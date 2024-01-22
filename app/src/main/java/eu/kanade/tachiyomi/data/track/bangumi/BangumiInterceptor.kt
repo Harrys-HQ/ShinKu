@@ -31,7 +31,10 @@ class BangumiInterceptor(private val bangumi: Bangumi) : Interceptor {
         }
 
         return originalRequest.newBuilder()
-            .header("User-Agent", "jobobby04/TachiyomiSY/v${BuildConfig.VERSION_NAME} (Android) (http://github.com/jobobby04/tachiyomisy)")
+            .header(
+                "User-Agent",
+                "jobobby04/TachiyomiSY/v${BuildConfig.VERSION_NAME} (Android) (http://github.com/jobobby04/tachiyomisy)",
+            )
             .apply {
                 if (originalRequest.method == "GET") {
                     val newUrl = originalRequest.url.newBuilder()
