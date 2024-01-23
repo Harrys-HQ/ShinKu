@@ -38,6 +38,8 @@ dependencyResolutionManagement {
     }
 }
 
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
 rootProject.name = "TachiyomiSY"
 include(":app")
 include(":i18n")
