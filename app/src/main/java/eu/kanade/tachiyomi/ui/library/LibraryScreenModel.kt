@@ -1020,7 +1020,7 @@ class LibraryScreenModel(
         return tracks.fastAny { track ->
             val trackService = trackerManager.get(track.trackerId)
             if (trackService != null) {
-                val status = trackService.getStatus(track.status.toInt())?.let {
+                val status = trackService.getStatus(track.status)?.let {
                     context.stringResource(it)
                 }
                 val name = trackerManager.get(track.trackerId)?.name
