@@ -96,7 +96,7 @@ body:
           required: true
         - label: If this is an issue with an extension, I should be opening an issue in the extension's repository.
           required: true
-        - label: I have gone through the [FAQ](https://tachiyomi.org/docs/faq/general) and [troubleshooting guide](https://tachiyomi.org/docs/guides/troubleshooting/).
+        - label: I have gone through the [FAQ](https://mihon.app/docs/faq/general) and [troubleshooting guide](https:/mihon.app/docs/guides/troubleshooting/).
           required: true
         - label: I have updated the app to version **[1.10.2](https://github.com/jobobby04/tachiyomisy/releases/latest)**.
           required: true
