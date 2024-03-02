@@ -634,9 +634,9 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 var tracker = dbTracks.firstOrNull { it.trackerId == TrackerManager.MDLIST }
                     ?: mdList.createInitialTracker(manga).toDomainTrack(idRequired = false)
 
-                if (tracker?.status == FollowStatus.UNFOLLOWED.int.toLong()) {
+                if (tracker?.status == FollowStatus.UNFOLLOWED.long) {
                     tracker = tracker.copy(
-                        status = FollowStatus.READING.int.toLong(),
+                        status = FollowStatus.READING.long,
                     )
                     val updatedTrack = mdList.update(tracker.toDbTrack())
                     insertTrack.await(updatedTrack.toDomainTrack(false)!!)
