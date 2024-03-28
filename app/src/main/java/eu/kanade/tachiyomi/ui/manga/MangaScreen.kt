@@ -67,6 +67,7 @@ import exh.source.isMdBasedSource
 import exh.ui.ifSourcesLoaded
 import exh.ui.metadata.MetadataViewScreen
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
@@ -514,6 +515,7 @@ class MangaScreen(
         navigator.push(SourcesScreen(smartSearchConfig))
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun mergeWithAnother(
         navigator: Navigator,
         context: Context,
