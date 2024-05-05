@@ -30,6 +30,9 @@ import tachiyomi.presentation.core.i18n.stringResource
 
 @Composable
 fun GlobalSearchResultItem(
+    // SY -->
+    modifier: Modifier = Modifier,
+    // SY <--
     title: String,
     // SY -->
     subtitle: String?,
@@ -38,10 +41,9 @@ fun GlobalSearchResultItem(
     // SY -->
     onLongClick: (() -> Unit)? = null,
     // SY <--
-    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    Column(modifier = modifier) {
+    Column(modifier) {
         Row(
             modifier = Modifier
                 .padding(
