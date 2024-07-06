@@ -34,6 +34,7 @@ import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
+import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.mdlist.MdList
 import eu.kanade.tachiyomi.network.HttpException
@@ -186,8 +187,6 @@ class MangaScreenModel(
 
     private val successState: State.Success?
         get() = state.value as? State.Success
-
-    val loggedInTrackers by lazy { trackerManager.trackers.filter { it.isLoggedIn } }
 
     val manga: Manga?
         get() = successState?.manga
@@ -358,6 +357,16 @@ class MangaScreenModel(
                 .collectLatest { availableScanlators ->
                     updateSuccessState {
                         it.copy(availableScanlators = availableScanlators.toImmutableSet())
+                    }
+                }
+        }
+
+        screenModelScope.launchIO {
+            trackerManager.loggedInTrackersFlow()
+                .distinctUntilChanged()
+                .collectLatest { trackers ->
+                    updateSuccessState {
+                        it.copy(loggedInTracker = trackers)
                     }
                 }
         }
@@ -1490,15 +1499,16 @@ class MangaScreenModel(
         val manga = state?.manga ?: return
 
         screenModelScope.launchIO {
-            getTracks.subscribe(manga.id)
-                .catch { logcat(LogPriority.ERROR, it) }
-                .map { tracks ->
-                    loggedInTrackers
-                        // Map to TrackItem
-                        .map { service -> TrackItem(tracks.find { it.trackerId == service.id }, service) }
-                        // Show only if the service supports this manga's source
-                        .filter { (it.tracker as? EnhancedTracker)?.accept(source!!) ?: true }
-                }
+            combine(
+                getTracks.subscribe(manga.id).catch { logcat(LogPriority.ERROR, it) },
+                trackerManager.loggedInTrackersFlow(),
+            ) { mangaTracks, loggedInTrackers ->
+                loggedInTrackers
+                    // Map to TrackItem
+                    .map { service -> TrackItem(mangaTracks.find { it.trackerId == service.id }, service) }
+                    // Show only if the service supports this manga's source
+                    .filter { (it.tracker as? EnhancedTracker)?.accept(source!!) ?: true }
+            }
                 // SY -->
                 .map { trackItems ->
                     if (manga.source in mangaDexSourceIds || state.mergedData?.manga?.values.orEmpty().any {
@@ -1637,6 +1647,7 @@ class MangaScreenModel(
             val isRefreshingData: Boolean = false,
             val dialog: MangaScreenModel.Dialog? = null,
             val hasPromptedToAddBefore: Boolean = false,
+            val loggedInTracker: List<Tracker> = emptyList(),
             // SY -->
             val meta: RaisedSearchMetadata?,
             val mergedData: MergedMangaData?,

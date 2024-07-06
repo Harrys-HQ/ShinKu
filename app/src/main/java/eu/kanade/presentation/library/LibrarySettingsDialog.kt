@@ -155,7 +155,7 @@ private fun ColumnScope.FilterPage(
     )
     // SY <--
 
-    val trackers = remember { screenModel.trackers }
+    val trackers by screenModel.trackersFlow.collectAsState()
     when (trackers.size) {
         0 -> {
             // No trackers
@@ -188,6 +188,7 @@ private fun ColumnScope.SortPage(
     category: Category?,
     screenModel: LibrarySettingsScreenModel,
 ) {
+    val trackers by screenModel.trackersFlow.collectAsState()
     // SY -->
     val globalSortMode by screenModel.libraryPreferences.sortingMode().collectAsState()
     val sortingMode = if (screenModel.grouping == LibraryGroup.BY_DEFAULT) {
@@ -206,12 +207,12 @@ private fun ColumnScope.SortPage(
     }.collectAsState(initial = screenModel.libraryPreferences.sortTagsForLibrary().get().isNotEmpty())
     // SY <--
 
-    val trackerSortOption =
-        if (screenModel.trackers.isEmpty()) {
-            emptyList()
-        } else {
-            listOf(MR.strings.action_sort_tracker_score to LibrarySort.Type.TrackerMean)
-        }
+
+    val trackerSortOption = if (trackers.isEmpty()) {
+        emptyList()
+    } else {
+        listOf(MR.strings.action_sort_tracker_score to LibrarySort.Type.TrackerMean)
+    }
 
     listOfNotNull(
         MR.strings.action_sort_alpha to LibrarySort.Type.Alphabetical,
@@ -346,12 +347,13 @@ private fun ColumnScope.GroupPage(
     screenModel: LibrarySettingsScreenModel,
     hasCategories: Boolean,
 ) {
-    val groups = remember(hasCategories, screenModel.trackers) {
+    val trackers by screenModel.trackersFlow.collectAsState()
+    val groups = remember(hasCategories, trackers) {
         buildList {
             add(LibraryGroup.BY_DEFAULT)
             add(LibraryGroup.BY_SOURCE)
             add(LibraryGroup.BY_STATUS)
-            if (screenModel.trackers.isNotEmpty()) {
+            if (trackers.isNotEmpty()) {
                 add(LibraryGroup.BY_TRACK_STATUS)
             }
             if (hasCategories) {
