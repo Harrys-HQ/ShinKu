@@ -34,7 +34,6 @@ import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
-import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.mdlist.MdList
 import eu.kanade.tachiyomi.network.HttpException
@@ -128,6 +127,7 @@ import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.domain.track.interactor.InsertTrack
+import tachiyomi.domain.track.model.Track
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 import tachiyomi.source.local.LocalSource
@@ -357,16 +357,6 @@ class MangaScreenModel(
                 .collectLatest { availableScanlators ->
                     updateSuccessState {
                         it.copy(availableScanlators = availableScanlators.toImmutableSet())
-                    }
-                }
-        }
-
-        screenModelScope.launchIO {
-            trackerManager.loggedInTrackersFlow()
-                .distinctUntilChanged()
-                .collectLatest { trackers ->
-                    updateSuccessState {
-                        it.copy(loggedInTracker = trackers)
                     }
                 }
         }
@@ -1500,45 +1490,55 @@ class MangaScreenModel(
 
         screenModelScope.launchIO {
             combine(
-                getTracks.subscribe(manga.id).catch { logcat(LogPriority.ERROR, it) },
+                getTracks.subscribe(manga.id)
+                    // SY -->
+                    .map { trackItems ->
+                        if (manga.source in mangaDexSourceIds || state.mergedData?.manga?.values.orEmpty().any {
+                                it.source in mangaDexSourceIds
+                            }
+                        ) {
+                            val mdTrack = trackItems.firstOrNull { it.trackerId == TrackerManager.MDLIST }
+                            when {
+                                trackerManager.mdList.isLoggedIn && mdTrack == null -> {
+                                    trackItems + createMdListTrack()
+                                }
+                                else -> trackItems
+                            }
+                        } else {
+                            trackItems
+                        }
+                    }
+                    // SY <--
+                    .catch { logcat(LogPriority.ERROR, it) },
                 trackerManager.loggedInTrackersFlow(),
             ) { mangaTracks, loggedInTrackers ->
-                loggedInTrackers
-                    // Map to TrackItem
-                    .map { service -> TrackItem(mangaTracks.find { it.trackerId == service.id }, service) }
-                    // Show only if the service supports this manga's source
-                    .filter { (it.tracker as? EnhancedTracker)?.accept(source!!) ?: true }
-            }
+                // Show only if the service supports this manga's source
+                val supportedTrackers = loggedInTrackers.filter { (it as? EnhancedTracker)?.accept(source!!) ?: true }
+                val supportedTrackerIds = supportedTrackers.map { it.id }.toHashSet()
+                val supportedTrackerTracks = mangaTracks.filter { it.trackerId in supportedTrackerIds }
                 // SY -->
-                .map { trackItems ->
-                    if (manga.source in mangaDexSourceIds || state.mergedData?.manga?.values.orEmpty().any {
-                            it.source in mangaDexSourceIds
-                        }
-                    ) {
-                        val mdTrack = trackItems.firstOrNull { it.tracker is MdList }
-                        when {
-                            mdTrack == null -> {
-                                trackItems
-                            }
-                            mdTrack.track == null -> {
-                                trackItems - mdTrack + createMdListTrack()
-                            }
-                            else -> trackItems
-                        }
-                    } else {
-                        trackItems
-                    }
+                val trackingCount = supportedTrackerTracks.count {
+                    (it.trackerId == TrackerManager.MDLIST && it.status != FollowStatus.UNFOLLOWED.long) ||
+                        it.trackerId != TrackerManager.MDLIST
                 }
+                trackingCount to supportedTrackers.isNotEmpty()
                 // SY <--
+            }
+
                 .distinctUntilChanged()
-                .collectLatest { trackItems ->
-                    updateSuccessState { it.copy(trackItems = trackItems) }
+                .collectLatest { (trackingCount, hasLoggedInTrackers) ->
+                    updateSuccessState {
+                        it.copy(
+                            trackingCount = trackingCount,
+                            hasLoggedInTrackers = hasLoggedInTrackers,
+                        )
+                    }
                 }
         }
     }
 
     // SY -->
-    private suspend fun createMdListTrack(): TrackItem {
+    private suspend fun createMdListTrack(): Track {
         val state = successState!!
         val mdManga = state.manga.takeIf { it.source in mangaDexSourceIds }
             ?: state.mergedData?.manga?.values?.find { it.source in mangaDexSourceIds }
@@ -1546,7 +1546,7 @@ class MangaScreenModel(
         val track = trackerManager.mdList.createInitialTracker(state.manga, mdManga)
             .toDomainTrack(false)!!
         insertTrack.await(track)
-        return TrackItem(getTracks.await(mangaId).first { it.trackerId == trackerManager.mdList.id }, trackerManager.mdList)
+        return getTracks.await(mangaId).first { it.trackerId == trackerManager.mdList.id }
     }
     // SY <--
 
@@ -1643,11 +1643,11 @@ class MangaScreenModel(
             val chapters: List<ChapterList.Item>,
             val availableScanlators: ImmutableSet<String>,
             val excludedScanlators: ImmutableSet<String>,
-            val trackItems: List<TrackItem> = emptyList(),
+            val trackingCount: Int = 0,
+            val hasLoggedInTrackers: Boolean = false,
             val isRefreshingData: Boolean = false,
             val dialog: MangaScreenModel.Dialog? = null,
             val hasPromptedToAddBefore: Boolean = false,
-            val loggedInTracker: List<Tracker> = emptyList(),
             // SY -->
             val meta: RaisedSearchMetadata?,
             val mergedData: MergedMangaData?,
@@ -1699,11 +1699,6 @@ class MangaScreenModel(
 
             val filterActive: Boolean
                 get() = scanlatorFilterActive || manga.chaptersFiltered()
-
-            val trackingCount: Int
-                get() = trackItems.count {
-                    it.track != null && ((it.tracker is MdList && it.track.status != FollowStatus.UNFOLLOWED.long) || it.tracker !is MdList)
-                }
 
             /**
              * Applies the view filters to the list of chapters obtained from the database.
