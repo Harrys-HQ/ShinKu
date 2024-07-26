@@ -28,6 +28,7 @@ import eu.kanade.presentation.browse.components.MigrationItem
 import eu.kanade.presentation.browse.components.MigrationItemResult
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.AppBarActions
+import eu.kanade.presentation.util.animateItemFastScroll
 import eu.kanade.tachiyomi.ui.browse.migration.advanced.process.MigratingManga
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -95,7 +96,7 @@ fun MigrationListScreen(
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .animateItemPlacement()
+                        .animateItemFastScroll()
                         .padding(horizontal = 16.dp)
                         .height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.SpaceBetween,
