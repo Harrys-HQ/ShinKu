@@ -17,6 +17,7 @@ data class BackupOptions(
     // SY -->
     val customInfo: Boolean = true,
     val readEntries: Boolean = true,
+    val savedSearches: Boolean = true,
     // SY <--
 ) {
 
@@ -32,6 +33,7 @@ data class BackupOptions(
         // SY -->
         customInfo,
         readEntries,
+        savedSearches,
         // SY <--
     )
 
@@ -80,6 +82,11 @@ data class BackupOptions(
                 setter = { options, enabled -> options.copy(readEntries = enabled) },
                 enabled = { it.libraryEntries },
             ),
+            Entry(
+                label = SYMR.strings.saved_searches,
+                getter = BackupOptions::savedSearches,
+                setter = { options, enabled -> options.copy(savedSearches = enabled) },
+            ),
             // SY <--
         )
 
@@ -114,6 +121,7 @@ data class BackupOptions(
             // SY -->
             customInfo = array[8],
             readEntries = array[9],
+            savedSearches = array[10],
             // SY <--
         )
     }
