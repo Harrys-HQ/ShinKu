@@ -49,7 +49,7 @@ class SyncSettingsSelector : Screen() {
             LazyColumnWithAction(
                 contentPadding = contentPadding,
                 actionLabel = stringResource(SYMR.strings.label_sync),
-                actionEnabled = state.options.anyEnabled(),
+                actionEnabled = state.options.canCreate(),
                 onClickAction = {
                     if (!SyncDataJob.isRunning(context)) {
                         model.syncNow(context)
@@ -122,12 +122,14 @@ private class SyncSettingsSelectorModel(
                 tracking = syncSettings.tracking,
                 history = syncSettings.history,
                 appSettings = syncSettings.appSettings,
+                extensionRepoSettings = syncSettings.extensionRepoSettings,
                 sourceSettings = syncSettings.sourceSettings,
                 privateSettings = syncSettings.privateSettings,
 
                 // SY -->
                 customInfo = syncSettings.customInfo,
                 readEntries = syncSettings.readEntries,
+                savedSearches = syncSettings.savedSearches,
                 // SY <--
             )
         }
@@ -140,12 +142,14 @@ private class SyncSettingsSelectorModel(
                 tracking = backupOptions.tracking,
                 history = backupOptions.history,
                 appSettings = backupOptions.appSettings,
+                extensionRepoSettings = backupOptions.extensionRepoSettings,
                 sourceSettings = backupOptions.sourceSettings,
                 privateSettings = backupOptions.privateSettings,
 
                 // SY -->
                 customInfo = backupOptions.customInfo,
                 readEntries = backupOptions.readEntries,
+                savedSearches = backupOptions.savedSearches,
                 // SY <--
             )
         }
