@@ -67,6 +67,15 @@ Get the app from our [releases page](https://github.com/jobobby04/tachiyomisy/re
 
 If you want to try new features before they get to the stable release, you can download the preview version [here](https://github.com/jobobby04/tachiyomisypreview/releases).
 
+## Translation
+Feel free to translate the project on [Weblate](https://hosted.weblate.org/projects/mihon/tachiyomisy/)
+
+<details><summary>Translation Progress</summary>
+<a href="https://hosted.weblate.org/engage/mihon/">
+<img src="https://hosted.weblate.org/widgets/mihon/-/tachiyomisy/multi-auto.svg" alt="Translation status" />
+</a>
+</details>
+
 ## Issues, Feature Requests and Contributing
 
 Please make sure to read the full guidelines. Your issue may be closed without warning if you do not.
