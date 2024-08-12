@@ -8,7 +8,6 @@ on:
 jobs:
   trigger_preview_build:
     name: Trigger preview build
-    if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
 
     steps:
