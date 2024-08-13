@@ -402,4 +402,5 @@ class WebtoonViewer(
     }
 }
 
+// Double the cache size to reduce rebinds/recycles incurred by the extra layout space on scroll direction changes
 private const val RecyclerViewCacheSize = 4
