@@ -28,6 +28,8 @@ spotless {
     format("xml") {
         target("**/*.xml")
         targetExclude("**/build/**/*.xml")
+        // weblate seems to have its own line endings
+        targetExclude("**/moko-resources/**/*.xml")
         trimTrailingWhitespace()
         endWithNewline()
     }
