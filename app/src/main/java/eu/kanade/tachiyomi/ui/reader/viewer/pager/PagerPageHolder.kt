@@ -50,7 +50,7 @@ class PagerPageHolder(
     /**
      * Loading progress bar to indicate the current progress.
      */
-    private val progressIndicator: ReaderProgressIndicator = ReaderProgressIndicator(readerThemedContext)
+    private var progressIndicator: ReaderProgressIndicator? = null // = ReaderProgressIndicator(readerThemedContext)
 
     /**
      * Error layout to show when the image fails to load.
@@ -70,7 +70,6 @@ class PagerPageHolder(
     private var extraLoadJob: Job? = null
 
     init {
-        addView(progressIndicator)
         loadJob = scope.launch { loadPageAndProcessStatus(1) }
         extraLoadJob = scope.launch { loadPageAndProcessStatus(2) }
     }
@@ -85,6 +84,13 @@ class PagerPageHolder(
         loadJob = null
         extraLoadJob?.cancel()
         extraLoadJob = null
+    }
+
+    private fun initProgressIndicator() {
+        if (progressIndicator == null) {
+            progressIndicator = ReaderProgressIndicator(context)
+            addView(progressIndicator)
+        }
     }
 
     /**
@@ -111,7 +117,7 @@ class PagerPageHolder(
                     Page.State.DOWNLOAD_IMAGE -> {
                         setDownloading()
                         page.progressFlow.collectLatest { value ->
-                            progressIndicator.setProgress(value)
+                            progressIndicator?.setProgress(value)
                         }
                     }
                     Page.State.READY -> setImage()
@@ -125,7 +131,8 @@ class PagerPageHolder(
      * Called when the page is queued.
      */
     private fun setQueued() {
-        progressIndicator.show()
+        initProgressIndicator()
+        progressIndicator?.show()
         removeErrorLayout()
     }
 
@@ -133,7 +140,8 @@ class PagerPageHolder(
      * Called when the page is loading.
      */
     private fun setLoading() {
-        progressIndicator.show()
+        initProgressIndicator()
+        progressIndicator?.show()
         removeErrorLayout()
     }
 
@@ -141,7 +149,8 @@ class PagerPageHolder(
      * Called when the page is downloading.
      */
     private fun setDownloading() {
-        progressIndicator.show()
+        initProgressIndicator()
+        progressIndicator?.show()
         removeErrorLayout()
     }
 
@@ -150,9 +159,9 @@ class PagerPageHolder(
      */
     private suspend fun setImage() {
         if (extraPage == null) {
-            progressIndicator.setProgress(0)
+            progressIndicator?.setProgress(0)
         } else {
-            progressIndicator.setProgress(95)
+            progressIndicator?.setProgress(95)
         }
 
         val streamFn = page.stream ?: return
@@ -269,7 +278,7 @@ class PagerPageHolder(
             return imageSource
         }
 
-        scope.launch { progressIndicator.setProgress(96) }
+        scope.launch { progressIndicator?.setProgress(96) }
         if (imageBitmap.height < imageBitmap.width) {
             imageSource2.close()
             page.fullPage = true
@@ -287,7 +296,7 @@ class PagerPageHolder(
             return imageSource
         }
 
-        scope.launch { progressIndicator.setProgress(97) }
+        scope.launch { progressIndicator?.setProgress(97) }
         if (imageBitmap2.height < imageBitmap2.width) {
             imageSource2.close()
             extraPage?.fullPage = true
@@ -342,9 +351,9 @@ class PagerPageHolder(
     private fun updateProgress(progress: Int) {
         scope.launch {
             if (progress == 100) {
-                progressIndicator.hide()
+                progressIndicator?.hide()
             } else {
-                progressIndicator.setProgress(progress)
+                progressIndicator?.setProgress(progress)
             }
         }
     }
@@ -397,13 +406,13 @@ class PagerPageHolder(
      * Called when the page has an error.
      */
     private fun setError() {
-        progressIndicator.hide()
+        progressIndicator?.hide()
         showErrorLayout()
     }
 
     override fun onImageLoaded() {
         super.onImageLoaded()
-        progressIndicator.hide()
+        progressIndicator?.hide()
     }
 
     /**
