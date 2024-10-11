@@ -117,7 +117,6 @@ import tachiyomi.source.local.LocalSource
 import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import java.util.Collections
 
 /**
  * Typealias for the library manga, using the category as keys, and list of manga as values.
@@ -178,25 +177,23 @@ class LibraryScreenModel(
                     ::Pair,
                 ),
                 // SY <--
-            ) { searchQuery, library, tracks, (trackingFiler, _), (groupType, sort) ->
+            ) { searchQuery, library, tracks, (trackingFilter, _), (groupType, sort) ->
                 library
                     // SY -->
                     .applyGrouping(groupType)
                     // SY <--
-                    .applyFilters(tracks, trackingFiler)
+                    .applyFilters(tracks, trackingFilter)
                     .applySort(
-                        tracks, trackingFiler.keys, /* SY --> */sort.takeIf {
+                        tracks, trackingFilter.keys, /* SY --> */sort.takeIf {
                             groupType != LibraryGroup.BY_DEFAULT
                         }, /* SY <-- */
                     )
                     .mapValues { (_, value) ->
                         if (searchQuery != null) {
-                            // Filter query
                             // SY -->
-                            filterLibrary(value, searchQuery, trackingFiler)
+                            filterLibrary(value, searchQuery, trackingFilter)
                             // SY <--
                         } else {
-                            // Don't do anything
                             value
                         }
                     }
@@ -279,12 +276,9 @@ class LibraryScreenModel(
         // SY <--
     }
 
-    /**
-     * Applies library filters to the given map of manga.
-     */
     private suspend fun LibraryMap.applyFilters(
         trackMap: Map<Long, List<Track>>,
-        trackingFiler: Map<Long, TriState>,
+        trackingFilter: Map<Long, TriState>,
     ): LibraryMap {
         val prefs = getLibraryItemPreferencesFlow().first()
         val downloadedOnly = prefs.globalFilterDownloaded
@@ -296,10 +290,10 @@ class LibraryScreenModel(
         val filterCompleted = prefs.filterCompleted
         val filterIntervalCustom = prefs.filterIntervalCustom
 
-        val isNotLoggedInAnyTrack = trackingFiler.isEmpty()
+        val isNotLoggedInAnyTrack = trackingFilter.isEmpty()
 
-        val excludedTracks = trackingFiler.mapNotNull { if (it.value == TriState.ENABLED_NOT) it.key else null }
-        val includedTracks = trackingFiler.mapNotNull { if (it.value == TriState.ENABLED_IS) it.key else null }
+        val excludedTracks = trackingFilter.mapNotNull { if (it.value == TriState.ENABLED_NOT) it.key else null }
+        val includedTracks = trackingFilter.mapNotNull { if (it.value == TriState.ENABLED_IS) it.key else null }
         val trackFiltersIsIgnored = includedTracks.isEmpty() && excludedTracks.isEmpty()
 
         // SY -->
@@ -370,14 +364,13 @@ class LibraryScreenModel(
             // SY <--
         }
 
-        return this.mapValues { entry -> entry.value.fastFilter(filterFn) }
+        return mapValues { (_, value) -> value.fastFilter(filterFn) }
     }
 
     /**
      * Applies library sorting to the given map of manga.
      */
     private fun LibraryMap.applySort(
-        // Map<MangaId, List<Track>>
         trackMap: Map<Long, List<Track>>,
         loggedInTrackerIds: Set<Long>,
         /* SY --> */
@@ -416,9 +409,9 @@ class LibraryScreenModel(
             }
         }
 
-        val sortFn: (LibraryItem, LibraryItem) -> Int = { i1, i2 ->
+        fun LibrarySort.comparator(): Comparator<LibraryItem> = Comparator { i1, i2 ->
             // SY -->
-            val sort = groupSort ?: keys.find { it.id == i1.libraryManga.category }!!.sort
+            val sort = groupSort ?: this
             // SY <--
             when (sort.type) {
                 LibrarySort.Type.Alphabetical -> {
@@ -468,17 +461,15 @@ class LibraryScreenModel(
             }
         }
 
-        return this.mapValues { entry ->
+        return mapValues { (key, value) ->
             // SY -->
-            val isAscending = groupSort?.isAscending ?: keys.find { it.id == entry.key.id }!!.sort.isAscending
+            val isAscending = groupSort?.isAscending ?: key.sort.isAscending
             // SY <--
-            val comparator = if ( /* SY --> */ isAscending /* SY <-- */) {
-                Comparator(sortFn)
-            } else {
-                Collections.reverseOrder(sortFn)
-            }
+            val comparator = key.sort.comparator()
+                .let { if (/* SY --> */ isAscending /* SY <-- */) it else it.reversed() }
+                .thenComparator(sortAlphabetically)
 
-            entry.value.sortedWith(comparator.thenComparator(sortAlphabetically))
+            value.sortedWith(comparator)
         }
     }
 
