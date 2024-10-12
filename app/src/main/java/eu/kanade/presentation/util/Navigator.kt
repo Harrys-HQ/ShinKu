@@ -60,7 +60,10 @@ interface AssistContentScreen {
 }
 
 @Composable
-fun DefaultNavigatorScreenTransition(navigator: Navigator) {
+fun DefaultNavigatorScreenTransition(
+    navigator: Navigator,
+    modifier: Modifier = Modifier,
+) {
     val slideDistance = rememberSlideDistance()
     ScreenTransition(
         navigator = navigator,
@@ -70,6 +73,7 @@ fun DefaultNavigatorScreenTransition(navigator: Navigator) {
                 slideDistance = slideDistance,
             )
         },
+        modifier = modifier,
     )
 }
 
