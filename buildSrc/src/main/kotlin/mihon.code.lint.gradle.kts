@@ -6,6 +6,18 @@ plugins {
 
 val libs = the<LibrariesForLibs>()
 
+val xmlFormatExclude = buildList(2) {
+    add("**/build/**/*.xml")
+
+    projectDir
+        .resolve("src/commonMain/moko-resources")
+        .takeIf { it.isDirectory }
+        ?.let(::fileTree)
+        ?.matching { exclude("/base/**") }
+        ?.let(::add)
+}
+    .toTypedArray()
+
 spotless {
     kotlin {
         target("**/*.kt", "**/*.kts")
@@ -27,9 +39,7 @@ spotless {
     }
     format("xml") {
         target("**/*.xml")
-        targetExclude("**/build/**/*.xml")
-        // weblate seems to have its own line endings
-        targetExclude("**/moko-resources/**/*.xml")
+        targetExclude(*xmlFormatExclude)
         trimTrailingWhitespace()
         endWithNewline()
     }
