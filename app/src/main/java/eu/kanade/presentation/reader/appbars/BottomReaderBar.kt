@@ -46,6 +46,7 @@ fun BottomReaderBar(
     doublePages: Boolean,
     onClickChapterList: () -> Unit,
     onClickWebView: (() -> Unit)?,
+    onClickBrowser: (() -> Unit)?,
     onClickShare: (() -> Unit)?,
     onClickPageLayout: () -> Unit,
     onClickShiftPage: () -> Unit,
@@ -74,6 +75,15 @@ fun BottomReaderBar(
                 Icon(
                     imageVector = Icons.Outlined.Public,
                     contentDescription = stringResource(MR.strings.action_open_in_web_view),
+                )
+            }
+        }
+
+        if (ReaderBottomButton.Browser.isIn(enabledButtons) && onClickBrowser != null) {
+            IconButton(onClick = onClickBrowser) {
+                Icon(
+                    imageVector = Icons.Outlined.Public,
+                    contentDescription = stringResource(MR.strings.action_open_in_browser),
                 )
             }
         }

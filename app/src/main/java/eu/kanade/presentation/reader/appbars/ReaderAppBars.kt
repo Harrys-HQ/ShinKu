@@ -74,6 +74,7 @@ fun ReaderAppBars(
     // bookmarked: Boolean,
     // onToggleBookmarked: () -> Unit,
     onOpenInWebView: (() -> Unit)?,
+    onOpenInBrowser: (() -> Unit)?,
     onShare: (() -> Unit)?,
 
     viewer: Viewer?,
@@ -308,6 +309,7 @@ fun ReaderAppBars(
                         doublePages = doublePages,
                         onClickChapterList = onClickChapterList,
                         onClickWebView = onOpenInWebView,
+                        onClickBrowser = onOpenInBrowser,
                         onClickShare = onShare,
                         onClickPageLayout = onClickPageLayout,
                         onClickShiftPage = onClickShiftPage,
