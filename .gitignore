@@ -1,26 +1,21 @@
+# Build files
 .gradle
 .kotlin
-/local.properties
-/.idea/workspace.xml
-.DS_Store
+build
+
+# IDE files
+*.iml
 .idea/*
 !.idea/icon.png
-*iml
-*.iml
-/mainframer
-/.mainframer
-
-# Built files
-*/build
-/build
-*.apk
-app/**/output.json
-
-# Unnecessary file
-*.swp
-
-TODO.md
-CHANGELOG.md
 /captures
-build.sh
+
+# Configuration files
+local.properties
+
+# macOS specific files
+.DS_Store
+
+# SY ignores
+google-services.json
 /app/src/main/assets/client_secrets.json
+*.apk
