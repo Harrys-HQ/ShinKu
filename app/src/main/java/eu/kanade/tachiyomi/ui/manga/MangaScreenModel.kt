@@ -376,6 +376,14 @@ class MangaScreenModel(
         screenModelScope.launchIO {
             val manga = getMangaAndChapters.awaitManga(mangaId)
             // SY -->
+            val mergedData = getMergedReferencesById.await(mangaId).takeIf { it.isNotEmpty() }?.let { references ->
+                MergedMangaData(
+                    references,
+                    getMergedMangaById.await(mangaId).associateBy { it.id },
+                    references.map { it.mangaSourceId }.distinct()
+                        .map { sourceManager.getOrStub(it) },
+                )
+            }
             val chapters = (
                 if (manga.source ==
                     MERGED_SOURCE_ID
@@ -385,15 +393,7 @@ class MangaScreenModel(
                     getMangaAndChapters.awaitChapters(mangaId, applyScanlatorFilter = true)
                 }
                 )
-                .toChapterListItems(manga, null)
-            val mergedData = getMergedReferencesById.await(mangaId).takeIf { it.isNotEmpty() }?.let { references ->
-                MergedMangaData(
-                    references,
-                    getMergedMangaById.await(mangaId).associateBy { it.id },
-                    references.map { it.mangaSourceId }.distinct()
-                        .map { sourceManager.getOrStub(it) },
-                )
-            }
+                .toChapterListItems(manga, mergedData)
             val meta = getFlatMetadata.await(mangaId)
             // SY <--
 
