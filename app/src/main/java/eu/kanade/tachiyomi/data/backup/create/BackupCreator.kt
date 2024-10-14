@@ -32,6 +32,7 @@ import tachiyomi.domain.backup.service.BackupPreferences
 import tachiyomi.domain.manga.interactor.GetFavorites
 import tachiyomi.domain.manga.interactor.GetMergedManga
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.i18n.MR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -48,6 +49,7 @@ class BackupCreator(
     private val parser: ProtoBuf = Injekt.get(),
     private val getFavorites: GetFavorites = Injekt.get(),
     private val backupPreferences: BackupPreferences = Injekt.get(),
+    private val mangaRepository: MangaRepository = Injekt.get(),
 
     private val categoriesBackupCreator: CategoriesBackupCreator = CategoriesBackupCreator(),
     private val mangaBackupCreator: MangaBackupCreator = MangaBackupCreator(),
@@ -85,15 +87,12 @@ class BackupCreator(
                 throw IllegalStateException(context.stringResource(MR.strings.create_backup_file_error))
             }
 
-            val backupManga = backupMangas(
-                getFavorites.await() /* SY --> */ +
-                    if (options.readEntries) {
-                        handler.awaitList { mangasQueries.getReadMangaNotInLibrary(MangaMapper::mapManga) }
-                    } else {
-                        emptyList()
-                    } + getMergedManga.await(), // SY <--
-                options,
-            )
+            val nonFavoriteManga = if (options.readEntries) mangaRepository.getReadMangaNotInLibrary() else emptyList()
+            // SY -->
+            val mergedManga = getMergedManga.await()
+            // SY <--
+            val backupManga = backupMangas(getFavorites.await() + nonFavoriteManga /* SY --> */ + mergedManga /* SY <-- */, options)
+
             val backup = Backup(
                 backupManga = backupManga,
                 backupCategories = backupCategories(options),
