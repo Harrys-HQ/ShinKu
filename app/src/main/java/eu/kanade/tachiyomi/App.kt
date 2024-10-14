@@ -48,8 +48,11 @@ import eu.kanade.tachiyomi.data.coil.TachiyomiImageDecoder
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.di.AppModule
+import eu.kanade.tachiyomi.di.InjektKoinBridge
 import eu.kanade.tachiyomi.di.PreferenceModule
 import eu.kanade.tachiyomi.di.SYPreferenceModule
+import eu.kanade.tachiyomi.di.importModule
+import eu.kanade.tachiyomi.di.initExpensiveComponents
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.ui.base.delegate.SecureActivityDelegate
@@ -123,6 +126,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         // SY -->
         Injekt.importModule(SYPreferenceModule(this))
         Injekt.importModule(SYDomainModule())
+        InjektKoinBridge.startKoin(this)
+        initExpensiveComponents(this)
         // SY <--
 
         setupExhLogging() // EXH logging
