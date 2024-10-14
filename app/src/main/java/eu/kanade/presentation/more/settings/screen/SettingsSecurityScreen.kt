@@ -150,7 +150,7 @@ object SettingsSecurityScreen : SearchableSettings {
                         .toImmutableMap(),
                     enabled = passwordProtectDownloads,
 
-                    ),
+                ),
                 kotlin.run {
                     var dialogOpen by remember { mutableStateOf(false) }
                     if (dialogOpen) {
@@ -217,7 +217,7 @@ object SettingsSecurityScreen : SearchableSettings {
                 },
                 // SY <--
                 Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.secure_screen_summary)),
-            )
+            ),
         )
     }
 

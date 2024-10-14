@@ -27,7 +27,6 @@ import okio.sink
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.data.DatabaseHandler
-import tachiyomi.data.manga.MangaMapper
 import tachiyomi.domain.backup.service.BackupPreferences
 import tachiyomi.domain.manga.interactor.GetFavorites
 import tachiyomi.domain.manga.interactor.GetMergedManga
@@ -91,7 +90,8 @@ class BackupCreator(
             // SY -->
             val mergedManga = getMergedManga.await()
             // SY <--
-            val backupManga = backupMangas(getFavorites.await() + nonFavoriteManga /* SY --> */ + mergedManga /* SY <-- */, options)
+            val backupManga =
+                backupMangas(getFavorites.await() + nonFavoriteManga /* SY --> */ + mergedManga /* SY <-- */, options)
 
             val backup = Backup(
                 backupManga = backupManga,
