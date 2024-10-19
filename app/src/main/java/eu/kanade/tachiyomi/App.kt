@@ -71,7 +71,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import logcat.LogPriority
 import logcat.LogcatLogger
-import mihon.core.firebase.Firebase
+import mihon.core.firebase.FirebaseConfig
 import mihon.core.migration.Migrator
 import mihon.core.migration.migrations.migrations
 import org.conscrypt.Conscrypt
@@ -100,6 +100,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
         super<Application>.onCreate()
+        FirebaseConfig.init(applicationContext)
 
         GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
 
@@ -127,11 +128,11 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         setupExhLogging() // EXH logging
         LogcatLogger.install(XLogLogcatLogger()) // SY Redirect Logcat to XLog
 
-        Firebase.setup(applicationContext, privacyPreferences, ProcessLifecycleOwner.get().lifecycleScope)
-
         setupNotificationChannels()
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
+
+        val scope = ProcessLifecycleOwner.get().lifecycleScope
 
         // Show notification to disable Incognito Mode when it's enabled
         basePreferences.incognitoMode().changes()
@@ -160,14 +161,22 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                     cancelNotification(Notifications.ID_INCOGNITO_MODE)
                 }
             }
-            .launchIn(ProcessLifecycleOwner.get().lifecycleScope)
+            .launchIn(scope)
+
+        privacyPreferences.analytics()
+            .changes()
+            .onEach(FirebaseConfig::setAnalyticsEnabled)
+            .launchIn(scope)
+
+        privacyPreferences.crashlytics()
+            .changes()
+            .onEach(FirebaseConfig::setCrashlyticsEnabled)
+            .launchIn(scope)
 
         setAppCompatDelegateThemeMode(Injekt.get<UiPreferences>().themeMode().get())
 
         // Updates widget update
-        with(WidgetManager(Injekt.get(), Injekt.get())) {
-            init(ProcessLifecycleOwner.get().lifecycleScope)
-        }
+        WidgetManager(Injekt.get(), Injekt.get()).apply { init(scope) }
 
         /*if (!LogcatLogger.isInstalled && networkPreferences.verboseLogging().get()) {
             LogcatLogger.install(AndroidLogcatLogger(LogPriority.VERBOSE))
