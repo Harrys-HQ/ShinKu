@@ -251,7 +251,7 @@ class DownloadCache(
 
     // SY -->
     suspend fun removeFolders(folders: List<String>, manga: Manga) {
-        rootDownloadsDirLock.withLock {
+        rootDownloadsDirMutex.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return
             val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.ogTitle)] ?: return
             folders.forEach { chapter ->
