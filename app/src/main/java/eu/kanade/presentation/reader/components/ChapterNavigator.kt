@@ -18,7 +18,6 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
@@ -45,8 +44,8 @@ import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.theme.TachiyomiPreviewTheme
 import eu.kanade.presentation.util.isTabletUi
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.material.Slider
 import tachiyomi.presentation.core.i18n.stringResource
-import kotlin.math.roundToInt
 
 @Composable
 fun ChapterNavigator(
@@ -61,7 +60,7 @@ fun ChapterNavigator(
     currentPageText: String,
     // SY <--
     totalPages: Int,
-    onSliderValueChange: (Int) -> Unit,
+    onPageIndexChange: (Int) -> Unit,
 ) {
     // SY -->
     if (isVerticalSlider) {
@@ -73,7 +72,7 @@ fun ChapterNavigator(
             currentPage = currentPage,
             currentPageText = currentPageText,
             totalPages = totalPages,
-            onSliderValueChange = onSliderValueChange,
+            onPageIndexChange = onPageIndexChange,
         )
         return
     }
@@ -138,14 +137,11 @@ fun ChapterNavigator(
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(horizontal = 8.dp),
-                            value = currentPage.toFloat(),
-                            valueRange = 1f..totalPages.toFloat(),
-                            steps = totalPages - 2,
-                            onValueChange = {
-                                val new = it.roundToInt() - 1
-                                if (new != currentPage) {
-                                    onSliderValueChange(new)
-                                }
+                            value = currentPage,
+                            valueRange = 1..totalPages,
+                            onValueChange = f@{
+                                if (it == currentPage) return@f
+                                onPageIndexChange(it - 1)
                             },
                             interactionSource = interactionSource,
                         )
@@ -184,7 +180,7 @@ fun ChapterNavigatorVert(
     currentPageText: String,
     // SY <--
     totalPages: Int,
-    onSliderValueChange: (Int) -> Unit,
+    onPageIndexChange: (Int) -> Unit,
 ) {
     val isTabletUi = isTabletUi()
     val verticalPadding = if (isTabletUi) 24.dp else 8.dp
@@ -259,11 +255,11 @@ fun ChapterNavigatorVert(
                             }
                         }
                         .weight(1f),
-                    value = currentPage.toFloat(),
-                    valueRange = 1f..totalPages.toFloat(),
-                    steps = totalPages,
-                    onValueChange = {
-                        onSliderValueChange(it.roundToInt() - 1)
+                    value = currentPage,
+                    valueRange = 1..totalPages,
+                    onValueChange = f@{
+                        if (it == currentPage) return@f
+                        onPageIndexChange(it - 1)
                     },
                     interactionSource = interactionSource,
                 )
@@ -301,7 +297,7 @@ private fun ChapterNavigatorPreview() {
             enabledPrevious = true,
             currentPage = currentPage,
             totalPages = 10,
-            onSliderValueChange = { currentPage = it },
+            onPageIndexChange = { currentPage = (it + 1) },
             // SY -->
             currentPageText = "1",
             isVerticalSlider = false,
