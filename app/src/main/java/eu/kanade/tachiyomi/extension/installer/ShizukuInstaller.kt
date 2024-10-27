@@ -125,7 +125,7 @@ class ShizukuInstaller(private val service: Service) : Installer(service) {
             false
         }
         newProcess = Shizuku::class.java
-            .getDeclaredMethod("newProcess", Array::class.java, Array::class.java, String::class.java)
+            .getDeclaredMethod("newProcess", Array<out String>::class.java, Array<out String>::class.java, String::class.java)
         newProcess.isAccessible = true
     }
 }
