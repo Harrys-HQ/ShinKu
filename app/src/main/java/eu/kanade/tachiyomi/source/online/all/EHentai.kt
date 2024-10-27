@@ -452,7 +452,7 @@ class EHentai(
         }.plus(
             select("#gdt a").map {
                 Pair(it.child(0).attr("title").removePrefix("Page ").substringBefore(":").toInt(), it.attr("href"))
-            }
+            },
         ).sortedBy(Pair<Int, String>::first).map { it.second }
     }
 
