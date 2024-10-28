@@ -53,7 +53,7 @@ body:
       label: TachiyomiSY version
       description: You can find your TachiyomiSY version in **More → About**.
       placeholder: |
-        Example: "1.10.5"
+        Example: "1.11.0"
     validations:
       required: true
 
@@ -63,7 +63,7 @@ body:
       label: Android version
       description: You can find this somewhere in your Android settings.
       placeholder: |
-        Example: "Android 11"
+        Example: "Android 14"
     validations:
       required: true
 
@@ -73,7 +73,7 @@ body:
       label: Device
       description: List your device and model.
       placeholder: |
-        Example: "Google Pixel 5"
+        Example: "Google Pixel 8"
     validations:
       required: true
 
@@ -96,7 +96,7 @@ body:
           required: true
         - label: I have gone through the [FAQ](https://mihon.app/docs/faq/general) and [troubleshooting guide](https:/mihon.app/docs/guides/troubleshooting/).
           required: true
-        - label: I have updated the app to version **[1.10.5](https://github.com/jobobby04/tachiyomisy/releases/latest)**.
+        - label: I have updated the app to version **[1.11.0](https://github.com/jobobby04/tachiyomisy/releases/latest)**.
           required: true
         - label: I have updated all installed extensions.
           required: true
