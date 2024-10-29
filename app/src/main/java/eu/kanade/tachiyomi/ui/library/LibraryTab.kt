@@ -75,7 +75,7 @@ import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
-object LibraryTab : Tab {
+data object LibraryTab : Tab {
 
     override val options: TabOptions
         @Composable
