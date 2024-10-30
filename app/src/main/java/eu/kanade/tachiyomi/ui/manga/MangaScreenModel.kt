@@ -1269,10 +1269,7 @@ class MangaScreenModel(
                 chapters = chapters.toTypedArray(),
             )
 
-            if (
-                successState?.hasLoggedInTrackers == false ||
-                !read || autoTrackState == AutoTrackState.NEVER
-            ) {
+            if (!read || successState?.hasLoggedInTrackers == false || autoTrackState == AutoTrackState.NEVER) {
                 return@launchIO
             }
 
