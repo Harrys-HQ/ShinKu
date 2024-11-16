@@ -15,7 +15,6 @@ import coil3.request.bitmapConfig
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.util.storage.CbzCrypto
 import eu.kanade.tachiyomi.util.storage.CbzCrypto.getCoverStream
-import eu.kanade.tachiyomi.util.system.GLUtil
 import mihon.core.common.archive.archiveReader
 import okio.BufferedSource
 import tachiyomi.core.common.util.system.ImageUtil
@@ -71,7 +70,7 @@ class TachiyomiImageDecoder(private val resources: ImageSource, private val opti
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             options.bitmapConfig == Bitmap.Config.HARDWARE &&
-            maxOf(bitmap.width, bitmap.height) <= GLUtil.maxTextureSize
+            ImageUtil.canUseHardwareBitmap(bitmap)
         ) {
             val hwBitmap = bitmap.copy(Bitmap.Config.HARDWARE, false)
             if (hwBitmap != null) {
