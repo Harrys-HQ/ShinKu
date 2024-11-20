@@ -185,9 +185,9 @@ open class BrowseSourceScreenModel(
      * Flow of Pager flow tied to [State.listing]
      */
     private val hideInLibraryItems = sourcePreferences.hideInLibraryItems().get()
-    val mangaPagerFlow = state.map { it.listing }
+    val mangaPagerFlowFlow = state.map { it.listing }
         .distinctUntilChanged()
-        .flatMapLatest { listing ->
+        .map { listing ->
             Pager(PagingConfig(pageSize = 25)) {
                 // SY -->
                 createSourcePagingSource(listing.query ?: "", listing.filters)
@@ -204,8 +204,9 @@ open class BrowseSourceScreenModel(
                 }
                     .filter { !hideInLibraryItems || !it.value.first.favorite }
             }
+                .cachedIn(ioCoroutineScope)
         }
-        .cachedIn(ioCoroutineScope)
+        .stateIn(ioCoroutineScope, SharingStarted.Lazily, emptyFlow())
 
     fun getColumnsPreference(orientation: Int): GridCells {
         val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
