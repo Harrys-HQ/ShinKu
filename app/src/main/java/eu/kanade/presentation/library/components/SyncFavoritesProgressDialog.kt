@@ -75,7 +75,7 @@ fun SyncFavoritesProgressDialog(
                             FavoritesSyncStatus.SyncError.GallerySyncError.UnableToDeleteFromRemote ->
                                 context.stringResource(SYMR.strings.favorites_sync_unable_to_delete)
                         }
-                    }
+                    },
                 ),
                 positiveButtonText = context.stringResource(MR.strings.action_ok),
                 positiveButton = setStatusIdle,
@@ -112,7 +112,7 @@ fun SyncFavoritesProgressDialog(
                             context.stringResource(SYMR.strings.favorites_sync_unable_to_add_to_remote, status.title, status.gid)
                         FavoritesSyncStatus.SyncError.GallerySyncError.UnableToDeleteFromRemote ->
                             context.stringResource(SYMR.strings.favorites_sync_unable_to_delete)
-                    }
+                    },
                 ),
                 positiveButtonText = context.stringResource(MR.strings.action_ok),
                 positiveButton = setStatusIdle,
@@ -137,7 +137,7 @@ fun SyncFavoritesProgressDialog(
                             if (status.isThrottling) {
                                 context.stringResource(
                                     SYMR.strings.favorites_sync_processing_throttle,
-                                    context.stringResource(SYMR.strings.favorites_sync_adding_to_remote, status.index, status.total)
+                                    context.stringResource(SYMR.strings.favorites_sync_adding_to_remote, status.index, status.total),
                                 )
                             } else {
                                 context.stringResource(SYMR.strings.favorites_sync_adding_to_remote, status.index, status.total)
@@ -148,7 +148,7 @@ fun SyncFavoritesProgressDialog(
                             if (status.isThrottling) {
                                 context.stringResource(
                                     SYMR.strings.favorites_sync_processing_throttle,
-                                    context.stringResource(SYMR.strings.favorites_sync_add_to_local, status.index, status.total)
+                                    context.stringResource(SYMR.strings.favorites_sync_add_to_local, status.index, status.total),
                                 )
                             } else {
                                 context.stringResource(SYMR.strings.favorites_sync_add_to_local, status.index, status.total)
