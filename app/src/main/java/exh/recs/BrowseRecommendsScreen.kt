@@ -19,7 +19,6 @@ import exh.ui.ifSourcesLoaded
 import mihon.presentation.core.util.collectAsLazyPagingItems
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.presentation.core.components.material.Scaffold
-import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.LoadingScreen
 
 class BrowseRecommendsScreen(
@@ -62,11 +61,14 @@ class BrowseRecommendsScreen(
 
         Scaffold(
             topBar = { scrollBehavior ->
-                val recSource = remember { screenModel.recommendationSource }
+                val title = remember {
+                    val recSource = screenModel.recommendationSource
+                    "${recSource.name} (${recSource.category.getString(context)})"
+                }
 
                 BrowseSourceSimpleToolbar(
                     navigateUp = navigator::pop,
-                    title = "${recSource.name} (${stringResource(recSource.category)})",
+                    title = title,
                     displayMode = screenModel.displayMode,
                     onDisplayModeChange = { screenModel.displayMode = it },
                     scrollBehavior = scrollBehavior,

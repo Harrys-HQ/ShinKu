@@ -106,7 +106,7 @@ class ExtensionManager(
     }
 
     fun getAppIconForSource(sourceId: Long): Drawable? {
-        val pkgName = getExtensionPackage(sourceId) ?: return null
+        val pkgName = getExtensionPackage(sourceId)
 
         if (pkgName != null) {
             return iconMap[pkgName] ?: iconMap.getOrPut(pkgName) {

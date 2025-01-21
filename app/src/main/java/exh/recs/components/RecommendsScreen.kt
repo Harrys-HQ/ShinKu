@@ -23,7 +23,7 @@ import tachiyomi.presentation.core.i18n.stringResource
 
 @Composable
 fun RecommendsScreen(
-    manga: Manga,
+    manga: Manga?,
     state: RecommendsScreenModel.State,
     navigateUp: () -> Unit,
     getManga: @Composable (Manga) -> State<Manga>,
@@ -34,7 +34,7 @@ fun RecommendsScreen(
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
-                title = stringResource(SYMR.strings.similar, manga.title),
+                title = stringResource(SYMR.strings.similar, manga?.title.orEmpty()),
                 scrollBehavior = scrollBehavior,
                 navigateUp = navigateUp,
             )
