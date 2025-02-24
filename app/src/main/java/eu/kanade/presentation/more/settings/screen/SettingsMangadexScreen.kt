@@ -178,7 +178,7 @@ object SettingsMangadexScreen : SearchableSettings {
         sourcePreferences: SourcePreferences,
     ): Preference.PreferenceItem.ListPreference<String> {
         return Preference.PreferenceItem.ListPreference(
-            pref = unsortedPreferences.preferredMangaDexId(),
+            preference = unsortedPreferences.preferredMangaDexId(),
             title = stringResource(SYMR.strings.mangadex_preffered_source),
             subtitle = stringResource(SYMR.strings.mangadex_preffered_source_summary),
             entries = MdUtil.getEnabledMangaDexs(sourcePreferences)

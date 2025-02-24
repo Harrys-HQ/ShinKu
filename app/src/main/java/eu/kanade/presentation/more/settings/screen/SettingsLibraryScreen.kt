@@ -100,12 +100,12 @@ object SettingsLibraryScreen : SearchableSettings {
                     onClick = { navigator.push(CategoryScreen()) },
                 ),
                 Preference.PreferenceItem.ListPreference(
-                    pref = libraryPreferences.defaultCategory(),
-                    title = stringResource(MR.strings.default_category),
+                    preference = libraryPreferences.defaultCategory(),
                     entries = ids.zip(labels).toMap().toImmutableMap(),
+                    title = stringResource(MR.strings.default_category),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
-                    pref = libraryPreferences.categorizedDisplaySettings(),
+                    preference = libraryPreferences.categorizedDisplaySettings(),
                     title = stringResource(MR.strings.categorized_display_settings),
                     onValueChanged = {
                         if (!it) {
@@ -157,8 +157,7 @@ object SettingsLibraryScreen : SearchableSettings {
             title = stringResource(MR.strings.pref_category_library_update),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
-                    pref = autoUpdateIntervalPref,
-                    title = stringResource(MR.strings.pref_library_update_interval),
+                    preference = autoUpdateIntervalPref,
                     entries = persistentMapOf(
                         0 to stringResource(MR.strings.update_never),
                         12 to stringResource(MR.strings.update_12hour),
@@ -167,21 +166,22 @@ object SettingsLibraryScreen : SearchableSettings {
                         72 to stringResource(MR.strings.update_72hour),
                         168 to stringResource(MR.strings.update_weekly),
                     ),
+                    title = stringResource(MR.strings.pref_library_update_interval),
                     onValueChanged = {
                         LibraryUpdateJob.setupTask(context, it)
                         true
                     },
                 ),
                 Preference.PreferenceItem.MultiSelectListPreference(
-                    pref = libraryPreferences.autoUpdateDeviceRestrictions(),
-                    enabled = autoUpdateInterval > 0,
-                    title = stringResource(MR.strings.pref_library_update_restriction),
-                    subtitle = stringResource(MR.strings.restrictions),
+                    preference = libraryPreferences.autoUpdateDeviceRestrictions(),
                     entries = persistentMapOf(
                         DEVICE_ONLY_ON_WIFI to stringResource(MR.strings.connected_to_wifi),
                         DEVICE_NETWORK_NOT_METERED to stringResource(MR.strings.network_not_metered),
                         DEVICE_CHARGING to stringResource(MR.strings.charging),
                     ),
+                    title = stringResource(MR.strings.pref_library_update_restriction),
+                    subtitle = stringResource(MR.strings.restrictions),
+                    enabled = autoUpdateInterval > 0,
                     onValueChanged = {
                         // Post to event looper to allow the preference to be updated.
                         ContextCompat.getMainExecutor(context).execute { LibraryUpdateJob.setupTask(context) }
@@ -199,7 +199,7 @@ object SettingsLibraryScreen : SearchableSettings {
                 ),
                 // SY -->
                 Preference.PreferenceItem.ListPreference(
-                    pref = libraryPreferences.groupLibraryUpdateType(),
+                    preference = libraryPreferences.groupLibraryUpdateType(),
                     title = stringResource(SYMR.strings.library_group_updates),
                     entries = persistentMapOf(
                         GroupLibraryMode.GLOBAL to stringResource(SYMR.strings.library_group_updates_global),
@@ -210,27 +210,27 @@ object SettingsLibraryScreen : SearchableSettings {
                 ),
                 // SY <--
                 Preference.PreferenceItem.SwitchPreference(
-                    pref = libraryPreferences.autoUpdateMetadata(),
+                    preference = libraryPreferences.autoUpdateMetadata(),
                     title = stringResource(MR.strings.pref_library_update_refresh_metadata),
                     subtitle = stringResource(MR.strings.pref_library_update_refresh_metadata_summary),
                 ),
                 Preference.PreferenceItem.MultiSelectListPreference(
-                    pref = libraryPreferences.autoUpdateMangaRestrictions(),
-                    title = stringResource(MR.strings.pref_library_update_smart_update),
+                    preference = libraryPreferences.autoUpdateMangaRestrictions(),
                     entries = persistentMapOf(
                         MANGA_HAS_UNREAD to stringResource(MR.strings.pref_update_only_completely_read),
                         MANGA_NON_READ to stringResource(MR.strings.pref_update_only_started),
                         MANGA_NON_COMPLETED to stringResource(MR.strings.pref_update_only_non_completed),
                         MANGA_OUTSIDE_RELEASE_PERIOD to stringResource(MR.strings.pref_update_only_in_release_period),
                     ),
+                    title = stringResource(MR.strings.pref_library_update_smart_update),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
-                    pref = libraryPreferences.newShowUpdatesCount(),
+                    preference = libraryPreferences.newShowUpdatesCount(),
                     title = stringResource(MR.strings.pref_library_update_show_tab_badge),
                 ),
                 // SY -->
                 Preference.PreferenceItem.SwitchPreference(
-                    pref = libraryPreferences.libraryReadDuplicateChapters(),
+                    preference = libraryPreferences.libraryReadDuplicateChapters(),
                     title = stringResource(SYMR.strings.pref_library_mark_duplicate_chapters),
                     subtitle = stringResource(SYMR.strings.pref_library_mark_duplicate_chapters_summary),
                 ),
@@ -247,8 +247,7 @@ object SettingsLibraryScreen : SearchableSettings {
             title = stringResource(MR.strings.pref_chapter_swipe),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
-                    pref = libraryPreferences.swipeToStartAction(),
-                    title = stringResource(MR.strings.pref_chapter_swipe_start),
+                    preference = libraryPreferences.swipeToStartAction(),
                     entries = persistentMapOf(
                         LibraryPreferences.ChapterSwipeAction.Disabled to
                             stringResource(MR.strings.disabled),
@@ -259,10 +258,10 @@ object SettingsLibraryScreen : SearchableSettings {
                         LibraryPreferences.ChapterSwipeAction.Download to
                             stringResource(MR.strings.action_download),
                     ),
+                    title = stringResource(MR.strings.pref_chapter_swipe_start),
                 ),
                 Preference.PreferenceItem.ListPreference(
-                    pref = libraryPreferences.swipeToEndAction(),
-                    title = stringResource(MR.strings.pref_chapter_swipe_end),
+                    preference = libraryPreferences.swipeToEndAction(),
                     entries = persistentMapOf(
                         LibraryPreferences.ChapterSwipeAction.Disabled to
                             stringResource(MR.strings.disabled),
@@ -273,6 +272,7 @@ object SettingsLibraryScreen : SearchableSettings {
                         LibraryPreferences.ChapterSwipeAction.Download to
                             stringResource(MR.strings.action_download),
                     ),
+                    title = stringResource(MR.strings.pref_chapter_swipe_end),
                 ),
             ),
         )
@@ -305,7 +305,7 @@ object SettingsLibraryScreen : SearchableSettings {
             enabled = skipPreMigration || migrationSources.isNotEmpty(),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
-                    pref = unsortedPreferences.skipPreMigration(),
+                    preference = unsortedPreferences.skipPreMigration(),
                     title = stringResource(SYMR.strings.skip_pre_migration),
                     subtitle = stringResource(SYMR.strings.pref_skip_pre_migration_summary),
                 ),

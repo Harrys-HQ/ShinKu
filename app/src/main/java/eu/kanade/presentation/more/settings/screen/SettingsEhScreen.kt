@@ -43,7 +43,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat.startActivity
 import eu.kanade.presentation.library.components.SyncFavoritesWarningDialog
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
@@ -194,7 +193,7 @@ object SettingsEhScreen : SearchableSettings {
         val context = LocalContext.current
         val value by unsortedPreferences.enableExhentai().collectAsState()
         return Preference.PreferenceItem.SwitchPreference(
-            pref = unsortedPreferences.enableExhentai(),
+            preference = unsortedPreferences.enableExhentai(),
             title = stringResource(SYMR.strings.enable_exhentai),
             subtitle = if (!value) {
                 stringResource(SYMR.strings.requires_login)
@@ -219,7 +218,7 @@ object SettingsEhScreen : SearchableSettings {
         unsortedPreferences: UnsortedPreferences,
     ): Preference.PreferenceItem.ListPreference<Int> {
         return Preference.PreferenceItem.ListPreference(
-            pref = unsortedPreferences.useHentaiAtHome(),
+            preference = unsortedPreferences.useHentaiAtHome(),
             title = stringResource(SYMR.strings.use_hentai_at_home),
             subtitle = stringResource(SYMR.strings.use_hentai_at_home_summary),
             entries = persistentMapOf(
@@ -237,7 +236,7 @@ object SettingsEhScreen : SearchableSettings {
     ): Preference.PreferenceItem.SwitchPreference {
         val value by unsortedPreferences.useJapaneseTitle().collectAsState()
         return Preference.PreferenceItem.SwitchPreference(
-            pref = unsortedPreferences.useJapaneseTitle(),
+            preference = unsortedPreferences.useJapaneseTitle(),
             title = stringResource(SYMR.strings.show_japanese_titles),
             subtitle = if (value) {
                 stringResource(SYMR.strings.show_japanese_titles_option_1)
@@ -255,7 +254,7 @@ object SettingsEhScreen : SearchableSettings {
     ): Preference.PreferenceItem.SwitchPreference {
         val value by unsortedPreferences.exhUseOriginalImages().collectAsState()
         return Preference.PreferenceItem.SwitchPreference(
-            pref = unsortedPreferences.exhUseOriginalImages(),
+            preference = unsortedPreferences.exhUseOriginalImages(),
             title = stringResource(SYMR.strings.use_original_images),
             subtitle = if (value) {
                 stringResource(SYMR.strings.use_original_images_on)
@@ -273,8 +272,7 @@ object SettingsEhScreen : SearchableSettings {
             title = stringResource(SYMR.strings.watched_tags),
             subtitle = stringResource(SYMR.strings.watched_tags_summary),
             onClick = {
-                startActivity(
-                    context,
+                context.startActivity(
                     WebViewActivity.newIntent(
                         context,
                         url = "https://exhentai.org/mytags",
@@ -802,7 +800,7 @@ object SettingsEhScreen : SearchableSettings {
         unsortedPreferences: UnsortedPreferences,
     ): Preference.PreferenceItem.SwitchPreference {
         return Preference.PreferenceItem.SwitchPreference(
-            pref = unsortedPreferences.exhWatchedListDefaultState(),
+            preference = unsortedPreferences.exhWatchedListDefaultState(),
             title = stringResource(SYMR.strings.watched_list_default),
             subtitle = stringResource(SYMR.strings.watched_list_state_summary),
             enabled = exhentaiEnabled,
@@ -815,7 +813,7 @@ object SettingsEhScreen : SearchableSettings {
         unsortedPreferences: UnsortedPreferences,
     ): Preference.PreferenceItem.ListPreference<String> {
         return Preference.PreferenceItem.ListPreference(
-            pref = unsortedPreferences.imageQuality(),
+            preference = unsortedPreferences.imageQuality(),
             title = stringResource(SYMR.strings.eh_image_quality_summary),
             subtitle = stringResource(SYMR.strings.eh_image_quality),
             entries = persistentMapOf(
@@ -833,7 +831,7 @@ object SettingsEhScreen : SearchableSettings {
     @Composable
     fun enhancedEhentaiView(unsortedPreferences: UnsortedPreferences): Preference.PreferenceItem.SwitchPreference {
         return Preference.PreferenceItem.SwitchPreference(
-            pref = unsortedPreferences.enhancedEHentaiView(),
+            preference = unsortedPreferences.enhancedEHentaiView(),
             title = stringResource(SYMR.strings.pref_enhanced_e_hentai_view),
             subtitle = stringResource(SYMR.strings.pref_enhanced_e_hentai_view_summary),
         )
@@ -842,7 +840,7 @@ object SettingsEhScreen : SearchableSettings {
     @Composable
     fun readOnlySync(unsortedPreferences: UnsortedPreferences): Preference.PreferenceItem.SwitchPreference {
         return Preference.PreferenceItem.SwitchPreference(
-            pref = unsortedPreferences.exhReadOnlySync(),
+            preference = unsortedPreferences.exhReadOnlySync(),
             title = stringResource(SYMR.strings.disable_favorites_uploading),
             subtitle = stringResource(SYMR.strings.disable_favorites_uploading_summary),
         )
@@ -867,7 +865,7 @@ object SettingsEhScreen : SearchableSettings {
     @Composable
     fun lenientSync(unsortedPreferences: UnsortedPreferences): Preference.PreferenceItem.SwitchPreference {
         return Preference.PreferenceItem.SwitchPreference(
-            pref = unsortedPreferences.exhLenientSync(),
+            preference = unsortedPreferences.exhLenientSync(),
             title = stringResource(SYMR.strings.ignore_sync_errors),
             subtitle = stringResource(SYMR.strings.ignore_sync_errors_summary),
         )
@@ -942,7 +940,7 @@ object SettingsEhScreen : SearchableSettings {
         val value by unsortedPreferences.exhAutoUpdateFrequency().collectAsState()
         val context = LocalContext.current
         return Preference.PreferenceItem.ListPreference(
-            pref = unsortedPreferences.exhAutoUpdateFrequency(),
+            preference = unsortedPreferences.exhAutoUpdateFrequency(),
             title = stringResource(SYMR.strings.time_between_batches),
             subtitle = if (value == 0) {
                 stringResource(SYMR.strings.time_between_batches_summary_1, stringResource(MR.strings.app_name))
@@ -978,7 +976,7 @@ object SettingsEhScreen : SearchableSettings {
         val value by unsortedPreferences.exhAutoUpdateRequirements().collectAsState()
         val context = LocalContext.current
         return Preference.PreferenceItem.MultiSelectListPreference(
-            pref = unsortedPreferences.exhAutoUpdateRequirements(),
+            preference = unsortedPreferences.exhAutoUpdateRequirements(),
             title = stringResource(SYMR.strings.auto_update_restrictions),
             subtitle = remember(value) {
                 context.stringResource(

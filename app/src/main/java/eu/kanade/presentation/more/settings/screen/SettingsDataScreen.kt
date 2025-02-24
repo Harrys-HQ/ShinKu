@@ -255,8 +255,7 @@ object SettingsDataScreen : SearchableSettings {
 
                 // Automatic backups
                 Preference.PreferenceItem.ListPreference(
-                    pref = backupPreferences.backupInterval(),
-                    title = stringResource(MR.strings.pref_backup_interval),
+                    preference = backupPreferences.backupInterval(),
                     entries = persistentMapOf(
                         0 to stringResource(MR.strings.off),
                         6 to stringResource(MR.strings.update_6hour),
@@ -265,6 +264,7 @@ object SettingsDataScreen : SearchableSettings {
                         48 to stringResource(MR.strings.update_48hour),
                         168 to stringResource(MR.strings.update_weekly),
                     ),
+                    title = stringResource(MR.strings.pref_backup_interval),
                     onValueChanged = {
                         BackupCreateJob.setupTask(context, it)
                         true
@@ -348,7 +348,7 @@ object SettingsDataScreen : SearchableSettings {
                 ),
                 // SY <--
                 Preference.PreferenceItem.SwitchPreference(
-                    pref = libraryPreferences.autoClearChapterCache(),
+                    preference = libraryPreferences.autoClearChapterCache(),
                     title = stringResource(MR.strings.pref_auto_clear_chapter_cache),
                 ),
             ),
@@ -362,7 +362,7 @@ object SettingsDataScreen : SearchableSettings {
                 title = stringResource(SYMR.strings.pref_sync_service_category),
                 preferenceItems = persistentListOf(
                     Preference.PreferenceItem.ListPreference(
-                        pref = syncPreferences.syncService(),
+                        preference = syncPreferences.syncService(),
                         title = stringResource(SYMR.strings.pref_sync_service),
                         entries = persistentMapOf(
                             SyncManager.SyncService.NONE.value to stringResource(MR.strings.off),
@@ -506,7 +506,7 @@ object SettingsDataScreen : SearchableSettings {
             Preference.PreferenceItem.EditTextPreference(
                 title = stringResource(SYMR.strings.pref_sync_host),
                 subtitle = stringResource(SYMR.strings.pref_sync_host_summ),
-                pref = syncPreferences.clientHost(),
+                preference = syncPreferences.clientHost(),
                 onValueChanged = { newValue ->
                     scope.launch {
                         // Trim spaces at the beginning and end, then remove trailing slash if present
@@ -520,7 +520,7 @@ object SettingsDataScreen : SearchableSettings {
             Preference.PreferenceItem.EditTextPreference(
                 title = stringResource(SYMR.strings.pref_sync_api_key),
                 subtitle = stringResource(SYMR.strings.pref_sync_api_key_summ),
-                pref = syncPreferences.clientAPIKey(),
+                preference = syncPreferences.clientAPIKey(),
             ),
         )
     }
@@ -567,7 +567,7 @@ object SettingsDataScreen : SearchableSettings {
             title = stringResource(SYMR.strings.pref_sync_automatic_category),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
-                    pref = syncIntervalPref,
+                    preference = syncIntervalPref,
                     title = stringResource(SYMR.strings.pref_sync_interval),
                     entries = persistentMapOf(
                         0 to stringResource(MR.strings.off),
