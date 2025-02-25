@@ -49,7 +49,6 @@ fun MoreScreen(
     onDownloadedOnlyChange: (Boolean) -> Unit,
     incognitoMode: Boolean,
     onIncognitoModeChange: (Boolean) -> Unit,
-    isFDroid: Boolean,
     // SY -->
     showNavUpdates: Boolean,
     showNavHistory: Boolean,
@@ -66,26 +65,7 @@ fun MoreScreen(
 ) {
     val uriHandler = LocalUriHandler.current
 
-    Scaffold(
-        topBar = {
-            Column(
-                modifier = Modifier.windowInsetsPadding(
-                    WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                ),
-            ) {
-                if (isFDroid) {
-                    WarningBanner(
-                        textRes = MR.strings.fdroid_warning,
-                        modifier = Modifier.clickable {
-                            uriHandler.openUri(
-                                "https://mihon.app/docs/faq/general#how-do-i-update-from-the-f-droid-builds",
-                            )
-                        },
-                    )
-                }
-            }
-        },
-    ) { contentPadding ->
+    Scaffold { contentPadding ->
         ScrollbarLazyColumn(
             modifier = Modifier.padding(contentPadding),
         ) {
