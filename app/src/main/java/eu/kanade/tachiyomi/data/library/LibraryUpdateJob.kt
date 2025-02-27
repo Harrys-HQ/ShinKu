@@ -401,29 +401,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                 ) {
                                     try {
                                         val newChapters = updateManga(manga, fetchWindow)
-                                            // SY -->
-                                            .sortedByDescending { it.sourceOrder }.run {
-                                                if (libraryPreferences.libraryReadDuplicateChapters().get()) {
-                                                    val readChapters = getChaptersByMangaId.await(manga.id).filter {
-                                                        it.read
-                                                    }
-                                                    val newReadChapters = this.filter { chapter ->
-                                                        chapter.chapterNumber >= 0 &&
-                                                            readChapters.any {
-                                                                it.chapterNumber == chapter.chapterNumber
-                                                            }
-                                                    }
-
-                                                    if (newReadChapters.isNotEmpty()) {
-                                                        setReadStatus.await(true, *newReadChapters.toTypedArray())
-                                                    }
-
-                                                    this.filterNot { newReadChapters.contains(it) }
-                                                } else {
-                                                    this
-                                                }
-                                            }
-                                        // SY <--
+                                            .sortedByDescending { it.sourceOrder }
 
                                         if (newChapters.isNotEmpty()) {
                                             val chaptersToDownload = filterChaptersForDownload.await(manga, newChapters)
