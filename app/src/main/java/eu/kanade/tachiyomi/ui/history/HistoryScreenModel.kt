@@ -43,7 +43,6 @@ import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import kotlin.collections.map
 
 class HistoryScreenModel(
     private val addTracks: AddTracks = Injekt.get(),
@@ -216,11 +215,11 @@ class HistoryScreenModel(
         }
     }
 
-    fun showMigrateDialog(currentManga: Manga, duplicate: Manga) {
+    /*SY -->fun showMigrateDialog(currentManga: Manga, duplicate: Manga) {
         mutableState.update { currentState ->
             currentState.copy(dialog = Dialog.Migrate(newManga = currentManga, oldManga = duplicate))
         }
-    }
+    } SY <--*/
 
     fun showChangeCategoryDialog(manga: Manga) {
         screenModelScope.launch {
@@ -252,7 +251,7 @@ class HistoryScreenModel(
             val manga: Manga,
             val initialSelection: ImmutableList<CheckboxState<Category>>,
         ) : Dialog
-        data class Migrate(val newManga: Manga, val oldManga: Manga) : Dialog
+        /* SY --> data class Migrate(val newManga: Manga, val oldManga: Manga) : Dialog SY <-- */
     }
 
     sealed interface Event {

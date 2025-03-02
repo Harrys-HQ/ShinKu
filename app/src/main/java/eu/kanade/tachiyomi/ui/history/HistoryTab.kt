@@ -27,8 +27,7 @@ import eu.kanade.presentation.history.components.HistoryDeleteDialog
 import eu.kanade.presentation.manga.DuplicateMangaDialog
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.R
-import eu.kanade.tachiyomi.ui.browse.migration.search.MigrateDialog
-import eu.kanade.tachiyomi.ui.browse.migration.search.MigrateDialogScreenModel
+import eu.kanade.tachiyomi.ui.browse.migration.advanced.design.PreMigrationScreen
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
@@ -37,6 +36,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import tachiyomi.core.common.i18n.stringResource
+import tachiyomi.domain.UnsortedPreferences
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -120,7 +120,14 @@ data object HistoryTab : Tab {
                     },
                     onOpenManga = { navigator.push(MangaScreen(dialog.duplicate.id)) },
                     onMigrate = {
-                        screenModel.showMigrateDialog(dialog.manga, dialog.duplicate)
+                        // SY -->
+                        PreMigrationScreen.navigateToMigration(
+                            Injekt.get<UnsortedPreferences>().skipPreMigration().get(),
+                            navigator,
+                            dialog.duplicate.id,
+                            dialog.manga.id,
+                        )
+                        // SY <--
                     },
                 )
             }
@@ -134,7 +141,7 @@ data object HistoryTab : Tab {
                     },
                 )
             }
-            is HistoryScreenModel.Dialog.Migrate -> {
+            /*SY -->is HistoryScreenModel.Dialog.Migrate -> {
                 MigrateDialog(
                     oldManga = dialog.oldManga,
                     newManga = dialog.newManga,
@@ -143,7 +150,7 @@ data object HistoryTab : Tab {
                     onClickTitle = { navigator.push(MangaScreen(dialog.oldManga.id)) },
                     onPopScreen = { navigator.replace(MangaScreen(dialog.newManga.id)) },
                 )
-            }
+            } SY <--*/
             null -> {}
         }
 
