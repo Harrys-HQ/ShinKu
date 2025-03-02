@@ -205,12 +205,12 @@ class SyncChaptersWithSource(
 
         // --> EXH (carry over reading progress)
         if (manga.isEhBasedManga()) {
-            val finalAdded = updatedToAdd.subtract(reAdded)
+            val finalAdded = updatedToAdd.filterNot { it.url in changedOrDuplicateReadUrls }
             if (finalAdded.isNotEmpty()) {
                 val max = dbChapters.maxOfOrNull { it.lastPageRead }
                 if (max != null && max > 0) {
                     updatedToAdd = updatedToAdd.map {
-                        if (it !in reAdded) {
+                        if (it.url !in changedOrDuplicateReadUrls) {
                             it.copy(lastPageRead = max)
                         } else {
                             it
