@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -285,8 +284,8 @@ private fun onViewCreated(manga: Manga, context: Context, binding: EditMangaDial
 }
 
 private suspend fun getTrackers(manga: Manga, binding: EditMangaDialogBinding, context: Context, getTracks: GetTracks, trackerManager: TrackerManager, tracks: MutableState<List<Pair<Track, Tracker>>>, showTrackerSelectionDialogue: MutableState<Boolean>) {
-    tracks.value = getTracks.await(manga.id).map { track ->
-        track to trackerManager.get(track.trackerId)!!
+    tracks.value = getTracks.await(manga.id).mapNotNull { track ->
+        track to (trackerManager.get(track.trackerId) ?: return@mapNotNull null)
     }
         .filterNot { (_, tracker) -> tracker is EnhancedTracker }
 
