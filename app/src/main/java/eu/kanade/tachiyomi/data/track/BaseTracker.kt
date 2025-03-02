@@ -133,7 +133,7 @@ abstract class BaseTracker(
     override suspend fun getMangaMetadata(track: DomainTrack): TrackMangaMetadata? {
         throw NotImplementedError("Not implemented.")
     }
-    
+
     override suspend fun searchById(id: String): TrackSearch? {
         throw NotImplementedError("Not implemented.")
     }
