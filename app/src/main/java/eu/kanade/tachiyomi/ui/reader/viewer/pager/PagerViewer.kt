@@ -304,6 +304,8 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
         }
 
         pager.addOnPageChangeListener(pagerListener)
+        // Manually call onPageChange to update the UI
+        onPageChange(pager.currentItem)
     }
 
     /**
@@ -474,13 +476,7 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
 
     // SY -->
     fun setChaptersDoubleShift(chapters: ViewerChapters) {
-        // Remove Listener since we're about to change the size of the items
-        // If we don't the size change could put us on a new chapter
-        // pager.removeOnPageChangeListener(pagerListener)
         setChaptersInternal(chapters)
-        // pager.addOnPageChangeListener(pagerListener)
-        // Since we removed the listener while shifting, call page change to update the ui
-        onPageChange(pager.currentItem)
     }
 
     fun updateShifting(page: ReaderPage? = null) {
