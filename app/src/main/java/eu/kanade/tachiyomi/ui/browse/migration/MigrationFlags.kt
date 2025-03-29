@@ -8,6 +8,7 @@ object MigrationFlags {
     const val CUSTOM_COVER = 0b01000
     const val EXTRA = 0b10000
     const val DELETE_CHAPTERS = 0b100000
+    const val NOTES = 0b1000000
 
     fun hasChapters(value: Int): Boolean {
         return value and CHAPTERS != 0
@@ -31,5 +32,9 @@ object MigrationFlags {
 
     fun hasDeleteChapters(value: Int): Boolean {
         return value and DELETE_CHAPTERS != 0
+    }
+
+    fun hasNotes(value: Int): Boolean {
+        return value and NOTES != 0
     }
 }
