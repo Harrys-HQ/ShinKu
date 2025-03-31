@@ -101,9 +101,12 @@ import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.incrementAndFetch
 
+@OptIn(ExperimentalAtomicApi::class)
 class LibraryUpdateJob(private val context: Context, workerParams: WorkerParameters) :
     CoroutineWorker(context, workerParams) {
 
@@ -343,7 +346,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
      */
     private suspend fun updateChapterList() {
         val semaphore = Semaphore(5)
-        val progressCount = AtomicInteger(0)
+        val progressCount = AtomicInt(0)
         val currentlyUpdatingManga = CopyOnWriteArrayList<Manga>()
         val newUpdates = CopyOnWriteArrayList<Pair<Manga, Array<Chapter>>>()
         val failedUpdates = CopyOnWriteArrayList<Pair<Manga, String?>>()
@@ -408,7 +411,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
                                             if (chaptersToDownload.isNotEmpty()) {
                                                 downloadChapters(manga, chaptersToDownload)
-                                                hasDownloads.set(true)
+                                                hasDownloads.store(true)
                                             }
 
                                             libraryPreferences.newUpdatesCount().getAndSet { it + newChapters.size }
@@ -441,7 +444,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
         if (newUpdates.isNotEmpty()) {
             notifier.showUpdateNotifications(newUpdates)
-            if (hasDownloads.get()) {
+            if (hasDownloads.load()) {
                 downloadManager.startDownloads()
             }
         }
@@ -641,7 +644,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
     private suspend fun withUpdateNotification(
         updatingManga: CopyOnWriteArrayList<Manga>,
-        completed: AtomicInteger,
+        completed: AtomicInt,
         manga: Manga,
         block: suspend () -> Unit,
     ) = coroutineScope {
@@ -650,7 +653,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         updatingManga.add(manga)
         notifier.showProgressNotification(
             updatingManga,
-            completed.get(),
+            completed.load(),
             mangaToUpdate.size,
         )
 
@@ -659,10 +662,10 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         ensureActive()
 
         updatingManga.remove(manga)
-        completed.getAndIncrement()
+        completed.incrementAndFetch()
         notifier.showProgressNotification(
             updatingManga,
-            completed.get(),
+            completed.load(),
             mangaToUpdate.size,
         )
     }
