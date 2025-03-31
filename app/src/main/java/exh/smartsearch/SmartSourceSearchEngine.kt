@@ -1,9 +1,9 @@
 package exh.smartsearch
 
-import eu.kanade.domain.manga.model.toDomainManga
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.SManga
+import mihon.domain.manga.model.toDomainManga
 import tachiyomi.domain.manga.model.Manga
 
 class SmartSourceSearchEngine(

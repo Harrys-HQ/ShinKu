@@ -5,7 +5,6 @@ import android.net.wifi.WifiManager
 import android.os.PowerManager
 import androidx.annotation.StringRes
 import androidx.core.net.toUri
-import eu.kanade.domain.manga.model.toDomainManga
 import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.SManga
@@ -26,6 +25,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import mihon.domain.manga.model.toDomainManga
 import tachiyomi.data.source.NoResultsException
 import tachiyomi.domain.UnsortedPreferences
 import tachiyomi.domain.library.model.LibraryManga
@@ -201,8 +201,7 @@ class RecommendationSearchHelper(val context: Context) {
         return filterNot { manga ->
             // Source recommendations can be directly resolved, if the recommendation is from the same source
             recSource.associatedSourceId?.let { srcId ->
-                return@filterNot networkToLocalManga
-                    .await(manga.toDomainManga(srcId))
+                return@filterNot networkToLocalManga(manga.toDomainManga(srcId))
                     .let { local -> libraryManga.any { it.id == local.id } }
             }
 

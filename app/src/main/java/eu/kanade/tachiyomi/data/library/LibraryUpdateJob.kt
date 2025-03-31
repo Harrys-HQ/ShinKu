@@ -510,7 +510,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
     private suspend fun updateCovers() {
         val semaphore = Semaphore(5)
-        val progressCount = AtomicInteger(0)
+        val progressCount = AtomicInt(0)
         val currentlyUpdatingManga = CopyOnWriteArrayList<Manga>()
 
         coroutineScope {
@@ -585,7 +585,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 var dbManga = getManga.await(networkManga.url, mangaDex.id)
 
                 if (dbManga == null) {
-                    dbManga = networkToLocalManga.await(
+                    dbManga = networkToLocalManga(
                         Manga.create().copy(
                             url = networkManga.url,
                             ogTitle = networkManga.title,
