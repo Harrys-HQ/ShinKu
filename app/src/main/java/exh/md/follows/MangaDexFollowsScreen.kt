@@ -103,14 +103,15 @@ class MangaDexFollowsScreen(private val sourceId: Long) : Screen() {
             is BrowseSourceScreenModel.Dialog.Migrate -> {}
             is BrowseSourceScreenModel.Dialog.AddDuplicateManga -> {
                 DuplicateMangaDialog(
+                    duplicates = dialog.duplicates,
                     onDismissRequest = onDismissRequest,
                     onConfirm = { screenModel.addFavorite(dialog.manga) },
-                    onOpenManga = { navigator.push(MangaScreen(dialog.duplicate.id)) },
+                    onOpenManga = { navigator.push(MangaScreen(it.id)) },
                     onMigrate = {
                         PreMigrationScreen.navigateToMigration(
                             Injekt.get<UnsortedPreferences>().skipPreMigration().get(),
                             navigator,
-                            dialog.duplicate.id,
+                            it.id,
                             dialog.manga.id,
                         )
                     },
