@@ -41,6 +41,8 @@ abstract class BaseSourcePagingSource(
     protected val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
 ) : SourcePagingSource() {
 
+    private val seenManga = hashSetOf<String>()
+
     abstract suspend fun requestNextPage(currentPage: Int): MangasPage
 
     override suspend fun load(
@@ -70,21 +72,20 @@ abstract class BaseSourcePagingSource(
     ): LoadResult.Page<Long, /*SY --> */ Pair<Manga, RaisedSearchMetadata?>/*SY <-- */> {
         val page = params.key ?: 1
 
-        val manga = mangasPage.mangas.map { it.toDomainManga(source!!.id) }
-            .let { networkToLocalManga(it) }
-
         // SY -->
         val metadata = if (mangasPage is MetadataMangasPage) {
             mangasPage.mangasMetadata
         } else {
             emptyList()
         }
+
+        val manga = mangasPage.mangas.mapIndexed { index, sManga -> sManga.toDomainManga(source!!.id) to metadata.getOrNull(index) }
+            .filter { seenManga.add(it.first.url) }
+            .let { manga -> manga.zip(networkToLocalManga(manga.map { it.first })).map { it.second to it.first.second } }
         // SY <--
 
         return LoadResult.Page(
-            data = manga// SY -->
-                .mapIndexed { index, sManga -> sManga to metadata.getOrNull(index) },
-            // SY <--,
+            data = manga,
             prevKey = null,
             nextKey = if (mangasPage.hasNextPage) page + 1 else null,
         )
