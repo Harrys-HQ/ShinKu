@@ -717,7 +717,7 @@ class ReaderActivity : BaseActivity() {
             ?.pages
             ?.forEachIndexed { _, page ->
                 var shouldQueuePage = false
-                if (page.status == Page.State.Error) {
+                if (page.status is Page.State.Error) {
                     shouldQueuePage = true
                 } /*else if (page.status == Page.LOAD_PAGE ||
                                     page.status == Page.DOWNLOAD_IMAGE) {
@@ -758,7 +758,7 @@ class ReaderActivity : BaseActivity() {
             return
         }
 
-        if (curPage.status == Page.State.Error) {
+        if (curPage.status is Page.State.Error) {
             toast(SYMR.strings.eh_boost_page_errored)
         } else if (curPage.status == Page.State.LoadPage || curPage.status == Page.State.DownloadImage) {
             toast(SYMR.strings.eh_boost_page_downloading)
