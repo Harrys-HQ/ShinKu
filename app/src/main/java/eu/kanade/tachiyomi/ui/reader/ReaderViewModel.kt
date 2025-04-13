@@ -697,7 +697,7 @@ class ReaderViewModel @JvmOverloads constructor(
         readerChapter.requestedPage = pageIndex
         chapterPageIndex = pageIndex
 
-        if (!incognitoMode && page.status != Page.State.ERROR) {
+        if (!incognitoMode && page.status != Page.State.Error) {
             readerChapter.chapter.last_page_read = pageIndex
 
             // SY -->
@@ -1071,7 +1071,7 @@ class ReaderViewModel @JvmOverloads constructor(
             (state.value.dialog as? Dialog.PageActions)?.page
         }
         // SY <--
-        if (page?.status != Page.State.READY) return
+        if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
 
         val context = Injekt.get<Application>()
@@ -1115,8 +1115,8 @@ class ReaderViewModel @JvmOverloads constructor(
         val isLTR = (viewer !is R2LPagerViewer) xor (viewer.config.invertDoublePages)
         val bg = viewer.config.pageCanvasColor
 
-        if (firstPage.status != Page.State.READY) return
-        if (secondPage?.status != Page.State.READY) return
+        if (firstPage.status != Page.State.Ready) return
+        if (secondPage?.status != Page.State.Ready) return
 
         val manga = manga ?: return
 
@@ -1191,7 +1191,7 @@ class ReaderViewModel @JvmOverloads constructor(
             (state.value.dialog as? Dialog.PageActions)?.page
         }
         // SY <--
-        if (page?.status != Page.State.READY) return
+        if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
 
         val context = Injekt.get<Application>()
@@ -1223,8 +1223,8 @@ class ReaderViewModel @JvmOverloads constructor(
         val isLTR = (viewer !is R2LPagerViewer) xor (viewer.config.invertDoublePages)
         val bg = viewer.config.pageCanvasColor
 
-        if (firstPage.status != Page.State.READY) return
-        if (secondPage?.status != Page.State.READY) return
+        if (firstPage.status != Page.State.Ready) return
+        if (secondPage?.status != Page.State.Ready) return
         val manga = manga ?: return
 
         val context = Injekt.get<Application>()
@@ -1260,7 +1260,7 @@ class ReaderViewModel @JvmOverloads constructor(
             (state.value.dialog as? Dialog.PageActions)?.page
         }
         // SY <--
-        if (page?.status != Page.State.READY) return
+        if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
         val stream = page.stream ?: return
 
