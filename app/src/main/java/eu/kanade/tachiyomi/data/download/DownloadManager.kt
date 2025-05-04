@@ -316,10 +316,13 @@ class DownloadManager(
 
         if (removeNonFavorite && !manga.favorite) {
             val mangaFolder = provider.getMangaDir(/* SY --> */ manga.ogTitle /* SY <-- */, source)
-            cleaned += 1 + mangaFolder.listFiles().orEmpty().size
-            mangaFolder.delete()
-            cache.removeManga(manga)
-            return cleaned
+                .getOrNull()
+            if (mangaFolder != null) {
+                cleaned += 1 + mangaFolder.listFiles().orEmpty().size
+                mangaFolder.delete()
+                cache.removeManga(manga)
+                return cleaned
+            }
         }
 
         val filesWithNoChapter = provider.findUnmatchedChapterDirs(allChapters, manga, source)
@@ -336,8 +339,8 @@ class DownloadManager(
         }
 
         if (cache.getDownloadCount(manga) == 0) {
-            val mangaFolder = provider.getMangaDir(/* SY --> */ manga.ogTitle /* SY <-- */, source)
-            if (!mangaFolder.listFiles().isNullOrEmpty()) {
+            val mangaFolder = provider.getMangaDir(/* SY --> */ manga.ogTitle /* SY <-- */, source).getOrNull()
+            if (mangaFolder != null && !mangaFolder.listFiles().isNullOrEmpty()) {
                 mangaFolder.delete()
                 cache.removeManga(manga)
             } else {
@@ -405,7 +408,10 @@ class DownloadManager(
      */
     suspend fun renameChapter(source: Source, manga: Manga, oldChapter: Chapter, newChapter: Chapter) {
         val oldNames = provider.getValidChapterDirNames(oldChapter.name, oldChapter.scanlator)
-        val mangaDir = provider.getMangaDir(/* SY --> */ manga.ogTitle /* SY <-- */, source)
+        val mangaDir = provider.getMangaDir(/* SY --> */ manga.ogTitle /* SY <-- */, source).getOrElse { e ->
+            logcat(LogPriority.ERROR, e) { "Manga download folder doesn't exist. Skipping renaming after source sync" }
+            return
+        }
 
         // Assume there's only 1 version of the chapter name formats present
         val oldDownload = oldNames.asSequence()
