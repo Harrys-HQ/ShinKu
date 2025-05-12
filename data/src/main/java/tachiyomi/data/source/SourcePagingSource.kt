@@ -57,7 +57,7 @@ abstract class BaseSourcePagingSource(
                     ?: throw NoResultsException()
             }
 
-             // SY -->
+            // SY -->
             getPageLoadResult(params, mangasPage)
             // SY <--
         } catch (e: Exception) {
