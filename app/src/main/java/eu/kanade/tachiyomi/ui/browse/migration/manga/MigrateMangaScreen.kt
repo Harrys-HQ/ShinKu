@@ -8,13 +8,13 @@ import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.presentation.browse.MigrateMangaScreen
 import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.browse.migration.advanced.design.PreMigrationScreen
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
-import tachiyomi.domain.UnsortedPreferences
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.screens.LoadingScreen
 import uy.kohesive.injekt.Injekt
@@ -44,7 +44,7 @@ data class MigrateMangaScreen(
             onClickItem = {
                 // SY -->
                 PreMigrationScreen.navigateToMigration(
-                    Injekt.get<UnsortedPreferences>().skipPreMigration().get(),
+                    Injekt.get<SourcePreferences>().skipPreMigration().get(),
                     navigator,
                     listOf(it.id),
                 )

@@ -8,6 +8,7 @@ import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.hasCustomCover
 import eu.kanade.domain.manga.model.toSManga
+import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -38,14 +39,13 @@ import logcat.LogPriority
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
-import tachiyomi.domain.UnsortedPreferences
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.chapter.interactor.UpdateChapter
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.chapter.model.ChapterUpdate
-import tachiyomi.domain.history.interactor.GetHistoryByMangaId
+import tachiyomi.domain.history.interactor.GetHistory
 import tachiyomi.domain.history.interactor.UpsertHistory
 import tachiyomi.domain.history.model.HistoryUpdate
 import tachiyomi.domain.manga.interactor.GetManga
@@ -64,7 +64,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class MigrationListScreenModel(
     private val config: MigrationProcedureConfig,
-    private val preferences: UnsortedPreferences = Injekt.get(),
+    private val preferences: SourcePreferences = Injekt.get(),
     private val sourceManager: SourceManager = Injekt.get(),
     private val downloadManager: DownloadManager = Injekt.get(),
     private val coverCache: CoverCache = Injekt.get(),
@@ -75,7 +75,7 @@ class MigrationListScreenModel(
     private val updateChapter: UpdateChapter = Injekt.get(),
     private val getChaptersByMangaId: GetChaptersByMangaId = Injekt.get(),
     private val getMergedReferencesById: GetMergedReferencesById = Injekt.get(),
-    private val getHistoryByMangaId: GetHistoryByMangaId = Injekt.get(),
+    private val getHistoryByMangaId: GetHistory = Injekt.get(),
     private val upsertHistory: UpsertHistory = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
@@ -236,7 +236,7 @@ class MigrationListScreenModel(
 
                                                 try {
                                                     syncChaptersWithSource.await(chapters, localManga, source)
-                                                } catch (e: Exception) {
+                                                } catch (_: Exception) {
                                                     return@async2 null
                                                 }
                                                 manga.progress.value =
@@ -248,7 +248,7 @@ class MigrationListScreenModel(
                                         } catch (e: CancellationException) {
                                             // Ignore cancellations
                                             throw e
-                                        } catch (e: Exception) {
+                                        } catch (_: Exception) {
                                             null
                                         }
                                     }
@@ -283,7 +283,7 @@ class MigrationListScreenModel(
                                 } catch (e: CancellationException) {
                                     // Ignore cancellations
                                     throw e
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     null
                                 }
                                 manga.progress.value = validSources.size to (index + 1)
@@ -293,7 +293,7 @@ class MigrationListScreenModel(
                             null
                         }
                     }.await()
-                } catch (e: CancellationException) {
+                } catch (_: CancellationException) {
                     // Ignore canceled migrations
                     continue
                 }
@@ -305,7 +305,7 @@ class MigrationListScreenModel(
                     } catch (e: CancellationException) {
                         // Ignore cancellations
                         throw e
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                     }
                 }
 
@@ -460,7 +460,7 @@ class MigrationListScreenModel(
                     val source = sourceManager.get(manga.source)!!
                     val chapters = source.getChapterList(localManga.toSManga())
                     syncChaptersWithSource.await(chapters, localManga, source)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     return@async null
                 }
                 localManga
@@ -473,7 +473,7 @@ class MigrationListScreenModel(
                 } catch (e: CancellationException) {
                     // Ignore cancellations
                     throw e
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                 }
 
                 migratingManga.searchResult.value = SearchResult.Result(result.id)

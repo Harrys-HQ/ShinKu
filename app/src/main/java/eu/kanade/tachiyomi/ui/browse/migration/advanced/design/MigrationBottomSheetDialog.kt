@@ -13,13 +13,13 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.isVisible
+import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.presentation.components.AdaptiveSheet
 import eu.kanade.tachiyomi.databinding.MigrationBottomSheetBinding
 import eu.kanade.tachiyomi.ui.browse.migration.MigrationFlags
 import eu.kanade.tachiyomi.util.system.toast
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.util.lang.toLong
-import tachiyomi.domain.UnsortedPreferences
 import tachiyomi.i18n.sy.SYMR
 import uy.kohesive.injekt.injectLazy
 
@@ -45,7 +45,7 @@ fun MigrationBottomSheetDialog(
 }
 
 class MigrationBottomSheetDialogState(private val onStartMigration: State<(extraParam: String?) -> Unit>) {
-    private val preferences: UnsortedPreferences by injectLazy()
+    private val preferences: SourcePreferences by injectLazy()
 
     /**
      * Init general reader preferences.
