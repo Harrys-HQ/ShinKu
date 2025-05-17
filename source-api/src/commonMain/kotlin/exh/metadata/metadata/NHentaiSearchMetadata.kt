@@ -28,6 +28,7 @@ class NHentaiSearchMetadata : RaisedSearchMetadata() {
     var favoritesCount: Long? = null
 
     var mediaId: String? = null
+    var mediaServer: Int? = null
 
     var japaneseTitle by titleDelegate(TITLE_TYPE_JAPANESE)
     var englishTitle by titleDelegate(TITLE_TYPE_ENGLISH)
@@ -46,7 +47,7 @@ class NHentaiSearchMetadata : RaisedSearchMetadata() {
 
         val cover = if (mediaId != null) {
             typeToExtension(coverImageType)?.let {
-                "https://t1.nhentai.net/galleries/$mediaId/cover.$it"
+                "https://t${mediaServer ?: 1}.nhentai.net/galleries/$mediaId/cover.$it"
             }
         } else {
             null
