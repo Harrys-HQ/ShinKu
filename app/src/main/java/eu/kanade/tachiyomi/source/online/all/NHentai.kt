@@ -196,7 +196,7 @@ class NHentai(delegate: HttpSource, val context: Context) :
             metadata.pageImageTypes.mapIndexed { index, s ->
                 PagePreviewInfo(
                     index + 1,
-                    imageUrl = thumbnailUrlFromType(metadata.mediaId!!, metadata.mediaServer ?: 1, index + 1, s)!!
+                    imageUrl = thumbnailUrlFromType(metadata.mediaId!!, metadata.mediaServer ?: 1, index + 1, s)!!,
                 )
             },
             false,
@@ -210,8 +210,8 @@ class NHentai(delegate: HttpSource, val context: Context) :
         page: Int,
         t: String,
     ) = NHentaiSearchMetadata.typeToExtension(t)?.let {
-            "https://t$mediaServer.nhentai.net/galleries/$mediaId/${page}t.$it"
-        }
+        "https://t$mediaServer.nhentai.net/galleries/$mediaId/${page}t.$it"
+    }
 
     override suspend fun fetchPreviewImage(page: PagePreviewInfo, cacheControl: CacheControl?): Response {
         return client.newCachelessCallWithProgress(
