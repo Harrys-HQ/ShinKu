@@ -558,6 +558,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
     }
 
     // SY -->
+
     /**
      * filter all follows from Mangadex and only add reading or rereading manga to library
      */
@@ -734,6 +735,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         private const val KEY_TARGET = "target"
 
         // SY -->
+
         /**
          * Key for group to update.
          */

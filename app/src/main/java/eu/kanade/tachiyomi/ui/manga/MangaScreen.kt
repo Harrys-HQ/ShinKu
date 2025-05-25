@@ -470,6 +470,7 @@ class MangaScreen(
     }
 
     // SY -->
+
     /**
      * Initiates source migration for the specific manga.
      */
