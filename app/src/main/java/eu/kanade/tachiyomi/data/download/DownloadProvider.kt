@@ -120,6 +120,7 @@ class DownloadProvider(
     }
 
     // SY -->
+
     /**
      * Returns a list of all files in manga directory
      *

@@ -291,6 +291,7 @@ class DownloadManager(
     }
 
     // SY -->
+
     /**
      * return the list of all manga folders
      */
