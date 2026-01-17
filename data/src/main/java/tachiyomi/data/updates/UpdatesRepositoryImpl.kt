@@ -2,6 +2,7 @@ package tachiyomi.data.updates
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import tachiyomi.core.common.util.lang.toLong
 import tachiyomi.data.AndroidDatabaseHandler
 import tachiyomi.data.DatabaseHandler
 import tachiyomi.domain.manga.model.MangaCover
@@ -28,12 +29,36 @@ class UpdatesRepositoryImpl(
         }
     }
 
-    override fun subscribeAll(after: Long, limit: Long): Flow<List<UpdatesWithRelations>> {
+    override fun subscribeAll(
+        after: Long,
+        limit: Long,
+        unread: Boolean?,
+        started: Boolean?,
+        bookmarked: Boolean?,
+        hideExcludedScanlators: Boolean,
+    ): Flow<List<UpdatesWithRelations>> {
         return databaseHandler.subscribeToList {
-            updatesViewQueries.getRecentUpdates(after, limit, ::mapUpdatesWithRelations)
+            updatesViewQueries.getRecentUpdatesWithFilters(
+                after = after,
+                limit = limit,
+                // invert because unread in Kotlin -> read column in SQL
+                read = unread?.let { !it },
+                started = started?.toLong(),
+                bookmarked = bookmarked,
+                hideExcludedScanlators = hideExcludedScanlators.toLong(),
+                mapper = ::mapUpdatesWithRelations,
+            )
         }.map {
             databaseHandler.awaitListExecutable {
-                (databaseHandler as AndroidDatabaseHandler).getUpdatesQuery(after, limit)
+                (databaseHandler as AndroidDatabaseHandler).getUpdatesQuery(
+                    after = after,
+                    limit = limit,
+                    // invert because unread in Kotlin -> read column in SQL
+                    read = unread?.let { !it },
+                    started = started?.toLong(),
+                    bookmarked = bookmarked,
+                    hideExcludedScanlators = hideExcludedScanlators.toLong(),
+                )
             }
                 .map(::mapUpdatesView)
         }
@@ -70,6 +95,7 @@ class UpdatesRepositoryImpl(
         coverLastModified: Long,
         dateUpload: Long,
         dateFetch: Long,
+        excludedScanlator: String?,
     ): UpdatesWithRelations = UpdatesWithRelations(
         mangaId = mangaId,
         // SY -->
