@@ -655,7 +655,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * if setting is enabled and [currentChapter] is queued for download
      */
     private fun cancelQueuedDownloads(currentChapter: ReaderChapter): Download? {
-        return downloadManager.getQueuedDownloadOrNull(currentChapter.chapter.id!!.toLong())?.also {
+        return downloadManager.getQueuedDownloadOrNull(currentChapter.chapter.id!!)?.also {
             downloadManager.cancelQueuedDownloads(listOf(it))
         }
     }
@@ -848,7 +848,7 @@ class ReaderViewModel @JvmOverloads constructor(
         viewModelScope.launchNonCancellable {
             updateChapter.await(
                 ChapterUpdate(
-                    id = chapter.id!!.toLong(),
+                    id = chapter.id!!,
                     bookmark = bookmarked,
                 ),
             )

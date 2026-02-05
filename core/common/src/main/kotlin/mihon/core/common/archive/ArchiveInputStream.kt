@@ -7,6 +7,7 @@ import me.zhanghai.android.libarchive.ArchiveException
 import java.io.InputStream
 import java.nio.ByteBuffer
 import kotlin.concurrent.Volatile
+import mihon.core.common.archive.ArchiveEntry as MihonArchiveEntry
 
 class ArchiveInputStream(
     buffer: Long,
@@ -67,18 +68,20 @@ class ArchiveInputStream(
         Archive.readFree(archive)
     }
 
-    fun getNextEntry() = Archive.readNextHeader(archive).takeUnless { it == 0L }?.let { entry ->
-        val name = ArchiveEntry.pathnameUtf8(entry) ?: ArchiveEntry.pathname(entry)?.decodeToString() ?: return null
-        val isFile = ArchiveEntry.filetype(entry) == ArchiveEntry.AE_IFREG
-        // SY -->
-        val isEncrypted = ArchiveEntry.isEncrypted(entry)
-        // SY <--
-        ArchiveEntry(
-            name,
-            isFile,
+    fun getNextEntry(): MihonArchiveEntry? {
+        return Archive.readNextHeader(archive).takeUnless { it == 0L }?.let { entry ->
+            val name = ArchiveEntry.pathnameUtf8(entry) ?: ArchiveEntry.pathname(entry)?.decodeToString() ?: return null
+            val isFile = ArchiveEntry.filetype(entry) == ArchiveEntry.AE_IFREG
             // SY -->
-            isEncrypted,
+            val isEncrypted = ArchiveEntry.isEncrypted(entry)
             // SY <--
-        )
+            MihonArchiveEntry(
+                name,
+                isFile,
+                // SY -->
+                isEncrypted,
+                // SY <--
+            )
+        }
     }
 }
