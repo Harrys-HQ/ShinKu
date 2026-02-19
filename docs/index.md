@@ -1,6 +1,12 @@
-# ![ShinKu Logo](https://raw.githubusercontent.com/Harrys-HQ/ShinKu/main/.github/readme-images/app-icon.png) ShinKu
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Harrys-HQ/ShinKu/main/.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
+</p>
 
-**ShinKu** (Crimson) is a modern, rebranded, and enhanced fork of TachiyomiSY, designed for a more immersive and intelligent manga-reading experience.
+<h1 align="center">ShinKu</h1>
+
+<p align="center">
+  <strong>ShinKu</strong> (Crimson) is a modern, rebranded, and enhanced fork of TachiyomiSY, designed for a more immersive and intelligent manga-reading experience.
+</p>
 
 ---
 
