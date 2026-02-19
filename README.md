@@ -1,8 +1,16 @@
-# ![ShinKu Logo](./.github/readme-images/app-icon.png) ShinKu
+<p align="center">
+  <img src="./.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
+</p>
 
-**ShinKu** (Crimson) is a modern, rebranded, and enhanced fork of [TachiyomiSY](https://github.com/jobobby04/TachiyomiSY), which itself is a feature-rich fork of [Mihon](https://github.com/mihonapp/mihon) (formerly Tachiyomi). 
+<h1 align="center">ShinKu</h1>
 
-ShinKu aims to provide a more immersive and intelligent manga-reading experience by combining the unique features of SY with advanced AI-powered discovery and a modernized UI.
+<p align="center">
+  <strong>ShinKu</strong> (Crimson) is a modern, rebranded, and enhanced fork of <a href="https://github.com/jobobby04/TachiyomiSY">TachiyomiSY</a>, which itself is a feature-rich fork of <a href="https://github.com/mihonapp/mihon">Mihon</a> (formerly Tachiyomi).
+</p>
+
+<p align="center">
+  ShinKu aims to provide a more immersive and intelligent manga-reading experience by combining the unique features of SY with advanced AI-powered discovery and a modernized UI.
+</p>
 
 ---
 
