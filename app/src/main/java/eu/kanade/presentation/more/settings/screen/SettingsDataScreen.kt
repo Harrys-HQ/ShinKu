@@ -67,8 +67,7 @@ import eu.kanade.tachiyomi.data.export.LibraryExporter
 import eu.kanade.tachiyomi.data.export.LibraryExporter.ExportOptions
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.data.sync.SyncManager
-import eu.kanade.tachiyomi.data.sync.service.GoogleDriveService
-import eu.kanade.tachiyomi.data.sync.service.GoogleDriveSyncService
+import eu.kanade.tachiyomi.data.sync.service.DropboxSyncService
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
@@ -521,8 +520,7 @@ object SettingsDataScreen : SearchableSettings {
                         title = stringResource(SYMR.strings.pref_sync_service),
                         entries = persistentMapOf(
                             SyncManager.SyncService.NONE.value to stringResource(MR.strings.off),
-                            SyncManager.SyncService.SYNCYOMI.value to stringResource(SYMR.strings.syncyomi),
-                            SyncManager.SyncService.GOOGLE_DRIVE.value to stringResource(SYMR.strings.google_drive),
+                            SyncManager.SyncService.DROPBOX.value to stringResource(SYMR.strings.dropbox),
                         ),
                         onValueChanged = { true },
                     ),
@@ -552,8 +550,7 @@ object SettingsDataScreen : SearchableSettings {
         val navigator = LocalNavigator.currentOrThrow
         val preferences = when (syncServiceType) {
             SyncManager.SyncService.NONE -> emptyList()
-            SyncManager.SyncService.SYNCYOMI -> getSelfHostPreferences(syncPreferences)
-            SyncManager.SyncService.GOOGLE_DRIVE -> getGoogleDrivePreferences()
+            SyncManager.SyncService.DROPBOX -> getDropboxPreferences()
         }
 
         return if (syncServiceType != SyncManager.SyncService.NONE) {
@@ -574,26 +571,44 @@ object SettingsDataScreen : SearchableSettings {
     }
 
     @Composable
-    private fun getGoogleDrivePreferences(): List<Preference> {
+    private fun getDropboxPreferences(): List<Preference> {
         val context = LocalContext.current
-        val googleDriveSync = Injekt.get<GoogleDriveService>()
+        val syncPreferences = remember { Injekt.get<SyncPreferences>() }
+        val dropboxSync = remember { DropboxSyncService(context, Injekt.get(), syncPreferences) }
+
+        LaunchedEffect(Unit) {
+            if (dropboxSync.handleLoginResponse()) {
+                context.toast(SYMR.strings.dropbox_login_success)
+            }
+        }
+
         return listOf(
             Preference.PreferenceItem.TextPreference(
-                title = stringResource(SYMR.strings.pref_google_drive_sign_in),
+                title = stringResource(SYMR.strings.pref_dropbox_sign_in),
+                subtitle = if (dropboxSync.isLoggedIn) stringResource(SYMR.strings.dropbox_login_success) else null,
                 onClick = {
-                    val intent = googleDriveSync.getSignInIntent()
-                    context.startActivity(intent)
+                    try {
+                        dropboxSync.startLogin(context)
+                    } catch (e: Exception) {
+                        context.toast(e.message ?: "Error signing in")
+                    }
                 },
             ),
-            getGoogleDrivePurge(),
+            Preference.PreferenceItem.EditTextPreference(
+                title = stringResource(SYMR.strings.pref_dropbox_manual_token),
+                subtitle = stringResource(SYMR.strings.pref_dropbox_manual_token_summ),
+                preference = syncPreferences.dropboxAccessToken(),
+            ),
+            getDropboxPurge(),
         )
     }
 
     @Composable
-    private fun getGoogleDrivePurge(): Preference.PreferenceItem.TextPreference {
+    private fun getDropboxPurge(): Preference.PreferenceItem.TextPreference {
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
-        val googleDriveSync = remember { GoogleDriveSyncService(context) }
+        val syncPreferences = remember { Injekt.get<SyncPreferences>() }
+        val dropboxSync = remember { DropboxSyncService(context, Injekt.get(), syncPreferences) }
         var showPurgeDialog by remember { mutableStateOf(false) }
 
         if (showPurgeDialog) {
@@ -601,22 +616,22 @@ object SettingsDataScreen : SearchableSettings {
                 onConfirm = {
                     showPurgeDialog = false
                     scope.launch {
-                        val result = googleDriveSync.deleteSyncDataFromGoogleDrive()
+                        val result = dropboxSync.deleteSyncDataFromDropbox()
                         when (result) {
-                            GoogleDriveSyncService.DeleteSyncDataStatus.NOT_INITIALIZED -> context.toast(
-                                SYMR.strings.google_drive_not_signed_in,
+                            DropboxSyncService.DeleteSyncDataStatus.NOT_INITIALIZED -> context.toast(
+                                SYMR.strings.dropbox_not_signed_in,
                                 duration = 5000,
                             )
-                            GoogleDriveSyncService.DeleteSyncDataStatus.NO_FILES -> context.toast(
-                                SYMR.strings.google_drive_sync_data_not_found,
+                            DropboxSyncService.DeleteSyncDataStatus.NO_FILES -> context.toast(
+                                SYMR.strings.dropbox_sync_data_not_found,
                                 duration = 5000,
                             )
-                            GoogleDriveSyncService.DeleteSyncDataStatus.SUCCESS -> context.toast(
-                                SYMR.strings.google_drive_sync_data_purged,
+                            DropboxSyncService.DeleteSyncDataStatus.SUCCESS -> context.toast(
+                                SYMR.strings.dropbox_sync_data_purged,
                                 duration = 5000,
                             )
-                            GoogleDriveSyncService.DeleteSyncDataStatus.ERROR -> context.toast(
-                                SYMR.strings.google_drive_sync_data_purge_error,
+                            DropboxSyncService.DeleteSyncDataStatus.ERROR -> context.toast(
+                                SYMR.strings.dropbox_sync_data_purge_error,
                                 duration = 10000,
                             )
                         }
@@ -627,7 +642,7 @@ object SettingsDataScreen : SearchableSettings {
         }
 
         return Preference.PreferenceItem.TextPreference(
-            title = stringResource(SYMR.strings.pref_google_drive_purge_sync_data),
+            title = stringResource(SYMR.strings.pref_dropbox_purge_sync_data),
             onClick = { showPurgeDialog = true },
         )
     }
@@ -650,69 +665,6 @@ object SettingsDataScreen : SearchableSettings {
                 TextButton(onClick = onConfirm) {
                     Text(text = stringResource(MR.strings.action_ok))
                 }
-            },
-        )
-    }
-
-    @Composable
-    private fun getSelfHostPreferences(syncPreferences: SyncPreferences): List<Preference> {
-        val scope = rememberCoroutineScope()
-
-        val qrScanLauncher = rememberLauncherForActivityResult(ScanContract()) {
-            if (it.contents != null && it.contents.isNotEmpty()) {
-                syncPreferences.clientAPIKey().set(it.contents)
-            }
-        }
-        val context = LocalContext.current
-        val scanOptions = remember {
-            ScanOptions().apply {
-                setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                setOrientationLocked(false)
-                setPrompt(SYMR.strings.scan_qr_code.getString(context))
-                addExtra(Intents.Scan.SCAN_TYPE, Intents.Scan.MIXED_SCAN)
-            }
-        }
-
-        return listOf(
-            Preference.PreferenceItem.EditTextPreference(
-                title = stringResource(SYMR.strings.pref_sync_host),
-                subtitle = stringResource(SYMR.strings.pref_sync_host_summ),
-                preference = syncPreferences.clientHost(),
-                onValueChanged = { newValue ->
-                    scope.launch {
-                        // Trim spaces at the beginning and end, then remove trailing slash if present
-                        val trimmedValue = newValue.trim()
-                        val modifiedValue = trimmedValue.trimEnd { it == '/' }
-                        syncPreferences.clientHost().set(modifiedValue)
-                    }
-                    true
-                },
-            ),
-            Preference.PreferenceItem.CustomPreference(
-                title = stringResource(SYMR.strings.pref_sync_api_key),
-            ) {
-                val values by syncPreferences.clientAPIKey().collectAsState()
-                EditTextPreferenceWidget(
-                    title = stringResource(SYMR.strings.pref_sync_api_key),
-                    subtitle = stringResource(SYMR.strings.pref_sync_api_key_summ),
-                    onConfirm = {
-                        syncPreferences.clientAPIKey().set(it)
-                        true
-                    },
-                    icon = null,
-                    value = values,
-                    widget = {
-                        IconButton(
-                            onClick = { qrScanLauncher.launch(scanOptions) },
-                            modifier = Modifier.padding(start = TrailingWidgetBuffer),
-                        ) {
-                            Icon(
-                                Icons.Filled.QrCodeScanner,
-                                contentDescription = stringResource(SYMR.strings.scan_qr_code),
-                            )
-                        }
-                    },
-                )
             },
         )
     }

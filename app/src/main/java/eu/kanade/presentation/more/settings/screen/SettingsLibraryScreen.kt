@@ -18,6 +18,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.presentation.category.visualName
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.widget.TriStateListDialog
+import eu.kanade.tachiyomi.data.category.SmartCategorizerJob
 import eu.kanade.tachiyomi.data.library.LibraryUpdateJob
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.category.genre.SortTagScreen
@@ -75,6 +76,7 @@ object SettingsLibraryScreen : SearchableSettings {
         allCategories: List<Category>,
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
+        val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val userCategoriesCount = allCategories.filterNot(Category::isSystemCategory).size
 
@@ -210,6 +212,15 @@ object SettingsLibraryScreen : SearchableSettings {
                     preference = libraryPreferences.autoUpdateMetadata(),
                     title = stringResource(MR.strings.pref_library_update_refresh_metadata),
                     subtitle = stringResource(MR.strings.pref_library_update_refresh_metadata_summary),
+                ),
+                Preference.PreferenceItem.ListPreference(
+                    preference = libraryPreferences.libraryUpdateSpeed(),
+                    title = stringResource(MR.strings.pref_library_update_speed),
+                    entries = persistentMapOf(
+                        0 to stringResource(MR.strings.update_speed_standard),
+                        1 to stringResource(MR.strings.update_speed_boost),
+                        2 to stringResource(MR.strings.update_speed_extreme),
+                    ),
                 ),
                 Preference.PreferenceItem.MultiSelectListPreference(
                     preference = libraryPreferences.autoUpdateMangaRestrictions(),

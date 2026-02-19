@@ -165,6 +165,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                     context.startActivity(intent)
                 },
             ),
+            getVibeSearchGroup(basePreferences = basePreferences),
             getBackgroundActivityGroup(),
             getDataGroup(),
             getNetworkGroup(networkPreferences = networkPreferences),
@@ -177,6 +178,22 @@ object SettingsAdvancedScreen : SearchableSettings {
             getDataSaverGroup(),
             getDeveloperToolsGroup(),
             // SY <--
+        )
+    }
+
+    @Composable
+    private fun getVibeSearchGroup(
+        basePreferences: BasePreferences,
+    ): Preference.PreferenceGroup {
+        return Preference.PreferenceGroup(
+            title = stringResource(MR.strings.pref_vibe_search),
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.EditTextPreference(
+                    preference = basePreferences.geminiApiKey(),
+                    title = stringResource(MR.strings.pref_gemini_api_key),
+                    subtitle = stringResource(MR.strings.pref_gemini_api_key_summary),
+                ),
+            ),
         )
     }
 

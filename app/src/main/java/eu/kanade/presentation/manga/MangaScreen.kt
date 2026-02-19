@@ -46,9 +46,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import eu.kanade.presentation.components.relativeDateText
 import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.manga.components.ChapterHeader
@@ -63,9 +67,10 @@ import eu.kanade.presentation.manga.components.MissingChapterCountListItem
 import eu.kanade.presentation.manga.components.PagePreviewItems
 import eu.kanade.presentation.manga.components.PagePreviews
 import eu.kanade.presentation.manga.components.SearchMetadataChips
+import eu.kanade.presentation.theme.DynamicThemeProvider
 import eu.kanade.presentation.util.formatChapterNumber
+import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.download.model.Download
-import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import eu.kanade.tachiyomi.source.online.MetadataSource
 import eu.kanade.tachiyomi.source.online.all.EHentai
@@ -93,10 +98,8 @@ import exh.ui.metadata.adapters.MangaDexDescription
 import exh.ui.metadata.adapters.NHentaiDescription
 import exh.ui.metadata.adapters.PururinDescription
 import exh.ui.metadata.adapters.TsuminoDescription
-import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.chapter.service.missingChaptersCount
 import tachiyomi.domain.library.service.LibraryPreferences
-import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.TwoPanelBox
@@ -110,6 +113,7 @@ import tachiyomi.source.local.isLocal
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import coil3.asDrawable
 
 @Composable
 fun MangaScreen(
@@ -120,7 +124,7 @@ fun MangaScreen(
     chapterSwipeStartAction: LibraryPreferences.ChapterSwipeAction,
     chapterSwipeEndAction: LibraryPreferences.ChapterSwipeAction,
     navigateUp: () -> Unit,
-    onChapterClicked: (Chapter) -> Unit,
+    onChapterClicked: (tachiyomi.domain.chapter.model.Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
     onAddToLibraryClicked: () -> Unit,
     onWebViewClicked: (() -> Unit)?,
@@ -158,10 +162,10 @@ fun MangaScreen(
     // SY <--
 
     // For bottom action menu
-    onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
-    onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
-    onMarkPreviousAsReadClicked: (Chapter) -> Unit,
-    onMultiDeleteClicked: (List<Chapter>) -> Unit,
+    onMultiBookmarkClicked: (List<tachiyomi.domain.chapter.model.Chapter>, bookmarked: Boolean) -> Unit,
+    onMultiMarkAsReadClicked: (List<tachiyomi.domain.chapter.model.Chapter>, markAsRead: Boolean) -> Unit,
+    onMarkPreviousAsReadClicked: (tachiyomi.domain.chapter.model.Chapter) -> Unit,
+    onMultiDeleteClicked: (List<tachiyomi.domain.chapter.model.Chapter>) -> Unit,
 
     // For chapter swipe
     onChapterSwipe: (ChapterList.Item, LibraryPreferences.ChapterSwipeAction) -> Unit,
@@ -178,100 +182,113 @@ fun MangaScreen(
         }
     }
 
-    if (!isTabletUi) {
-        MangaScreenSmallImpl(
-            state = state,
-            snackbarHostState = snackbarHostState,
-            nextUpdate = nextUpdate,
-            chapterSwipeStartAction = chapterSwipeStartAction,
-            chapterSwipeEndAction = chapterSwipeEndAction,
-            navigateUp = navigateUp,
-            onChapterClicked = onChapterClicked,
-            onDownloadChapter = onDownloadChapter,
-            onAddToLibraryClicked = onAddToLibraryClicked,
-            onWebViewClicked = onWebViewClicked,
-            onWebViewLongClicked = onWebViewLongClicked,
-            onTrackingClicked = onTrackingClicked,
-            onTagSearch = onTagSearch,
-            onCopyTagToClipboard = onCopyTagToClipboard,
-            onFilterClicked = onFilterButtonClicked,
-            onRefresh = onRefresh,
-            onContinueReading = onContinueReading,
-            onSearch = onSearch,
-            onCoverClicked = onCoverClicked,
-            onShareClicked = onShareClicked,
-            onDownloadActionClicked = onDownloadActionClicked,
-            onEditCategoryClicked = onEditCategoryClicked,
-            onEditIntervalClicked = onEditFetchIntervalClicked,
-            onMigrateClicked = onMigrateClicked,
-            onEditNotesClicked = onEditNotesClicked,
-            // SY -->
-            onMetadataViewerClicked = onMetadataViewerClicked,
-            onEditInfoClicked = onEditInfoClicked,
-            onRecommendClicked = onRecommendClicked,
-            onMergedSettingsClicked = onMergedSettingsClicked,
-            onMergeClicked = onMergeClicked,
-            onMergeWithAnotherClicked = onMergeWithAnotherClicked,
-            onOpenPagePreview = onOpenPagePreview,
-            onMorePreviewsClicked = onMorePreviewsClicked,
-            previewsRowCount = previewsRowCount,
-            // SY <--
-            onMultiBookmarkClicked = onMultiBookmarkClicked,
-            onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
-            onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
-            onMultiDeleteClicked = onMultiDeleteClicked,
-            onChapterSwipe = onChapterSwipe,
-            onChapterSelected = onChapterSelected,
-            onAllChapterSelected = onAllChapterSelected,
-            onInvertSelection = onInvertSelection,
-        )
-    } else {
-        MangaScreenLargeImpl(
-            state = state,
-            snackbarHostState = snackbarHostState,
-            chapterSwipeStartAction = chapterSwipeStartAction,
-            chapterSwipeEndAction = chapterSwipeEndAction,
-            nextUpdate = nextUpdate,
-            navigateUp = navigateUp,
-            onChapterClicked = onChapterClicked,
-            onDownloadChapter = onDownloadChapter,
-            onAddToLibraryClicked = onAddToLibraryClicked,
-            onWebViewClicked = onWebViewClicked,
-            onWebViewLongClicked = onWebViewLongClicked,
-            onTrackingClicked = onTrackingClicked,
-            onTagSearch = onTagSearch,
-            onCopyTagToClipboard = onCopyTagToClipboard,
-            onFilterButtonClicked = onFilterButtonClicked,
-            onRefresh = onRefresh,
-            onContinueReading = onContinueReading,
-            onSearch = onSearch,
-            onCoverClicked = onCoverClicked,
-            onShareClicked = onShareClicked,
-            onDownloadActionClicked = onDownloadActionClicked,
-            onEditCategoryClicked = onEditCategoryClicked,
-            onEditIntervalClicked = onEditFetchIntervalClicked,
-            onMigrateClicked = onMigrateClicked,
-            onEditNotesClicked = onEditNotesClicked,
-            // SY -->
-            onMetadataViewerClicked = onMetadataViewerClicked,
-            onEditInfoClicked = onEditInfoClicked,
-            onRecommendClicked = onRecommendClicked,
-            onMergedSettingsClicked = onMergedSettingsClicked,
-            onMergeClicked = onMergeClicked,
-            onMergeWithAnotherClicked = onMergeWithAnotherClicked,
-            onOpenPagePreview = onOpenPagePreview,
-            onMorePreviewsClicked = onMorePreviewsClicked,
-            previewsRowCount = previewsRowCount,
-            // SY <--
-            onMultiBookmarkClicked = onMultiBookmarkClicked,
-            onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
-            onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
-            onMultiDeleteClicked = onMultiDeleteClicked,
-            onChapterSwipe = onChapterSwipe,
-            onChapterSelected = onChapterSelected,
-            onAllChapterSelected = onAllChapterSelected,
-            onInvertSelection = onInvertSelection,
-        )
+    val painter = rememberAsyncImagePainter(
+        model = ImageRequest.Builder(context)
+            .data(state.manga)
+            .crossfade(true)
+            .build(),
+    )
+
+    DynamicThemeProvider(
+        cover = painter.state.let { 
+            (it as? coil3.compose.AsyncImagePainter.State.Success)?.result?.image?.asDrawable(context.resources) 
+        }
+    ) {
+        if (!isTabletUi) {
+            MangaScreenSmallImpl(
+                state = state,
+                snackbarHostState = snackbarHostState,
+                nextUpdate = nextUpdate,
+                chapterSwipeStartAction = chapterSwipeStartAction,
+                chapterSwipeEndAction = chapterSwipeEndAction,
+                navigateUp = navigateUp,
+                onChapterClicked = onChapterClicked,
+                onDownloadChapter = onDownloadChapter,
+                onAddToLibraryClicked = onAddToLibraryClicked,
+                onWebViewClicked = onWebViewClicked,
+                onWebViewLongClicked = onWebViewLongClicked,
+                onTrackingClicked = onTrackingClicked,
+                onTagSearch = onTagSearch,
+                onCopyTagToClipboard = onCopyTagToClipboard,
+                onFilterClicked = onFilterButtonClicked,
+                onRefresh = onRefresh,
+                onContinueReading = onContinueReading,
+                onSearch = onSearch,
+                onCoverClicked = onCoverClicked,
+                onShareClicked = onShareClicked,
+                onDownloadActionClicked = onDownloadActionClicked,
+                onEditCategoryClicked = onEditCategoryClicked,
+                onEditIntervalClicked = onEditFetchIntervalClicked,
+                onMigrateClicked = onMigrateClicked,
+                onEditNotesClicked = onEditNotesClicked,
+                // SY -->
+                onMetadataViewerClicked = onMetadataViewerClicked,
+                onEditInfoClicked = onEditInfoClicked,
+                onRecommendClicked = onRecommendClicked,
+                onMergedSettingsClicked = onMergedSettingsClicked,
+                onMergeClicked = onMergeClicked,
+                onMergeWithAnotherClicked = onMergeWithAnotherClicked,
+                onOpenPagePreview = onOpenPagePreview,
+                onMorePreviewsClicked = onMorePreviewsClicked,
+                previewsRowCount = previewsRowCount,
+                // SY <--
+                onMultiBookmarkClicked = onMultiBookmarkClicked,
+                onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
+                onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
+                onMultiDeleteClicked = onMultiDeleteClicked,
+                onChapterSwipe = onChapterSwipe,
+                onChapterSelected = onChapterSelected,
+                onAllChapterSelected = onAllChapterSelected,
+                onInvertSelection = onInvertSelection,
+            )
+        } else {
+            MangaScreenLargeImpl(
+                state = state,
+                snackbarHostState = snackbarHostState,
+                chapterSwipeStartAction = chapterSwipeStartAction,
+                chapterSwipeEndAction = chapterSwipeEndAction,
+                nextUpdate = nextUpdate,
+                navigateUp = navigateUp,
+                onChapterClicked = onChapterClicked,
+                onDownloadChapter = onDownloadChapter,
+                onAddToLibraryClicked = onAddToLibraryClicked,
+                onWebViewClicked = onWebViewClicked,
+                onWebViewLongClicked = onWebViewLongClicked,
+                onTrackingClicked = onTrackingClicked,
+                onTagSearch = onTagSearch,
+                onCopyTagToClipboard = onCopyTagToClipboard,
+                onFilterButtonClicked = onFilterButtonClicked,
+                onRefresh = onRefresh,
+                onContinueReading = onContinueReading,
+                onSearch = onSearch,
+                onCoverClicked = onCoverClicked,
+                onShareClicked = onShareClicked,
+                onDownloadActionClicked = onDownloadActionClicked,
+                onEditCategoryClicked = onEditCategoryClicked,
+                onEditIntervalClicked = onEditFetchIntervalClicked,
+                onMigrateClicked = onMigrateClicked,
+                onEditNotesClicked = onEditNotesClicked,
+                // SY -->
+                onMetadataViewerClicked = onMetadataViewerClicked,
+                onEditInfoClicked = onEditInfoClicked,
+                onRecommendClicked = onRecommendClicked,
+                onMergedSettingsClicked = onMergedSettingsClicked,
+                onMergeClicked = onMergeClicked,
+                onMergeWithAnotherClicked = onMergeWithAnotherClicked,
+                onOpenPagePreview = onOpenPagePreview,
+                onMorePreviewsClicked = onMorePreviewsClicked,
+                previewsRowCount = previewsRowCount,
+                // SY <--
+                onMultiBookmarkClicked = onMultiBookmarkClicked,
+                onMultiMarkAsReadClicked = onMultiMarkAsReadClicked,
+                onMarkPreviousAsReadClicked = onMarkPreviousAsReadClicked,
+                onMultiDeleteClicked = onMultiDeleteClicked,
+                onChapterSwipe = onChapterSwipe,
+                onChapterSelected = onChapterSelected,
+                onAllChapterSelected = onAllChapterSelected,
+                onInvertSelection = onInvertSelection,
+            )
+        }
     }
 }
 
@@ -283,7 +300,7 @@ private fun MangaScreenSmallImpl(
     chapterSwipeStartAction: LibraryPreferences.ChapterSwipeAction,
     chapterSwipeEndAction: LibraryPreferences.ChapterSwipeAction,
     navigateUp: () -> Unit,
-    onChapterClicked: (Chapter) -> Unit,
+    onChapterClicked: (tachiyomi.domain.chapter.model.Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
     onAddToLibraryClicked: () -> Unit,
     onWebViewClicked: (() -> Unit)?,
@@ -322,10 +339,10 @@ private fun MangaScreenSmallImpl(
     // SY <--
 
     // For bottom action menu
-    onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
-    onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
-    onMarkPreviousAsReadClicked: (Chapter) -> Unit,
-    onMultiDeleteClicked: (List<Chapter>) -> Unit,
+    onMultiBookmarkClicked: (List<tachiyomi.domain.chapter.model.Chapter>, bookmarked: Boolean) -> Unit,
+    onMultiMarkAsReadClicked: (List<tachiyomi.domain.chapter.model.Chapter>, markAsRead: Boolean) -> Unit,
+    onMarkPreviousAsReadClicked: (tachiyomi.domain.chapter.model.Chapter) -> Unit,
+    onMultiDeleteClicked: (List<tachiyomi.domain.chapter.model.Chapter>) -> Unit,
 
     // For chapter swipe
     onChapterSwipe: (ChapterList.Item, LibraryPreferences.ChapterSwipeAction) -> Unit,
@@ -602,11 +619,11 @@ private fun MangaScreenSmallImpl(
 fun MangaScreenLargeImpl(
     state: MangaScreenModel.State.Success,
     snackbarHostState: SnackbarHostState,
-    nextUpdate: Instant?,
     chapterSwipeStartAction: LibraryPreferences.ChapterSwipeAction,
     chapterSwipeEndAction: LibraryPreferences.ChapterSwipeAction,
+    nextUpdate: Instant?,
     navigateUp: () -> Unit,
-    onChapterClicked: (Chapter) -> Unit,
+    onChapterClicked: (tachiyomi.domain.chapter.model.Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
     onAddToLibraryClicked: () -> Unit,
     onWebViewClicked: (() -> Unit)?,
@@ -645,10 +662,10 @@ fun MangaScreenLargeImpl(
     // SY <--
 
     // For bottom action menu
-    onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
-    onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
-    onMarkPreviousAsReadClicked: (Chapter) -> Unit,
-    onMultiDeleteClicked: (List<Chapter>) -> Unit,
+    onMultiBookmarkClicked: (List<tachiyomi.domain.chapter.model.Chapter>, bookmarked: Boolean) -> Unit,
+    onMultiMarkAsReadClicked: (List<tachiyomi.domain.chapter.model.Chapter>, markAsRead: Boolean) -> Unit,
+    onMarkPreviousAsReadClicked: (tachiyomi.domain.chapter.model.Chapter) -> Unit,
+    onMultiDeleteClicked: (List<tachiyomi.domain.chapter.model.Chapter>) -> Unit,
 
     // For swipe actions
     onChapterSwipe: (ChapterList.Item, LibraryPreferences.ChapterSwipeAction) -> Unit,
@@ -902,11 +919,11 @@ fun MangaScreenLargeImpl(
 @Composable
 private fun SharedMangaBottomActionMenu(
     selected: List<ChapterList.Item>,
-    onMultiBookmarkClicked: (List<Chapter>, bookmarked: Boolean) -> Unit,
-    onMultiMarkAsReadClicked: (List<Chapter>, markAsRead: Boolean) -> Unit,
-    onMarkPreviousAsReadClicked: (Chapter) -> Unit,
+    onMultiBookmarkClicked: (List<tachiyomi.domain.chapter.model.Chapter>, bookmarked: Boolean) -> Unit,
+    onMultiMarkAsReadClicked: (List<tachiyomi.domain.chapter.model.Chapter>, markAsRead: Boolean) -> Unit,
+    onMarkPreviousAsReadClicked: (tachiyomi.domain.chapter.model.Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
-    onMultiDeleteClicked: (List<Chapter>) -> Unit,
+    onMultiDeleteClicked: (List<tachiyomi.domain.chapter.model.Chapter>) -> Unit,
     fillFraction: Float,
     modifier: Modifier = Modifier,
 ) {
@@ -942,7 +959,7 @@ private fun SharedMangaBottomActionMenu(
 }
 
 private fun LazyListScope.sharedChapterItems(
-    manga: Manga,
+    manga: tachiyomi.domain.manga.model.Manga,
     mergedData: MergedMangaData?,
     chapters: List<ChapterList>,
     isAnyChapterSelected: Boolean,
@@ -951,7 +968,7 @@ private fun LazyListScope.sharedChapterItems(
     // SY -->
     alwaysShowReadingProgress: Boolean,
     // SY <--
-    onChapterClicked: (Chapter) -> Unit,
+    onChapterClicked: (tachiyomi.domain.chapter.model.Chapter) -> Unit,
     onDownloadChapter: ((List<ChapterList.Item>, ChapterDownloadAction) -> Unit)?,
     onChapterSelected: (ChapterList.Item, Boolean, Boolean, Boolean) -> Unit,
     onChapterSwipe: (ChapterList.Item, LibraryPreferences.ChapterSwipeAction) -> Unit,
@@ -974,7 +991,7 @@ private fun LazyListScope.sharedChapterItems(
             }
             is ChapterList.Item -> {
                 MangaChapterListItem(
-                    title = if (manga.displayMode == Manga.CHAPTER_DISPLAY_NUMBER) {
+                    title = if (manga.displayMode == tachiyomi.domain.manga.model.Manga.CHAPTER_DISPLAY_NUMBER) {
                         stringResource(
                             MR.strings.display_mode_chapter,
                             formatChapterNumber(item.chapter.chapterNumber),
@@ -1049,7 +1066,7 @@ private fun onChapterItemClick(
     chapterItem: ChapterList.Item,
     isAnyChapterSelected: Boolean,
     onToggleSelection: (Boolean) -> Unit,
-    onChapterClicked: (Chapter) -> Unit,
+    onChapterClicked: (tachiyomi.domain.chapter.model.Chapter) -> Unit,
 ) {
     when {
         chapterItem.selected -> onToggleSelection(false)
@@ -1066,7 +1083,7 @@ typealias MetadataDescriptionComposable = @Composable (
 ) -> Unit
 
 @Composable
-fun metadataDescription(source: Source): MetadataDescriptionComposable? {
+fun metadataDescription(source: eu.kanade.tachiyomi.source.Source): MetadataDescriptionComposable? {
     val metadataSource = remember(source.id) { source.getMainSource<MetadataSource<*, *>>() }
     return remember(metadataSource) {
         when (metadataSource) {

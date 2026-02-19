@@ -22,7 +22,10 @@ import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.more.MoreScreen
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.category.SmartCategorizerJob
 import eu.kanade.tachiyomi.data.download.DownloadManager
+import eu.kanade.tachiyomi.ui.browse.migration.dead.DeadSourceScannerScreen
+import eu.kanade.tachiyomi.ui.browse.migration.failed.FailedUpdatesMigrationScreen
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.download.DownloadQueueScreen
 import eu.kanade.tachiyomi.ui.history.HistoryTab
@@ -36,6 +39,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import tachiyomi.core.common.util.lang.launchIO
+import tachiyomi.domain.history.interactor.GetTotalReadDuration
+import tachiyomi.domain.manga.interactor.GetLibraryManga
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 import uy.kohesive.injekt.Injekt
@@ -65,6 +70,8 @@ data object MoreTab : Tab {
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = rememberScreenModel { MoreScreenModel() }
         val downloadQueueState by screenModel.downloadQueueState.collectAsState()
+        val readChapters by screenModel.readChapters.collectAsState()
+        val readDuration by screenModel.readDuration.collectAsState()
         MoreScreen(
             downloadQueueStateProvider = { downloadQueueState },
             downloadedOnly = screenModel.downloadedOnly,
@@ -74,11 +81,16 @@ data object MoreTab : Tab {
             // SY -->
             showNavUpdates = screenModel.showNavUpdates,
             showNavHistory = screenModel.showNavHistory,
+            readChapters = readChapters,
+            readDuration = readDuration,
             // SY <--
             onClickDownloadQueue = { navigator.push(DownloadQueueScreen) },
             onClickCategories = { navigator.push(CategoryScreen()) },
             onClickStats = { navigator.push(StatsScreen()) },
             onClickDataAndStorage = { navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage)) },
+            onClickSmartCategorizer = { SmartCategorizerJob.startNow(context) },
+            onClickDeadSourceScanner = { navigator.push(DeadSourceScannerScreen()) },
+            onClickFailedUpdatesMigration = { navigator.push(FailedUpdatesMigrationScreen()) },
             onClickSettings = { navigator.push(SettingsScreen()) },
             onClickAbout = { navigator.push(SettingsScreen(SettingsScreen.Destination.About)) },
             // SY -->
@@ -92,6 +104,8 @@ data object MoreTab : Tab {
 
 private class MoreScreenModel(
     private val downloadManager: DownloadManager = Injekt.get(),
+    private val getLibraryManga: GetLibraryManga = Injekt.get(),
+    private val getTotalReadDuration: GetTotalReadDuration = Injekt.get(),
     preferences: BasePreferences = Injekt.get(),
     // SY -->
     uiPreferences: UiPreferences = Injekt.get(),
@@ -104,12 +118,25 @@ private class MoreScreenModel(
     // SY -->
     val showNavUpdates by uiPreferences.showNavUpdates().asState(screenModelScope)
     val showNavHistory by uiPreferences.showNavHistory().asState(screenModelScope)
+
+    private val _readChapters = MutableStateFlow(0)
+    val readChapters = _readChapters.asStateFlow()
+
+    private val _readDuration = MutableStateFlow(0L)
+    val readDuration = _readDuration.asStateFlow()
     // SY <--
 
     private var _downloadQueueState: MutableStateFlow<DownloadQueueState> = MutableStateFlow(DownloadQueueState.Stopped)
     val downloadQueueState: StateFlow<DownloadQueueState> = _downloadQueueState.asStateFlow()
 
     init {
+        // SY -->
+        screenModelScope.launchIO {
+            val libraryManga = getLibraryManga.await()
+            _readChapters.value = libraryManga.sumOf { it.readCount }.toInt()
+            _readDuration.value = getTotalReadDuration.await()
+        }
+        // SY <--
         // Handle running/paused status change and queue progress updating
         screenModelScope.launchIO {
             combine(

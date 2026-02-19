@@ -165,7 +165,10 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         val group = inputData.getInt(KEY_GROUP, LibraryGroup.BY_DEFAULT)
         val groupExtra = inputData.getString(KEY_GROUP_EXTRA)
         // SY <--
-        addMangaToQueue(categoryId, group, groupExtra)
+
+        if (target == Target.CHAPTERS || target == Target.COVERS) {
+            addMangaToQueue(categoryId, group, groupExtra, target)
+        }
 
         return withIOContext {
             try {
@@ -210,13 +213,13 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
      *
      * @param categoryId the ID of the category to update, or -1 if no category specified.
      */
-    private suspend fun addMangaToQueue(categoryId: Long, group: Int, groupExtra: String?) {
+    private suspend fun addMangaToQueue(categoryId: Long, group: Int, groupExtra: String?, target: Target) {
         val libraryManga = getLibraryManga.await()
         // SY -->
         val groupLibraryUpdateType = libraryPreferences.groupLibraryUpdateType().get()
         // SY <--
 
-        val listToUpdate = if (categoryId != -1L) {
+        var listToUpdate = if (categoryId != -1L) {
             libraryManga.filter { categoryId in it.categories }
             // SY -->
         } else if (
@@ -271,7 +274,18 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
             // SY <--
         }
 
-        val restrictions = libraryPreferences.autoUpdateMangaRestrictions().get()
+        // SY -->
+        if (target == Target.CHAPTERS || target == Target.COVERS) {
+            listToUpdate = listToUpdate.filterNot { it.manga.source in LIBRARY_UPDATE_EXCLUDED_SOURCES }
+        }
+        // SY <--
+
+        val isAuto = tags.contains(WORK_NAME_AUTO)
+        val restrictions = if (isAuto) {
+            libraryPreferences.autoUpdateMangaRestrictions().get()
+        } else {
+            emptySet()
+        }
         val skippedUpdates = mutableListOf<Pair<Manga, String?>>()
         val (_, fetchWindowUpperBound) = fetchInterval.getWindow(ZonedDateTime.now())
 
@@ -337,7 +351,14 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
      * @return an observable delivering the progress of each update.
      */
     private suspend fun updateChapterList() {
-        val semaphore = Semaphore(5)
+        val speed = libraryPreferences.libraryUpdateSpeed().get()
+        val (maxConcurrentSources, maxMangaPerSource) = when (speed) {
+            1 -> 10 to 2 // Boost
+            2 -> Int.MAX_VALUE to Int.MAX_VALUE // Extreme
+            else -> 5 to 1 // Standard (default)
+        }
+
+        val semaphore = Semaphore(maxConcurrentSources)
         val progressCount = AtomicInt(0)
         val currentlyUpdatingManga = CopyOnWriteArrayList<Manga>()
         val newUpdates = CopyOnWriteArrayList<Pair<Manga, Array<Chapter>>>()
@@ -351,9 +372,6 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
         coroutineScope {
             mangaToUpdate.groupBy { it.manga.source }
-                // SY -->
-                .filterNot { it.key in LIBRARY_UPDATE_EXCLUDED_SOURCES }
-                // SY <--
                 .values
                 .map { mangaInSource ->
                     async {
@@ -380,50 +398,60 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                     }
                                 }
                             }
-                            mangaInSource.forEach { libraryManga ->
-                                val manga = libraryManga.manga
-                                ensureActive()
 
-                                // Don't continue to update if manga is not in library
-                                if (getManga.await(manga.id)?.favorite != true) {
-                                    return@forEach
-                                }
+                            val mangaSemaphore = Semaphore(maxMangaPerSource)
+                            coroutineScope {
+                                mangaInSource.forEach { libraryManga ->
+                                    val manga = libraryManga.manga
+                                    ensureActive()
 
-                                withUpdateNotification(
-                                    currentlyUpdatingManga,
-                                    progressCount,
-                                    manga,
-                                ) {
-                                    try {
-                                        val newChapters = updateManga(manga, fetchWindow)
-                                            .sortedByDescending { it.sourceOrder }
+                                    // Don't continue to update if manga is not in library
+                                    if (getManga.await(manga.id)?.favorite != true) {
+                                        return@forEach
+                                    }
 
-                                        if (newChapters.isNotEmpty()) {
-                                            val chaptersToDownload = filterChaptersForDownload.await(manga, newChapters)
+                                    launch {
+                                        mangaSemaphore.withPermit {
+                                            withUpdateNotification(
+                                                currentlyUpdatingManga,
+                                                progressCount,
+                                                manga,
+                                            ) {
+                                                try {
+                                                    val newChapters = updateManga(manga, fetchWindow)
+                                                        .sortedByDescending { it.sourceOrder }
 
-                                            if (chaptersToDownload.isNotEmpty()) {
-                                                downloadChapters(manga, chaptersToDownload)
-                                                hasDownloads.store(true)
+                                                    if (newChapters.isNotEmpty()) {
+                                                        val chaptersToDownload =
+                                                            filterChaptersForDownload.await(manga, newChapters)
+
+                                                        if (chaptersToDownload.isNotEmpty()) {
+                                                            downloadChapters(manga, chaptersToDownload)
+                                                            hasDownloads.store(true)
+                                                        }
+
+                                                        libraryPreferences.newUpdatesCount()
+                                                            .getAndSet { it + newChapters.size }
+
+                                                        // Convert to the manga that contains new chapters
+                                                        newUpdates.add(manga to newChapters.toTypedArray())
+                                                    }
+                                                } catch (e: Throwable) {
+                                                    val errorMessage = when (e) {
+                                                        is NoChaptersException -> context.stringResource(
+                                                            MR.strings.no_chapters_error,
+                                                        )
+                                                        // failedUpdates will already have the source, don't need to copy it into the message
+                                                        is SourceNotInstalledException -> context.stringResource(
+                                                            MR.strings.loader_not_implemented_error,
+                                                        )
+
+                                                        else -> e.message
+                                                    }
+                                                    failedUpdates.add(manga to errorMessage)
+                                                }
                                             }
-
-                                            libraryPreferences.newUpdatesCount().getAndSet { it + newChapters.size }
-
-                                            // Convert to the manga that contains new chapters
-                                            newUpdates.add(manga to newChapters.toTypedArray())
                                         }
-                                    } catch (e: Throwable) {
-                                        val errorMessage = when (e) {
-                                            is NoChaptersException -> context.stringResource(
-                                                MR.strings.no_chapters_error,
-                                            )
-                                            // failedUpdates will already have the source, don't need to copy it into the message
-                                            is SourceNotInstalledException -> context.stringResource(
-                                                MR.strings.loader_not_implemented_error,
-                                            )
-
-                                            else -> e.message
-                                        }
-                                        failedUpdates.add(manga to errorMessage)
                                     }
                                 }
                             }
@@ -443,11 +471,16 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         }
 
         if (failedUpdates.isNotEmpty()) {
+            val failedIds = failedUpdates.map { it.first.id.toString() }.toSet()
+            libraryPreferences.failedUpdatesMangaIds().set(failedIds)
+
             val errorFile = writeErrorFile(failedUpdates)
             notifier.showUpdateErrorNotification(
                 failedUpdates.size,
                 errorFile.getUriCompat(context),
             )
+        } else {
+            libraryPreferences.failedUpdatesMangaIds().delete()
         }
     }
 
@@ -484,25 +517,36 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
         // Update manga metadata if needed
         if (libraryPreferences.autoUpdateMetadata().get()) {
-            val networkManga = source.getMangaDetails(manga.toSManga())
-            updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = false, coverCache)
+            val lastUpdate = manga.lastMetadataUpdate
+            val now = Instant.now().toEpochMilli()
+            if (now - lastUpdate > 7 * 24 * 60 * 60 * 1000L) {
+                val networkManga = source.getMangaDetails(manga.toSManga())
+                updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = false, coverCache)
+            }
         }
-
-        if (source is MergedSource) {
-            return source.fetchChaptersAndSync(manga, false)
-        }
-
-        val chapters = source.getChapterList(manga.toSManga())
 
         // Get manga from database to account for if it was removed during the update and
         // to get latest data so it doesn't get overwritten later on
         val dbManga = getManga.await(manga.id)?.takeIf { it.favorite } ?: return emptyList()
 
+        if (source is MergedSource) {
+            return source.fetchChaptersAndSync(dbManga, false)
+        }
+
+        val chapters = source.getChapterList(dbManga.toSManga())
+
         return syncChaptersWithSource.await(chapters, dbManga, source, false, fetchWindow)
     }
 
     private suspend fun updateCovers() {
-        val semaphore = Semaphore(5)
+        val speed = libraryPreferences.libraryUpdateSpeed().get()
+        val (maxConcurrentSources, maxMangaPerSource) = when (speed) {
+            1 -> 10 to 2 // Boost
+            2 -> Int.MAX_VALUE to Int.MAX_VALUE // Extreme
+            else -> 5 to 1 // Standard (default)
+        }
+
+        val semaphore = Semaphore(maxConcurrentSources)
         val progressCount = AtomicInt(0)
         val currentlyUpdatingManga = CopyOnWriteArrayList<Manga>()
 
@@ -512,32 +556,40 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 .map { mangaInSource ->
                     async {
                         semaphore.withPermit {
-                            mangaInSource.forEach { libraryManga ->
-                                val manga = libraryManga.manga
-                                ensureActive()
+                            val mangaSemaphore = Semaphore(maxMangaPerSource)
+                            coroutineScope {
+                                mangaInSource.forEach { libraryManga ->
+                                    val manga = libraryManga.manga
+                                    ensureActive()
 
-                                withUpdateNotification(
-                                    currentlyUpdatingManga,
-                                    progressCount,
-                                    manga,
-                                ) {
-                                    val source = sourceManager.get(manga.source) ?: return@withUpdateNotification
-                                    try {
-                                        val networkManga = source.getMangaDetails(manga.toSManga())
-                                        val updatedManga = manga.prepUpdateCover(
-                                            coverCache,
-                                            networkManga,
-                                            true,
-                                        )
-                                            .copyFrom(networkManga)
-                                        try {
-                                            updateManga.await(updatedManga.toMangaUpdate())
-                                        } catch (_: Exception) {
-                                            logcat(LogPriority.ERROR) { "Manga doesn't exist anymore" }
+                                    launch {
+                                        mangaSemaphore.withPermit {
+                                            withUpdateNotification(
+                                                currentlyUpdatingManga,
+                                                progressCount,
+                                                manga,
+                                            ) {
+                                                val source =
+                                                    sourceManager.get(manga.source) ?: return@withUpdateNotification
+                                                try {
+                                                    val networkManga = source.getMangaDetails(manga.toSManga())
+                                                    val updatedManga = manga.prepUpdateCover(
+                                                        coverCache,
+                                                        networkManga,
+                                                        true,
+                                                    )
+                                                        .copyFrom(networkManga)
+                                                    try {
+                                                        updateManga.await(updatedManga.toMangaUpdate())
+                                                    } catch (_: Exception) {
+                                                        logcat(LogPriority.ERROR) { "Manga doesn't exist anymore" }
+                                                    }
+                                                } catch (e: Throwable) {
+                                                    // Ignore errors and continue
+                                                    logcat(LogPriority.ERROR, e)
+                                                }
+                                            }
                                         }
-                                    } catch (e: Throwable) {
-                                        // Ignore errors and continue
-                                        logcat(LogPriority.ERROR, e)
                                     }
                                 }
                             }

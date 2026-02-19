@@ -151,6 +151,7 @@ class MangaRepositoryImpl(
                     coverLastModified = it.coverLastModified,
                     dateAdded = it.dateAdded,
                     updateStrategy = it.updateStrategy,
+                    lastMetadataUpdate = it.lastMetadataUpdate,
                     version = it.version,
                     // SY -->
                     updateTitle = it.ogTitle.isNotBlank(),
@@ -188,6 +189,7 @@ class MangaRepositoryImpl(
                     dateAdded = value.dateAdded,
                     mangaId = value.id,
                     updateStrategy = value.updateStrategy?.let(UpdateStrategyColumnAdapter::encode),
+                    lastMetadataUpdate = value.lastMetadataUpdate,
                     version = value.version,
                     isSyncing = 0,
                     notes = value.notes,

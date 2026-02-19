@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">TachiyomiSY</string>
+    <string name="app_name" translatable="false">ShinKu</string>
 
     <!-- Generic strings -->
     <string name="on">On</string>
@@ -300,6 +300,41 @@
 
     <string name="pref_library_update_refresh_metadata">Automatically refresh metadata</string>
     <string name="pref_library_update_refresh_metadata_summary">Check for new cover and details when updating library</string>
+
+    <string name="pref_library_update_speed">Library update speed</string>
+    <string name="update_speed_standard">Standard (5 concurrent sources, 1 manga per source)</string>
+    <string name="update_speed_boost">Boost (10 concurrent sources, 2 manga per source)</string>
+    <string name="update_speed_extreme">Extreme (Unlimited concurrent sources/manga)</string>
+
+    <string name="label_shinku_features">ShinKu Features</string>
+    <string name="pref_smart_categorizer">Smart Categorizer</string>
+    <string name="pref_smart_categorizer_summary">Automatically organize your library into Reading, Queue, Finished, and Dropped</string>
+    <string name="smart_categorizer_all">Library</string>
+    <string name="smart_categorizer_reading">Reading</string>
+    <string name="smart_categorizer_queue">Queue</string>
+    <string name="smart_categorizer_finished">Finished</string>
+    <string name="smart_categorizer_dropped">Dropped</string>
+    <string name="action_start_smart_categorizer">Start categorizer</string>
+    <string name="notification_smart_categorizing">Categorizing series…</string>
+
+    <string name="reading_journey_title">Your Reading Journey</string>
+    <string name="reading_journey_chapters_read">Chapters read</string>
+    <string name="reading_journey_time_read">Time spent reading</string>
+
+    <string name="dead_source_scanner_title">Dead Source Scanner</string>
+    <string name="dead_source_scanner_summary">Find and migrate manga from uninstalled extensions</string>
+    <string name="dead_source_scanner_empty">No dead sources found! Your library is healthy.</string>
+    <string name="failed_updates_migration_title">Failed Updates Migration</string>
+    <string name="failed_updates_migration_summary">Migrate manga that failed during the last library update</string>
+        <string name="failed_updates_migration_empty">No failed updates found in the recent refresh.</string>
+    
+        <string name="pref_vibe_search">Vibe Search</string>
+        <string name="pref_vibe_search_summary">Use Gemini AI to find manga based on your description (requires API key)</string>
+        <string name="pref_gemini_api_key">Gemini API Key</string>
+        <string name="pref_gemini_api_key_summary">Enter your API key from Google AI Studio to enable semantic search</string>
+        <string name="vibe_search_loading">Gemini is searching for vibes…</string>
+    
+        <string name="dead_source_scanner_count">%1$d manga</string>
 
     <string name="default_category">Default category</string>
     <string name="default_category_summary">Always ask</string>

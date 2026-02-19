@@ -23,6 +23,7 @@ data class MangaUpdate(
     val thumbnailUrl: String? = null,
     val updateStrategy: UpdateStrategy? = null,
     val initialized: Boolean? = null,
+    val lastMetadataUpdate: Long? = null,
     val version: Long? = null,
     val notes: String? = null,
     // SY -->
@@ -54,6 +55,7 @@ fun Manga.toMangaUpdate(): MangaUpdate {
         // SY <--
         updateStrategy = updateStrategy,
         initialized = initialized,
+        lastMetadataUpdate = lastMetadataUpdate,
         version = version,
         notes = notes,
     )

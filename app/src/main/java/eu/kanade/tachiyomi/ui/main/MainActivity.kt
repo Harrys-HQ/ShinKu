@@ -298,18 +298,7 @@ class MainActivity : BaseActivity() {
                 ShowOnboarding()
             }
 
-            // SY -->
-            if (hasDebugOverlay) {
-                val isDebugOverlayEnabled by remember {
-                    DebugToggles.ENABLE_DEBUG_OVERLAY.asPref(lifecycleScope)
-                }
-                if (isDebugOverlayEnabled) {
-                    DebugModeOverlay()
-                }
-            }
-            // SY <--
-
-            var showChangelog by remember { mutableStateOf(didMigration && !BuildConfig.DEBUG) }
+            var showChangelog by remember { mutableStateOf(didMigration) }
             if (showChangelog) {
                 // SY -->
                 WhatsNewDialog(onDismissRequest = { showChangelog = false })

@@ -5,7 +5,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.automirrored.outlined.PlaylistAdd
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Dangerous
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.GetApp
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
@@ -19,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.vectorResource
+import eu.kanade.presentation.more.components.ReadingJourneyCard
+import eu.kanade.presentation.more.settings.widget.PreferenceGroupHeader
 import eu.kanade.presentation.more.settings.widget.SwitchPreferenceWidget
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.tachiyomi.R
@@ -41,11 +46,16 @@ fun MoreScreen(
     // SY -->
     showNavUpdates: Boolean,
     showNavHistory: Boolean,
+    readChapters: Int,
+    readDuration: Long,
     // SY <--
     onClickDownloadQueue: () -> Unit,
     onClickCategories: () -> Unit,
     onClickStats: () -> Unit,
     onClickDataAndStorage: () -> Unit,
+    onClickSmartCategorizer: () -> Unit,
+    onClickDeadSourceScanner: () -> Unit,
+    onClickFailedUpdatesMigration: () -> Unit,
     onClickSettings: () -> Unit,
     onClickAbout: () -> Unit,
     onClickBatchAdd: () -> Unit,
@@ -60,6 +70,13 @@ fun MoreScreen(
         ) {
             item {
                 LogoHeader()
+            }
+            item {
+                ReadingJourneyCard(
+                    readChapters = readChapters,
+                    readDuration = readDuration,
+                    onClick = onClickStats,
+                )
             }
             item {
                 SwitchPreferenceWidget(
@@ -102,6 +119,36 @@ fun MoreScreen(
                 }
             }
             // SY <--
+
+            item {
+                PreferenceGroupHeader(title = stringResource(MR.strings.label_shinku_features))
+            }
+            item {
+                TextPreferenceWidget(
+                    title = stringResource(MR.strings.pref_smart_categorizer),
+                    subtitle = stringResource(MR.strings.pref_smart_categorizer_summary),
+                    icon = Icons.Outlined.AutoAwesome,
+                    onPreferenceClick = onClickSmartCategorizer,
+                )
+            }
+            item {
+                TextPreferenceWidget(
+                    title = stringResource(MR.strings.dead_source_scanner_title),
+                    subtitle = stringResource(MR.strings.dead_source_scanner_summary),
+                    icon = Icons.Outlined.Dangerous,
+                    onPreferenceClick = onClickDeadSourceScanner,
+                )
+            }
+            item {
+                TextPreferenceWidget(
+                    title = stringResource(MR.strings.failed_updates_migration_title),
+                    subtitle = stringResource(MR.strings.failed_updates_migration_summary),
+                    icon = Icons.Outlined.ErrorOutline,
+                    onPreferenceClick = onClickFailedUpdatesMigration,
+                )
+            }
+
+            item { HorizontalDivider() }
 
             item {
                 val downloadQueueState = downloadQueueStateProvider()

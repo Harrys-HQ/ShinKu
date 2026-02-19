@@ -141,15 +141,13 @@ object AboutScreen : Screen() {
                     }
                 }
 
-                if (!BuildConfig.DEBUG) {
-                    item {
-                        TextPreferenceWidget(
-                            title = stringResource(MR.strings.whats_new),
-                            // SY -->
-                            onPreferenceClick = { showWhatsNewDialog = true },
-                            // SY <--
-                        )
-                    }
+                item {
+                    TextPreferenceWidget(
+                        title = stringResource(MR.strings.whats_new),
+                        // SY -->
+                        onPreferenceClick = { showWhatsNewDialog = true },
+                        // SY <--
+                    )
                 }
 
                 // item {
@@ -209,7 +207,7 @@ object AboutScreen : Screen() {
                             label = "GitHub",
                             icon = CustomIcons.Github,
                             // SY -->
-                            url = "https://github.com/jobobby04/tachiyomisy",
+                            url = "https://github.com/Harrys-HQ/ShinKu",
                             // SY <--
                         )
                     }
@@ -269,7 +267,7 @@ object AboutScreen : Screen() {
             }
             // SY -->
             isPreviewBuildType -> {
-                "Preview r$syDebugVersion".let {
+                "ShinKu r$syDebugVersion".let {
                     if (withBuildDate) {
                         "$it (${BuildConfig.COMMIT_SHA}, ${getFormattedBuildTime()})"
                     } else {

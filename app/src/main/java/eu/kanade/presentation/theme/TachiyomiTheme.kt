@@ -30,12 +30,14 @@ import uy.kohesive.injekt.api.get
 fun TachiyomiTheme(
     appTheme: AppTheme? = null,
     amoled: Boolean? = null,
+    overrideColorScheme: ColorScheme? = null,
     content: @Composable () -> Unit,
 ) {
     val uiPreferences = Injekt.get<UiPreferences>()
     BaseTachiyomiTheme(
         appTheme = appTheme ?: uiPreferences.appTheme().get(),
         isAmoled = amoled ?: uiPreferences.themeDarkAmoled().get(),
+        overrideColorScheme = overrideColorScheme,
         content = content,
     )
 }
@@ -45,16 +47,17 @@ fun TachiyomiPreviewTheme(
     appTheme: AppTheme = AppTheme.DEFAULT,
     isAmoled: Boolean = false,
     content: @Composable () -> Unit,
-) = BaseTachiyomiTheme(appTheme, isAmoled, content)
+) = BaseTachiyomiTheme(appTheme, isAmoled, null, content)
 
 @Composable
 private fun BaseTachiyomiTheme(
     appTheme: AppTheme,
     isAmoled: Boolean,
+    overrideColorScheme: ColorScheme?,
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(
-        colorScheme = getThemeColorScheme(appTheme, isAmoled),
+        colorScheme = overrideColorScheme ?: getThemeColorScheme(appTheme, isAmoled),
         content = content,
     )
 }

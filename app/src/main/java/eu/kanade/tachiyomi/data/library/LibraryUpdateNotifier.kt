@@ -75,7 +75,7 @@ class LibraryUpdateNotifier(
      */
     val progressNotificationBuilder by lazy {
         context.notificationBuilder(Notifications.CHANNEL_LIBRARY_PROGRESS) {
-            setContentTitle(context.stringResource(MR.strings.app_name))
+            setContentTitle(context.stringResource(MR.strings.notification_updating_progress, ""))
             setSmallIcon(R.drawable.ic_refresh_24dp)
             setLargeIcon(notificationBitmap)
             setOngoing(true)
@@ -381,10 +381,10 @@ class LibraryUpdateNotifier(
 
     companion object {
         const val HELP_WARNING_URL = "https://mihon.app/docs/faq/library#why-am-i-warned-about-large-bulk-updates-and-downloads"
+        const val MANGA_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 60
     }
 }
 
 private const val NOTIF_MAX_CHAPTERS = 5
 private const val NOTIF_TITLE_MAX_LEN = 45
 private const val NOTIF_ICON_SIZE = 192
-private const val MANGA_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 60

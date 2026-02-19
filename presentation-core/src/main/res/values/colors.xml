@@ -23,6 +23,6 @@
     <color name="md_black_1000_12">#1F000000</color>
     <color name="md_white_1000_12">#1FFFFFFF</color>
 
-    <color name="ic_launcher_background">#232B30</color>
+    <color name="ic_launcher_background">#000000</color>
 
 </resources>
