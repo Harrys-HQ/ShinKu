@@ -26,6 +26,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import exh.source.LIBRARY_UPDATE_EXCLUDED_SOURCES
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
@@ -36,6 +37,7 @@ import tachiyomi.domain.manga.model.toMangaUpdate
 import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
@@ -95,6 +97,7 @@ class MetadataUpdateJob(private val context: Context, workerParams: WorkerParame
      */
     private suspend fun addMangaToQueue() {
         mangaToUpdate = getLibraryManga.await()
+            .filterNot { it.manga.source in LIBRARY_UPDATE_EXCLUDED_SOURCES }
         notifier.showQueueSizeWarningNotificationIfNeeded(mangaToUpdate)
     }
 
@@ -174,8 +177,6 @@ class MetadataUpdateJob(private val context: Context, workerParams: WorkerParame
     companion object {
         private const val TAG = "MetadataUpdate"
         private const val WORK_NAME_MANUAL = "MetadataUpdate"
-
-        private const val MANGA_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 60
 
         fun startNow(context: Context): Boolean {
             val wm = context.workManager

@@ -81,6 +81,7 @@ class UpdateManga(
                 status = remoteManga.status.toLong(),
                 updateStrategy = remoteManga.update_strategy,
                 initialized = true,
+                lastMetadataUpdate = Instant.now().toEpochMilli(),
             ),
         )
         if (success && title != null) {

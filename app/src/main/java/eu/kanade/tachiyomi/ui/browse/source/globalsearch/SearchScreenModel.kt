@@ -5,6 +5,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.produceState
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import eu.kanade.domain.base.BasePreferences
+import eu.kanade.domain.source.interactor.GeminiVibeSearch
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.presentation.util.ioCoroutineScope
 import eu.kanade.tachiyomi.extension.ExtensionManager
@@ -18,6 +20,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
@@ -43,6 +46,8 @@ abstract class SearchScreenModel(
     private val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
     private val getManga: GetManga = Injekt.get(),
     private val preferences: SourcePreferences = Injekt.get(),
+    private val basePreferences: BasePreferences = Injekt.get(),
+    private val geminiVibeSearch: GeminiVibeSearch = Injekt.get(),
 ) : StateScreenModel<SearchScreenModel.State>(initialState) {
 
     private val coroutineDispatcher = Executors.newFixedThreadPool(5).asCoroutineDispatcher()
@@ -159,6 +164,14 @@ abstract class SearchScreenModel(
         }
 
         searchJob = ioCoroutineScope.launch {
+            val apiKey = basePreferences.geminiApiKey().get()
+            val finalQueries = if (apiKey.isNotBlank()) {
+                val vibeTitles = geminiVibeSearch.getMangaTitles(query, apiKey)
+                if (vibeTitles.isNotEmpty()) vibeTitles else listOf(query)
+            } else {
+                listOf(query)
+            }
+
             sources.map { source ->
                 async {
                     if (state.value.items[source] !is SearchItemResult.Loading) {
@@ -166,17 +179,21 @@ abstract class SearchScreenModel(
                     }
 
                     try {
-                        val page = withContext(coroutineDispatcher) {
-                            source.getSearchManga(1, query, source.getFilterList())
+                        val allResults = mutableListOf<Manga>()
+                        for (q in finalQueries) {
+                            ensureActive()
+                            val page = withContext(coroutineDispatcher) {
+                                source.getSearchManga(1, q, source.getFilterList())
+                            }
+                            val titles = page.mangas
+                                .map { it.toDomainManga(source.id) }
+                                .distinctBy { it.url }
+                                .let { networkToLocalManga(it) }
+                            allResults.addAll(titles)
                         }
 
-                        val titles = page.mangas
-                            .map { it.toDomainManga(source.id) }
-                            .distinctBy { it.url }
-                            .let { networkToLocalManga(it) }
-
                         if (isActive) {
-                            updateItem(source, SearchItemResult.Success(titles))
+                            updateItem(source, SearchItemResult.Success(allResults.distinctBy { it.url }))
                         }
                     } catch (e: Exception) {
                         if (isActive) {

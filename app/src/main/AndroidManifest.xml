@@ -201,8 +201,9 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.setting.track.GoogleDriveLoginActivity"
-            android:label="GoogleDrive"
+            android:name="com.dropbox.core.android.AuthActivity"
+            android:configChanges="orientation|keyboard|keyboardHidden"
+            android:launchMode="singleTask"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -210,8 +211,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data
-                    android:scheme="eu.kanade.google.oauth" />
+                <data android:scheme="db-6h2m965uod1itio" />
             </intent-filter>
         </activity>
 
@@ -410,7 +410,7 @@
 
                 <data
                     android:host="mangadex-auth"
-                    android:scheme="tachiyomisy" />
+                    android:scheme="shinku" />
             </intent-filter>
         </activity>
 

@@ -141,8 +141,8 @@ fun MangaInfoBox(
                         brush = Brush.verticalGradient(colors = backdropGradientColors),
                     )
                 }
-                .blur(4.dp)
-                .alpha(0.2f),
+                .blur(16.dp)
+                .alpha(0.5f),
         )
 
         // Manga & source info

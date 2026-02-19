@@ -29,10 +29,12 @@ android {
     namespace = "eu.kanade.tachiyomi"
 
     defaultConfig {
-        applicationId = "eu.kanade.tachiyomi.sy"
+        applicationId = "eu.kanade.shinku"
 
-        versionCode = 75
-        versionName = "1.12.0"
+        setProperty("archivesBaseName", "ShinKu")
+
+        versionCode = 80
+        versionName = "2.0.0"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -280,6 +282,10 @@ dependencies {
     // String similarity
     implementation(libs.stringSimilarity)
 
+    // Palette
+    implementation(libs.palette)
+    implementation(libs.materialKolor)
+
     // Tests
     testImplementation(libs.bundles.test)
     testRuntimeOnly(libs.junit.platform.launcher)
@@ -303,9 +309,9 @@ dependencies {
     implementation(sylibs.ratingbar)
     implementation(sylibs.composeRatingbar)
 
-    // Google drive
-    implementation(sylibs.google.api.services.drive)
-    implementation(sylibs.google.api.client.oauth)
+    // Dropbox
+    implementation(sylibs.dropbox.core)
+    implementation(sylibs.dropbox.android)
 
     // Koin
     implementation(sylibs.koin.core)

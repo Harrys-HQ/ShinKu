@@ -21,9 +21,9 @@ fun LogoHeader() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_tachi),
+            painter = painterResource(R.drawable.ic_shinku_logo),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+            tint = androidx.compose.ui.graphics.Color.Unspecified,
             modifier = Modifier
                 .padding(vertical = 56.dp)
                 .size(64.dp),

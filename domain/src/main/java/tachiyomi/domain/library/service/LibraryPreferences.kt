@@ -219,6 +219,10 @@ class LibraryPreferences(
 
     fun groupLibraryBy() = preferenceStore.getInt("group_library_by", LibraryGroup.BY_DEFAULT)
 
+    fun libraryUpdateSpeed() = preferenceStore.getInt("library_update_speed", 0)
+
+    fun failedUpdatesMangaIds() = preferenceStore.getStringSet("failed_updates_manga_ids", emptySet())
+
     // SY <--
 
     companion object {

@@ -11,9 +11,8 @@ import eu.kanade.tachiyomi.data.backup.models.BackupManga
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreJob
 import eu.kanade.tachiyomi.data.backup.restore.RestoreOptions
 import eu.kanade.tachiyomi.data.backup.restore.restorers.MangaRestorer
-import eu.kanade.tachiyomi.data.sync.service.GoogleDriveSyncService
+import eu.kanade.tachiyomi.data.sync.service.DropboxSyncService
 import eu.kanade.tachiyomi.data.sync.service.SyncData
-import eu.kanade.tachiyomi.data.sync.service.SyncYomiSyncService
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority
@@ -53,8 +52,7 @@ class SyncManager(
 
     enum class SyncService(val value: Int) {
         NONE(0),
-        SYNCYOMI(1),
-        GOOGLE_DRIVE(2),
+        DROPBOX(1),
         ;
 
         companion object {
@@ -120,17 +118,8 @@ class SyncManager(
 
         // Handle sync based on the selected service
         val syncService = when (val syncService = SyncService.fromInt(syncPreferences.syncService().get())) {
-            SyncService.SYNCYOMI -> {
-                SyncYomiSyncService(
-                    context,
-                    json,
-                    syncPreferences,
-                    notifier,
-                )
-            }
-
-            SyncService.GOOGLE_DRIVE -> {
-                GoogleDriveSyncService(context, json, syncPreferences)
+            SyncService.DROPBOX -> {
+                DropboxSyncService(context, json, syncPreferences)
             }
 
             else -> {
