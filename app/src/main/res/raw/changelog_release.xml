@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
     <changelogversion versionName="2.0.0" changeDate="Feb 19,2026">
-        <changelogtext>Migration to new repository: https://github.com/Harrys-HQ/ShinKu</changelogtext>
-        <changelogtext>Replace Google Drive and SyncYomi with Dropbox integration</changelogtext>
+        <changelogtext>[b]Rebranding to ShinKu 2.0.0 (Crimson)[/b]</changelogtext>
+        <changelogtext>AI-powered [b]Vibe Search[/b] with Google Gemini integration</changelogtext>
+        <changelogtext>[b]Reading Journey[/b] statistics card in the More tab</changelogtext>
+        <changelogtext>[b]Dynamic Theme[/b] overhaul with immersive cover-based coloring</changelogtext>
+        <changelogtext>[b]Smart Categorizer[/b] for automated library organization</changelogtext>
+        <changelogtext>Replace Google Drive and SyncYomi with [b]Dropbox integration[/b]</changelogtext>
         <changelogtext>Add manual token entry for Dropbox sync</changelogtext>
+        <changelogtext>Transition to [b]Feed Menu[/b] replacing the old Latest tab</changelogtext>
         <changelogtext>Fix library update progress notification being hidden by restrictions</changelogtext>
         <changelogtext>Fix stuck progress bar during library updates when excluded sources are present</changelogtext>
         <changelogtext>Ensure manual updates bypass auto-update restrictions</changelogtext>
@@ -362,7 +367,7 @@
         <changelogtext>Fix source category deletion crash</changelogtext>
     </changelogversion>
     <changelogversion versionName="1.0.0" changeDate="July 9,2020">
-        <changelogtext>Welcome to my first full release of TachiyomiSY!</changelogtext>
+        <changelogtext>Welcome to my first full release of ShinKu (based on TachiyomiSY)!</changelogtext>
         <changelogtext>I hope you enjoy your stay, many improvements are planned!</changelogtext>
     </changelogversion>
 </changelog>

@@ -5,7 +5,7 @@
 <h1 align="center">ShinKu</h1>
 
 <p align="center">
-  <strong>ShinKu</strong> (Crimson) is a modern, rebranded, and enhanced fork of <a href="https://github.com/jobobby04/TachiyomiSY">TachiyomiSY</a>, which itself is a feature-rich fork of <a href="https://github.com/mihonapp/mihon">Mihon</a> (formerly Tachiyomi).
+  <strong>ShinKu</strong> (Crimson) is a modern, rebranded, and enhanced fork of the SY base, which itself is a feature-rich fork of <a href="https://github.com/mihonapp/mihon">Mihon</a> (formerly Tachiyomi).
 </p>
 
 <p align="center">
@@ -29,10 +29,15 @@ In addition to all features from TachiyomiSY and Mihon, ShinKu introduces:
 
 ---
 
-## 🚀 Core Features (Inherited)
+## 🚀 Retained Core Features
 
-*   **From TachiyomiSY:** Latest tab (up to 5 sources), automatic webtoon detection, manga recommendations, lewd filters, tracking filters, custom source categories, manga info editing, and merging multiple versions of the same manga.
-*   **From Mihon:** Online/Offline reading, massive source library via extensions, configurable reader, multi-tracker support (MyAnimeList, AniList, Kitsu, etc.), and local/cloud backups.
+ShinKu preserves and enhances the best features from TachiyomiSY and Mihon:
+
+*   **Feed Menu:** Pin your favorite searches, popular, and latest updates to a single view (replaces the old Latest tab).
+*   **Manga Recommendations:** Discover new series based on what you are currently reading via community and source recommendations.
+*   **Advanced Filtering:** Lewd filters, tracking filters, and custom source categories to keep your library organized.
+*   **Metadata Editing:** Edit manga info, tags, and covers directly within the app, and merge multiple versions of the same manga.
+*   **Mihon Foundation:** Online/Offline reading, massive source library via extensions, configurable reader, multi-tracker support, and local/cloud backups.
 
 ---
 
@@ -48,7 +53,7 @@ ShinKu is built upon the incredible work of the following projects and developer
 
 ---
 
-## 📥 Getting Started
+## 🛠 Setup & Installation
 
 1.  **Download:** Grab the latest `ShinKu-*.apk` from our releases.
 2.  **API Setup:** To enable **Vibe Search**, get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and enter it in **Settings > Advanced > Vibe Search**.

@@ -1,7 +1,0 @@
-{
-  "id": "internal-tooling",
-  "name": "Internal Tooling",
-  "description": "Custom scripts for ShinKu maintenance.",
-  "status": "in-progress",
-  "priority": "high"
-}

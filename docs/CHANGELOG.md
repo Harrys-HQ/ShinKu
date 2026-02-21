@@ -1,9 +1,14 @@
 # ShinKu Changelog
 
 ## 2.0.0 (2026-02-19)
-- **New:** Migration to new repository: https://github.com/Harrys-HQ/ShinKu
-- **New:** Replace Google Drive and SyncYomi with Dropbox integration.
+- **New:** Rebranding to ShinKu 2.0.0 (Crimson).
+- **New:** AI-powered **Vibe Search** with Google Gemini integration.
+- **New:** **Reading Journey** statistics card in the More tab.
+- **New:** **Dynamic Theme** overhaul with immersive cover-based coloring.
+- **New:** **Smart Categorizer** for automated library organization.
+- **New:** Replace Google Drive and SyncYomi with **Dropbox integration**.
 - **New:** Add manual token entry for Dropbox sync.
+- **New:** Transition to **Feed Menu** replacing the old Latest tab.
 - **Fix:** Fixed library update progress notification being hidden by restrictions.
 - **Fix:** Fixed stuck progress bar during library updates when excluded sources are present.
 - **Fix:** Ensure manual updates bypass auto-update restrictions.
