@@ -12,3 +12,4 @@
 - [New Features](./tracks/features/index.md)
 - [UI & Visual Identity](./tracks/ui-visual-identity/index.md)
 - [Dropbox Integration](./tracks/dropbox-integration/index.md)
+- [Documentation Renewal](./tracks/documentation-renewal/index.md)

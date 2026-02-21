@@ -1,7 +1,0 @@
-{
-  "id": "upstream-sync",
-  "name": "Upstream Synchronization",
-  "description": "Synchronize with Mihon upstream for core fixes.",
-  "status": "planned",
-  "priority": "medium"
-}
