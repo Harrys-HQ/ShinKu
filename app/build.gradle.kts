@@ -14,7 +14,7 @@ plugins {
     id("com.github.ben-manes.versions")
 }
 
-if (gradle.startParameter.taskRequests.toString().contains("Standard")) {
+if (gradle.startParameter.taskRequests.toString().contains("Standard") && file("google-services.json").exists()) {
     pluginManager.apply {
         apply(libs.plugins.google.services.get().pluginId)
         apply(libs.plugins.firebase.crashlytics.get().pluginId)
@@ -29,17 +29,17 @@ android {
     namespace = "eu.kanade.tachiyomi"
 
     defaultConfig {
-        applicationId = "eu.kanade.shinku"
+        applicationId = "com.shinku.reader"
 
         setProperty("archivesBaseName", "ShinKu")
 
-        versionCode = 80
-        versionName = "2.0.0"
+        versionCode = 81
+        versionName = "2.1.0"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
         buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = false)}\"")
-        buildConfigField("boolean", "INCLUDE_UPDATER", "false")
+        buildConfigField("boolean", "INCLUDE_UPDATER", "true")
 
         ndk {
             abiFilters += supportedAbis
@@ -71,8 +71,8 @@ android {
         }
         named("release") {
             signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             setProguardFiles(listOf(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"))
 
             buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = true)}\"")

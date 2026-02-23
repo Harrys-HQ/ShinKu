@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Harrys-HQ/ShinKu/main/.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
+  <img src="https://raw.githubusercontent.com/Harrys-HQ/ShinKu/master/.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
 </p>
 
 <h1 align="center">ShinKu</h1>

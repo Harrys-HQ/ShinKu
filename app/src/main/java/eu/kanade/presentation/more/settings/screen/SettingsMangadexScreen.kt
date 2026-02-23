@@ -59,7 +59,7 @@ object SettingsMangadexScreen : SearchableSettings {
     @Composable
     override fun getTitleRes() = SYMR.strings.pref_category_mangadex
 
-    override fun isEnabled(): Boolean = MdUtil.getEnabledMangaDexs(Injekt.get()).isNotEmpty()
+    override fun isEnabled(): Boolean = false
 
     @Composable
     override fun getPreferences(): List<Preference> {

@@ -113,22 +113,6 @@ object SettingsBrowseScreen : SearchableSettings {
                     ),
                 ),
             ),
-            Preference.PreferenceGroup(
-                title = stringResource(MR.strings.pref_category_nsfw_content),
-                preferenceItems = persistentListOf(
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = sourcePreferences.showNsfwSource(),
-                        title = stringResource(MR.strings.pref_show_nsfw_source),
-                        subtitle = stringResource(MR.strings.requires_app_restart),
-                        onValueChanged = {
-                            (context as FragmentActivity).authenticate(
-                                title = context.stringResource(MR.strings.pref_category_nsfw_content),
-                            )
-                        },
-                    ),
-                    Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.parental_controls_info)),
-                ),
-            ),
         )
     }
 }

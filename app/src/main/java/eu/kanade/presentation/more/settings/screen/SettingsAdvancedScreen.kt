@@ -10,12 +10,18 @@ import android.webkit.WebView
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -23,6 +29,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.window.DialogProperties
@@ -32,11 +43,14 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.extension.interactor.TrustExtension
+import eu.kanade.domain.source.interactor.GeminiVibeSearch
 import eu.kanade.domain.source.service.SourcePreferences
-import eu.kanade.domain.source.service.SourcePreferences.DataSaver
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.screen.advanced.ClearDatabaseScreen
 import eu.kanade.presentation.more.settings.screen.debug.DebugInfoScreen
+import eu.kanade.presentation.more.settings.widget.BasePreferenceWidget
+import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
+import eu.kanade.presentation.more.settings.widget.PrefsHorizontalPadding
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.data.download.DownloadCache
@@ -74,17 +88,21 @@ import exh.source.BlacklistedSources
 import exh.source.EH_SOURCE_ID
 import exh.source.EXH_SOURCE_ID
 import exh.source.ExhPreferences
+import exh.source.ShinKuPreferences
 import exh.util.toAnnotatedString
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import okhttp3.Headers
 import tachiyomi.core.common.i18n.pluralStringResource
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.launchNonCancellable
+import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.ImageUtil
 import tachiyomi.core.common.util.system.logcat
@@ -165,7 +183,6 @@ object SettingsAdvancedScreen : SearchableSettings {
                     context.startActivity(intent)
                 },
             ),
-            getVibeSearchGroup(basePreferences = basePreferences),
             getBackgroundActivityGroup(),
             getDataGroup(),
             getNetworkGroup(networkPreferences = networkPreferences),
@@ -173,27 +190,7 @@ object SettingsAdvancedScreen : SearchableSettings {
             getDownloadsGroup(downloadPreferences = downloadPreferences),
             getReaderGroup(basePreferences = basePreferences),
             getExtensionsGroup(basePreferences = basePreferences),
-            // SY -->
-            // getDownloaderGroup(),
-            getDataSaverGroup(),
             getDeveloperToolsGroup(),
-            // SY <--
-        )
-    }
-
-    @Composable
-    private fun getVibeSearchGroup(
-        basePreferences: BasePreferences,
-    ): Preference.PreferenceGroup {
-        return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_vibe_search),
-            preferenceItems = persistentListOf(
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = basePreferences.geminiApiKey(),
-                    title = stringResource(MR.strings.pref_gemini_api_key),
-                    subtitle = stringResource(MR.strings.pref_gemini_api_key_summary),
-                ),
-            ),
         )
     }
 
@@ -266,7 +263,10 @@ object SettingsAdvancedScreen : SearchableSettings {
         networkPreferences: NetworkPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
         val networkHelper = remember { Injekt.get<NetworkHelper>() }
+        val shinkuPreferences = remember { Injekt.get<ShinKuPreferences>() }
+        val geminiVibeSearch = remember { Injekt.get<GeminiVibeSearch>() }
 
         val userAgentPref = networkPreferences.defaultUserAgent()
         val userAgent by userAgentPref.collectAsState()
@@ -326,27 +326,85 @@ object SettingsAdvancedScreen : SearchableSettings {
                         true
                     },
                 ),
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = userAgentPref,
+                Preference.PreferenceItem.CustomPreference(
                     title = stringResource(MR.strings.pref_user_agent_string),
-                    onValueChanged = {
-                        try {
-                            // OkHttp checks for valid values internally
-                            Headers.Builder().add("User-Agent", it)
-                            context.toast(MR.strings.requires_app_restart)
-                        } catch (_: IllegalArgumentException) {
-                            context.toast(MR.strings.error_user_agent_string_invalid)
-                            return@EditTextPreference false
+                    content = {
+                        var showDialog by rememberSaveable { mutableStateOf(false) }
+                        if (showDialog) {
+                            var currentUa by rememberSaveable { mutableStateOf(userAgent) }
+                            AlertDialog(
+                                onDismissRequest = { showDialog = false },
+                                title = { Text(text = stringResource(MR.strings.pref_user_agent_string)) },
+                                text = {
+                                    Column {
+                                        OutlinedTextField(
+                                            value = currentUa,
+                                            onValueChange = { currentUa = it },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            maxLines = 5,
+                                        )
+                                    }
+                                },
+                                confirmButton = {
+                                    Row {
+                                        TextButton(
+                                            onClick = {
+                                                currentUa = userAgentPref.defaultValue()
+                                            },
+                                        ) {
+                                            Text(text = stringResource(MR.strings.action_default))
+                                        }
+                                        TextButton(
+                                            onClick = {
+                                                val apiKey = shinkuPreferences.geminiApiKey().get()
+                                                val model = shinkuPreferences.geminiModel().get()
+                                                scope.launch {
+                                                    withContext(Dispatchers.Main) {
+                                                        context.toast(MR.strings.vibe_search_loading)
+                                                    }
+                                                    val latest = geminiVibeSearch.getLatestUserAgent(apiKey, model, currentUa)
+                                                    if (latest.isNotBlank()) {
+                                                        currentUa = latest
+                                                    } else {
+                                                        withContext(Dispatchers.Main) {
+                                                            context.toast("Failed to fetch latest UA")
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                        ) {
+                                            Text(text = stringResource(MR.strings.action_update))
+                                        }
+                                        TextButton(
+                                            onClick = {
+                                                try {
+                                                    Headers.Builder().add("User-Agent", currentUa)
+                                                    userAgentPref.set(currentUa)
+                                                    context.toast(MR.strings.requires_app_restart)
+                                                    showDialog = false
+                                                } catch (_: IllegalArgumentException) {
+                                                    context.toast(MR.strings.error_user_agent_string_invalid)
+                                                }
+                                            },
+                                        ) {
+                                            Text(text = stringResource(MR.strings.action_ok))
+                                        }
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showDialog = false }) {
+                                        Text(text = stringResource(MR.strings.action_cancel))
+                                    }
+                                },
+                                properties = DialogProperties(usePlatformDefaultWidth = true),
+                            )
                         }
-                        true
-                    },
-                ),
-                Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.pref_reset_user_agent_string),
-                    enabled = remember(userAgent) { userAgent != userAgentPref.defaultValue() },
-                    onClick = {
-                        userAgentPref.delete()
-                        context.toast(MR.strings.requires_app_restart)
+
+                        TextPreferenceWidget(
+                            title = stringResource(MR.strings.pref_user_agent_string),
+                            subtitle = userAgent,
+                            onPreferenceClick = { showDialog = true },
+                        )
                     },
                 ),
             ),
@@ -543,238 +601,15 @@ object SettingsAdvancedScreen : SearchableSettings {
 
     // SY -->
     @Composable
-    fun CleanupDownloadsDialog(
-        onDismissRequest: () -> Unit,
-        onCleanupDownloads: (removeRead: Boolean, removeNonFavorite: Boolean) -> Unit,
-    ) {
-        val context = LocalContext.current
-        val options = remember { context.resources.getStringArray(R.array.clean_up_downloads).toList() }
-        val selection = remember {
-            options.toMutableStateList()
-        }
-        AlertDialog(
-            onDismissRequest = onDismissRequest,
-            title = { Text(text = stringResource(SYMR.strings.clean_up_downloaded_chapters)) },
-            text = {
-                LazyColumn {
-                    options.forEachIndexed { index, option ->
-                        item {
-                            LabeledCheckbox(
-                                label = option,
-                                checked = index == 0 || selection.contains(option),
-                                onCheckedChange = {
-                                    when (it) {
-                                        true -> selection.add(option)
-                                        false -> selection.remove(option)
-                                    }
-                                },
-                            )
-                        }
-                    }
-                }
-            },
-            properties = DialogProperties(
-                usePlatformDefaultWidth = true,
-            ),
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val removeRead = options[1] in selection
-                        val removeNonFavorite = options[2] in selection
-                        onCleanupDownloads(removeRead, removeNonFavorite)
-                    },
-                ) {
-                    Text(text = stringResource(MR.strings.action_ok))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(MR.strings.action_cancel))
-                }
-            },
-        )
-    }
-
-    @Composable
-    private fun getDownloaderGroup(): Preference.PreferenceGroup {
-        val scope = rememberCoroutineScope()
-        val context = LocalContext.current
-        var dialogOpen by remember { mutableStateOf(false) }
-        if (dialogOpen) {
-            CleanupDownloadsDialog(
-                onDismissRequest = { dialogOpen = false },
-                onCleanupDownloads = { removeRead, removeNonFavorite ->
-                    dialogOpen = false
-                    if (job?.isActive == true) return@CleanupDownloadsDialog
-                    context.toast(SYMR.strings.starting_cleanup)
-                    job = scope.launchNonCancellable {
-                        val mangaList = Injekt.get<GetAllManga>().await()
-                        val downloadManager: DownloadManager = Injekt.get()
-                        var foldersCleared = 0
-                        Injekt.get<SourceManager>().getOnlineSources().forEach { source ->
-                            val mangaFolders = downloadManager.getMangaFolders(source)
-                            val sourceManga = mangaList
-                                .asSequence()
-                                .filter { it.source == source.id }
-                                .map { it to DiskUtil.buildValidFilename(it.ogTitle) }
-                                .toList()
-
-                            mangaFolders.forEach mangaFolder@{ mangaFolder ->
-                                val manga =
-                                    sourceManga.find { (_, folderName) ->
-                                        folderName == mangaFolder.name
-                                    }?.first
-                                if (manga == null) {
-                                    // download is orphaned delete it
-                                    foldersCleared += 1 + (
-                                        mangaFolder.listFiles()
-                                            .orEmpty().size
-                                        )
-                                    mangaFolder.delete()
-                                } else {
-                                    val chapterList = Injekt.get<GetChaptersByMangaId>().await(manga.id)
-                                    foldersCleared += downloadManager.cleanupChapters(
-                                        chapterList,
-                                        manga,
-                                        source,
-                                        removeRead,
-                                        removeNonFavorite,
-                                    )
-                                }
-                            }
-                        }
-                        withUIContext {
-                            val cleanupString =
-                                if (foldersCleared == 0) {
-                                    context.stringResource(SYMR.strings.no_folders_to_cleanup)
-                                } else {
-                                    context.pluralStringResource(
-                                        SYMR.plurals.cleanup_done,
-                                        foldersCleared,
-                                        foldersCleared,
-                                    )
-                                }
-                            context.toast(cleanupString, Toast.LENGTH_LONG)
-                        }
-                    }
-                },
-            )
-        }
-        return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.download_notifier_downloader_title),
-            preferenceItems = persistentListOf(
-                Preference.PreferenceItem.TextPreference(
-                    title = stringResource(SYMR.strings.clean_up_downloaded_chapters),
-                    subtitle = stringResource(SYMR.strings.delete_unused_chapters),
-                    onClick = { dialogOpen = true },
-                ),
-            ),
-        )
-    }
-
-    @Composable
-    private fun getDataSaverGroup(): Preference.PreferenceGroup {
-        val sourcePreferences = remember { Injekt.get<SourcePreferences>() }
-        val dataSaver by sourcePreferences.dataSaver().collectAsState()
-        return Preference.PreferenceGroup(
-            title = stringResource(SYMR.strings.data_saver),
-            preferenceItems = persistentListOf(
-                Preference.PreferenceItem.ListPreference(
-                    preference = sourcePreferences.dataSaver(),
-                    title = stringResource(SYMR.strings.data_saver),
-                    subtitle = stringResource(SYMR.strings.data_saver_summary),
-                    entries = persistentMapOf(
-                        DataSaver.NONE to stringResource(MR.strings.disabled),
-                        DataSaver.BANDWIDTH_HERO to stringResource(SYMR.strings.bandwidth_hero),
-                        DataSaver.WSRV_NL to stringResource(SYMR.strings.wsrv),
-                    ),
-                ),
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = sourcePreferences.dataSaverServer(),
-                    title = stringResource(SYMR.strings.bandwidth_data_saver_server),
-                    subtitle = stringResource(SYMR.strings.data_saver_server_summary),
-                    enabled = dataSaver == DataSaver.BANDWIDTH_HERO,
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = sourcePreferences.dataSaverDownloader(),
-                    title = stringResource(SYMR.strings.data_saver_downloader),
-                    enabled = dataSaver != DataSaver.NONE,
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = sourcePreferences.dataSaverIgnoreJpeg(),
-                    title = stringResource(SYMR.strings.data_saver_ignore_jpeg),
-                    enabled = dataSaver != DataSaver.NONE,
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = sourcePreferences.dataSaverIgnoreGif(),
-                    title = stringResource(SYMR.strings.data_saver_ignore_gif),
-                    enabled = dataSaver != DataSaver.NONE,
-                ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = sourcePreferences.dataSaverImageQuality(),
-                    title = stringResource(SYMR.strings.data_saver_image_quality),
-                    subtitle = stringResource(SYMR.strings.data_saver_image_quality_summary),
-                    entries = listOf(
-                        "10%",
-                        "20%",
-                        "40%",
-                        "50%",
-                        "70%",
-                        "80%",
-                        "90%",
-                        "95%",
-                    ).associateBy { it.trimEnd('%').toInt() }.toImmutableMap(),
-                    enabled = dataSaver != DataSaver.NONE,
-                ),
-                kotlin.run {
-                    val dataSaverImageFormatJpeg by sourcePreferences.dataSaverImageFormatJpeg()
-                        .collectAsState()
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = sourcePreferences.dataSaverImageFormatJpeg(),
-                        title = stringResource(SYMR.strings.data_saver_image_format),
-                        subtitle = if (dataSaverImageFormatJpeg) {
-                            stringResource(SYMR.strings.data_saver_image_format_summary_on)
-                        } else {
-                            stringResource(SYMR.strings.data_saver_image_format_summary_off)
-                        },
-                        enabled = dataSaver != DataSaver.NONE,
-                    )
-                },
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = sourcePreferences.dataSaverColorBW(),
-                    title = stringResource(SYMR.strings.data_saver_color_bw),
-                    enabled = dataSaver == DataSaver.BANDWIDTH_HERO,
-                ),
-            ),
-        )
-    }
-
-    @Composable
     private fun getDeveloperToolsGroup(): Preference.PreferenceGroup {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
         val sourcePreferences = remember { Injekt.get<SourcePreferences>() }
-        val exhPreferences = remember { Injekt.get<ExhPreferences>() }
         val delegateSourcePreferences = remember { Injekt.get<DelegateSourcePreferences>() }
         val securityPreferences = remember { Injekt.get<SecurityPreferences>() }
         return Preference.PreferenceGroup(
             title = stringResource(SYMR.strings.developer_tools),
             preferenceItems = persistentListOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = exhPreferences.isHentaiEnabled(),
-                    title = stringResource(SYMR.strings.toggle_hentai_features),
-                    subtitle = stringResource(SYMR.strings.toggle_hentai_features_summary),
-                    onValueChanged = {
-                        if (it) {
-                            BlacklistedSources.HIDDEN_SOURCES += EH_SOURCE_ID
-                            BlacklistedSources.HIDDEN_SOURCES += EXH_SOURCE_ID
-                        } else {
-                            BlacklistedSources.HIDDEN_SOURCES -= EH_SOURCE_ID
-                            BlacklistedSources.HIDDEN_SOURCES -= EXH_SOURCE_ID
-                        }
-                        true
-                    },
-                ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = delegateSourcePreferences.delegateSources(),
                     title = stringResource(SYMR.strings.toggle_delegated_sources),
@@ -784,16 +619,6 @@ object SettingsAdvancedScreen : SearchableSettings {
                         AndroidSourceManager.DELEGATED_SOURCES.values.map { it.sourceName }.distinct()
                             .joinToString(),
                     ),
-                ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = exhPreferences.logLevel(),
-                    title = stringResource(SYMR.strings.log_level),
-                    subtitle = stringResource(SYMR.strings.log_level_summary),
-                    entries = EHLogLevel.entries.mapIndexed { index, ehLogLevel ->
-                        index to "${context.stringResource(ehLogLevel.nameRes)} (${
-                            context.stringResource(ehLogLevel.description)
-                        })"
-                    }.toMap().toImmutableMap(),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = sourcePreferences.enableSourceBlacklist(),
@@ -865,7 +690,4 @@ object SettingsAdvancedScreen : SearchableSettings {
             ),
         )
     }
-
-    private var job: Job? = null
-    // SY <--
 }

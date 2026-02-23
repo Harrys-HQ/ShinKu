@@ -354,7 +354,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         val speed = libraryPreferences.libraryUpdateSpeed().get()
         val (maxConcurrentSources, maxMangaPerSource) = when (speed) {
             1 -> 10 to 2 // Boost
-            2 -> Int.MAX_VALUE to Int.MAX_VALUE // Extreme
+            2 -> 20 to 5 // Optimized Extreme (was Int.MAX_VALUE)
             else -> 5 to 1 // Standard (default)
         }
 
@@ -418,6 +418,11 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                 manga,
                                             ) {
                                                 try {
+                                                    // Add a small delay between updates to be nice to sources
+                                                    if (speed == 2) {
+                                                        kotlinx.coroutines.delay(500)
+                                                    }
+
                                                     val newChapters = updateManga(manga, fetchWindow)
                                                         .sortedByDescending { it.sourceOrder }
 

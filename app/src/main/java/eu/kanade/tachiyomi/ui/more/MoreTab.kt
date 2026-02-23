@@ -20,13 +20,13 @@ import eu.kanade.core.preference.asState
 import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.more.MoreScreen
+import eu.kanade.presentation.more.settings.screen.SettingsShinKuScreen
 import eu.kanade.presentation.util.Tab
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.category.SmartCategorizerJob
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.ui.browse.migration.dead.DeadSourceScannerScreen
 import eu.kanade.tachiyomi.ui.browse.migration.failed.FailedUpdatesMigrationScreen
-import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.download.DownloadQueueScreen
 import eu.kanade.tachiyomi.ui.history.HistoryTab
 import eu.kanade.tachiyomi.ui.setting.SettingsScreen
@@ -85,19 +85,16 @@ data object MoreTab : Tab {
             readDuration = readDuration,
             // SY <--
             onClickDownloadQueue = { navigator.push(DownloadQueueScreen) },
-            onClickCategories = { navigator.push(CategoryScreen()) },
-            onClickStats = { navigator.push(StatsScreen()) },
             onClickDataAndStorage = { navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage)) },
             onClickSmartCategorizer = { SmartCategorizerJob.startNow(context) },
             onClickDeadSourceScanner = { navigator.push(DeadSourceScannerScreen()) },
             onClickFailedUpdatesMigration = { navigator.push(FailedUpdatesMigrationScreen()) },
+            onClickConfigureFeatures = { navigator.push(SettingsShinKuScreen) },
+            onClickStats = { navigator.push(StatsScreen()) },
             onClickSettings = { navigator.push(SettingsScreen()) },
             onClickAbout = { navigator.push(SettingsScreen(SettingsScreen.Destination.About)) },
-            // SY -->
-            onClickBatchAdd = { navigator.push(BatchAddScreen()) },
             onClickUpdates = { navigator.push(UpdatesTab) },
             onClickHistory = { navigator.push(HistoryTab) },
-            // SY <--
         )
     }
 }
