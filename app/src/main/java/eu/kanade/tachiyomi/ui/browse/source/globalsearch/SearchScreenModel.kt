@@ -1,21 +1,24 @@
 package eu.kanade.tachiyomi.ui.browse.source.globalsearch
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.produceState
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import eu.kanade.domain.base.BasePreferences
 import eu.kanade.domain.source.interactor.GeminiVibeSearch
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.presentation.util.ioCoroutineScope
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.util.system.toast
+import exh.source.ShinKuPreferences
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toPersistentMap
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
@@ -34,6 +37,7 @@ import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.i18n.MR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.concurrent.Executors
@@ -46,8 +50,9 @@ abstract class SearchScreenModel(
     private val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
     private val getManga: GetManga = Injekt.get(),
     private val preferences: SourcePreferences = Injekt.get(),
-    private val basePreferences: BasePreferences = Injekt.get(),
+    private val shinkuPreferences: ShinKuPreferences = Injekt.get(),
     private val geminiVibeSearch: GeminiVibeSearch = Injekt.get(),
+    private val context: Context = Injekt.get(),
 ) : StateScreenModel<SearchScreenModel.State>(initialState) {
 
     private val coroutineDispatcher = Executors.newFixedThreadPool(5).asCoroutineDispatcher()
@@ -164,9 +169,13 @@ abstract class SearchScreenModel(
         }
 
         searchJob = ioCoroutineScope.launch {
-            val apiKey = basePreferences.geminiApiKey().get()
+            val apiKey = shinkuPreferences.geminiApiKey().get()
+            val model = shinkuPreferences.geminiModel().get()
             val finalQueries = if (apiKey.isNotBlank()) {
-                val vibeTitles = geminiVibeSearch.getMangaTitles(query, apiKey)
+                withContext(Dispatchers.Main) {
+                    context.toast(MR.strings.vibe_search_loading)
+                }
+                val vibeTitles = geminiVibeSearch.getMangaTitles(query, apiKey, model)
                 if (vibeTitles.isNotEmpty()) vibeTitles else listOf(query)
             } else {
                 listOf(query)

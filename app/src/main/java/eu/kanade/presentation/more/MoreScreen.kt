@@ -50,15 +50,14 @@ fun MoreScreen(
     readDuration: Long,
     // SY <--
     onClickDownloadQueue: () -> Unit,
-    onClickCategories: () -> Unit,
-    onClickStats: () -> Unit,
     onClickDataAndStorage: () -> Unit,
     onClickSmartCategorizer: () -> Unit,
     onClickDeadSourceScanner: () -> Unit,
     onClickFailedUpdatesMigration: () -> Unit,
+    onClickConfigureFeatures: () -> Unit,
+    onClickStats: () -> Unit,
     onClickSettings: () -> Unit,
     onClickAbout: () -> Unit,
-    onClickBatchAdd: () -> Unit,
     onClickUpdates: () -> Unit,
     onClickHistory: () -> Unit,
 ) {
@@ -147,6 +146,13 @@ fun MoreScreen(
                     onPreferenceClick = onClickFailedUpdatesMigration,
                 )
             }
+            item {
+                TextPreferenceWidget(
+                    title = stringResource(MR.strings.action_configure_features),
+                    icon = Icons.Outlined.AutoAwesome,
+                    onPreferenceClick = onClickConfigureFeatures,
+                )
+            }
 
             item { HorizontalDivider() }
 
@@ -181,34 +187,11 @@ fun MoreScreen(
             }
             item {
                 TextPreferenceWidget(
-                    title = stringResource(MR.strings.categories),
-                    icon = Icons.AutoMirrored.Outlined.Label,
-                    onPreferenceClick = onClickCategories,
-                )
-            }
-            item {
-                TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_stats),
-                    icon = Icons.Outlined.QueryStats,
-                    onPreferenceClick = onClickStats,
-                )
-            }
-            item {
-                TextPreferenceWidget(
                     title = stringResource(MR.strings.label_data_storage),
                     icon = Icons.Outlined.Storage,
                     onPreferenceClick = onClickDataAndStorage,
                 )
             }
-            // SY -->
-            item {
-                TextPreferenceWidget(
-                    title = stringResource(SYMR.strings.eh_batch_add),
-                    icon = Icons.AutoMirrored.Outlined.PlaylistAdd,
-                    onPreferenceClick = onClickBatchAdd,
-                )
-            }
-            // SY <--
 
             item { HorizontalDivider() }
 

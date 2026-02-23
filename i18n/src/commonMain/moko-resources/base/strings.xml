@@ -167,6 +167,8 @@
     <string name="action_start_downloading_now">Start downloading now</string>
     <string name="action_not_now">Not now</string>
     <string name="action_add_anyway">Add anyway</string>
+    <string name="action_update">Update</string>
+    <string name="action_default">Default</string>
 
     <!-- Operations -->
     <string name="loading">Loading…</string>
@@ -304,7 +306,7 @@
     <string name="pref_library_update_speed">Library update speed</string>
     <string name="update_speed_standard">Standard (5 concurrent sources, 1 manga per source)</string>
     <string name="update_speed_boost">Boost (10 concurrent sources, 2 manga per source)</string>
-    <string name="update_speed_extreme">Extreme (Unlimited concurrent sources/manga)</string>
+    <string name="update_speed_extreme">Extreme (20 concurrent sources, 5 manga per source, 500ms delay)</string>
 
     <string name="label_shinku_features">ShinKu Features</string>
     <string name="pref_smart_categorizer">Smart Categorizer</string>
@@ -326,15 +328,29 @@
     <string name="dead_source_scanner_empty">No dead sources found! Your library is healthy.</string>
     <string name="failed_updates_migration_title">Failed Updates Migration</string>
     <string name="failed_updates_migration_summary">Migrate manga that failed during the last library update</string>
-        <string name="failed_updates_migration_empty">No failed updates found in the recent refresh.</string>
+    <string name="failed_updates_migration_empty">No failed updates found in the recent refresh.</string>
+    <string name="action_configure_features">Configure Features</string>
+
+    <string name="pref_gemini_model">Gemini Model</string>
+    <string name="pref_gemini_model_summary">Select the Gemini model to use for AI features (Gemini 2.5 Flash and above supported)</string>
+    <string name="action_test_api_key">Test API Key</string>
+    <string name="api_key_test_success">API Key is valid!</string>
+    <string name="api_key_test_failed">API Key test failed: %s</string>
+
+    <string name="pref_ai_pro_tier">AI Pro Tier</string>
+    <string name="pref_ai_pro_tier_summary">Remove rate-limiting delays (requires Gemini Pro subscription)</string>
+
+    <string name="pref_category_immersion_reader">Immersion &amp; Reader</string>
+    <string name="pref_live_translation">Live Translation / OCR</string>
+    <string name="pref_live_translation_summary">Translate text overlays using OCR and Gemini AI</string>
     
-        <string name="pref_vibe_search">Vibe Search</string>
-        <string name="pref_vibe_search_summary">Use Gemini AI to find manga based on your description (requires API key)</string>
-        <string name="pref_gemini_api_key">Gemini API Key</string>
-        <string name="pref_gemini_api_key_summary">Enter your API key from Google AI Studio to enable semantic search</string>
-        <string name="vibe_search_loading">Gemini is searching for vibes…</string>
-    
-        <string name="dead_source_scanner_count">%1$d manga</string>
+                <string name="pref_vibe_search">Vibe Search</string>
+                <string name="pref_vibe_search_summary">Use Gemini AI to find manga based on your description (requires API key)</string>
+                <string name="pref_gemini_api_key">Gemini API Key</string>
+                <string name="pref_gemini_api_key_summary">Enter your API key from Google AI Studio to enable semantic search</string>
+                <string name="vibe_search_loading">Gemini is searching for vibes…</string>
+            
+                <string name="dead_source_scanner_count">%1$d manga</string>
 
     <string name="default_category">Default category</string>
     <string name="default_category_summary">Always ask</string>
