@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,6 +38,8 @@ fun ReaderPageActionsDialog(
     onSave: (useExtraPage: Boolean) -> Unit,
     onShareCombined: (copy: Boolean) -> Unit,
     onSaveCombined: () -> Unit,
+    onFootnotes: () -> Unit,
+    onTranslation: () -> Unit,
     hasExtraPage: Boolean,
     // SY <--
 ) {
@@ -46,6 +50,28 @@ fun ReaderPageActionsDialog(
 
     AdaptiveSheet(onDismissRequest = onDismissRequest) {
         Column(modifier = Modifier.padding(vertical = 16.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+            ) {
+                ActionButton(
+                    modifier = Modifier.weight(1f),
+                    title = stringResource(MR.strings.action_interactive_footnotes),
+                    icon = Icons.Outlined.AutoAwesome,
+                    onClick = {
+                        onFootnotes()
+                        onDismissRequest()
+                    },
+                )
+                ActionButton(
+                    modifier = Modifier.weight(1f),
+                    title = stringResource(MR.strings.action_live_translation),
+                    icon = Icons.Outlined.Translate,
+                    onClick = {
+                        onTranslation()
+                        onDismissRequest()
+                    },
+                )
+            }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
             ) {

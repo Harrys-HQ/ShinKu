@@ -153,6 +153,7 @@ fun MangaScreen(
     onMetadataViewerClicked: () -> Unit,
     onEditInfoClicked: () -> Unit,
     onRecommendClicked: () -> Unit,
+    onVibeClicked: () -> Unit,
     onMergedSettingsClicked: () -> Unit,
     onMergeClicked: () -> Unit,
     onMergeWithAnotherClicked: () -> Unit,
@@ -194,8 +195,9 @@ fun MangaScreen(
             (it as? coil3.compose.AsyncImagePainter.State.Success)?.result?.image?.asDrawable(context.resources) 
         }
     ) {
-        if (!isTabletUi) {
-            MangaScreenSmallImpl(
+        TachiyomiTheme(genres = state.manga.genre) {
+            if (!isTabletUi) {
+                MangaScreenSmallImpl(
                 state = state,
                 snackbarHostState = snackbarHostState,
                 nextUpdate = nextUpdate,
@@ -330,6 +332,7 @@ private fun MangaScreenSmallImpl(
     onMetadataViewerClicked: () -> Unit,
     onEditInfoClicked: () -> Unit,
     onRecommendClicked: () -> Unit,
+    onVibeClicked: () -> Unit,
     onMergedSettingsClicked: () -> Unit,
     onMergeClicked: () -> Unit,
     onMergeWithAnotherClicked: () -> Unit,
@@ -561,8 +564,10 @@ private fun MangaScreenSmallImpl(
                             MangaInfoButtons(
                                 showRecommendsButton = !state.showRecommendationsInOverflow,
                                 showMergeWithAnotherButton = state.showMergeWithAnother,
+                                showVibeButton = state.showVibeButton,
                                 onRecommendClicked = onRecommendClicked,
                                 onMergeWithAnotherClicked = onMergeWithAnotherClicked,
+                                onVibeClicked = onVibeClicked,
                             )
                         }
                     }
@@ -653,6 +658,7 @@ fun MangaScreenLargeImpl(
     onMetadataViewerClicked: () -> Unit,
     onEditInfoClicked: () -> Unit,
     onRecommendClicked: () -> Unit,
+    onVibeClicked: () -> Unit,
     onMergedSettingsClicked: () -> Unit,
     onMergeClicked: () -> Unit,
     onMergeWithAnotherClicked: () -> Unit,
@@ -850,8 +856,10 @@ fun MangaScreenLargeImpl(
                             MangaInfoButtons(
                                 showRecommendsButton = !state.showRecommendationsInOverflow,
                                 showMergeWithAnotherButton = state.showMergeWithAnother,
+                                showVibeButton = state.showVibeButton,
                                 onRecommendClicked = onRecommendClicked,
                                 onMergeWithAnotherClicked = onMergeWithAnotherClicked,
+                                onVibeClicked = onVibeClicked,
                             )
                         }
                         if (state.pagePreviewsState !is PagePreviewState.Unused && previewsRowCount > 0) {

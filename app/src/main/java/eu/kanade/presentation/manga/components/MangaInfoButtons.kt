@@ -7,6 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 import tachiyomi.presentation.core.components.material.Button
 import tachiyomi.presentation.core.i18n.stringResource
@@ -15,11 +16,23 @@ import tachiyomi.presentation.core.i18n.stringResource
 fun MangaInfoButtons(
     showRecommendsButton: Boolean,
     showMergeWithAnotherButton: Boolean,
+    showVibeButton: Boolean,
     onRecommendClicked: () -> Unit,
     onMergeWithAnotherClicked: () -> Unit,
+    onVibeClicked: () -> Unit,
 ) {
-    if (showRecommendsButton || showMergeWithAnotherButton) {
+    if (showRecommendsButton || showMergeWithAnotherButton || showVibeButton) {
         Column(Modifier.fillMaxWidth()) {
+            if (showVibeButton) {
+                Button(
+                    onClick = onVibeClicked,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                ) {
+                    Text(stringResource(MR.strings.action_find_similar_vibes))
+                }
+            }
             if (showMergeWithAnotherButton) {
                 Button(
                     onClick = onMergeWithAnotherClicked,

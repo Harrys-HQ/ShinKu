@@ -146,6 +146,18 @@ class MangaScreen(
                 }
                 .launchIn(this)
         }
+
+        LaunchedEffect(Unit) {
+            screenModel.events
+                .onEach { event ->
+                    when (event) {
+                        is MangaScreenModel.Event.SearchSimilarVibes -> {
+                            navigator.push(GlobalSearchScreen(event.titles.joinToString(" ")))
+                        }
+                    }
+                }
+                .launchIn(this)
+        }
         // SY <--
 
         MangaScreen(
@@ -216,6 +228,7 @@ class MangaScreen(
             onRecommendClicked = {
                 openRecommends(navigator, screenModel.source?.getMainSource(), successState.manga)
             },
+            onVibeClicked = screenModel::findSimilarVibes,
             onMergedSettingsClicked = screenModel::showEditMergedSettingsDialog,
             onMergeClicked = { openSmartSearch(navigator, successState.manga) },
             onMergeWithAnotherClicked = {
