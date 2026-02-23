@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.1.0" changeDate="Feb 23,2026">
+        <changelogtext>[b]Rebranded to com.shinku.reader[/b]</changelogtext>
+        <changelogtext>Optimized UI: Rearranged ShinKu features and restored Statistics to Reading Journey</changelogtext>
+        <changelogtext>Enhanced AI: Added support for [b]Gemini 3.1 Pro / 2.5 Flash[/b] and above</changelogtext>
+        <changelogtext>AI Pro Tier: Unlimited quota / no rate-limiting delays for Pro users</changelogtext>
+        <changelogtext>Smart [b]User-Agent update tool[/b] using Gemini AI</changelogtext>
+        <changelogtext>Safely removed E-Hentai and MangaDex bloat for maximum performance</changelogtext>
+        <changelogtext>Optimized [b]Extreme library update speed[/b] with safety delays to prevent IP bans</changelogtext>
+        <changelogtext>Fixed "Check for updates" logic pointing to the Harrys-HQ/ShinKu repository</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.0.0" changeDate="Feb 19,2026">
         <changelogtext>[b]Rebranding to ShinKu 2.0.0 (Crimson)[/b]</changelogtext>
         <changelogtext>AI-powered [b]Vibe Search[/b] with Google Gemini integration</changelogtext>

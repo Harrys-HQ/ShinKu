@@ -320,6 +320,8 @@ dependencies {
 
     // ZXing Android Embedded
     implementation(sylibs.zxing.android.embedded)
+
+    implementation(libs.mlkit.text.recognition)
 }
 
 androidComponents {

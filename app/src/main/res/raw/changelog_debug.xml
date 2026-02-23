@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="false">
+    <changelogversion versionName="r81" changeDate="Feb 23,2026">
+        <changelogtext>[b]Rebranded to com.shinku.reader[/b]</changelogtext>
+        <changelogtext>Optimized UI and ShinKu features consolidation</changelogtext>
+        <changelogtext>Added Gemini 3.1 Pro / 2.5 Flash support</changelogtext>
+        <changelogtext>Implemented AI Pro Tier rate-limit bypass</changelogtext>
+        <changelogtext>Smart User-Agent auto-update tool</changelogtext>
+        <changelogtext>Removed redundant E-Hentai/MangaDex logic</changelogtext>
+        <changelogtext>Optimized Extreme update speed with safety delays</changelogtext>
+    </changelogversion>
     <!--
 
     <changelogversion changeDate="" versionName="r1810">

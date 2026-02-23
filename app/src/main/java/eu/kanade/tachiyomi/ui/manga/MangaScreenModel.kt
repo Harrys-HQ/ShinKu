@@ -191,6 +191,8 @@ class MangaScreenModel(
     private val setMangaCategories: SetMangaCategories = Injekt.get(),
     private val mangaRepository: MangaRepository = Injekt.get(),
     private val filterChaptersForDownload: FilterChaptersForDownload = Injekt.get(),
+    private val shinkuPreferences: exh.source.ShinKuPreferences = Injekt.get(),
+    private val geminiVibeSearch: eu.kanade.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
 
@@ -231,8 +233,35 @@ class MangaScreenModel(
 
     data class EXHRedirect(val mangaId: Long)
 
+    val events: MutableSharedFlow<Event> = MutableSharedFlow()
+
+    sealed interface Event {
+        data class SearchSimilarVibes(val titles: List<String>) : Event
+    }
+
     var dedupe: Boolean = true
     // EXH <--
+
+    fun findSimilarVibes() {
+        val manga = manga ?: return
+        val apiKey = shinkuPreferences.geminiApiKey().get()
+        val model = shinkuPreferences.geminiModel().get()
+        if (apiKey.isBlank()) return
+
+        screenModelScope.launch {
+            withContext(Dispatchers.Main) {
+                context.toast(MR.strings.vibe_search_loading)
+            }
+            val titles = geminiVibeSearch.getSimilarManga(manga.title, manga.description ?: "", apiKey, model)
+            if (titles.isNotEmpty()) {
+                events.emit(Event.SearchSimilarVibes(titles))
+            } else {
+                withContext(Dispatchers.Main) {
+                    context.toast("No similar vibes found")
+                }
+            }
+        }
+    }
 
     private data class CombineState(
         val manga: Manga,
@@ -349,6 +378,16 @@ class MangaScreenModel(
                 .collectLatest { excludedScanlators ->
                     updateSuccessState {
                         it.copy(excludedScanlators = excludedScanlators.toImmutableSet())
+                    }
+                }
+        }
+
+        screenModelScope.launchIO {
+            shinkuPreferences.geminiApiKey().changes()
+                .flowWithLifecycle(lifecycle)
+                .collectLatest { apiKey ->
+                    updateSuccessState {
+                        it.copy(showVibeButton = apiKey.isNotBlank())
                     }
                 }
         }
@@ -1748,6 +1787,7 @@ class MangaScreenModel(
             val pagePreviewsState: PagePreviewState,
             val alwaysShowReadingProgress: Boolean,
             val previewsRowCount: Int,
+            val showVibeButton: Boolean,
             // SY <--
         ) : State {
             val processedChapters by lazy {

@@ -26,19 +26,58 @@ import eu.kanade.presentation.theme.colorscheme.YotsubaColorScheme
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.ColorUtils
+import eu.kanade.domain.ui.UiPreferences
+import eu.kanade.domain.ui.model.AppTheme
+
 @Composable
 fun TachiyomiTheme(
     appTheme: AppTheme? = null,
     amoled: Boolean? = null,
     overrideColorScheme: ColorScheme? = null,
+    genres: List<String>? = null,
     content: @Composable () -> Unit,
 ) {
     val uiPreferences = Injekt.get<UiPreferences>()
-    BaseTachiyomiTheme(
+    var colorScheme = overrideColorScheme ?: getThemeColorScheme(
         appTheme = appTheme ?: uiPreferences.appTheme().get(),
         isAmoled = amoled ?: uiPreferences.themeDarkAmoled().get(),
-        overrideColorScheme = overrideColorScheme,
+    )
+
+    if (genres != null && (appTheme ?: uiPreferences.appTheme().get()) == AppTheme.STRAWBERRY_DAIQUIRI) {
+        colorScheme = applyGenreTone(colorScheme, genres)
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
         content = content,
+    )
+}
+
+private fun applyGenreTone(scheme: ColorScheme, genres: List<String>): ColorScheme {
+    val primaryHue = when {
+        genres.any { it.contains("Horror", true) || it.contains("Psychological", true) } -> 0f // Deep Blood Red
+        genres.any { it.contains("Sci-Fi", true) || it.contains("Cyberpunk", true) } -> 300f // Neon Crimson/Magenta
+        genres.any { it.contains("Slice of Life", true) || it.contains("Romance", true) } -> 340f // Soft Pinkish Crimson
+        genres.any { it.contains("Action", true) || it.contains("Adventure", true) } -> 15f // Vibrant Orange-Red
+        else -> return scheme
+    }
+
+    fun adjustColor(color: Color): Color {
+        val hsl = FloatArray(3)
+        ColorUtils.colorToHSL(color.toArgb(), hsl)
+        hsl[0] = primaryHue
+        return Color(ColorUtils.HSLToColor(hsl))
+    }
+
+    return scheme.copy(
+        primary = adjustColor(scheme.primary),
+        primaryContainer = adjustColor(scheme.primaryContainer),
+        secondary = adjustColor(scheme.secondary),
+        secondaryContainer = adjustColor(scheme.secondaryContainer),
+        tertiary = adjustColor(scheme.tertiary),
     )
 }
 
