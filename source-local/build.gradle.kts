@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("mihon.library")
+    id("shinku.library")
     kotlin("multiplatform")
 }
 
@@ -27,7 +27,7 @@ kotlin {
                 // Move ChapterRecognition to separate module?
                 implementation(projects.domain)
 
-                implementation(kotlinx.bundles.serialization)
+                implementation(libs.bundles.serialization)
             }
         }
     }
@@ -42,7 +42,7 @@ kotlin {
 }
 
 android {
-    namespace = "tachiyomi.source.local"
+    namespace = "eu.kanade.tachiyomi.source.local"
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

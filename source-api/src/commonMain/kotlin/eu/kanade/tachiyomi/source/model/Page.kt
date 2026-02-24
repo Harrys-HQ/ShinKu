@@ -4,11 +4,13 @@ import android.net.Uri
 import eu.kanade.tachiyomi.network.ProgressListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 @Serializable
-open class Page(
+open @SerialName("eu.kanade.tachiyomi.source.model.Page")
+class Page(
     val index: Int,
     /* SY --> */
     var /* SY <-- */ url: String = "",
@@ -50,10 +52,15 @@ open class Page(
     }
 
     sealed interface State {
-        data object Queue : State
-        data object LoadPage : State
-        data object DownloadImage : State
-        data object Ready : State
-        data class Error(val error: Throwable) : State
+        @SerialName("eu.kanade.tachiyomi.source.model.Queue")
+data object Queue : State
+        @SerialName("eu.kanade.tachiyomi.source.model.LoadPage")
+data object LoadPage : State
+        @SerialName("eu.kanade.tachiyomi.source.model.DownloadImage")
+data object DownloadImage : State
+        @SerialName("eu.kanade.tachiyomi.source.model.Ready")
+data object Ready : State
+        @SerialName("eu.kanade.tachiyomi.source.model.Error")
+data class Error(val error: Throwable) : State
     }
 }

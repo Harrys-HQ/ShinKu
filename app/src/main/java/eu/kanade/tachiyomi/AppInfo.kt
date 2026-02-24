@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi
 
-import tachiyomi.core.common.util.system.ImageUtil
+import com.shinku.reader.BuildConfig
+import com.shinku.reader.core.common.util.system.ImageUtil
 
 /**
  * Used by extensions.

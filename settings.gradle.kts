@@ -17,19 +17,7 @@ pluginManagement {
 
 dependencyResolutionManagement {
     versionCatalogs {
-        create("kotlinx") {
-            from(files("gradle/kotlinx.versions.toml"))
         }
-        create("androidx") {
-            from(files("gradle/androidx.versions.toml"))
-        }
-        create("compose") {
-            from(files("gradle/compose.versions.toml"))
-        }
-        create("sylibs") {
-            from(files("gradle/sy.versions.toml"))
-        }
-    }
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()

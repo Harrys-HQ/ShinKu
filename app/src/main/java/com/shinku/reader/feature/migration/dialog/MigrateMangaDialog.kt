@@ -1,0 +1,184 @@
+package com.shinku.reader.feature.migration.dialog
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.util.fastForEach
+import cafe.adriel.voyager.core.model.StateScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.screen.Screen
+import com.shinku.reader.domain.manga.model.hasCustomCover
+import com.shinku.reader.domain.source.service.SourcePreferences
+import com.shinku.reader.data.cache.CoverCache
+import com.shinku.reader.data.download.DownloadManager
+import kotlinx.coroutines.flow.update
+import com.shinku.reader.domain.migration.models.MigrationFlag
+import com.shinku.reader.domain.migration.usecases.MigrateMangaUseCase
+import com.shinku.reader.feature.common.utils.getLabel
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.lang.withUIContext
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.core.components.LabeledCheckbox
+import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.screens.LoadingScreen
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
+
+@Composable
+internal fun Screen.MigrateMangaDialog(
+    current: Manga,
+    target: Manga,
+    onClickTitle: () -> Unit,
+    onDismissRequest: () -> Unit,
+    onComplete: () -> Unit = onDismissRequest,
+) {
+    val scope = rememberCoroutineScope()
+
+    val screenModel = rememberScreenModel { MigrateDialogScreenModel() }
+    LaunchedEffect(current, target) {
+        screenModel.init(current, target)
+    }
+    val state by screenModel.state.collectAsState()
+
+    if (state.isMigrated) return
+
+    if (state.isMigrating) {
+        LoadingScreen(
+            modifier = Modifier.background(MaterialTheme.colorScheme.background.copy(alpha = 0.7f)),
+        )
+        return
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = {
+            Text(text = stringResource(MR.strings.migration_dialog_what_to_include))
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
+                state.applicableFlags.fastForEach { flag ->
+                    LabeledCheckbox(
+                        label = stringResource(flag.getLabel()),
+                        checked = flag in state.selectedFlags,
+                        onCheckedChange = { screenModel.toggleSelection(flag) },
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
+            ) {
+                TextButton(
+                    onClick = {
+                        onDismissRequest()
+                        onClickTitle()
+                    },
+                ) {
+                    Text(text = stringResource(MR.strings.action_show_manga))
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                TextButton(
+                    onClick = {
+                        scope.launchIO {
+                            screenModel.migrateManga(replace = false)
+                            withUIContext { onComplete() }
+                        }
+                    },
+                ) {
+                    Text(text = stringResource(MR.strings.copy))
+                }
+                TextButton(
+                    onClick = {
+                        scope.launchIO {
+                            screenModel.migrateManga(replace = true)
+                            withUIContext { onComplete() }
+                        }
+                    },
+                ) {
+                    Text(text = stringResource(MR.strings.migrate))
+                }
+            }
+        },
+    )
+}
+
+private class MigrateDialogScreenModel(
+    private val sourcePreference: SourcePreferences = Injekt.get(),
+    private val coverCache: CoverCache = Injekt.get(),
+    private val downloadManager: DownloadManager = Injekt.get(),
+    private val migrateManga: MigrateMangaUseCase = Injekt.get(),
+) : StateScreenModel<MigrateDialogScreenModel.State>(State()) {
+
+    fun init(current: Manga, target: Manga) {
+        val applicableFlags = buildList {
+            MigrationFlag.entries.forEach {
+                val applicable = when (it) {
+                    MigrationFlag.CHAPTER -> true
+                    MigrationFlag.CATEGORY -> true
+                    MigrationFlag.CUSTOM_COVER -> current.hasCustomCover(coverCache)
+                    MigrationFlag.NOTES -> current.notes.isNotBlank()
+                    MigrationFlag.REMOVE_DOWNLOAD -> downloadManager.getDownloadCount(current) > 0
+                }
+                if (applicable) add(it)
+            }
+        }
+        val selectedFlags = sourcePreference.migrationFlags().get()
+        mutableState.update {
+            it.copy(
+                current = current,
+                target = target,
+                applicableFlags = applicableFlags,
+                selectedFlags = selectedFlags,
+            )
+        }
+    }
+
+    fun toggleSelection(flag: MigrationFlag) {
+        mutableState.update {
+            val selectedFlags = it.selectedFlags.toMutableSet()
+                .apply { if (contains(flag)) remove(flag) else add(flag) }
+                .toSet()
+            it.copy(selectedFlags = selectedFlags)
+        }
+    }
+
+    suspend fun migrateManga(replace: Boolean) {
+        val state = state.value
+        val current = state.current ?: return
+        val target = state.target ?: return
+        sourcePreference.migrationFlags().set(state.selectedFlags)
+        mutableState.update { it.copy(isMigrating = true) }
+        migrateManga(current, target, replace)
+        mutableState.update { it.copy(isMigrating = false, isMigrated = true) }
+    }
+
+    data class State(
+        val current: Manga? = null,
+        val target: Manga? = null,
+        val applicableFlags: List<MigrationFlag> = emptyList(),
+        val selectedFlags: Set<MigrationFlag> = emptySet(),
+        val isMigrating: Boolean = false,
+        val isMigrated: Boolean = false,
+    )
+}

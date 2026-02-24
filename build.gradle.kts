@@ -1,12 +1,12 @@
 buildscript {
     dependencies {
         // classpath(libs.android.shortcut.gradle)
-        classpath(sylibs.versionsx)
+        classpath(libs.versionsx)
     }
 }
 
 plugins {
-    alias(kotlinx.plugins.serialization) apply false
+    alias(libs.plugins.serialization) apply false
     alias(libs.plugins.aboutLibraries) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
     alias(libs.plugins.google.services) apply false

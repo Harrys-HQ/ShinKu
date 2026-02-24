@@ -1,8 +1,8 @@
 -dontobfuscate
 
--keep,allowoptimization class eu.kanade.**
+-keep,allowoptimization class com.shinku.reader.**
 -keep,allowoptimization class tachiyomi.**
--keep,allowoptimization class mihon.**
+-keep,allowoptimization class com.shinku.reader.**
 
 # Keep common dependencies used in extensions
 -keep,allowoptimization class androidx.preference.** { public protected *; }
@@ -18,15 +18,15 @@
 -keep,allowoptimization class uy.kohesive.injekt.** { public protected *; }
 
 # From extensions-lib
--keep,allowoptimization class eu.kanade.tachiyomi.network.interceptor.RateLimitInterceptorKt { public protected *; }
--keep,allowoptimization class eu.kanade.tachiyomi.network.interceptor.SpecificHostRateLimitInterceptorKt { public protected *; }
--keep,allowoptimization class eu.kanade.tachiyomi.network.NetworkHelper { public protected *; }
--keep,allowoptimization class eu.kanade.tachiyomi.network.OkHttpExtensionsKt { public protected *; }
--keep,allowoptimization class eu.kanade.tachiyomi.network.RequestsKt { public protected *; }
--keep,allowoptimization class eu.kanade.tachiyomi.AppInfo { public protected *; }
+-keep,allowoptimization class com.shinku.reader.network.interceptor.RateLimitInterceptorKt { public protected *; }
+-keep,allowoptimization class com.shinku.reader.network.interceptor.SpecificHostRateLimitInterceptorKt { public protected *; }
+-keep,allowoptimization class com.shinku.reader.network.NetworkHelper { public protected *; }
+-keep,allowoptimization class com.shinku.reader.network.OkHttpExtensionsKt { public protected *; }
+-keep,allowoptimization class com.shinku.reader.network.RequestsKt { public protected *; }
+-keep,allowoptimization class com.shinku.reader.AppInfo { public protected *; }
 
 # Debug functions
--keep,allowoptimization class exh.debug.DebugFunctions { public *; }
+-keep,allowoptimization class com.shinku.reader.exh.debug.DebugFunctions { public *; }
 
 ##---------------Begin: proguard configuration for RxJava 1.x  ----------
 -dontwarn sun.misc.**
@@ -63,11 +63,11 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
--keep,includedescriptorclasses class eu.kanade.**$$serializer { *; }
--keepclassmembers class eu.kanade.** {
+-keep,includedescriptorclasses class com.shinku.reader.**$$serializer { *; }
+-keepclassmembers class com.shinku.reader.** {
     *** Companion;
 }
--keepclasseswithmembers class eu.kanade.** {
+-keepclasseswithmembers class com.shinku.reader.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 
@@ -79,11 +79,11 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
--keep,includedescriptorclasses class exh.**$$serializer { *; }
--keepclassmembers class exh.** {
+-keep,includedescriptorclasses class com.shinku.reader.exh.**$$serializer { *; }
+-keepclassmembers class com.shinku.reader.exh.** {
     *** Companion;
 }
--keepclasseswithmembers class exh.** {
+-keepclasseswithmembers class com.shinku.reader.exh.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 

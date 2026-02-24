@@ -295,7 +295,6 @@
     <string name="google_drive_sync_data_not_found">لم يتم العثور على بيانات مزامنة في Google Drive</string>
     <string name="google_drive_sync_data_purge_error">حدث خطأ أثناء إزالة بيانات المزامنة من Google Drive، حاول تسجيل الدخول مرة أخرى.</string>
     <string name="pref_choose_what_to_sync">اختر ما تريد مزامنته</string>
-    <string name="syncyomi">Sync Yomi</string>
     <string name="google_drive_not_signed_in">لم يتم تسجيل الدخول إلى Google Drive</string>
     <string name="pref_purge_confirmation_message">ستؤدي إزالة بيانات المزامنة إلى حذف جميع بيانات المزامنة من Google Drive. هل أنت متأكد أنك تريد الاستمرار؟</string>
     <string name="tuesday">الثلاثاء</string>

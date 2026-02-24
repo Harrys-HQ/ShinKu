@@ -1,12 +1,12 @@
 @file:Suppress("ChromeOsAbiSupport")
 
-import mihon.buildlogic.getBuildTime
-import mihon.buildlogic.getCommitCount
-import mihon.buildlogic.getGitSha
+import shinku.buildlogic.getBuildTime
+import shinku.buildlogic.getCommitCount
+import shinku.buildlogic.getGitSha
 
 plugins {
-    id("mihon.android.application")
-    id("mihon.android.application.compose")
+    id("shinku.android.application")
+    id("shinku.android.application.compose")
     kotlin("plugin.parcelize")
     kotlin("plugin.serialization")
     // id("com.github.zellius.shortcut-helper")
@@ -26,15 +26,15 @@ if (gradle.startParameter.taskRequests.toString().contains("Standard") && file("
 val supportedAbis = setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
 
 android {
-    namespace = "eu.kanade.tachiyomi"
+    namespace = "com.shinku.reader"
 
     defaultConfig {
         applicationId = "com.shinku.reader"
 
         setProperty("archivesBaseName", "ShinKu")
 
-        versionCode = 81
-        versionName = "2.1.0"
+        versionCode = 82
+        versionName = "2.1.1"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -140,8 +140,8 @@ android {
     }
 
     lint {
-        abortOnError = false
-        checkReleaseBuilds = false
+        abortOnError = true
+        checkReleaseBuilds = true
     }
 }
 
@@ -178,47 +178,47 @@ dependencies {
     implementation(projects.presentationWidget)
 
     // Compose
-    implementation(compose.activity)
-    implementation(compose.foundation)
-    implementation(compose.material3.core)
-    implementation(compose.material.icons)
-    implementation(compose.animation)
-    implementation(compose.animation.graphics)
-    debugImplementation(compose.ui.tooling)
-    implementation(compose.ui.tooling.preview)
-    implementation(compose.ui.util)
+    implementation(libs.activity)
+    implementation(libs.foundation)
+    implementation(libs.material3.core)
+    implementation(libs.material.icons)
+    implementation(libs.animation)
+    implementation(libs.animation.graphics)
+    debugImplementation(libs.ui.tooling)
+    implementation(libs.ui.tooling.preview)
+    implementation(libs.ui.util)
 
-    implementation(androidx.interpolator)
+    implementation(libs.interpolator)
 
-    implementation(androidx.paging.runtime)
-    implementation(androidx.paging.compose)
+    implementation(libs.paging.runtime)
+    implementation(libs.paging.compose)
 
     implementation(libs.bundles.sqlite)
     // SY -->
-    implementation(sylibs.sqlcipher)
+    implementation(libs.sqlcipher)
     // SY <--
 
-    implementation(kotlinx.reflect)
-    implementation(kotlinx.immutables)
+    implementation(libs.reflect)
+    implementation(libs.immutables)
 
-    implementation(platform(kotlinx.coroutines.bom))
-    implementation(kotlinx.bundles.coroutines)
+    implementation(platform(libs.coroutines.bom))
+    implementation(libs.bundles.coroutines)
 
     // AndroidX libraries
-    implementation(androidx.annotation)
-    implementation(androidx.appcompat)
-    implementation(androidx.biometricktx)
-    implementation(androidx.constraintlayout)
-    implementation(androidx.corektx)
-    implementation(androidx.splashscreen)
-    implementation(androidx.recyclerview)
-    implementation(androidx.viewpager)
-    implementation(androidx.profileinstaller)
+    implementation(libs.annotation)
+    implementation(libs.appcompat)
+    implementation(libs.biometricktx)
+    implementation(libs.constraintlayout)
+    implementation(libs.corektx)
+    implementation(libs.splashscreen)
+    implementation(libs.recyclerview)
+    implementation(libs.viewpager)
+    implementation(libs.profileinstaller)
 
-    implementation(androidx.bundles.lifecycle)
+    implementation(libs.bundles.lifecycle)
 
     // Job scheduling
-    implementation(androidx.workmanager)
+    implementation(libs.workmanager)
 
     // RxJava
     implementation(libs.rxjava)
@@ -229,7 +229,7 @@ dependencies {
     implementation(libs.conscrypt.android) // TLS 1.3 support for Android < 10
 
     // Data serialization (JSON, protobuf, xml)
-    implementation(kotlinx.bundles.serialization)
+    implementation(libs.bundles.serialization)
 
     // HTML parser
     implementation(libs.jsoup)
@@ -295,7 +295,7 @@ dependencies {
     // debugImplementation(libs.leakcanary.android)
     implementation(libs.leakcanary.plumber)
 
-    testImplementation(kotlinx.coroutines.test)
+    testImplementation(libs.coroutines.test)
 
     // SY -->
     // Firebase (EH)
@@ -304,22 +304,22 @@ dependencies {
     implementation(libs.firebase.crashlytics)
 
     // Better logging (EH)
-    implementation(sylibs.xlog)
+    implementation(libs.xlog)
 
     // RatingBar (SY)
-    implementation(sylibs.ratingbar)
-    implementation(sylibs.composeRatingbar)
+    implementation(libs.ratingbar)
+    implementation(libs.composeRatingbar)
 
     // Dropbox
-    implementation(sylibs.dropbox.core)
-    implementation(sylibs.dropbox.android)
+    implementation(libs.dropbox.core)
+    implementation(libs.dropbox.android)
 
     // Koin
-    implementation(sylibs.koin.core)
-    implementation(sylibs.koin.android)
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
 
     // ZXing Android Embedded
-    implementation(sylibs.zxing.android.embedded)
+    implementation(libs.zxing.android.embedded)
 
     implementation(libs.mlkit.text.recognition)
 }
@@ -334,6 +334,6 @@ androidComponents {
 
 buildscript {
     dependencies {
-        classpath(kotlinx.gradle)
+        classpath(libs.kotlin.gradle.plugin)
     }
 }

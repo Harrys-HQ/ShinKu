@@ -1,6 +1,6 @@
 package eu.kanade.tachiyomi.source.model
 
-import exh.metadata.metadata.RaisedSearchMetadata
+import com.shinku.reader.exh.metadata.metadata.RaisedSearchMetadata
 
 /* SY --> */
 open /* SY <-- */ class MangasPage(open val mangas: List<SManga>, open val hasNextPage: Boolean) {

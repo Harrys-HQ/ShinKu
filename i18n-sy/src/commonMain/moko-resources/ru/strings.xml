@@ -663,7 +663,6 @@
     <string name="eh_image_quality_1600">1600x</string>
     <string name="eh_image_quality_2400">2400x</string>
     <string name="eh_image_quality_780">780x</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="aes_256">AES 256</string>
     <string name="aes_128">AES 128</string>
     <string name="add_tags">Добавить тэги</string>

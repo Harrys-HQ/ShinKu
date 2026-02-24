@@ -5,7 +5,7 @@
     <!--Toolbars-->
     <!--========-->
 
-    <style name="Theme.Tachiyomi.ActionButton.Overflow" parent="Widget.AppCompat.ActionButton.Overflow">
+    <style name="Theme.ShinKu.ActionButton.Overflow" parent="Widget.AppCompat.ActionButton.Overflow">
         <item name="android:tint">?attr/colorOnSurface</item>
     </style>
 
@@ -13,7 +13,7 @@
     <!--===========-->
     <!--AlertDialog-->
     <!--===========-->
-    <style name="ThemeOverlay.Tachiyomi.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.ShinKu.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="android:layout">@layout/m3_alert_dialog</item>
         <item name="android:background">@drawable/material_popup_background</item>
         <item name="dialogCornerRadius">@dimen/m3_alert_dialog_corner_size</item>
@@ -29,9 +29,9 @@
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
 
-    <style name="TextAppearance.Tachiyomi.Preference.Secondary" parent="TextAppearance.Material3.BodySmall" />
+    <style name="TextAppearance.ShinKu.Preference.Secondary" parent="TextAppearance.Material3.BodySmall" />
 
-    <style name="TextAppearance.Tachiyomi.SectionHeader" parent="TextAppearance.Material3.LabelLarge">
+    <style name="TextAppearance.ShinKu.SectionHeader" parent="TextAppearance.Material3.LabelLarge">
         <item name="android:textColor">?android:attr/textColorSecondary</item>
     </style>
 
@@ -39,7 +39,7 @@
     <!--=======================-->
     <!--Widgets.MaterialDivider-->
     <!--=======================-->
-    <style name="Widget.Tachiyomi.MaterialDivider" parent="Widget.Material3.MaterialDivider">
+    <style name="Widget.ShinKu.MaterialDivider" parent="Widget.Material3.MaterialDivider">
         <item name="dividerColor">@color/divider_default</item>
     </style>
 
@@ -47,11 +47,11 @@
     <!--==============-->
     <!--Widgets.Switch-->
     <!--==============-->
-    <style name="Widget.Tachiyomi.Switch" parent="Widget.Material3.CompoundButton.Switch">
-        <item name="materialThemeOverlay">@style/ThemeOverlay.Tachiyomi.Switch</item>
+    <style name="Widget.ShinKu.Switch" parent="Widget.Material3.CompoundButton.Switch">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.ShinKu.Switch</item>
     </style>
 
-    <style name="ThemeOverlay.Tachiyomi.Switch" parent="">
+    <style name="ThemeOverlay.ShinKu.Switch" parent="">
         <item name="elevationOverlayEnabled">@bool/elevationOverlayEnabled</item>
     </style>
 
@@ -59,12 +59,12 @@
     <!--===========-->
     <!--Preferences-->
     <!--===========-->
-    <style name="PreferenceThemeOverlay.Tachiyomi">
+    <style name="PreferenceThemeOverlay.ShinKu">
         <item name="preferenceCategoryTitleTextAppearance">?attr/textAppearanceBodyMedium</item>
-        <item name="switchPreferenceCompatStyle">@style/PreferenceThemeOverlay.Tachiyomi.SwitchPreferenceCompat</item>
+        <item name="switchPreferenceCompatStyle">@style/PreferenceThemeOverlay.ShinKu.SwitchPreferenceCompat</item>
     </style>
 
-    <style name="PreferenceThemeOverlay.Tachiyomi.SwitchPreferenceCompat" parent="Preference.SwitchPreferenceCompat.Material">
+    <style name="PreferenceThemeOverlay.ShinKu.SwitchPreferenceCompat" parent="Preference.SwitchPreferenceCompat.Material">
         <item name="android:widgetLayout">@layout/pref_widget_switch_material</item>
     </style>
 

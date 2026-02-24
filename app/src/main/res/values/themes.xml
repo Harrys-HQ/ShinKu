@@ -6,7 +6,7 @@
     <!--============-->
 
     <!--== Theme Base ==-->
-    <style name="Base.Theme.Tachiyomi" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.ShinKu" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Disallow "Force dark theme" -->
         <item name="android:forceDarkAllowed" tools:targetApi="Q">false</item>
 
@@ -47,7 +47,7 @@
 
         <item name="android:divider">@color/divider_default</item>
         <item name="android:listDivider">@drawable/line_divider</item>
-        <item name="materialDividerStyle">@style/Widget.Tachiyomi.MaterialDivider</item>
+        <item name="materialDividerStyle">@style/Widget.ShinKu.MaterialDivider</item>
 
         <!-- Ripples -->
         <item name="colorControlHighlight">?attr/colorSurfaceVariant</item>
@@ -64,40 +64,40 @@
         <item name="android:enforceNavigationBarContrast" tools:targetApi="Q">false</item>
         <item name="android:enforceStatusBarContrast" tools:targetApi="Q">false</item>
         <item name="android:itemTextAppearance">@style/TextAppearance.Widget.Menu</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Tachiyomi.MaterialAlertDialog</item>
-        <item name="alertDialogTheme">@style/ThemeOverlay.Tachiyomi.MaterialAlertDialog</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.ShinKu.MaterialAlertDialog</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.ShinKu.MaterialAlertDialog</item>
         <item name="textAppearanceButton">@style/TextAppearance.Widget.Button</item>
         <item name="android:buttonStyle">?attr/borderlessButtonStyle</item>
         <item name="android:backgroundDimAmount">0.32</item>
         <item name="windowActionModeOverlay">true</item>
-        <item name="actionOverflowButtonStyle">@style/Theme.Tachiyomi.ActionButton.Overflow</item>
-        <item name="preferenceTheme">@style/PreferenceThemeOverlay.Tachiyomi</item>
+        <item name="actionOverflowButtonStyle">@style/Theme.ShinKu.ActionButton.Overflow</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.ShinKu</item>
 
-        <item name="chipStyle">@style/Widget.Tachiyomi.Chip.Action</item>
+        <item name="chipStyle">@style/Widget.ShinKu.Chip.Action</item>
         <item name="chipTextColor">?android:attr/textColorPrimary</item>
         <item name="chipBackgroundColor">?android:attr/divider</item>
 
         <item name="textInputStyle">@style/Widget.Material3.TextInputLayout.OutlinedBox</item>
         <item name="appBarLayoutStyle">@style/Widget.Material3.AppBarLayout</item>
         <item name="toolbarStyle">@style/Widget.Material3.Toolbar.Surface</item>
-        <item name="switchStyle">@style/Widget.Tachiyomi.Switch</item>
+        <item name="switchStyle">@style/Widget.ShinKu.Switch</item>
         <item name="materialSwitchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
-        <item name="switchPreferenceCompatStyle">@style/Widget.Tachiyomi.Switch</item>
+        <item name="switchPreferenceCompatStyle">@style/Widget.ShinKu.Switch</item>
         <item name="materialCardViewStyle">@style/Widget.Material3.CardView.Elevated</item>
 
         <!-- Preference text appearance -->
         <item name="android:textAppearanceListItem">?attr/textAppearanceBodyLarge</item>
-        <item name="android:textAppearanceListItemSecondary">@style/TextAppearance.Tachiyomi.Preference.Secondary</item>
+        <item name="android:textAppearanceListItemSecondary">@style/TextAppearance.ShinKu.Preference.Secondary</item>
     </style>
 
     <!--== Default Theme ==-->
-    <style name="Theme.Tachiyomi" parent="Base.Theme.Tachiyomi" />
+    <style name="Theme.ShinKu" parent="Base.Theme.ShinKu" />
 
     <!-- Monet theme only support S+ -->
-    <style name="Theme.Tachiyomi.Monet" />
+    <style name="Theme.ShinKu.Monet" />
 
     <!--== Catppuccin Theme ==-->
-    <style name="Theme.Tachiyomi.Catppuccin">
+    <style name="Theme.ShinKu.Catppuccin">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/catppuccin_primary</item>
         <item name="colorOnPrimary">@color/catppuccin_onPrimary</item>
@@ -136,7 +136,7 @@
         <item name="colorSurfaceContainerLowest">@color/catppuccin_surfaceContainerLowest</item>
     </style>
     <!--== Green Apple Theme ==-->
-    <style name="Theme.Tachiyomi.GreenApple">
+    <style name="Theme.ShinKu.GreenApple">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/greenapple_primary</item>
         <item name="colorOnPrimary">@color/greenapple_onPrimary</item>
@@ -176,7 +176,7 @@
     </style>
 
     <!--== Lavender Theme ==-->
-    <style name="Theme.Tachiyomi.Lavender">
+    <style name="Theme.ShinKu.Lavender">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/lavender_primary</item>
         <item name="colorOnPrimary">@color/lavender_onPrimary</item>
@@ -216,7 +216,7 @@
     </style>
 
     <!--== Midnight Dusk Theme ==-->
-    <style name="Theme.Tachiyomi.MidnightDusk">
+    <style name="Theme.ShinKu.MidnightDusk">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/midnightdusk_primary</item>
         <item name="colorOnPrimary">@color/midnightdusk_onPrimary</item>
@@ -249,7 +249,7 @@
     </style>
 
     <!--== Strawberry Daiquiri Theme ==-->
-    <style name="Theme.Tachiyomi.StrawberryDaiquiri">
+    <style name="Theme.ShinKu.StrawberryDaiquiri">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/strawberry_primary</item>
         <item name="colorOnPrimary">@color/strawberry_onPrimary</item>
@@ -289,7 +289,7 @@
     </style>
 
     <!--== Tako Theme ==-->
-    <style name="Theme.Tachiyomi.Tako">
+    <style name="Theme.ShinKu.Tako">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/tako_primary</item>
         <item name="colorOnPrimary">@color/tako_onPrimary</item>
@@ -322,7 +322,7 @@
     </style>
 
     <!--== Teal & Turquoise Theme ==-->
-    <style name="Theme.Tachiyomi.TealTurquoise">
+    <style name="Theme.ShinKu.TealTurquoise">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/tealturquoise_primary</item>
         <item name="colorOnPrimary">@color/tealturquoise_onPrimary</item>
@@ -355,7 +355,7 @@
     </style>
 
     <!--== Yin & Yang Theme ==-->
-    <style name="Theme.Tachiyomi.YinYang">
+    <style name="Theme.ShinKu.YinYang">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/yinyang_primary</item>
         <item name="colorOnPrimary">@color/yinyang_onPrimary</item>
@@ -388,7 +388,7 @@
     </style>
 
     <!--== Yotsuba Theme ==-->
-    <style name="Theme.Tachiyomi.Yotsuba">
+    <style name="Theme.ShinKu.Yotsuba">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/yotsuba_primary</item>
         <item name="colorOnPrimary">@color/yotsuba_onPrimary</item>
@@ -421,7 +421,7 @@
     </style>
 
     <!--== Tidal Wave Theme ==-->
-    <style name="Theme.Tachiyomi.TidalWave">
+    <style name="Theme.ShinKu.TidalWave">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/tidalwave_primary</item>
         <item name="colorOnPrimary">@color/tidalwave_onPrimary</item>
@@ -454,7 +454,7 @@
     </style>
 
     <!--== Nord Theme ==-->
-    <style name="Theme.Tachiyomi.Nord">
+    <style name="Theme.ShinKu.Nord">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/nord_primary</item>
         <item name="colorOnPrimary">@color/nord_onPrimary</item>
@@ -491,7 +491,7 @@
     </style>
 
     <!--== Monochrome Theme ==-->
-    <style name="Theme.Tachiyomi.Monochrome">
+    <style name="Theme.ShinKu.Monochrome">
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/monochrome_primary</item>
         <item name="colorOnPrimary">@color/monochrome_onPrimary</item>
@@ -530,17 +530,17 @@
     </style>
 
     <!--== AMOLED Mode Overlay ==-->
-    <style name="ThemeOverlay.Tachiyomi.Amoled" parent="" />
+    <style name="ThemeOverlay.ShinKu.Amoled" parent="" />
 
     <!--===============-->
     <!-- Launch Screen -->
     <!--===============-->
 
     <!--== Splash Theme ==-->
-    <style name="Theme.Tachiyomi.SplashScreen" parent="Theme.SplashScreen">
+    <style name="Theme.ShinKu.SplashScreen" parent="Theme.SplashScreen">
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_tachi_splash</item>
         <item name="windowSplashScreenBackground">@color/splash</item>
-        <item name="postSplashScreenTheme">@style/Theme.Tachiyomi</item>
+        <item name="postSplashScreenTheme">@style/Theme.ShinKu</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>

@@ -1,0 +1,98 @@
+package com.shinku.reader.domain.sync
+
+import com.shinku.reader.domain.sync.models.SyncSettings
+import com.shinku.reader.data.sync.models.SyncTriggerOptions
+import com.shinku.reader.core.common.preference.Preference
+import com.shinku.reader.core.common.preference.PreferenceStore
+import java.util.UUID
+
+class SyncPreferences(
+    private val preferenceStore: PreferenceStore,
+) {
+    fun lastSyncTimestamp() = preferenceStore.getLong(Preference.appStateKey("last_sync_timestamp"), 0L)
+
+    fun lastSyncEtag() = preferenceStore.getString("sync_etag", "")
+
+    fun syncInterval() = preferenceStore.getInt("sync_interval", 0)
+    fun syncService() = preferenceStore.getInt("sync_service", 0)
+
+    fun dropboxAccessToken() = preferenceStore.getString(
+        Preference.appStateKey("dropbox_access_token"),
+        "",
+    )
+
+    fun uniqueDeviceID(): String {
+        val uniqueIDPreference = preferenceStore.getString(Preference.appStateKey("unique_device_id"), "")
+
+        // Retrieve the current value of the preference
+        var uniqueID = uniqueIDPreference.get()
+        if (uniqueID.isBlank()) {
+            uniqueID = UUID.randomUUID().toString()
+            uniqueIDPreference.set(uniqueID)
+        }
+
+        return uniqueID
+    }
+
+    fun isSyncEnabled(): Boolean {
+        return syncService().get() != 0
+    }
+
+    fun getSyncSettings(): SyncSettings {
+        return SyncSettings(
+            libraryEntries = preferenceStore.getBoolean("library_entries", true).get(),
+            categories = preferenceStore.getBoolean("categories", true).get(),
+            chapters = preferenceStore.getBoolean("chapters", true).get(),
+            tracking = preferenceStore.getBoolean("tracking", true).get(),
+            history = preferenceStore.getBoolean("history", true).get(),
+            appSettings = preferenceStore.getBoolean("appSettings", true).get(),
+            extensionRepoSettings = preferenceStore.getBoolean("extensionRepoSettings", true).get(),
+            sourceSettings = preferenceStore.getBoolean("sourceSettings", true).get(),
+            privateSettings = preferenceStore.getBoolean("privateSettings", true).get(),
+
+            // SY -->
+            customInfo = preferenceStore.getBoolean("customInfo", true).get(),
+            readEntries = preferenceStore.getBoolean("readEntries", true).get(),
+            savedSearches = preferenceStore.getBoolean("savedSearches", true).get(),
+            // SY <--
+        )
+    }
+
+    fun setSyncSettings(syncSettings: SyncSettings) {
+        preferenceStore.getBoolean("library_entries", true).set(syncSettings.libraryEntries)
+        preferenceStore.getBoolean("categories", true).set(syncSettings.categories)
+        preferenceStore.getBoolean("chapters", true).set(syncSettings.chapters)
+        preferenceStore.getBoolean("tracking", true).set(syncSettings.tracking)
+        preferenceStore.getBoolean("history", true).set(syncSettings.history)
+        preferenceStore.getBoolean("appSettings", true).set(syncSettings.appSettings)
+        preferenceStore.getBoolean("extensionRepoSettings", true).set(syncSettings.extensionRepoSettings)
+        preferenceStore.getBoolean("sourceSettings", true).set(syncSettings.sourceSettings)
+        preferenceStore.getBoolean("privateSettings", true).set(syncSettings.privateSettings)
+
+        // SY -->
+        preferenceStore.getBoolean("customInfo", true).set(syncSettings.customInfo)
+        preferenceStore.getBoolean("readEntries", true).set(syncSettings.readEntries)
+        preferenceStore.getBoolean("savedSearches", true).set(syncSettings.savedSearches)
+        // SY <--
+    }
+
+    fun getSyncTriggerOptions(): SyncTriggerOptions {
+        return SyncTriggerOptions(
+            syncOnChapterRead = preferenceStore.getBoolean("sync_on_chapter_read", false).get(),
+            syncOnChapterOpen = preferenceStore.getBoolean("sync_on_chapter_open", false).get(),
+            syncOnAppStart = preferenceStore.getBoolean("sync_on_app_start", false).get(),
+            syncOnAppResume = preferenceStore.getBoolean("sync_on_app_resume", false).get(),
+        )
+    }
+
+    fun setSyncTriggerOptions(syncTriggerOptions: SyncTriggerOptions) {
+        preferenceStore.getBoolean("sync_on_chapter_read", false)
+            .set(syncTriggerOptions.syncOnChapterRead)
+        preferenceStore.getBoolean("sync_on_chapter_open", false)
+            .set(syncTriggerOptions.syncOnChapterOpen)
+        preferenceStore.getBoolean("sync_on_app_start", false)
+            .set(syncTriggerOptions.syncOnAppStart)
+        preferenceStore.getBoolean("sync_on_app_resume", false)
+            .set(syncTriggerOptions.syncOnAppResume)
+    }
+}

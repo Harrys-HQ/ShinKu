@@ -167,7 +167,6 @@
     <string name="thursday">Giovedì</string>
     <string name="friday">Venerdì</string>
     <string name="author">Autore</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="error_before_sync_gdrive">Errore prima della sincronizzazione: %s</string>
     <string name="biometric_lock_end_time">Inserisci l\'orario di fine</string>
     <string name="similar_titles">Titoli simili</string>

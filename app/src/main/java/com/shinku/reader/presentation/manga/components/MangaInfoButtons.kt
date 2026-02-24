@@ -1,0 +1,58 @@
+package com.shinku.reader.presentation.manga.components
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.core.components.material.Button
+import com.shinku.reader.presentation.core.i18n.stringResource
+
+@Composable
+fun MangaInfoButtons(
+    showRecommendsButton: Boolean,
+    showMergeWithAnotherButton: Boolean,
+    showVibeButton: Boolean,
+    onRecommendClicked: () -> Unit,
+    onMergeWithAnotherClicked: () -> Unit,
+    onVibeClicked: () -> Unit,
+) {
+    if (showRecommendsButton || showMergeWithAnotherButton || showVibeButton) {
+        Column(Modifier.fillMaxWidth()) {
+            if (showVibeButton) {
+                Button(
+                    onClick = onVibeClicked,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                ) {
+                    Text(stringResource(MR.strings.action_find_similar_vibes))
+                }
+            }
+            if (showMergeWithAnotherButton) {
+                Button(
+                    onClick = onMergeWithAnotherClicked,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                ) {
+                    Text(stringResource(SYMR.strings.merge_with_another_source))
+                }
+            }
+            if (showRecommendsButton) {
+                Button(
+                    onClick = onRecommendClicked,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                ) {
+                    Text(stringResource(SYMR.strings.az_recommends))
+                }
+            }
+        }
+    }
+}

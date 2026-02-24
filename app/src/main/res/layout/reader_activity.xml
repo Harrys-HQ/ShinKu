@@ -15,7 +15,7 @@
 
     </FrameLayout>
 
-    <eu.kanade.tachiyomi.ui.reader.ReaderNavigationOverlayView
+    <com.shinku.reader.ui.reader.ReaderNavigationOverlayView
         android:id="@+id/navigation_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

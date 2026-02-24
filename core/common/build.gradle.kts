@@ -1,12 +1,12 @@
 plugins {
-    id("mihon.library")
+    id("shinku.library")
     kotlin("android")
     kotlin("plugin.serialization")
     id("com.github.ben-manes.versions")
 }
 
 android {
-    namespace = "eu.kanade.tachiyomi.core.common"
+    namespace = "com.shinku.reader.core.common"
 }
 
 kotlin {
@@ -39,9 +39,9 @@ dependencies {
     implementation(libs.unifile)
     implementation(libs.libarchive)
 
-    api(kotlinx.coroutines.core)
-    api(kotlinx.serialization.json)
-    api(kotlinx.serialization.json.okio)
+    api(libs.coroutines.core)
+    api(libs.serialization.json)
+    api(libs.serialization.json.okio)
 
     api(libs.preferencektx)
 
@@ -57,8 +57,8 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 
     // SY -->
-    implementation(sylibs.xlog)
+    implementation(libs.xlog)
     implementation(libs.injekt)
-    implementation(sylibs.exifinterface)
+    implementation(libs.exifinterface)
     // SY <--
 }

@@ -1,11 +1,11 @@
 plugins {
-    id("mihon.library")
-    id("mihon.library.compose")
+    id("shinku.library")
+    id("shinku.library.compose")
     kotlin("android")
 }
 
 android {
-    namespace = "tachiyomi.presentation.widget"
+    namespace = "com.shinku.reader.presentation.widget"
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -19,10 +19,10 @@ dependencies {
     implementation(projects.presentationCore)
     api(projects.i18n)
 
-    implementation(compose.glance)
+    implementation(libs.glance)
     implementation(libs.material)
 
-    implementation(kotlinx.immutables)
+    implementation(libs.immutables)
 
     implementation(platform(libs.coil.bom))
     implementation(libs.coil.core)

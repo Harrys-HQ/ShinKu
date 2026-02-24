@@ -193,7 +193,6 @@
     <string name="pref_sync_service_category">Eşitleme</string>
     <string name="pref_sync_automatic_category">Otomatik Eşitleme</string>
     <string name="pref_sync_interval">Eşitleme sıklığı</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="last_synchronization">Son eşitleme: %1$s</string>
     <string name="google_drive">Google Drive</string>
     <string name="pref_google_drive_sign_in">Giriş yap</string>

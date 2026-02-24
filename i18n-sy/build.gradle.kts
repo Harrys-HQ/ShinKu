@@ -1,5 +1,5 @@
 plugins {
-    id("mihon.library")
+    id("shinku.library")
     kotlin("multiplatform")
     alias(libs.plugins.moko)
     id("com.github.ben-manes.versions")
@@ -20,7 +20,7 @@ kotlin {
 }
 
 android {
-    namespace = "tachiyomi.i18n.sy"
+    namespace = "com.shinku.reader.i18n.sy"
 
     sourceSets {
         named("main") {
@@ -35,7 +35,7 @@ android {
 
 multiplatformResources {
     resourcesClassName.set("SYMR")
-    resourcesPackage.set("tachiyomi.i18n.sy")
+    resourcesPackage.set("com.shinku.reader.i18n.sy")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

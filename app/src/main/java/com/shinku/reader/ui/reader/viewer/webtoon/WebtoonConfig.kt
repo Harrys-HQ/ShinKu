@@ -1,0 +1,143 @@
+package com.shinku.reader.ui.reader.viewer.webtoon
+
+import com.shinku.reader.ui.reader.setting.ReaderPreferences
+import com.shinku.reader.ui.reader.viewer.ViewerConfig
+import com.shinku.reader.ui.reader.viewer.ViewerNavigation
+import com.shinku.reader.ui.reader.viewer.navigation.DisabledNavigation
+import com.shinku.reader.ui.reader.viewer.navigation.EdgeNavigation
+import com.shinku.reader.ui.reader.viewer.navigation.KindlishNavigation
+import com.shinku.reader.ui.reader.viewer.navigation.LNavigation
+import com.shinku.reader.ui.reader.viewer.navigation.RightAndLeftNavigation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
+
+/**
+ * Configuration used by webtoon viewers.
+ */
+class WebtoonConfig(
+    scope: CoroutineScope,
+    readerPreferences: ReaderPreferences = Injekt.get(),
+) : ViewerConfig(readerPreferences, scope) {
+
+    var themeChangedListener: (() -> Unit)? = null
+
+    var imageCropBorders = false
+        private set
+
+    var zoomOutDisabled = false
+        private set
+
+    var zoomPropertyChangedListener: ((Boolean) -> Unit)? = null
+
+    var sidePadding = 0
+        private set
+
+    var doubleTapZoom = true
+        private set
+
+    var doubleTapZoomChangedListener: ((Boolean) -> Unit)? = null
+
+    val theme = readerPreferences.readerTheme().get()
+
+    // SY -->
+    var usePageTransitions = false
+
+    var continuousCropBorders = false
+        private set
+
+    // SY <--
+    init {
+        readerPreferences.cropBordersWebtoon()
+            .register({ imageCropBorders = it }, { imagePropertyChangedListener?.invoke() })
+
+        readerPreferences.webtoonSidePadding()
+            .register({ sidePadding = it }, { imagePropertyChangedListener?.invoke() })
+
+        readerPreferences.navigationModeWebtoon()
+            .register({ navigationMode = it }, { updateNavigation(it) })
+
+        readerPreferences.webtoonNavInverted()
+            .register({ tappingInverted = it }, { navigator.invertMode = it })
+        readerPreferences.webtoonNavInverted().changes()
+            .drop(1)
+            .onEach { navigationModeChangedListener?.invoke() }
+            .launchIn(scope)
+
+        readerPreferences.dualPageSplitWebtoon()
+            .register({ dualPageSplit = it }, { imagePropertyChangedListener?.invoke() })
+
+        readerPreferences.dualPageInvertWebtoon()
+            .register({ dualPageInvert = it }, { imagePropertyChangedListener?.invoke() })
+
+        readerPreferences.dualPageRotateToFitWebtoon()
+            .register(
+                { dualPageRotateToFit = it },
+                { imagePropertyChangedListener?.invoke() },
+            )
+
+        readerPreferences.dualPageRotateToFitInvertWebtoon()
+            .register(
+                { dualPageRotateToFitInvert = it },
+                { imagePropertyChangedListener?.invoke() },
+            )
+
+        readerPreferences.webtoonDisableZoomOut()
+            .register(
+                { zoomOutDisabled = it },
+                { zoomPropertyChangedListener?.invoke(it) },
+            )
+
+        readerPreferences.webtoonDoubleTapZoomEnabled()
+            .register(
+                { doubleTapZoom = it },
+                { doubleTapZoomChangedListener?.invoke(it) },
+            )
+
+        readerPreferences.readerTheme().changes()
+            .drop(1)
+            .distinctUntilChanged()
+            .onEach { themeChangedListener?.invoke() }
+            .launchIn(scope)
+
+        // SY -->
+        val performanceMode = Injekt.get<com.shinku.reader.domain.base.BasePreferences>().performanceMode().get()
+        readerPreferences.cropBordersContinuousVertical()
+            .register({ continuousCropBorders = it }, { imagePropertyChangedListener?.invoke() })
+
+        readerPreferences.pageTransitionsWebtoon()
+            .register(
+                {
+                    usePageTransitions = if (performanceMode == 1) false else it
+                },
+                { imagePropertyChangedListener?.invoke() },
+            )
+        // SY <--
+    }
+
+    override var navigator: ViewerNavigation = defaultNavigation()
+        set(value) {
+            field = value.also { it.invertMode = tappingInverted }
+        }
+
+    override fun defaultNavigation(): ViewerNavigation {
+        return LNavigation()
+    }
+
+    override fun updateNavigation(navigationMode: Int) {
+        this.navigator = when (navigationMode) {
+            0 -> defaultNavigation()
+            1 -> LNavigation()
+            2 -> KindlishNavigation()
+            3 -> EdgeNavigation()
+            4 -> RightAndLeftNavigation()
+            5 -> DisabledNavigation()
+            else -> defaultNavigation()
+        }
+        navigationModeChangedListener?.invoke()
+    }
+}

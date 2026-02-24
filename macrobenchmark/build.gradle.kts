@@ -1,9 +1,9 @@
 plugins {
-    id("mihon.benchmark")
+    id("shinku.benchmark")
 }
 
 android {
-    namespace = "tachiyomi.macrobenchmark"
+    namespace = "com.shinku.reader.macrobenchmark"
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -26,10 +26,10 @@ android {
 }
 
 dependencies {
-    implementation(androidx.test.ext)
-    implementation(androidx.test.espresso.core)
-    implementation(androidx.test.uiautomator)
-    implementation(androidx.benchmark.macro)
+    implementation(libs.test.ext)
+    implementation(libs.test.espresso.core)
+    implementation(libs.test.uiautomator)
+    implementation(libs.benchmark.macro)
 }
 
 androidComponents {

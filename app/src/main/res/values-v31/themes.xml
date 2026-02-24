@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- From ThemeOverlay.Material3.DynamicColors.Light -->
-    <style name="Theme.Tachiyomi.Monet">
+    <style name="Theme.ShinKu.Monet">
         <!-- Color palettes -->
         <item name="colorPrimary">@color/m3_sys_color_dynamic_light_primary</item>
         <item name="colorOnPrimary">@color/m3_sys_color_dynamic_light_on_primary</item>

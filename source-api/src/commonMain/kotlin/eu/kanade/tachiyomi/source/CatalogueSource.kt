@@ -3,7 +3,7 @@ package eu.kanade.tachiyomi.source
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import rx.Observable
-import tachiyomi.core.common.util.lang.awaitSingle
+import com.shinku.reader.core.common.util.lang.awaitSingle
 
 interface CatalogueSource : Source {
 

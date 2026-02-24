@@ -1,9 +1,9 @@
-import mihon.buildlogic.generatedBuildDir
-import mihon.buildlogic.tasks.getLocalesConfigTask
+import shinku.buildlogic.generatedBuildDir
+import shinku.buildlogic.tasks.getLocalesConfigTask
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("mihon.library")
+    id("shinku.library")
     kotlin("multiplatform")
     alias(libs.plugins.moko)
     id("com.github.ben-manes.versions")
@@ -31,7 +31,7 @@ kotlin {
 val generatedAndroidResourceDir = generatedBuildDir.resolve("android/res")
 
 android {
-    namespace = "tachiyomi.i18n"
+    namespace = "com.shinku.reader.i18n"
 
     sourceSets {
         val main by getting
@@ -47,7 +47,7 @@ android {
 }
 
 multiplatformResources {
-    resourcesPackage.set("tachiyomi.i18n")
+    resourcesPackage.set("com.shinku.reader.i18n")
 }
 
 tasks {

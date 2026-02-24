@@ -26,11 +26,11 @@ Before you start, please note that the ability to use following technologies is 
 
 ## Getting help
 
-- Join [the Discord server](https://discord.gg/mihon) for online help and to ask questions while developing.
+- Join [the Discord server](https://discord.gg/shinku) for online help and to ask questions while developing.
 
 # Translations
 
-Translations are done externally via Weblate. See [our website](https://mihon.app/docs/contribute#translation) for more details.
+Translations are done externally via Weblate. See [our website](https://com.shinku.reader.mihon.app/docs/contribute#translation) for more details.
 
 
 # Forks
@@ -58,7 +58,7 @@ When creating a fork, remember to:
 8. Click publish
 9. Go to API & Services -> Credentials
 10. Click Create credentials -> Oauth client ID
-11. Select Android, give it a name, and set `eu.kanade.google.oauth` as the package name
+11. Select Android, give it a name, and set `com.shinku.reader.google.oauth` as the package name
 12. To get the SHA-1 key, run `keytool -printcert -jarfile app-standard-universal-release.apk` on your apk, and copy the listed SHA-1
 13. Expand advanced settings, and enable Custom URL scheme
 14. After that just download the json, name it to `client_secrets.json` and put it in `app/src/main/assets/`

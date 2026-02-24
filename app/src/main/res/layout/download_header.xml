@@ -16,7 +16,7 @@
 
         <TextView
             android:id="@+id/title"
-            style="@style/TextAppearance.Tachiyomi.SectionHeader"
+            style="@style/TextAppearance.ShinKu.SectionHeader"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:paddingHorizontal="16dp"

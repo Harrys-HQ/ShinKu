@@ -1,11 +1,11 @@
 plugins {
-    id("mihon.library")
+    id("shinku.library")
     kotlin("android")
     kotlin("plugin.serialization")
 }
 
 android {
-    namespace = "tachiyomi.domain"
+    namespace = "com.shinku.reader.domain"
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -23,21 +23,21 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.core.common)
 
-    implementation(platform(kotlinx.coroutines.bom))
-    implementation(kotlinx.bundles.coroutines)
-    implementation(kotlinx.bundles.serialization)
+    implementation(platform(libs.coroutines.bom))
+    implementation(libs.bundles.coroutines)
+    implementation(libs.bundles.serialization)
 
     implementation(libs.unifile)
 
     api(libs.sqldelight.android.paging)
 
-    compileOnly(compose.runtime.annotation)
+    compileOnly(libs.runtime.annotation)
 
     // SY -->
     implementation(libs.injekt)
     // SY <--
 
     testImplementation(libs.bundles.test)
-    testImplementation(kotlinx.coroutines.test)
+    testImplementation(libs.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
