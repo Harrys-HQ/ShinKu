@@ -225,7 +225,6 @@
     <string name="pref_sync_automatic_category">Automatska sinkronizacija</string>
     <string name="pref_sync_interval">Učestalost sinkronizacije</string>
     <string name="pref_choose_what_to_sync">Odaberi što želiš sinkronizirati</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="scan_qr_code">Snimi QR-kod</string>
     <string name="last_synchronization">Zadnja sinkronizacija: %1$s</string>
     <string name="google_drive">Google Drive</string>

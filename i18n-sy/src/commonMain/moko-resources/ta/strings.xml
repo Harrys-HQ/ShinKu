@@ -276,7 +276,6 @@
     <string name="pref_sync_automatic_category">தானியங்கி ஒத்திசைவு</string>
     <string name="pref_sync_interval">ஒத்திசைவு அதிர்வெண்</string>
     <string name="pref_choose_what_to_sync">ஒத்திசைக்க என்ன என்பதைத் தேர்வுசெய்க</string>
-    <string name="syncyomi">சினிசோமி</string>
     <string name="last_synchronization">கடைசி ஒத்திசைவு: %1$s</string>
     <string name="google_drive">கூகிள் இயக்கி</string>
     <string name="pref_google_drive_sign_in">விடுபதிகை</string>

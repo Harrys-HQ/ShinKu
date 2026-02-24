@@ -7,9 +7,9 @@
         android:shortcutLongLabel="@string/label_library"
         android:shortcutShortLabel="@string/label_library">
         <intent
-            android:action="eu.kanade.tachiyomi.SHOW_LIBRARY"
-            android:targetPackage="eu.kanade.tachiyomi.sy"
-            android:targetClass="eu.kanade.tachiyomi.ui.main.MainActivity" />
+            android:action="com.shinku.reader.SHOW_LIBRARY"
+            android:targetPackage="com.shinku.reader.sy"
+            android:targetClass="com.shinku.reader.ui.main.MainActivity" />
     </shortcut>
     <shortcut
         android:enabled="true"
@@ -19,9 +19,9 @@
         android:shortcutLongLabel="@string/label_recent_updates"
         android:shortcutShortLabel="@string/label_recent_updates">
         <intent
-            android:action="eu.kanade.tachiyomi.SHOW_RECENTLY_UPDATED"
-            android:targetPackage="eu.kanade.tachiyomi.sy"
-            android:targetClass="eu.kanade.tachiyomi.ui.main.MainActivity" />
+            android:action="com.shinku.reader.SHOW_RECENTLY_UPDATED"
+            android:targetPackage="com.shinku.reader.sy"
+            android:targetClass="com.shinku.reader.ui.main.MainActivity" />
     </shortcut>
     <shortcut
         android:enabled="true"
@@ -31,9 +31,9 @@
         android:shortcutLongLabel="@string/label_recent_manga"
         android:shortcutShortLabel="@string/label_recent_manga">
         <intent
-            android:action="eu.kanade.tachiyomi.SHOW_RECENTLY_READ"
-            android:targetPackage="eu.kanade.tachiyomi.sy"
-            android:targetClass="eu.kanade.tachiyomi.ui.main.MainActivity" />
+            android:action="com.shinku.reader.SHOW_RECENTLY_READ"
+            android:targetPackage="com.shinku.reader.sy"
+            android:targetClass="com.shinku.reader.ui.main.MainActivity" />
     </shortcut>
     <shortcut
         android:enabled="true"
@@ -43,8 +43,8 @@
         android:shortcutLongLabel="@string/browse"
         android:shortcutShortLabel="@string/browse">
         <intent
-            android:action="eu.kanade.tachiyomi.SHOW_CATALOGUES"
-            android:targetPackage="eu.kanade.tachiyomi.sy"
-            android:targetClass="eu.kanade.tachiyomi.ui.main.MainActivity" />
+            android:action="com.shinku.reader.SHOW_CATALOGUES"
+            android:targetPackage="com.shinku.reader.sy"
+            android:targetClass="com.shinku.reader.ui.main.MainActivity" />
     </shortcut>
 </shortcuts>

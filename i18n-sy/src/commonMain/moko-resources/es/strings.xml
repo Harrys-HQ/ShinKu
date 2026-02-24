@@ -196,7 +196,6 @@
     <string name="pref_sync_service">Servicio</string>
     <string name="pref_sync_automatic_category">Sincronización automática</string>
     <string name="pref_choose_what_to_sync">Elige qué sincronizar</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="last_synchronization">Última sincronización: %1$s</string>
     <string name="pref_google_drive_purge_sync_data">Borrar los datos de sincronización de Google Drive</string>
     <string name="google_drive_sync_data_purged">Sincronizar datos purgador de Google Drive</string>

@@ -1,11 +1,11 @@
 plugins {
-    id("mihon.library")
-    id("mihon.library.compose")
+    id("shinku.library")
+    id("shinku.library.compose")
     kotlin("android")
 }
 
 android {
-    namespace = "tachiyomi.presentation.core"
+    namespace = "com.shinku.reader.presentation.core"
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -35,17 +35,17 @@ dependencies {
     // SY <--
 
     // Compose
-    implementation(compose.activity)
-    implementation(compose.foundation)
-    implementation(compose.material3.core)
-    implementation(compose.material.icons)
-    implementation(compose.animation)
-    implementation(compose.animation.graphics)
-    debugImplementation(compose.ui.tooling)
-    implementation(compose.ui.tooling.preview)
-    implementation(compose.ui.util)
+    implementation(libs.activity)
+    implementation(libs.foundation)
+    implementation(libs.material3.core)
+    implementation(libs.material.icons)
+    implementation(libs.animation)
+    implementation(libs.animation.graphics)
+    debugImplementation(libs.ui.tooling)
+    implementation(libs.ui.tooling.preview)
+    implementation(libs.ui.util)
 
-    implementation(androidx.paging.runtime)
-    implementation(androidx.paging.compose)
-    implementation(kotlinx.immutables)
+    implementation(libs.paging.runtime)
+    implementation(libs.paging.compose)
+    implementation(libs.immutables)
 }

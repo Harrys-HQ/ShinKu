@@ -56,8 +56,9 @@ ShinKu is built upon the incredible work of the following projects and developer
 ## 🛠 Setup & Installation
 
 1.  **Download:** Grab the latest `ShinKu-*.apk` from our releases.
-2.  **API Setup:** To enable **Vibe Search**, get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and enter it in **Settings > Advanced > Vibe Search**.
-3.  **Migration:** Coming from SY? Backups are fully compatible!
+2.  **API Setup:** To enable **Vibe Search**, get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and enter it in **Settings > ShinKu Features > Gemini AI**.
+3.  **Performance:** Enable **120Hz support** or the **E-Ink profile** in **Settings > ShinKu Features > Performance**.
+4.  **Migration:** Coming from Mihon or SY? Backups are fully compatible! Just restore your `.tachibk` file in **Settings > Data and storage**.
 
 ---
 

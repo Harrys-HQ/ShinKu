@@ -435,7 +435,6 @@
     <string name="pref_mark_read_dupe_chapters_summary">Marquer les chapitres en double comme lus après la lecture</string>
     <string name="pref_sync_host_summ">Saisissez l’adresse de l’hôte pour synchroniser votre bibliothèque</string>
     <string name="google_drive_not_signed_in">Pas connecté à Google Drive</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="pref_sync_api_key_summ">Entrez la clé API pour synchroniser votre bibliothèque</string>
     <string name="pref_google_drive_purge_sync_data">Effacer les données de synchronisation de Google Drive</string>
     <string name="google_drive_sync_data_not_found">Aucune donnée de synchronisation trouvée dans Google Drive</string>

@@ -2,7 +2,7 @@ package eu.kanade.tachiyomi.network
 
 import android.content.Context
 import app.cash.quickjs.QuickJs
-import tachiyomi.core.common.util.lang.withIOContext
+import com.shinku.reader.core.common.util.lang.withIOContext
 
 /**
  * Util for evaluating JavaScript in sources.

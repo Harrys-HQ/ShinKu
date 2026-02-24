@@ -509,7 +509,6 @@
     <string name="pref_sync_api_key">Chave API</string>
     <string name="pref_sync_api_key_summ">Coloque sua chave API para sincronizar sua biblioteca</string>
     <string name="pref_choose_what_to_sync">Escolha o que sincronizar</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="google_drive">Google Drive</string>
     <string name="pref_google_drive_sign_in">Login</string>
     <string name="pref_google_drive_purge_sync_data">Limpar dados sincronizados do Google Drive</string>

@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <eu.kanade.tachiyomi.widget.TachiyomiTextInputEditText
+        <com.shinku.reader.widget.ShinKuTextInputEditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 

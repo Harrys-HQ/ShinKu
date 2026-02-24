@@ -1,7 +1,7 @@
 package eu.kanade.tachiyomi.network
 
-import tachiyomi.core.common.preference.Preference
-import tachiyomi.core.common.preference.PreferenceStore
+import com.shinku.reader.core.common.preference.Preference
+import com.shinku.reader.core.common.preference.PreferenceStore
 
 class NetworkPreferences(
     private val preferenceStore: PreferenceStore,

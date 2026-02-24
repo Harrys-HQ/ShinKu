@@ -1,11 +1,11 @@
 plugins {
-    id("mihon.library")
+    id("shinku.library")
     kotlin("android")
     kotlin("plugin.serialization")
 }
 
 android {
-    namespace = "tachiyomi.core.metadata"
+    namespace = "com.shinku.reader.core.metadata"
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -16,5 +16,5 @@ android {
 dependencies {
     implementation(projects.sourceApi)
 
-    implementation(kotlinx.bundles.serialization)
+    implementation(libs.bundles.serialization)
 }

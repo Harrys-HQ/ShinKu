@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("mihon.library")
+    id("shinku.library")
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     id("com.github.ben-manes.versions")
@@ -12,18 +12,18 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                api(kotlinx.serialization.json)
+                api(libs.serialization.json)
                 api(libs.injekt)
                 api(libs.rxjava)
                 api(libs.jsoup)
 
-                implementation(project.dependencies.platform(compose.bom))
-                implementation(compose.runtime)
+                implementation(project.dependencies.platform(libs.bom))
+                implementation(libs.runtime)
 
                 // SY -->
                 api(projects.i18n)
                 api(projects.i18nSy)
-                api(kotlinx.reflect)
+                api(libs.reflect)
                 // SY <--
             }
         }
@@ -33,8 +33,8 @@ kotlin {
                 api(libs.preferencektx)
 
                 // Workaround for https://youtrack.jetbrains.com/issue/KT-57605
-                implementation(kotlinx.coroutines.android)
-                implementation(project.dependencies.platform(kotlinx.coroutines.bom))
+                implementation(libs.coroutines.android)
+                implementation(project.dependencies.platform(libs.coroutines.bom))
             }
         }
     }

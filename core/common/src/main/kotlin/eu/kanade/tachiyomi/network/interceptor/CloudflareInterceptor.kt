@@ -6,16 +6,16 @@ import android.webkit.WebView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import eu.kanade.tachiyomi.network.AndroidCookieJar
-import eu.kanade.tachiyomi.util.system.WebViewClientCompat
-import eu.kanade.tachiyomi.util.system.isOutdated
-import eu.kanade.tachiyomi.util.system.toast
+import com.shinku.reader.util.system.WebViewClientCompat
+import com.shinku.reader.util.system.isOutdated
+import com.shinku.reader.util.system.toast
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
-import tachiyomi.core.common.i18n.stringResource
-import tachiyomi.i18n.MR
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.i18n.MR
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 

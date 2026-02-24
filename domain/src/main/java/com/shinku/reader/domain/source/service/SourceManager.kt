@@ -1,0 +1,31 @@
+package com.shinku.reader.domain.source.service
+
+import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+import com.shinku.reader.domain.source.model.StubSource
+
+interface SourceManager {
+
+    val catalogueSources: Flow<List<CatalogueSource>>
+
+    fun get(sourceKey: Long): Source?
+
+    fun getOrStub(sourceKey: Long): Source
+
+    fun getOnlineSources(): List<HttpSource>
+
+    fun getCatalogueSources(): List<CatalogueSource>
+
+    // SY -->
+    val isInitialized: StateFlow<Boolean>
+
+    fun getVisibleOnlineSources(): List<HttpSource>
+
+    fun getVisibleCatalogueSources(): List<CatalogueSource>
+    // SY <--
+
+    fun getStubSources(): List<StubSource>
+}

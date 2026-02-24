@@ -154,7 +154,6 @@
     <string name="pref_sync_host">Host</string>
     <string name="pref_sync_service">Dienst</string>
     <string name="pref_sync_service_category">Sync</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="pref_sync_api_key">API Schlüssel</string>
     <string name="pref_sync_now_group_title">Sync-Aktionen</string>
     <string name="pref_sync_now">Jetzt synchronisieren</string>

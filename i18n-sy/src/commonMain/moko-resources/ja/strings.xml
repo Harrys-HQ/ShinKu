@@ -207,7 +207,6 @@
     <string name="pref_sync_automatic_category">自動同期</string>
     <string name="pref_sync_interval">同期の間隔</string>
     <string name="pref_choose_what_to_sync">同期する項目を選択</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="last_synchronization">最後の同期: %1$s</string>
     <string name="google_drive">Google ドライブ</string>
     <string name="pref_google_drive_sign_in">サインイン</string>

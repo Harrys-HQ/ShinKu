@@ -552,7 +552,6 @@
     <string name="pref_sync_service_category">Sinkronisasi</string>
     <string name="pref_sync_automatic_category">Otomatis Sinkronisasi</string>
     <string name="pref_choose_what_to_sync">Pilih apa yang akan di sinkronisasi</string>
-    <string name="syncyomi">Sinkronisasi Yomi</string>
     <string name="last_synchronization">Sinkronisasi Terakhir: %1$s</string>
     <string name="google_drive">GDrive</string>
     <string name="pref_google_drive_sign_in">Masuk</string>

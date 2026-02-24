@@ -1,12 +1,12 @@
 plugins {
-    id("mihon.library")
+    id("shinku.library")
     kotlin("android")
     kotlin("plugin.serialization")
     alias(libs.plugins.sqldelight)
 }
 
 android {
-    namespace = "tachiyomi.data"
+    namespace = "com.shinku.reader.data"
 
     defaultConfig {
         consumerProguardFiles("consumer-rules.pro")
@@ -15,7 +15,7 @@ android {
     sqldelight {
         databases {
             create("Database") {
-                packageName.set("tachiyomi.data")
+                packageName.set("com.shinku.reader.data")
                 dialect(libs.sqldelight.dialects.sql)
                 schemaOutputDirectory.set(project.file("./src/main/sqldelight"))
             }

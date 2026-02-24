@@ -22,7 +22,6 @@
     <string name="pref_sync_service">সেৱা</string>
     <string name="pref_sync_service_category">সিঙ্ক</string>
     <string name="pref_choose_what_to_sync">কি সিঙ্ক কৰিব তা বাচক</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="pref_sync_options_summ">সিঙ্ক ট্ৰিগাৰ নিৰ্ধাৰণৰ বাবে ব্যৱহাৰ কৰিব পাৰি</string>
     <string name="biometric_lock_times">বায়োমেট্ৰিক লক সময়</string>
     <string name="saturday">শনিবাৰ</string>

@@ -1,0 +1,277 @@
+package com.shinku.reader.presentation.browse.components
+
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import com.gowtham.ratingbar.ComposeStars
+import com.gowtham.ratingbar.RatingBarStyle
+import dev.icerock.moko.resources.StringResource
+import com.shinku.reader.presentation.manga.components.MangaCover
+import com.shinku.reader.exh.metadata.MetadataUtil
+import com.shinku.reader.exh.metadata.metadata.EHentaiSearchMetadata
+import com.shinku.reader.exh.metadata.metadata.RaisedSearchMetadata
+import com.shinku.reader.exh.util.SourceTagsUtil
+import com.shinku.reader.exh.util.SourceTagsUtil.GenreColor
+import com.shinku.reader.exh.util.floor
+import kotlinx.coroutines.flow.StateFlow
+import com.shinku.reader.core.common.i18n.pluralStringResource
+import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.core.components.Badge
+import com.shinku.reader.presentation.core.components.BadgeGroup
+import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
+import java.time.Instant
+import java.time.ZoneId
+
+@Composable
+fun BrowseSourceEHentaiList(
+    mangaList: LazyPagingItems<StateFlow</* SY --> */Pair<Manga, RaisedSearchMetadata?>/* SY <-- */>>,
+    contentPadding: PaddingValues,
+    onMangaClick: (Manga) -> Unit,
+    onMangaLongClick: (Manga) -> Unit,
+) {
+    LazyColumn(
+        contentPadding = contentPadding,
+    ) {
+        item {
+            if (mangaList.loadState.prepend is LoadState.Loading) {
+                BrowseSourceLoadingItem()
+            }
+        }
+
+        items(count = mangaList.itemCount) { index ->
+            val pair by mangaList[index]?.collectAsState() ?: return@items
+            val manga = pair.first
+            val metadata = pair.second
+
+            BrowseSourceEHentaiListItem(
+                manga = manga,
+                // SY -->
+                metadata = metadata,
+                // SY <--
+                onClick = { onMangaClick(manga) },
+                onLongClick = { onMangaLongClick(manga) },
+            )
+        }
+
+        item {
+            if (mangaList.loadState.refresh is LoadState.Loading || mangaList.loadState.append is LoadState.Loading) {
+                BrowseSourceLoadingItem()
+            }
+        }
+    }
+}
+
+@Composable
+fun BrowseSourceEHentaiListItem(
+    manga: Manga,
+    // SY -->
+    metadata: RaisedSearchMetadata?,
+    // SY <--
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = onClick,
+) {
+    if (metadata !is EHentaiSearchMetadata) return
+    val overlayColor = MaterialTheme.colorScheme.background.copy(alpha = 0.66f)
+
+    val context = LocalContext.current
+    val languageText by produceState("", metadata) {
+        value = withIOContext {
+            val locale = SourceTagsUtil.getLocaleSourceUtil(
+                metadata.tags
+                    .firstOrNull { it.namespace == EHentaiSearchMetadata.EH_LANGUAGE_NAMESPACE }
+                    ?.name,
+            )
+            val pageCount = metadata.length
+            if (locale != null && pageCount != null) {
+                context.pluralStringResource(
+                    SYMR.plurals.browse_language_and_pages,
+                    pageCount,
+                    pageCount,
+                    locale.toLanguageTag().uppercase(),
+                )
+            } else if (pageCount != null) {
+                context.pluralStringResource(SYMR.plurals.num_pages, pageCount, pageCount)
+            } else {
+                locale?.toLanguageTag()?.uppercase().orEmpty()
+            }
+        }
+    }
+    val datePosted by produceState("", metadata) {
+        value = withIOContext {
+            runCatching {
+                metadata.datePosted?.let {
+                    MetadataUtil.EX_DATE_FORMAT.format(Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()))
+                }
+            }.getOrNull().orEmpty()
+        }
+    }
+    val genre by produceState<Pair<GenreColor, StringResource>?>(null, metadata) {
+        value = withIOContext {
+            when (metadata.genre) {
+                "doujinshi" -> GenreColor.DOUJINSHI_COLOR to SYMR.strings.doujinshi
+                "manga" -> GenreColor.MANGA_COLOR to SYMR.strings.entry_type_manga
+                "artistcg" -> GenreColor.ARTIST_CG_COLOR to SYMR.strings.artist_cg
+                "gamecg" -> GenreColor.GAME_CG_COLOR to SYMR.strings.game_cg
+                "western" -> GenreColor.WESTERN_COLOR to SYMR.strings.western
+                "non-h" -> GenreColor.NON_H_COLOR to SYMR.strings.non_h
+                "imageset" -> GenreColor.IMAGE_SET_COLOR to SYMR.strings.image_set
+                "cosplay" -> GenreColor.COSPLAY_COLOR to SYMR.strings.cosplay
+                "asianporn" -> GenreColor.ASIAN_PORN_COLOR to SYMR.strings.asian_porn
+                "misc" -> GenreColor.MISC_COLOR to SYMR.strings.misc
+                else -> null
+            }
+        }
+    }
+    val rating by produceState(0f, metadata) {
+        value = withIOContext {
+            val rating = metadata.averageRating?.toFloat()
+            rating?.div(0.5F)?.floor()?.let { 0.5F.times(it) } ?: 0f
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .height(148.dp)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box {
+            MangaCover.Book(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .drawWithContent {
+                        drawContent()
+                        if (manga.favorite) {
+                            drawRect(overlayColor)
+                        }
+                    },
+                data = manga,
+            )
+            if (manga.favorite) {
+                BadgeGroup(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .align(Alignment.TopStart),
+                ) {
+                    Badge(stringResource(MR.strings.in_library))
+                }
+            }
+        }
+        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+            Column(Modifier.fillMaxWidth()) {
+                Text(
+                    text = manga.title,
+                    maxLines = 2,
+                    modifier = Modifier.padding(start = 8.dp, top = 8.dp),
+                    style = MaterialTheme.typography.titleSmall,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                metadata.uploader?.let {
+                    Text(
+                        text = it,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 8.dp),
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 14.sp,
+                    )
+                }
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp, start = 8.dp, end = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    ComposeStars(
+                        value = rating,
+                        numOfStars = 5,
+                        size = 18.dp,
+                        spaceBetween = 2.dp,
+                        hideInactiveStars = false,
+                        style = RatingBarStyle.Fill(
+                            activeColor = Color(0xFF005ED7),
+                            inActiveColor = Color(0xE1E2ECFF),
+                        ),
+                        painterEmpty = null,
+                        painterFilled = null,
+                    )
+                    val color = genre?.first?.color
+                    val res = genre?.second
+                    Card(
+                        colors = if (color != null) {
+                            CardDefaults.cardColors(Color(color))
+                        } else {
+                            CardDefaults.cardColors()
+                        },
+                    ) {
+                        Text(
+                            text = if (res != null) {
+                                stringResource(res)
+                            } else {
+                                metadata.genre.orEmpty()
+                            },
+                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp),
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                    horizontalAlignment = Alignment.End,
+                ) {
+                    Text(
+                        languageText,
+                        maxLines = 1,
+                        fontSize = 14.sp,
+                    )
+                    Text(
+                        datePosted,
+                        maxLines = 1,
+                        fontSize = 14.sp,
+                    )
+                }
+            }
+        }
+    }
+}

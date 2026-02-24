@@ -652,7 +652,6 @@
     <string name="kitsu_id">Kitsu id</string>
     <string name="mal_id">Mal id</string>
     <string name="anime_planet_id">Anime planet id</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="aes_256">AES 256</string>
     <string name="favorites_sync_failed_to_add_to_local_error">\'%1$s\' %2$s</string>
     <string name="id">Id</string>

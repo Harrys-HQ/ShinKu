@@ -543,7 +543,6 @@
     <string name="eh_image_quality_980">980x</string>
     <string name="eh_image_quality_780">780x</string>
     <string name="data_saver">Taga-save ng datos</string>
-    <string name="syncyomi">SyncYomi</string>
     <string name="google_drive">Google Drive</string>
     <string name="aes_256">AES 256</string>
     <string name="favorites_sync_failed_to_add_to_local_error">\'%1$s\' %2$s</string>

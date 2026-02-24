@@ -11,9 +11,15 @@ This document outlines the protocols for development to ensure efficiency and av
 ## Feature Implementation Protocol
 1. **ShinKu Grouping**: All new features must be grouped under a "ShinKu" settings section to maintain project identity.
 2. **Database Integrity**: Migrations must be numbered sequentially. Always update both the `.sq` files and create a new `.sqm` migration.
-3. **UI Consistency**: Use existing components from `tachiyomi.presentation.core` and `eu.kanade.presentation`.
+3. **UI Consistency**: Use existing components from `eu.kanade.tachiyomi.presentation.core` and `com.shinku.reader.presentation`.
+
+## Rebranding & Compatibility Protocol
+1. **Source-API Integrity**: Do NOT move `source-api` or `network` packages out of `eu.kanade.tachiyomi`. These are the binary interface for external extensions.
+2. **Backup Compatibility**: Use `@SerialName` with the legacy `eu.kanade.tachiyomi` prefix for all backup models to ensure old backups can be restored.
+3. **Logo Usage**: Use `ic_shinku_foreground` for notifications and monochrome icons to avoid the "cropping" effect caused by the background.
+4. **Link Hijacking**: Always include legacy `tachiyomi://` and `mihon://` intent filters in `AndroidManifest.xml` to catch external ecosystem links.
 
 ## Current Focus
-- **Smart Categorizer**: Ensure user categories are completely hidden when enabled.
-- **Dead Source Scanner**: Optimize for background execution.
-- **Failed Updates**: Maintain the `last_update_error` flag accurately.
+- **Vibe Search**: Expanding natural language search capabilities.
+- **Performance Profiles**: Monitoring stability of E-Ink and Low RAM modes.
+- **Upstream Sync**: Keeping the `eu.kanade.tachiyomi` bridge classes updated with the latest fixes.

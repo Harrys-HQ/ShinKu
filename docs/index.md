@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Harrys-HQ/ShinKu/master/.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
+  <img src="https://raw.githubusercontent.com/shinkureader/shinku/master/.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
 </p>
 
 <h1 align="center">ShinKu</h1>
@@ -10,11 +10,11 @@
 
 ---
 
-## 🚀 Latest Release: 2.0.0
+## 🚀 Latest Release: 2.1.1
 
 The latest version of ShinKu is now available! 
 
-- **[Download APK](https://github.com/Harrys-HQ/ShinKu/releases/latest)**
+- **[Download APK](https://github.com/shinkureader/shinku/releases/latest)**
 - **[View Changelog](./CHANGELOG.md)**
 
 ---
@@ -47,7 +47,7 @@ ShinKu preserves the best features from its predecessors, TachiyomiSY and Mihon:
 
 ## 🛠 Setup & Installation
 
-1.  **Download:** Download the latest APK from the [Releases](https://github.com/Harrys-HQ/ShinKu/releases/latest) page.
+1.  **Download:** Download the latest APK from the [Releases](https://github.com/shinkureader/shinku/releases/latest) page.
 2.  **Dropbox Sync:** Configure your Dropbox account in **Settings > Data > Sync** for cross-device reading.
 3.  **Vibe Search:** Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and add it in **Settings > Advanced > Vibe Search**.
 4.  **Migration:** Coming from SY? Backups are fully compatible!
@@ -57,7 +57,7 @@ ShinKu preserves the best features from its predecessors, TachiyomiSY and Mihon:
 ## 📄 Documentation
 
 - **[Full Changelog](./CHANGELOG.md)**
-- **[GitHub Repository](https://github.com/Harrys-HQ/ShinKu)**
+- **[GitHub Repository](https://github.com/shinkureader/shinku)**
 
 ---
 

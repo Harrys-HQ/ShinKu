@@ -1,0 +1,13 @@
+package com.shinku.reader.exh.ui
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import com.shinku.reader.domain.source.service.SourceManager
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
+
+@Composable
+fun ifSourcesLoaded(): Boolean {
+    return remember { Injekt.get<SourceManager>().isInitialized }.collectAsState().value
+}

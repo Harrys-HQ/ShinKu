@@ -1,10 +1,10 @@
 
-import eu.kanade.tachiyomi.data.backup.models.Backup
+import com.shinku.reader.data.backup.models.Backup
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.all.EHentai
-import exh.favorites.LocalFavoritesStorage
-import exh.metadata.metadata.EHentaiSearchMetadata
-import exh.source.EXH_SOURCE_ID
+import com.shinku.reader.exh.favorites.LocalFavoritesStorage
+import com.shinku.reader.exh.metadata.metadata.EHentaiSearchMetadata
+import com.shinku.reader.exh.source.EXH_SOURCE_ID
 import io.kotest.inspectors.shouldForAll
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -19,15 +19,15 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
-import tachiyomi.domain.category.interactor.GetCategories
-import tachiyomi.domain.category.model.Category
-import tachiyomi.domain.manga.interactor.GetCustomMangaInfo
-import tachiyomi.domain.manga.interactor.GetFavoriteEntries
-import tachiyomi.domain.manga.interactor.GetFavorites
-import tachiyomi.domain.manga.model.CustomMangaInfo
-import tachiyomi.domain.manga.model.FavoriteEntry
-import tachiyomi.domain.manga.model.Manga
-import tachiyomi.domain.manga.repository.CustomMangaRepository
+import com.shinku.reader.domain.category.interactor.GetCategories
+import com.shinku.reader.domain.category.model.Category
+import com.shinku.reader.domain.manga.interactor.GetCustomMangaInfo
+import com.shinku.reader.domain.manga.interactor.GetFavoriteEntries
+import com.shinku.reader.domain.manga.interactor.GetFavorites
+import com.shinku.reader.domain.manga.model.CustomMangaInfo
+import com.shinku.reader.domain.manga.model.FavoriteEntry
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.manga.repository.CustomMangaRepository
 import java.io.File
 
 class Tester {

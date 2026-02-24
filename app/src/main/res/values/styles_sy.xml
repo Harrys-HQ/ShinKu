@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Widget.Tachiyomi.Chip.Action" parent="Widget.Material3.Chip.Suggestion">
+    <style name="Widget.ShinKu.Chip.Action" parent="Widget.Material3.Chip.Suggestion">
         <item name="chipBackgroundColor">?attr/chipBackgroundColor</item>
         <item name="android:textColor">?attr/chipTextColor</item>
         <item name="rippleColor">?attr/colorControlHighlight</item>

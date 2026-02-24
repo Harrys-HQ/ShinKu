@@ -307,9 +307,9 @@
     <string name="pref_library_update_refresh_metadata_summary">Check for new cover and details when updating library</string>
 
     <string name="pref_library_update_speed">Library update speed</string>
-    <string name="update_speed_standard">Standard (5 concurrent sources, 1 manga per source)</string>
-    <string name="update_speed_boost">Boost (10 concurrent sources, 2 manga per source)</string>
-    <string name="update_speed_extreme">Extreme (20 concurrent sources, 5 manga per source, 500ms delay)</string>
+    <string name="update_speed_standard">Standard (5 concurrent sources)</string>
+    <string name="update_speed_boost">Boost (15 concurrent sources, 3 manga per source)</string>
+    <string name="update_speed_extreme">Extreme (40 concurrent sources, 10 manga per source, 100ms delay)</string>
 
     <string name="label_shinku_features">ShinKu Features</string>
     <string name="pref_smart_categorizer">Smart Categorizer</string>
@@ -346,13 +346,13 @@
     <string name="pref_category_immersion_reader">Immersion &amp; Reader</string>
     <string name="pref_live_translation">Live Translation / OCR</string>
     <string name="pref_live_translation_summary">Translate text overlays using OCR and Gemini AI</string>
-    
+
                 <string name="pref_vibe_search">Vibe Search</string>
                 <string name="pref_vibe_search_summary">Use Gemini AI to find manga based on your description (requires API key)</string>
                 <string name="pref_gemini_api_key">Gemini API Key</string>
                 <string name="pref_gemini_api_key_summary">Enter your API key from Google AI Studio to enable semantic search</string>
                 <string name="vibe_search_loading">Gemini is searching for vibes…</string>
-            
+
                 <string name="dead_source_scanner_count">%1$d manga</string>
 
     <string name="default_category">Default category</string>
@@ -395,7 +395,7 @@
     <string name="ext_confirm_remove">Remove Extension?</string>
     <string name="ext_app_info">App info</string>
     <string name="untrusted_extension">Untrusted extension</string>
-    <string name="untrusted_extension_message">Malicious extensions can read any stored login credentials or execute arbitrary code.\n\nBy trusting this extension, you accept these risks.</string>
+    <string name="untrusted_extension_message">Malicious extensions can read any stored login credentials from ShinKu or execute arbitrary code.\n\nBy trusting this extension, you accept these risks.</string>
     <string name="obsolete_extension_message">This extension is no longer available. It may not function properly and can cause issues with the app. Uninstalling it is recommended.</string>
     <string name="remove_private_extension_message">Do you really want to remove \"%s\" extension?</string>
     <string name="extension_api_error">Failed to fetch available extensions</string>
@@ -459,6 +459,15 @@
     <string name="pref_hardware_bitmap_threshold">Custom hardware bitmap threshold</string>
     <string name="pref_hardware_bitmap_threshold_default">Default (%d)</string>
     <string name="pref_hardware_bitmap_threshold_summary">If reader loads a blank image incrementally reduce the threshold.\nSelected: %s</string>
+    <string name="pref_high_refresh_rate">High Refresh Rate</string>
+    <string name="pref_high_refresh_rate_summary">Force maximum screen refresh rate (e.g. 120Hz) for smoother scrolling</string>
+    <string name="pref_performance_mode">Performance Profile</string>
+    <string name="pref_performance_mode_standard">Standard</string>
+    <string name="pref_performance_mode_eink">E-Ink Optimized</string>
+    <string name="pref_performance_mode_low_power">Low RAM / Power</string>
+    <string name="pref_performance_mode_eink_summary">Disables transitions, forces high contrast, and enables page flashing</string>
+    <string name="pref_performance_mode_low_power_summary">Reduces background tasks and image cache size to save battery/RAM</string>
+
     <string name="pref_always_decode_long_strip_with_ssiv_2">Use legacy decoder for long strip reader</string>
     <string name="pref_always_decode_long_strip_with_ssiv_summary">Affects performance. Only enable if reducing bitmap threshold doesn\'t fix blank image issues</string>
     <string name="pref_display_profile">Custom display profile</string>
@@ -1017,7 +1026,7 @@
     <string name="information_cloudflare_help">Tap here for help with Cloudflare</string>
     <string name="information_required_plain">*required</string>
     <!-- Do not translate "WebView" -->
-    <string name="information_webview_required">WebView is required for the app to function</string>
+    <string name="information_webview_required">WebView is required for ShinKu to function</string>
     <!-- Do not translate "WebView" -->
     <string name="information_webview_outdated">Please update the WebView app for better compatibility</string>
     <string name="chapter_settings_updated">Updated default chapter settings</string>
