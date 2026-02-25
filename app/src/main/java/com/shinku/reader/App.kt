@@ -49,6 +49,7 @@ import com.shinku.reader.data.coil.PagePreviewKeyer
 import com.shinku.reader.data.coil.TachiyomiImageDecoder
 import com.shinku.reader.data.notification.Notifications
 import com.shinku.reader.data.sync.SyncDataJob
+import com.shinku.reader.data.library.RepoHealthScanJob
 import com.shinku.reader.di.AppModule
 import com.shinku.reader.di.InjektKoinBridge
 import com.shinku.reader.di.PreferenceModule
@@ -204,6 +205,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         if (syncPreferences.isSyncEnabled() && syncTriggerOpt.syncOnAppStart) {
             SyncDataJob.startNow(this@App)
         }
+
+        RepoHealthScanJob.setupTask(this)
 
         initializeMigrator()
     }

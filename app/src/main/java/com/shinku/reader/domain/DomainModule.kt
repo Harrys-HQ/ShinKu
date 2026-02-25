@@ -46,6 +46,7 @@ import com.shinku.reader.data.chapter.ChapterRepositoryImpl
 import com.shinku.reader.data.history.HistoryRepositoryImpl
 import com.shinku.reader.data.manga.MangaRepositoryImpl
 import com.shinku.reader.data.release.ReleaseServiceImpl
+import com.shinku.reader.data.source.SourceHealthRepositoryImpl
 import com.shinku.reader.data.source.SourceRepositoryImpl
 import com.shinku.reader.data.source.StubSourceRepositoryImpl
 import com.shinku.reader.data.track.TrackRepositoryImpl
@@ -90,7 +91,10 @@ import com.shinku.reader.domain.manga.repository.MangaRepository
 import com.shinku.reader.domain.release.interactor.GetApplicationRelease
 import com.shinku.reader.domain.release.service.ReleaseService
 import com.shinku.reader.domain.source.interactor.GetRemoteManga
+import com.shinku.reader.domain.source.interactor.GetSourceHealth
 import com.shinku.reader.domain.source.interactor.GetSourcesWithNonLibraryManga
+import com.shinku.reader.domain.source.interactor.UpdateSourceHealth
+import com.shinku.reader.domain.source.repository.SourceHealthRepository
 import com.shinku.reader.domain.source.repository.SourceRepository
 import com.shinku.reader.domain.source.repository.StubSourceRepository
 import com.shinku.reader.domain.track.interactor.DeleteTrack
@@ -184,6 +188,7 @@ class DomainModule : InjektModule {
 
         addSingletonFactory<SourceRepository> { SourceRepositoryImpl(get(), get()) }
         addSingletonFactory<StubSourceRepository> { StubSourceRepositoryImpl(get()) }
+        addSingletonFactory<SourceHealthRepository> { SourceHealthRepositoryImpl(get()) }
         addFactory { GetEnabledSources(get(), get()) }
         addFactory { GetLanguagesWithSources(get(), get()) }
         addFactory { GetRemoteManga(get()) }
@@ -195,8 +200,11 @@ class DomainModule : InjektModule {
         addFactory { ToggleSourcePin(get()) }
         addFactory { TrustExtension(get(), get()) }
         addFactory { GeminiVibeSearch(get()) }
+        addFactory { GetSourceHealth(get()) }
+        addFactory { UpdateSourceHealth(get()) }
 
         addSingletonFactory<ExtensionRepoRepository> { ExtensionRepoRepositoryImpl(get()) }
+
         addFactory { ExtensionRepoService(get(), get()) }
         addFactory { GetExtensionRepo(get()) }
         addFactory { GetExtensionRepoCount(get()) }

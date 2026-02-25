@@ -12,6 +12,7 @@ import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.GetApp
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.HealthAndSafety
 import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.QueryStats
 import androidx.compose.material.icons.outlined.Settings
@@ -55,6 +56,7 @@ fun MoreScreen(
     onClickDeadSourceScanner: () -> Unit,
     onClickFailedUpdatesMigration: () -> Unit,
     onClickConfigureFeatures: () -> Unit,
+    onClickSourceHealth: () -> Unit,
     onClickStats: () -> Unit,
     onClickSettings: () -> Unit,
     onClickAbout: () -> Unit,
@@ -144,6 +146,14 @@ fun MoreScreen(
                     subtitle = stringResource(MR.strings.failed_updates_migration_summary),
                     icon = Icons.Outlined.ErrorOutline,
                     onPreferenceClick = onClickFailedUpdatesMigration,
+                )
+            }
+            item {
+                TextPreferenceWidget(
+                    title = "Source Health",
+                    subtitle = "Monitor and rank source stability",
+                    icon = Icons.Outlined.HealthAndSafety,
+                    onPreferenceClick = onClickSourceHealth,
                 )
             }
             item {

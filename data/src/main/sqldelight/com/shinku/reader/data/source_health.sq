@@ -1,0 +1,69 @@
+CREATE TABLE source_health (
+    source_id INTEGER NOT NULL PRIMARY KEY,
+    last_success INTEGER DEFAULT 0,
+    last_failure INTEGER DEFAULT 0,
+    failure_count INTEGER NOT NULL DEFAULT 0,
+    success_count INTEGER NOT NULL DEFAULT 0,
+    avg_latency INTEGER NOT NULL DEFAULT 0,
+    last_error TEXT
+);
+
+findAll:
+SELECT *
+FROM source_health;
+
+findOne:
+SELECT *
+FROM source_health
+WHERE source_id = :id;
+
+upsert:
+INSERT INTO source_health(source_id, last_success, last_failure, failure_count, success_count, avg_latency, last_error)
+VALUES (:id, :last_success, :last_failure, :failure_count, :success_count, :avg_latency, :last_error)
+ON CONFLICT(source_id)
+DO UPDATE
+SET
+    last_success = :last_success,
+    last_failure = :last_failure,
+    failure_count = :failure_count,
+    success_count = :success_count,
+    avg_latency = :avg_latency,
+    last_error = :last_error;
+
+updateStats:
+INSERT INTO source_health(
+    source_id,
+    last_success,
+    last_failure,
+    success_count,
+    failure_count,
+    avg_latency,
+    last_error
+)
+VALUES (
+    :id,
+    CASE WHEN :is_success = 1 THEN :timestamp ELSE 0 END,
+    CASE WHEN :is_success = 0 THEN :timestamp ELSE 0 END,
+    CASE WHEN :is_success = 1 THEN 1 ELSE 0 END,
+    CASE WHEN :is_success = 0 THEN 1 ELSE 0 END,
+    :latency,
+    CASE WHEN :is_success = 0 THEN :error ELSE NULL END
+)
+ON CONFLICT(source_id)
+DO UPDATE
+SET
+    last_success = CASE WHEN :is_success = 1 THEN :timestamp ELSE last_success END,
+    last_failure = CASE WHEN :is_success = 0 THEN :timestamp ELSE last_failure END,
+    success_count = success_count + CASE WHEN :is_success = 1 THEN 1 ELSE 0 END,
+    failure_count = failure_count + CASE WHEN :is_success = 0 THEN 1 ELSE 0 END,
+    avg_latency = (avg_latency + :latency) / 2,
+    last_error = CASE WHEN :is_success = 0 THEN :error ELSE last_error END;
+
+resetStats:
+UPDATE source_health
+SET
+    failure_count = 0,
+    success_count = 0,
+    avg_latency = 0,
+    last_error = NULL
+WHERE source_id = :id;

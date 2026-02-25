@@ -21,7 +21,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -40,6 +42,7 @@ import com.shinku.reader.domain.chapter.interactor.GetChaptersByMangaId
 import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.source.interactor.GetSourceHealth
 import com.shinku.reader.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -55,6 +58,7 @@ class MigrationListScreenModel(
     private val syncChaptersWithSource: SyncChaptersWithSource = Injekt.get(),
     private val getChaptersByMangaId: GetChaptersByMangaId = Injekt.get(),
     private val migrateManga: MigrateMangaUseCase = Injekt.get(),
+    private val getSourceHealth: GetSourceHealth = Injekt.get(),
 ) : StateScreenModel<MigrationListScreenModel.State>(State()) {
 
     private val smartSearchEngine = SmartSourceSearchEngine(extraSearchQuery)
@@ -124,64 +128,84 @@ class MigrationListScreenModel(
 
         val sources = preferences.migrationSources().get()
             .mapNotNull { sourceManager.get(it) as? CatalogueSource }
+            // Sort sources by health score (Healthiest first)
+            .map { source ->
+                val health = getSourceHealth.await(source.id)
+                source to (health?.healthScore ?: -1)
+            }
+            .sortedByDescending { it.second }
+            .map { it.first }
 
-        for (manga in mangas) {
-            if (!currentCoroutineContext().isActive) break
-            if (manga.manga.id !in state.value.mangaIds) continue
-            if (manga.searchResult.value != SearchResult.Searching) continue
-            if (!manga.migrationScope.isActive) continue
+        // Process up to 3 manga in parallel to speed things up without overwhelming the network
+        val globalSemaphore = Semaphore(3)
 
-            val result = try {
-                manga.migrationScope.async {
-                    if (prioritizeByChapters) {
-                        val sourceSemaphore = Semaphore(5)
-                        sources.map { source ->
-                            async innerAsync@{
-                                sourceSemaphore.withPermit {
-                                    val result = searchSource(manga.manga, source, deepSearchMode)
-                                    if (result == null || result.second.chapterCount == 0) return@innerAsync null
-                                    result
+        coroutineScope {
+            mangas.map { manga ->
+                async {
+                    if (manga.manga.id !in state.value.mangaIds) return@async
+                    if (manga.searchResult.value != SearchResult.Searching) return@async
+                    if (!manga.migrationScope.isActive) return@async
+
+                    globalSemaphore.withPermit {
+                        // Small delay to prevent massive bursts
+                        delay(100)
+                        
+                        val result = try {
+                            manga.migrationScope.async {
+                                if (prioritizeByChapters) {
+                                    // Concurrent search within a single manga
+                                    val sourceSemaphore = Semaphore(3)
+                                    sources.map { source ->
+                                        async innerAsync@{
+                                            sourceSemaphore.withPermit {
+                                                val result = searchSource(manga.manga, source, deepSearchMode)
+                                                if (result == null || result.second.chapterCount == 0) return@innerAsync null
+                                                result
+                                            }
+                                        }
+                                    }
+                                        .mapNotNull { it.await() }
+                                        .maxByOrNull { it.second.latestChapter ?: 0.0 }
+                                } else {
+                                    // Sequential search within a single manga (healthiest first)
+                                    sources.forEach { source ->
+                                        ensureActive()
+                                        val result = searchSource(manga.manga, source, deepSearchMode)
+                                        if (result != null) return@async result
+                                    }
+                                    null
                                 }
+                            }.await()
+                        } catch (_: CancellationException) {
+                            null
+                        }
+
+                        if (result != null && result.first.thumbnailUrl == null) {
+                            try {
+                                val newManga = sourceManager.getOrStub(result.first.source).getMangaDetails(result.first.toSManga())
+                                updateManga.awaitUpdateFromSource(result.first, newManga, true)
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (_: Exception) {
                             }
                         }
-                            .mapNotNull { it.await() }
-                            .maxByOrNull { it.second.latestChapter ?: 0.0 }
-                    } else {
-                        sources.forEach { source ->
-                            val result = searchSource(manga.manga, source, deepSearchMode)
-                            if (result != null) return@async result
+
+                        manga.searchResult.value = result?.first?.toSuccessSearchResult() ?: SearchResult.NotFound
+
+                        if (result == null && hideUnmatched) {
+                            removeManga(manga)
                         }
-                        null
+                        if (result != null &&
+                            hideWithoutUpdates &&
+                            (result.second.latestChapter ?: 0.0) <= (manga.latestChapter ?: 0.0)
+                        ) {
+                            removeManga(manga)
+                        }
+
+                        updateMigrationProgress()
                     }
                 }
-                    .await()
-            } catch (_: CancellationException) {
-                continue
-            }
-
-            if (result != null && result.first.thumbnailUrl == null) {
-                try {
-                    val newManga = sourceManager.getOrStub(result.first.source).getMangaDetails(result.first.toSManga())
-                    updateManga.awaitUpdateFromSource(result.first, newManga, true)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (_: Exception) {
-                }
-            }
-
-            manga.searchResult.value = result?.first?.toSuccessSearchResult() ?: SearchResult.NotFound
-
-            if (result == null && hideUnmatched) {
-                removeManga(manga)
-            }
-            if (result != null &&
-                hideWithoutUpdates &&
-                (result.second.latestChapter ?: 0.0) <= (manga.latestChapter ?: 0.0)
-            ) {
-                removeManga(manga)
-            }
-
-            updateMigrationProgress()
+            }.awaitAll()
         }
     }
 
