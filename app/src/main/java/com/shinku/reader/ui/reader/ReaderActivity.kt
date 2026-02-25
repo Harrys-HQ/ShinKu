@@ -391,9 +391,40 @@ class ReaderActivity : BaseActivity() {
                     onSave = viewModel::saveImage,
                     onShareCombined = viewModel::shareImages,
                     onSaveCombined = viewModel::saveImages,
-                    onFootnotes = {},
-                    onTranslation = {},
+                    onFootnotes = viewModel::onFootnotes,
+                    onTranslation = viewModel::onTranslation,
                     hasExtraPage = (state.dialog as? ReaderViewModel.Dialog.PageActions)?.extraPage != null,
+                )
+            }
+
+            is ReaderViewModel.Dialog.AiProcessing -> {
+                AlertDialog(
+                    onDismissRequest = onDismissRequest,
+                    confirmButton = {},
+                    title = { Text("AI Processing") },
+                    text = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            CircularProgressIndicator()
+                            Text("Analyzing page content...")
+                        }
+                    },
+                )
+            }
+
+            is ReaderViewModel.Dialog.AiInsight -> {
+                val dialog = state.dialog as ReaderViewModel.Dialog.AiInsight
+                AlertDialog(
+                    onDismissRequest = onDismissRequest,
+                    confirmButton = {
+                        TextButton(onClick = onDismissRequest) {
+                            Text(stringResource(MR.strings.action_ok))
+                        }
+                    },
+                    title = { Text(dialog.title) },
+                    text = { Text(dialog.content) },
                 )
             }
 

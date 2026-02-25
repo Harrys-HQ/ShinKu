@@ -71,3 +71,6 @@ WHERE chapter_id = :chapterId;
 getReadDuration:
 SELECT coalesce(sum(time_read), 0)
 FROM history;
+
+getHistory:
+SELECT * FROM history;

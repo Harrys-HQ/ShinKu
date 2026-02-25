@@ -38,6 +38,7 @@ class StatsScreenModel(
     private val trackerManager: TrackerManager = Injekt.get(),
     // SY -->
     private val getReadMangaNotInLibraryView: GetReadMangaNotInLibraryView = Injekt.get(),
+    private val getReadingStats: com.shinku.reader.domain.history.interactor.GetReadingStats = Injekt.get(),
     // SY <--
 ) : StateScreenModel<StatsScreenState>(StatsScreenState.Loading) {
 
@@ -92,12 +93,26 @@ class StatsScreenModel(
                 trackerCount = loggedInTrackers.size,
             )
 
+            // SY -->
+            val readingStats = getReadingStats.await()
+            val streaksStatData = StatsData.Streaks(
+                currentStreak = readingStats.currentStreak,
+            )
+            val genresStatData = StatsData.Genres(
+                topGenres = readingStats.bestGenres,
+            )
+            // SY <--
+
             mutableState.update {
                 StatsScreenState.Success(
                     overview = overviewStatData,
                     titles = titlesStatData,
                     chapters = chaptersStatData,
                     trackers = trackersStatData,
+                    // SY -->
+                    streaks = streaksStatData,
+                    genres = genresStatData,
+                    // SY <--
                 )
             }
             // SY -->

@@ -36,5 +36,9 @@ class GetManga(
     override suspend fun awaitId(url: String, sourceId: Long): Long? {
         return await(url, sourceId)?.id
     }
+
+    suspend fun awaitAll(): List<Manga> {
+        return mangaRepository.getAll()
+    }
     // SY <--
 }

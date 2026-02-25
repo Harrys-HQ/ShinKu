@@ -744,4 +744,14 @@
 
     <!-- Humanize time -->
     <string name="humanize_fallback">moments ago</string>
+
+    <!-- Reading Journey & Stats -->
+    <string name="reading_journey_title">Reading Journey</string>
+    <string name="reading_journey_chapters_read">Chapters</string>
+    <string name="reading_journey_time_read">Time</string>
+    <string name="reading_journey_streak">Streak</string>
+    <string name="reading_journey_streak_days">%1$d days</string>
+    <string name="label_streaks">Streaks</string>
+    <string name="label_current_streak">Current Streak</string>
+    <string name="label_top_genres">Top Genres</string>
 </resources>

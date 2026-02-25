@@ -138,6 +138,9 @@ class ReaderViewModel @JvmOverloads constructor(
     private val getMergedReferencesById: GetMergedReferencesById = Injekt.get(),
     private val getMergedChaptersByMangaId: GetMergedChaptersByMangaId = Injekt.get(),
     private val setReadStatus: SetReadStatus = Injekt.get(),
+    private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
+    private val textRecognitionInteractor: com.shinku.reader.domain.source.interactor.TextRecognitionInteractor = Injekt.get(),
+    private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
     // SY <--
 ) : ViewModel() {
 
@@ -1250,6 +1253,51 @@ class ReaderViewModel @JvmOverloads constructor(
     }
     // SY <--
 
+    // SY -->
+    fun onTranslation() {
+        val page = (state.value.dialog as? Dialog.PageActions)?.page ?: return
+        performAiAction(page, "Translation") { text ->
+            val apiKey = shinkuPreferences.geminiApiKey().get()
+            val model = shinkuPreferences.geminiModel().get()
+            geminiVibeSearch.translateText(text, apiKey, model)
+        }
+    }
+
+    fun onFootnotes() {
+        val page = (state.value.dialog as? Dialog.PageActions)?.page ?: return
+        performAiAction(page, "Insights") { text ->
+            val apiKey = shinkuPreferences.geminiApiKey().get()
+            val model = shinkuPreferences.geminiModel().get()
+            geminiVibeSearch.explainFootnotes(text, apiKey, model)
+        }
+    }
+
+    private fun performAiAction(page: ReaderPage, title: String, action: suspend (String) -> String) {
+        if (page.status != Page.State.Ready) return
+        val stream = page.stream ?: return
+        
+        viewModelScope.launchIO {
+            mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
+            try {
+                val bitmap = ImageDecoder.newInstance(stream())?.decode() ?: throw Exception("Failed to decode image")
+                val ocrResults = textRecognitionInteractor.recognizeText(bitmap)
+                val fullText = ocrResults.joinToString("\n") { it.text }
+
+                if (fullText.isBlank()) {
+                    mutableState.update { it.copy(dialog = Dialog.AiInsight(title, "No text detected on page.")) }
+                    return@launchIO
+                }
+
+                val result = action(fullText)
+                mutableState.update { it.copy(dialog = Dialog.AiInsight(title, result)) }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+                mutableState.update { it.copy(dialog = Dialog.AiInsight("Error", e.message ?: "Unknown error")) }
+            }
+        }
+    }
+    // SY <--
+
     /**
      * Sets the image of the selected page as cover and notifies the UI of the result.
      */
@@ -1395,6 +1443,8 @@ class ReaderViewModel @JvmOverloads constructor(
         data object AutoScrollHelp : Dialog
         data object RetryAllHelp : Dialog
         data object BoostPageHelp : Dialog
+        data object AiProcessing : Dialog
+        data class AiInsight(val title: String, val content: String) : Dialog
         // SY <--
     }
 
