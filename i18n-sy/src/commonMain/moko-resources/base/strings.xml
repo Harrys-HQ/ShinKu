@@ -754,4 +754,22 @@
     <string name="label_streaks">Streaks</string>
     <string name="label_current_streak">Current Streak</string>
     <string name="label_top_genres">Top Genres</string>
+
+    <!-- AI Enrichment -->
+    <string name="action_ai_fix">Fix with AI</string>
+    <string name="ai_fixing_metadata">AI is analyzing and fixing metadata…</string>
+    <string name="ai_fix_error">Failed to fix metadata with AI: %1$s</string>
+
+    <!-- Zen Mode -->
+    <string name="pref_zen_mode">Zen Mode</string>
+    <string name="pref_zen_mode_summary">Hide all distractions (page numbers, clock, etc.) while reading</string>
+
+    <!-- Feed AI -->
+    <string name="label_ai_recommends">AI Recommended for You</string>
+
+    <!-- Sync Conflict -->
+    <string name="sync_conflict_title">Sync Discrepancy Detected</string>
+    <string name="sync_conflict_message">You have different reading progress on another device for \"%1$s\".</string>
+    <string name="sync_conflict_local">Stay on current chapter (%1$s)</string>
+    <string name="sync_conflict_remote">Jump to other device\'s chapter (%1$s)</string>
 </resources>

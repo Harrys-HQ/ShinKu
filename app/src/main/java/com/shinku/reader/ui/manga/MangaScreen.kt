@@ -4,7 +4,12 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -13,10 +18,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -73,7 +80,8 @@ import kotlinx.coroutines.launch
 import logcat.LogPriority
 import com.shinku.reader.feature.migration.config.MigrationConfigScreen
 import com.shinku.reader.feature.migration.dialog.MigrateMangaDialog
-import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.core.common.i18n.stringResource as contextStringResource
 import com.shinku.reader.core.common.util.lang.launchUI
 import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.core.common.util.lang.withNonCancellableContext
@@ -153,6 +161,9 @@ class MangaScreen(
                     when (event) {
                         is MangaScreenModel.Event.SearchSimilarVibes -> {
                             navigator.push(GlobalSearchScreen(event.titles.joinToString(" ")))
+                        }
+                        is MangaScreenModel.Event.JumpToChapter -> {
+                            openChapter(context, event.chapter)
                         }
                     }
                 }
@@ -357,7 +368,61 @@ class MangaScreen(
                 EditMangaDialog(
                     manga = dialog.manga,
                     onDismissRequest = screenModel::dismissDialog,
+                    onAiFixClick = screenModel::fixMetadataWithAi,
                     onPositiveClick = screenModel::updateMangaInfo,
+                )
+            }
+            MangaScreenModel.Dialog.FixingMetadata -> {
+                AlertDialog(
+                    onDismissRequest = {},
+                    confirmButton = {},
+                    title = { Text(stringResource(SYMR.strings.action_ai_fix)) },
+                    text = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            androidx.compose.material3.CircularProgressIndicator()
+                            Text(stringResource(SYMR.strings.ai_fixing_metadata))
+                        }
+                    },
+                )
+            }
+            MangaScreenModel.Dialog.SyncDiscrepancy -> {
+                AlertDialog(
+                    onDismissRequest = { screenModel.resolveSyncDiscrepancy(false) },
+                    title = { Text(stringResource(SYMR.strings.sync_conflict_title)) },
+                    text = {
+                        Text(
+                            stringResource(
+                                SYMR.strings.sync_conflict_message,
+                                successState.manga.title,
+                            ),
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { screenModel.resolveSyncDiscrepancy(true) }) {
+                            val lastRead = successState.chapters
+                                .filter { it.chapter.read }
+                                .maxByOrNull { it.chapter.chapterNumber }
+                            Text(
+                                stringResource(
+                                    SYMR.strings.sync_conflict_remote,
+                                    lastRead?.chapter?.name ?: "",
+                                ),
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { screenModel.resolveSyncDiscrepancy(false) }) {
+                            Text(
+                                stringResource(
+                                    SYMR.strings.sync_conflict_local,
+                                    successState.chapters.find { !it.chapter.read }?.chapter?.name ?: "",
+                                ),
+                            )
+                        }
+                    },
                 )
             }
             is MangaScreenModel.Dialog.EditMergedSettings -> {
@@ -419,7 +484,7 @@ class MangaScreen(
                 context.startActivity(
                     Intent.createChooser(
                         intent,
-                        context.stringResource(MR.strings.action_share),
+                        context.contextStringResource(MR.strings.action_share),
                     ),
                 )
             }
@@ -550,7 +615,7 @@ class MangaScreen(
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
 
-                context.toast(context.stringResource(SYMR.strings.failed_merge, e.message.orEmpty()))
+                context.toast(context.contextStringResource(SYMR.strings.failed_merge, e.message.orEmpty()))
             }
         }
     }

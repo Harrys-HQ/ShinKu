@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.2.0" changeDate="Feb 25,2026">
+        <changelogtext>[b]AI Metadata Enrichment[/b]: Use Gemini to automatically fix poor descriptions and missing tags</changelogtext>
+        <changelogtext>[b]Zen Reader Mode[/b]: Hide all UI distractions for an immersive experience</changelogtext>
+        <changelogtext>[b]AI Proactive Discovery[/b]: Recommended manga section in the Feed based on your reading history</changelogtext>
+        <changelogtext>[b]Sync conflict handling[/b]: Smart detection and resolution of cross-device progress differences</changelogtext>
+        <changelogtext>Fixed Reading Journey UI wrapping and Statistics screen cutoff</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.1.2" changeDate="Feb 25,2026">
         <changelogtext>[b]AI-Powered Reader[/b]: Added Live Translation and Interactive Footnotes using Gemini AI</changelogtext>
         <changelogtext>[b]Enhanced Stats[/b]: Restored Reading Streaks and Top Genre breakdown</changelogtext>

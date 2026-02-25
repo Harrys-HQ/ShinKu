@@ -1,5 +1,16 @@
 # ShinKu Changelog
 
+## 2.2.0 (2026-02-25)
+### Added
+- **AI Metadata Enrichment:** New "Fix with AI" button in Edit Info to automatically generate high-quality descriptions and tags using Gemini.
+- **"Zen" Immersive Reader:** New mode to hide all UI distractions (page numbers, clock, bars) for pure immersion.
+- **AI-Powered Feed:** The Feed now proactively suggests new manga based on your top reading genres and history.
+- **Sync Conflict Resolver:** Smart detection of reading progress discrepancies across devices with a one-tap "Jump to Progress" option.
+
+### Fixed
+- **UI Scaling:** Fixed text wrapping in the Reading Journey card and text cutoff in the Statistics genre breakdown.
+- **Dropbox Reliability:** Improved auto-sync triggers when opening and finishing chapters.
+
 ## 2.1.2 (2026-02-25)
 ### Added
 - **AI-Powered Reader:** Integrated Google ML Kit OCR and Gemini AI for **Live Translation** and **Interactive Footnotes** (cultural context) directly in the reader.

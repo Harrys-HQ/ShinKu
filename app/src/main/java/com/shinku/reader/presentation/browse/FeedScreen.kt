@@ -74,7 +74,7 @@ fun FeedScreen(
 ) {
     when {
         state.isLoading -> LoadingScreen()
-        state.isEmpty -> EmptyScreen(
+        state.items.isNullOrEmpty() -> EmptyScreen(
             SYMR.strings.feed_tab_empty,
             modifier = Modifier.padding(contentPadding),
         )
@@ -98,6 +98,22 @@ fun FeedScreen(
                     contentPadding = contentPadding + topSmallPaddingValues,
                     modifier = Modifier.fillMaxSize(),
                 ) {
+                    if (!state.recommendations.isNullOrEmpty()) {
+                        item {
+                            GlobalSearchResultItem(
+                                title = stringResource(SYMR.strings.label_ai_recommends),
+                                subtitle = stringResource(MR.strings.last_used_source),
+                                onClick = {},
+                            ) {
+                                GlobalSearchCardRow(
+                                    titles = state.recommendations,
+                                    getManga = getMangaState,
+                                    onClick = onClickManga,
+                                    onLongClick = onClickManga,
+                                )
+                            }
+                        }
+                    }
                     items(
                         state.items.orEmpty(),
                         key = { it.feed.id },
