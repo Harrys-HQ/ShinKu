@@ -49,6 +49,7 @@ fun MoreScreen(
     showNavHistory: Boolean,
     readChapters: Int,
     readDuration: Long,
+    readStreak: Int,
     // SY <--
     onClickDownloadQueue: () -> Unit,
     onClickDataAndStorage: () -> Unit,
@@ -76,6 +77,7 @@ fun MoreScreen(
                 ReadingJourneyCard(
                     readChapters = readChapters,
                     readDuration = readDuration,
+                    readStreak = readStreak,
                     onClick = onClickStats,
                 )
             }

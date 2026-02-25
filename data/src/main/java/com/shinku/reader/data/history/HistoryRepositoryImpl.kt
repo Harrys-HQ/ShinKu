@@ -29,6 +29,10 @@ class HistoryRepositoryImpl(
         return handler.awaitOne { historyQueries.getReadDuration() }
     }
 
+    override suspend fun getAllHistory(): List<History> {
+        return handler.awaitList { historyQueries.getHistory(HistoryMapper::mapHistory) }
+    }
+
     override suspend fun getHistoryByMangaId(mangaId: Long): List<History> {
         return handler.awaitList { historyQueries.getHistoryByMangaId(mangaId, HistoryMapper::mapHistory) }
     }

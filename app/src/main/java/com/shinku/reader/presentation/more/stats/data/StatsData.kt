@@ -25,4 +25,14 @@ sealed interface StatsData {
         val meanScore: Double,
         val trackerCount: Int,
     ) : StatsData
+
+    // SY -->
+    data class Streaks(
+        val currentStreak: Int,
+    ) : StatsData
+
+    data class Genres(
+        val topGenres: List<String>,
+    ) : StatsData
+    // SY <--
 }

@@ -72,6 +72,7 @@ data object MoreTab : Tab {
         val downloadQueueState by screenModel.downloadQueueState.collectAsState()
         val readChapters by screenModel.readChapters.collectAsState()
         val readDuration by screenModel.readDuration.collectAsState()
+        val readStreak by screenModel.readStreak.collectAsState()
         MoreScreen(
             downloadQueueStateProvider = { downloadQueueState },
             downloadedOnly = screenModel.downloadedOnly,
@@ -83,6 +84,7 @@ data object MoreTab : Tab {
             showNavHistory = screenModel.showNavHistory,
             readChapters = readChapters,
             readDuration = readDuration,
+            readStreak = readStreak,
             // SY <--
             onClickDownloadQueue = { navigator.push(DownloadQueueScreen) },
             onClickDataAndStorage = { navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage)) },
@@ -104,6 +106,7 @@ private class MoreScreenModel(
     private val downloadManager: DownloadManager = Injekt.get(),
     private val getLibraryManga: GetLibraryManga = Injekt.get(),
     private val getTotalReadDuration: GetTotalReadDuration = Injekt.get(),
+    private val getReadingStats: com.shinku.reader.domain.history.interactor.GetReadingStats = Injekt.get(),
     preferences: BasePreferences = Injekt.get(),
     // SY -->
     uiPreferences: UiPreferences = Injekt.get(),
@@ -122,6 +125,9 @@ private class MoreScreenModel(
 
     private val _readDuration = MutableStateFlow(0L)
     val readDuration = _readDuration.asStateFlow()
+
+    private val _readStreak = MutableStateFlow(0)
+    val readStreak = _readStreak.asStateFlow()
     // SY <--
 
     private var _downloadQueueState: MutableStateFlow<DownloadQueueState> = MutableStateFlow(DownloadQueueState.Stopped)
@@ -131,8 +137,10 @@ private class MoreScreenModel(
         // SY -->
         screenModelScope.launchIO {
             val libraryManga = getLibraryManga.await()
+            val stats = getReadingStats.await()
             _readChapters.value = libraryManga.sumOf { it.readCount }.toInt()
-            _readDuration.value = getTotalReadDuration.await()
+            _readDuration.value = stats.totalReadDuration
+            _readStreak.value = stats.currentStreak
         }
         // SY <--
         // Handle running/paused status change and queue progress updating

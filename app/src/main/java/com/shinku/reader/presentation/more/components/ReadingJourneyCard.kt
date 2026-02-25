@@ -21,12 +21,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.i18n.stringResource
 
 @Composable
 fun ReadingJourneyCard(
     readChapters: Int,
     readDuration: Long,
+    readStreak: Int,
     onClick: () -> Unit,
 ) {
     val durationText = remember(readDuration) {
@@ -59,7 +61,7 @@ fun ReadingJourneyCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = stringResource(MR.strings.reading_journey_title),
+                    text = stringResource(SYMR.strings.reading_journey_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                 )
@@ -75,7 +77,7 @@ fun ReadingJourneyCard(
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = stringResource(MR.strings.reading_journey_chapters_read),
+                            text = stringResource(SYMR.strings.reading_journey_chapters_read),
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }
@@ -88,10 +90,23 @@ fun ReadingJourneyCard(
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = stringResource(MR.strings.reading_journey_time_read),
+                            text = stringResource(SYMR.strings.reading_journey_time_read),
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }
+                }
+
+                Column {
+                    Text(
+                        text = stringResource(SYMR.strings.reading_journey_streak_days, readStreak),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = stringResource(SYMR.strings.reading_journey_streak),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
                 }
             }
         }

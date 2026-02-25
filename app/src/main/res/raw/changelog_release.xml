@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.1.2" changeDate="Feb 25,2026">
+        <changelogtext>[b]AI-Powered Reader[/b]: Added Live Translation and Interactive Footnotes using Gemini AI</changelogtext>
+        <changelogtext>[b]Enhanced Stats[/b]: Restored Reading Streaks and Top Genre breakdown</changelogtext>
+        <changelogtext>[b]Precise Scroller[/b]: Rewritten Library Grid scroller for improved accuracy</changelogtext>
+        <changelogtext>[b]Dropbox Auto-Sync[/b]: Reading progress now triggers automatic background sync</changelogtext>
+        <changelogtext>Visual Polish: Animated shimmer effect for loading manga covers</changelogtext>
+        <changelogtext>Improved stability for legacy extensions and mass migration</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.1.0" changeDate="Feb 23,2026">
         <changelogtext>[b]Rebranded to com.shinku.reader[/b]</changelogtext>
         <changelogtext>Optimized UI: Rearranged ShinKu features and restored Statistics to Reading Journey</changelogtext>

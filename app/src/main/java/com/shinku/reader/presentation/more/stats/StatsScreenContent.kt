@@ -1,10 +1,14 @@
 package com.shinku.reader.presentation.more.stats
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.material.icons.Icons
@@ -16,13 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.shinku.reader.presentation.more.stats.components.StatsItem
 import com.shinku.reader.presentation.more.stats.components.StatsOverviewItem
 import com.shinku.reader.presentation.more.stats.data.StatsData
 import com.shinku.reader.presentation.util.toDurationString
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.components.SectionCard
-import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.i18n.stringResource
 import java.util.Locale
 import kotlin.time.DurationUnit
@@ -35,7 +40,7 @@ fun StatsScreenContent(
 ) {
     LazyColumn(
         contentPadding = paddingValues,
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
             OverviewSection(state.overview)
@@ -48,6 +53,59 @@ fun StatsScreenContent(
         }
         item {
             TrackerStats(state.trackers)
+        }
+        // SY -->
+        item {
+            StreakSection(state.streaks)
+        }
+        item {
+            GenreSection(state.genres)
+        }
+        // SY <--
+    }
+}
+
+@Composable
+private fun LazyItemScope.StreakSection(
+    data: StatsData.Streaks,
+) {
+    SectionCard(SYMR.strings.label_streaks) {
+        Row {
+            StatsItem(
+                data.currentStreak.toString(),
+                stringResource(SYMR.strings.label_current_streak),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LazyItemScope.GenreSection(
+    data: StatsData.Genres,
+) {
+    SectionCard(SYMR.strings.label_top_genres) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            data.topGenres.chunked(2).forEach { rowGenres ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowGenres.forEach { genre ->
+                        Row(modifier = Modifier.weight(1f)) {
+                            StatsItem(
+                                title = genre,
+                                subtitle = "",
+                            )
+                        }
+                    }
+                    if (rowGenres.size == 1) {
+                        Box(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
         }
     }
 }

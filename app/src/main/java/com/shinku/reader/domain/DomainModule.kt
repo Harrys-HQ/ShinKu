@@ -13,6 +13,7 @@ import com.shinku.reader.domain.manga.interactor.SetExcludedScanlators
 import com.shinku.reader.domain.manga.interactor.SetMangaViewerFlags
 import com.shinku.reader.domain.manga.interactor.UpdateManga
 import com.shinku.reader.domain.source.interactor.GeminiVibeSearch
+import com.shinku.reader.domain.source.interactor.TextRecognitionInteractor
 import com.shinku.reader.domain.source.interactor.GetEnabledSources
 import com.shinku.reader.domain.source.interactor.GetIncognitoState
 import com.shinku.reader.domain.source.interactor.GetLanguagesWithSources
@@ -71,6 +72,7 @@ import com.shinku.reader.domain.chapter.interactor.ShouldUpdateDbChapter
 import com.shinku.reader.domain.chapter.interactor.UpdateChapter
 import com.shinku.reader.domain.chapter.repository.ChapterRepository
 import com.shinku.reader.domain.history.interactor.GetHistory
+import com.shinku.reader.domain.history.interactor.GetReadingStats
 import com.shinku.reader.domain.history.interactor.GetNextChapters
 import com.shinku.reader.domain.history.interactor.GetTotalReadDuration
 import com.shinku.reader.domain.history.interactor.RemoveHistory
@@ -176,6 +178,7 @@ class DomainModule : InjektModule {
         addFactory { UpsertHistory(get()) }
         addFactory { RemoveHistory(get()) }
         addFactory { GetTotalReadDuration(get()) }
+        addFactory { GetReadingStats(get(), get(), get()) }
 
         addFactory { DeleteDownload(get(), get()) }
 
@@ -200,6 +203,7 @@ class DomainModule : InjektModule {
         addFactory { ToggleSourcePin(get()) }
         addFactory { TrustExtension(get(), get()) }
         addFactory { GeminiVibeSearch(get()) }
+        addFactory { TextRecognitionInteractor() }
         addFactory { GetSourceHealth(get()) }
         addFactory { UpdateSourceHealth(get()) }
 

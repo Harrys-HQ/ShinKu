@@ -53,6 +53,11 @@ SELECT *
 FROM chapters
 WHERE _id = :id;
 
+getChaptersByIds:
+SELECT *
+FROM chapters
+WHERE _id IN :ids;
+
 getChaptersByMangaId:
 SELECT C.*
 FROM chapters C
