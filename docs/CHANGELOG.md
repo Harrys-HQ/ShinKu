@@ -1,5 +1,19 @@
 # ShinKu Changelog
 
+## 2.1.2 (2026-02-25)
+### Fixed
+- **Migration Crash:** Added compatibility bridges for `JsoupExtensions` and `RxExtension` to resolve `NoClassDefFoundError` in extensions (e.g., Mangabuddy).
+- **Migration Stability:** Added error handling to the Smart Search engine to prevent source-specific crashes from hanging batch migrations.
+- **Vibe Search Isolation:** Restricted Vibe Search to global discovery; migration now strictly uses Direct Title Search to prevent AI-related timeouts.
+
+### Added
+- **Source Health Dashboard:** Monitor real-time reliability and speed of all extensions.
+- **Smart Throttling:** Automatically slows down library updates for "Sensitive" or slow sources to prevent IP bans.
+- **Global Repo Scanner:** Background task to periodically check the health of all available English sources in the repository.
+- **Weighted Grading:** New 5-star rating system based on both Reliability (70%) and Speed (30%).
+- **Batch Migration Parallelization:** Optimized Mass Migration to process 3 manga simultaneously for significantly faster lookups.
+- **Targeted Scanning:** Ability to refresh health for only installed sources or the entire repository.
+
 ## 2.1.1 (2026-02-24)
 - **New: Full Rebrand:** Completed the transition from Mihon/Tachiyomi to the **ShinKu** identity across the entire codebase.
 - **New: 120Hz Support:** Added High Refresh Rate support in **Settings > ShinKu Features** for significantly smoother scrolling on compatible devices.

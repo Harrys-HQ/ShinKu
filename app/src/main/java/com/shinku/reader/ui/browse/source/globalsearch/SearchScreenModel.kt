@@ -67,6 +67,8 @@ abstract class SearchScreenModel(
 
     protected var extensionFilter: String? = null
 
+    open val useVibeSearch: Boolean = true
+
     open val sortComparator = { map: Map<CatalogueSource, SearchItemResult> ->
         compareBy<CatalogueSource>(
             { (map[it] as? SearchItemResult.Success)?.isEmpty ?: true },
@@ -171,7 +173,10 @@ abstract class SearchScreenModel(
         searchJob = ioCoroutineScope.launch {
             val apiKey = shinkuPreferences.geminiApiKey().get()
             val model = shinkuPreferences.geminiModel().get()
-            val finalQueries = if (apiKey.isNotBlank()) {
+            
+            val isVibeEnabled = useVibeSearch && apiKey.isNotBlank()
+            
+            val finalQueries = if (isVibeEnabled) {
                 withContext(Dispatchers.Main) {
                     context.toast(MR.strings.vibe_search_loading)
                 }

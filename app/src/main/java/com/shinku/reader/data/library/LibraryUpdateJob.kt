@@ -88,6 +88,8 @@ import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.domain.manga.model.MangaUpdate
 import com.shinku.reader.domain.manga.model.toMangaUpdate
+import com.shinku.reader.domain.source.interactor.GetSourceHealth
+import com.shinku.reader.domain.source.interactor.UpdateSourceHealth
 import com.shinku.reader.domain.source.model.SourceNotInstalledException
 import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.domain.track.interactor.GetTracks
@@ -104,6 +106,7 @@ import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
+import kotlin.system.measureTimeMillis
 
 @OptIn(ExperimentalAtomicApi::class)
 class LibraryUpdateJob(private val context: Context, workerParams: WorkerParameters) :
@@ -129,6 +132,9 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
     private val insertTrack: InsertTrack = Injekt.get()
     private val trackerManager: TrackerManager = Injekt.get()
     private val mdList = trackerManager.mdList
+
+    private val getSourceHealth: GetSourceHealth = Injekt.get()
+    private val updateSourceHealth: UpdateSourceHealth = Injekt.get()
     // SY <--
 
     private val notifier = LibraryUpdateNotifier(context)
@@ -377,6 +383,19 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 .map { mangaInSource ->
                     async {
                         semaphore.withPermit {
+                            val sourceId = mangaInSource.first().manga.source
+                            val sourceHealth = getSourceHealth.await(sourceId)
+
+                            // SY -->
+                            // Smart Throttling: Override limits based on source health
+                            val dynamicMaxManga = if (speed > 0) {
+                                minOf(maxMangaPerSource, sourceHealth?.recommendedConcurrency ?: maxMangaPerSource)
+                            } else {
+                                1
+                            }
+                            val dynamicDelay = sourceHealth?.recommendedDelay ?: (if (speed > 0) 50L else 0L)
+                            // SY <--
+
                             if (
                                 mdlistLogged &&
                                 mangaInSource.firstOrNull()
@@ -400,7 +419,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                 }
                             }
 
-                            val mangaSemaphore = Semaphore(maxMangaPerSource)
+                            val mangaSemaphore = Semaphore(dynamicMaxManga)
                             coroutineScope {
                                 mangaInSource.forEach { libraryManga ->
                                     val manga = libraryManga.manga
@@ -415,8 +434,8 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                         mangaSemaphore.withPermit {
                                             // Source-specific polite delay (only if concurrency is high)
                                             // Spread out requests slightly to avoid burst detection
-                                            if (speed > 0) {
-                                                kotlinx.coroutines.delay(50)
+                                            if (dynamicDelay > 0) {
+                                                kotlinx.coroutines.delay(dynamicDelay)
                                             }
 
                                             withUpdateNotification(
@@ -424,41 +443,50 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                 progressCount,
                                                 manga,
                                             ) {
-                                                try {
-                                                    val newChapters = updateManga(manga, fetchWindow)
-                                                        .sortedByDescending { it.sourceOrder }
+                                                var success = false
+                                                var error: String? = null
+                                                val latency = measureTimeMillis {
+                                                    try {
+                                                        val newChapters = updateManga(manga, fetchWindow)
+                                                            .sortedByDescending { it.sourceOrder }
 
-                                                    if (newChapters.isNotEmpty()) {
-                                                        val chaptersToDownload =
-                                                            filterChaptersForDownload.await(manga, newChapters)
+                                                        if (newChapters.isNotEmpty()) {
+                                                            val chaptersToDownload =
+                                                                filterChaptersForDownload.await(manga, newChapters)
 
-                                                        if (chaptersToDownload.isNotEmpty()) {
-                                                            downloadChapters(manga, chaptersToDownload)
-                                                            hasDownloads.store(true)
+                                                            if (chaptersToDownload.isNotEmpty()) {
+                                                                downloadChapters(manga, chaptersToDownload)
+                                                                hasDownloads.store(true)
+                                                            }
+
+                                                            libraryPreferences.newUpdatesCount()
+                                                                .getAndSet { it + newChapters.size }
+
+                                                            // Convert to the manga that contains new chapters
+                                                            newUpdates.add(manga to newChapters.toTypedArray())
                                                         }
+                                                        updateManga.await(MangaUpdate(manga.id, lastUpdateError = false))
+                                                        success = true
+                                                    } catch (e: Throwable) {
+                                                        updateManga.await(MangaUpdate(manga.id, lastUpdateError = true))
+                                                        val errorMessage = when (e) {
+                                                            is NoChaptersException -> context.stringResource(
+                                                                MR.strings.no_chapters_error,
+                                                            )
+                                                            // failedUpdates will already have the source, don't need to copy it into the message
+                                                            is SourceNotInstalledException -> context.stringResource(
+                                                                MR.strings.loader_not_implemented_error,
+                                                            )
 
-                                                        libraryPreferences.newUpdatesCount()
-                                                            .getAndSet { it + newChapters.size }
-
-                                                        // Convert to the manga that contains new chapters
-                                                        newUpdates.add(manga to newChapters.toTypedArray())
+                                                            else -> e.message
+                                                        }
+                                                        error = errorMessage
+                                                        failedUpdates.add(manga to errorMessage)
                                                     }
-                                                    updateManga.await(MangaUpdate(manga.id, lastUpdateError = false))
-                                                } catch (e: Throwable) {
-                                                    updateManga.await(MangaUpdate(manga.id, lastUpdateError = true))
-                                                    val errorMessage = when (e) {
-                                                        is NoChaptersException -> context.stringResource(
-                                                            MR.strings.no_chapters_error,
-                                                        )
-                                                        // failedUpdates will already have the source, don't need to copy it into the message
-                                                        is SourceNotInstalledException -> context.stringResource(
-                                                            MR.strings.loader_not_implemented_error,
-                                                        )
-
-                                                        else -> e.message
-                                                    }
-                                                    failedUpdates.add(manga to errorMessage)
                                                 }
+                                                // SY -->
+                                                updateSourceHealth.await(sourceId, success, latency, error)
+                                                // SY <--
                                             }
                                         }
                                     }

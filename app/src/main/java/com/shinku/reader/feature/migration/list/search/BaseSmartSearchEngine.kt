@@ -1,9 +1,11 @@
 package com.shinku.reader.feature.migration.list.search
 
 import com.aallam.similarity.NormalizedLevenshtein
+import com.shinku.reader.core.common.util.system.logcat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
+import logcat.LogPriority
 import java.util.Locale
 
 typealias SearchAction<T> = suspend (String) -> List<T>
@@ -47,7 +49,13 @@ abstract class BaseSmartSearchEngine<T>(
                         query
                     }
 
-                    val candidates = searchAction(builtQuery)
+                    val candidates = try {
+                        searchAction(builtQuery)
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        logcat(logcat.LogPriority.ERROR, e) { "Source search failed for query: $builtQuery" }
+                        emptyList()
+                    }
                     candidates
                         .map {
                             val distance = if (queries.size > 1 || candidates.size > 1) {

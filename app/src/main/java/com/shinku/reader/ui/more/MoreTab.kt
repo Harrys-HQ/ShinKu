@@ -30,6 +30,7 @@ import com.shinku.reader.ui.browse.migration.failed.FailedUpdatesMigrationScreen
 import com.shinku.reader.ui.download.DownloadQueueScreen
 import com.shinku.reader.ui.history.HistoryTab
 import com.shinku.reader.ui.setting.SettingsScreen
+import com.shinku.reader.ui.sourcehealth.SourceHealthScreen
 import com.shinku.reader.ui.stats.StatsScreen
 import com.shinku.reader.ui.updates.UpdatesTab
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,6 +90,7 @@ data object MoreTab : Tab {
             onClickDeadSourceScanner = { navigator.push(DeadSourceScannerScreen()) },
             onClickFailedUpdatesMigration = { navigator.push(FailedUpdatesMigrationScreen()) },
             onClickConfigureFeatures = { navigator.push(SettingsShinKuScreen) },
+            onClickSourceHealth = { navigator.push(SourceHealthScreen()) },
             onClickStats = { navigator.push(StatsScreen()) },
             onClickSettings = { navigator.push(SettingsScreen()) },
             onClickAbout = { navigator.push(SettingsScreen(SettingsScreen.Destination.About)) },

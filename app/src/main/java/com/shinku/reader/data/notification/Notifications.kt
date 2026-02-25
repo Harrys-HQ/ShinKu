@@ -34,6 +34,9 @@ object Notifications {
     const val ID_EHENTAI_PROGRESS = -199
     const val ID_EHENTAI_ERROR = -198
 
+    const val CHANNEL_REPO_HEALTH_SCAN = "repo_health_scan_channel"
+    const val ID_REPO_HEALTH_SCAN = -104
+
     /**
      * Notification channel and ids used by the downloader.
      */
@@ -169,6 +172,11 @@ object Notifications {
                 buildNotificationChannel(CHANNEL_EXTENSIONS_UPDATE, IMPORTANCE_DEFAULT) {
                     setGroup(GROUP_APK_UPDATES)
                     setName(context.stringResource(MR.strings.channel_ext_updates))
+                },
+                buildNotificationChannel(CHANNEL_REPO_HEALTH_SCAN, IMPORTANCE_LOW) {
+                    setName("Repo Health Scan")
+                    setGroup(GROUP_LIBRARY)
+                    setShowBadge(false)
                 },
                 // SY -->
                 buildNotificationChannel(CHANNEL_LIBRARY_EHENTAI, IMPORTANCE_LOW) {
