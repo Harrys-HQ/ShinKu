@@ -155,5 +155,10 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
         label = stringResource(SYMR.strings.auto_webtoon_mode),
         pref = screenModel.preferences.useAutoWebtoon(),
     )
+
+    CheckboxItem(
+        label = stringResource(SYMR.strings.pref_zen_mode),
+        pref = screenModel.preferences.zenMode(),
+    )
     // SY <--
 }

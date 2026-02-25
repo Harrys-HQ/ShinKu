@@ -30,12 +30,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import logcat.LogPriority
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.domain.manga.model.toDomainManga
 import com.shinku.reader.core.common.util.lang.launchIO
 import com.shinku.reader.core.common.util.lang.launchNonCancellable
 import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.core.common.util.lang.withUIContext
 import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
+import com.shinku.reader.domain.source.interactor.GetRemoteManga
 import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchGlobal
 import com.shinku.reader.domain.source.interactor.DeleteFeedSavedSearchById
 import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchGlobal
@@ -66,6 +70,10 @@ open class FeedScreenModel(
     private val getSavedSearchBySourceId: GetSavedSearchBySourceId = Injekt.get(),
     private val insertFeedSavedSearch: InsertFeedSavedSearch = Injekt.get(),
     private val deleteFeedSavedSearchById: DeleteFeedSavedSearchById = Injekt.get(),
+    private val getReadingStats: com.shinku.reader.domain.history.interactor.GetReadingStats = Injekt.get(),
+    private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
+    private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
+    private val getRemoteManga: GetRemoteManga = Injekt.get(),
 ) : StateScreenModel<FeedScreenState>(FeedScreenState()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
@@ -96,11 +104,51 @@ open class FeedScreenModel(
             }
             .catch { _events.send(Event.FailedFetchingSources) }
             .launchIn(screenModelScope)
+
+        fetchAiRecommendations()
+    }
+
+    private fun fetchAiRecommendations() {
+        val apiKey = shinkuPreferences.geminiApiKey().get()
+        val model = shinkuPreferences.geminiModel().get()
+        if (apiKey.isBlank()) return
+
+        screenModelScope.launchIO {
+            try {
+                val stats = getReadingStats.await()
+                if (stats.bestGenres.isEmpty()) return@launchIO
+
+                val prompt = "Based on my top genres: ${stats.bestGenres.joinToString()}, suggest 5 real manga titles I might like. Return ONLY a JSON array of strings."
+                val titles = geminiVibeSearch.getMangaTitles(prompt, apiKey, model)
+                
+                if (titles.isNotEmpty()) {
+                    val sourceId = sourcePreferences.lastUsedSource().get()
+                    val source = sourceManager.get(sourceId) as? CatalogueSource ?: return@launchIO
+                    
+                    val recommendedManga = titles.mapNotNull { title ->
+                        try {
+                            val searchResult = withContext(coroutineDispatcher) {
+                                source.getSearchManga(1, title, FilterList())
+                            }.mangas.firstOrNull()
+                            searchResult?.toDomainManga(sourceId)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    
+                    val localManga = networkToLocalManga(recommendedManga)
+                    mutableState.update { it.copy(recommendations = localManga) }
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+            }
+        }
     }
 
     fun init() {
         pushed = false
         screenModelScope.launchIO {
+            fetchAiRecommendations()
             val newItems = state.value.items?.map { it.copy(results = null) } ?: return@launchIO
             mutableState.update { state ->
                 state.copy(
@@ -313,12 +361,10 @@ open class FeedScreenModel(
 data class FeedScreenState(
     val dialog: FeedScreenModel.Dialog? = null,
     val items: List<FeedItemUI>? = null,
+    val recommendations: List<DomainManga>? = null,
 ) {
     val isLoading
-        get() = items == null
-
-    val isEmpty
-        get() = items.isNullOrEmpty()
+        get() = items == null && recommendations == null
 
     val isLoadingItems
         get() = items?.fastAny { it.results == null } != false

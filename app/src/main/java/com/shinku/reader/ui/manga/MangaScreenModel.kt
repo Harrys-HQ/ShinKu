@@ -82,6 +82,8 @@ import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -194,6 +196,7 @@ class MangaScreenModel(
     private val mangaRepository: MangaRepository = Injekt.get(),
     private val filterChaptersForDownload: FilterChaptersForDownload = Injekt.get(),
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
+    private val syncPreferences: com.shinku.reader.domain.sync.SyncPreferences = Injekt.get(),
     private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
@@ -239,6 +242,7 @@ class MangaScreenModel(
 
     sealed interface Event {
         data class SearchSimilarVibes(val titles: List<String>) : Event
+        data class JumpToChapter(val chapter: Chapter) : Event
     }
 
     var dedupe: Boolean = true
@@ -290,6 +294,14 @@ class MangaScreenModel(
 
     init {
         screenModelScope.launchIO {
+            syncPreferences.syncDiscrepancies().changes()
+                .onEach { discrepancies ->
+                    if (discrepancies.contains(mangaId.toString())) {
+                        updateSuccessState { it.copy(dialog = Dialog.SyncDiscrepancy) }
+                    }
+                }
+                .launchIn(this)
+
             getMangaAndChapters.subscribe(mangaId, applyScanlatorFilter = true)
                 .distinctUntilChanged()
                 // SY -->
@@ -1703,9 +1715,11 @@ class MangaScreenModel(
         data class EditMergedSettings(val mergedData: MergedMangaData) : Dialog
         // SY <--
 
+        data object FixingMetadata : Dialog
         data object SettingsSheet : Dialog
         data object TrackSheet : Dialog
         data object FullCover : Dialog
+        data object SyncDiscrepancy : Dialog
     }
 
     fun dismissDialog() {
@@ -1751,6 +1765,56 @@ class MangaScreenModel(
         }
     }
 
+    fun fixMetadataWithAi() {
+        val state = successState ?: return
+        val manga = state.manga
+        val apiKey = shinkuPreferences.geminiApiKey().get()
+        val model = shinkuPreferences.geminiModel().get()
+
+        if (apiKey.isBlank()) {
+            context.toast(MR.strings.gemini_api_key_not_set)
+            return
+        }
+
+        screenModelScope.launchIO {
+            updateSuccessState { it.copy(dialog = Dialog.FixingMetadata) }
+            try {
+                val enriched = geminiVibeSearch.enrichMetadata(
+                    manga.title,
+                    manga.description.orEmpty(),
+                    apiKey,
+                    model,
+                )
+
+                if (enriched != null) {
+                    updateMangaInfo(
+                        title = null,
+                        author = null,
+                        artist = null,
+                        thumbnailUrl = null,
+                        description = enriched.description,
+                        tags = enriched.genres,
+                        status = null,
+                    )
+                    withUIContext {
+                        context.toast(MR.strings.action_done)
+                    }
+                } else {
+                    withUIContext {
+                        context.toast(context.stringResource(SYMR.strings.ai_fix_error, "AI returned no result"))
+                    }
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+                withUIContext {
+                    context.toast(context.stringResource(SYMR.strings.ai_fix_error, e.message ?: "Unknown error"))
+                }
+            } finally {
+                dismissDialog()
+            }
+        }
+    }
+
     fun showEditMergedSettingsDialog() {
         val mergedData = successState?.mergedData ?: return
         mutableState.update { state ->
@@ -1758,6 +1822,23 @@ class MangaScreenModel(
                 State.Loading -> state
                 is State.Success -> {
                     state.copy(dialog = Dialog.EditMergedSettings(mergedData))
+                }
+            }
+        }
+    }
+
+    fun resolveSyncDiscrepancy(jump: Boolean) {
+        syncPreferences.removeDiscrepancy(mangaId)
+        dismissDialog()
+        if (jump) {
+            // SuccessState contains chapters, we just need to find the latest read one
+            // However, after a sync, the local DB is updated by BackupRestoreJob
+            // So we can just find the chapter with the highest number that is read.
+            val chapters = successState?.chapters ?: return
+            val lastRead = chapters.filter { it.chapter.read }.maxByOrNull { it.chapter.chapterNumber }
+            if (lastRead != null) {
+                screenModelScope.launch {
+                    events.emit(Event.JumpToChapter(lastRead.chapter))
                 }
             }
         }

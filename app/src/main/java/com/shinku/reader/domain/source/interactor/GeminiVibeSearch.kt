@@ -132,6 +132,67 @@ class GeminiVibeSearch(
         )
     }
 
+    suspend fun enrichMetadata(title: String, currentDescription: String, apiKey: String, model: String): EnrichedMetadata? {
+        return withIOContext {
+            if (apiKey.isBlank()) return@withIOContext null
+            try {
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+                val prompt = """
+                    You are a manga librarian. Based on the title "$title" and description "$currentDescription", 
+                    provide an enriched version of the metadata.
+                    
+                    Return ONLY a JSON object with:
+                    1. "description": A high-quality, professional, and engaging summary in English.
+                    2. "genres": A list of relevant genre tags (e.g., ["Action", "Psychological"]).
+                    
+                    JSON format:
+                    {"description": "...", "genres": ["...", "..."]}
+                """.trimIndent()
+                
+                val bodyJson = """
+                    {
+                      "contents": [{
+                        "parts":[{"text": ${Json.encodeToString(prompt)}}]
+                      }]
+                    }
+                """.trimIndent()
+
+                val request = Request.Builder()
+                    .url(url)
+                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
+                    .build()
+
+                networkHelper.client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@withIOContext null
+                    val responseBody = response.body.string()
+                    val result = json.parseToJsonElement(responseBody)
+                    val text = result.jsonObject["candidates"]!!
+                        .jsonArray[0].jsonObject["content"]!!
+                        .jsonObject["parts"]!!
+                        .jsonArray[0].jsonObject["text"]!!
+                        .jsonPrimitive.content
+
+                    val start = text.indexOf("{")
+                    val end = text.lastIndexOf("}") + 1
+                    if (start != -1 && end > start) {
+                        val jsonStr = text.substring(start, end)
+                        json.decodeFromString<EnrichedMetadata>(jsonStr)
+                    } else {
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    @kotlinx.serialization.Serializable
+    data class EnrichedMetadata(
+        val description: String,
+        val genres: List<String>,
+    )
+
     private suspend fun callGeminiForText(prompt: String, apiKey: String, model: String): String {
         return withIOContext {
             if (apiKey.isBlank()) return@withIOContext "API Key not set"

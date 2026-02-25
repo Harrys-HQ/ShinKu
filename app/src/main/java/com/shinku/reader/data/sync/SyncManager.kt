@@ -160,6 +160,7 @@ class SyncManager(
 
         val (filteredFavorites, nonFavorites) = filterFavoritesAndNonFavorites(remoteBackup)
         updateNonFavorites(nonFavorites)
+        checkDiscrepancies(remoteBackup)
 
         val newSyncData = backup.copy(
             backupManga = filteredFavorites,
@@ -338,5 +339,46 @@ class SyncManager(
                 }
             }
         }
+    }
+
+    private suspend fun checkDiscrepancies(backup: Backup) {
+        val localMangaList = getAllMangaFromDB()
+        val localMangaMap = localMangaList.associateBy { Triple(it.source, it.url, it.title) }
+        val discrepancies = mutableSetOf<String>()
+
+        backup.backupManga.forEach { remoteManga ->
+            val key = Triple(remoteManga.source, remoteManga.url, remoteManga.title)
+            localMangaMap[key]?.let { localManga ->
+                if (isProgressAhead(localManga, remoteManga)) {
+                    discrepancies.add(localManga.id.toString())
+                }
+            }
+        }
+
+        if (discrepancies.isNotEmpty()) {
+            val current = syncPreferences.syncDiscrepancies().get()
+            syncPreferences.syncDiscrepancies().set(current + discrepancies)
+        }
+    }
+
+    private suspend fun isProgressAhead(localManga: Manga, remoteManga: BackupManga): Boolean {
+        val localChapters = handler.await { chaptersQueries.getChaptersByMangaId(localManga.id, 0).executeAsList() }
+        
+        val localReadCount = localChapters.count { it.read }
+        val remoteReadCount = remoteManga.chapters.count { it.read }
+
+        if (remoteReadCount > localReadCount) return true
+        
+        if (remoteReadCount == localReadCount) {
+            // Check last page read of the last read chapter or current one
+            val lastLocal = localChapters.filter { it.read }.maxByOrNull { it.chapter_number }
+            val lastRemote = remoteManga.chapters.filter { it.read }.maxByOrNull { it.chapterNumber }
+            
+            if (lastRemote != null && lastLocal != null) {
+                if (lastRemote.lastPageRead > lastLocal.last_page_read) return true
+            }
+        }
+
+        return false
     }
 }

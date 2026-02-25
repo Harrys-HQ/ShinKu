@@ -34,6 +34,17 @@ class SyncPreferences(
         return uniqueID
     }
 
+    // SY -->
+    fun syncDiscrepancies() = preferenceStore.getStringSet("sync_discrepancies", emptySet())
+
+    fun removeDiscrepancy(mangaId: Long) {
+        val current = syncDiscrepancies().get().toMutableSet()
+        if (current.remove(mangaId.toString())) {
+            syncDiscrepancies().set(current)
+        }
+    }
+    // SY <--
+
     fun isSyncEnabled(): Boolean {
         return syncService().get() != 0
     }

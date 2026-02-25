@@ -6,6 +6,7 @@ import android.widget.ArrayAdapter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -64,6 +65,7 @@ import uy.kohesive.injekt.api.get
 fun EditMangaDialog(
     manga: Manga,
     onDismissRequest: () -> Unit,
+    onAiFixClick: () -> Unit,
     onPositiveClick: (
         title: String?,
         author: String?,
@@ -85,33 +87,42 @@ fun EditMangaDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = {
-            TextButton(
-                onClick = {
-                    @Suppress("NAME_SHADOWING")
-                    val binding = binding ?: return@TextButton
-                    onPositiveClick(
-                        binding.title.text.toString(),
-                        binding.mangaAuthor.text.toString(),
-                        binding.mangaArtist.text.toString(),
-                        binding.thumbnailUrl.text.toString(),
-                        binding.mangaDescription.text.toString(),
-                        binding.mangaGenresTags.getTextStrings(),
-                        binding.status.selectedItemPosition.let {
-                            when (it) {
-                                1 -> SManga.ONGOING
-                                2 -> SManga.COMPLETED
-                                3 -> SManga.LICENSED
-                                4 -> SManga.PUBLISHING_FINISHED
-                                5 -> SManga.CANCELLED
-                                6 -> SManga.ON_HIATUS
-                                else -> null
-                            }
-                        }?.toLong(),
-                    )
-                    onDismissRequest()
-                },
-            ) {
-                Text(stringResource(MR.strings.action_save))
+            Row {
+                TextButton(
+                    onClick = {
+                        onAiFixClick()
+                    },
+                ) {
+                    Text(stringResource(SYMR.strings.action_ai_fix))
+                }
+                TextButton(
+                    onClick = {
+                        @Suppress("NAME_SHADOWING")
+                        val binding = binding ?: return@TextButton
+                        onPositiveClick(
+                            binding.title.text.toString(),
+                            binding.mangaAuthor.text.toString(),
+                            binding.mangaArtist.text.toString(),
+                            binding.thumbnailUrl.text.toString(),
+                            binding.mangaDescription.text.toString(),
+                            binding.mangaGenresTags.getTextStrings(),
+                            binding.status.selectedItemPosition.let {
+                                when (it) {
+                                    1 -> SManga.ONGOING
+                                    2 -> SManga.COMPLETED
+                                    3 -> SManga.LICENSED
+                                    4 -> SManga.PUBLISHING_FINISHED
+                                    5 -> SManga.CANCELLED
+                                    6 -> SManga.ON_HIATUS
+                                    else -> null
+                                }
+                            }?.toLong(),
+                        )
+                        onDismissRequest()
+                    },
+                ) {
+                    Text(stringResource(MR.strings.action_save))
+                }
             }
         },
         dismissButton = {

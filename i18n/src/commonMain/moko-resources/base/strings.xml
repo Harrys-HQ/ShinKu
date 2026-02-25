@@ -172,6 +172,7 @@
     <string name="action_live_translation">Live Translation</string>
     <string name="action_update">Update</string>
     <string name="action_default">Default</string>
+    <string name="action_done">Done</string>
 
     <!-- Operations -->
     <string name="loading">Loading…</string>
@@ -351,6 +352,7 @@
                 <string name="pref_vibe_search_summary">Use Gemini AI to find manga based on your description (requires API key)</string>
                 <string name="pref_gemini_api_key">Gemini API Key</string>
                 <string name="pref_gemini_api_key_summary">Enter your API key from Google AI Studio to enable semantic search</string>
+                <string name="gemini_api_key_not_set">Gemini API key not set</string>
                 <string name="vibe_search_loading">Gemini is searching for vibes…</string>
 
                 <string name="dead_source_scanner_count">%1$d manga</string>
