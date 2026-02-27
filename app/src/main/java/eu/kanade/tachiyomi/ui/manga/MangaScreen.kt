@@ -207,7 +207,9 @@ class MangaScreen(
             previewsRowCount = successState.previewsRowCount,
             onMigrateClicked = {
                 navigator.push(MigrationConfigScreen(successState.manga.id))
-            }.takeIf { successState.manga.favorite },
+            }.takeIf {
+                successState.manga.favorite /* SY --> */ && successState.manga.source != MERGED_SOURCE_ID /* SY <-- */
+            },
             onEditNotesClicked = { navigator.push(MangaNotesScreen(manga = successState.manga)) },
             // SY -->
             onMetadataViewerClicked = { openMetadataViewer(navigator, successState.manga) },
