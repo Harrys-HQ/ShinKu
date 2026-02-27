@@ -3,7 +3,6 @@ package exh.ui.login
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.webkit.CookieManager
@@ -13,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.core.net.toUri
 import eu.kanade.presentation.webview.EhLoginWebViewScreen
 import eu.kanade.presentation.webview.components.IgneousDialog
 import eu.kanade.tachiyomi.R
@@ -92,16 +92,32 @@ class EhLoginActivity : BaseActivity() {
 
     private fun onPageFinished(view: WebView, url: String, customIgneous: String?) {
         xLogD(url)
-        val parsedUrl = Uri.parse(url)
+        val parsedUrl = url.toUri()
         if (parsedUrl.host.equals("forums.e-hentai.org", ignoreCase = true)) {
-            // Hide distracting content
-            if (!parsedUrl.queryParameterNames.contains(PARAM_SKIP_INJECT)) {
-                view.evaluateJavascript(HIDE_JS, null)
-            }
-            // Check login result
+            view.evaluateJavascript(
+                """
+                    (function() {
+                        let html = document.documentElement.innerHTML;
+                        return html.includes("/cdn-cgi/");
+                    })();
+                    """.trimIndent()
+            ) { result ->
+                val isCloudflareBlock = result == "true"
 
-            if (parsedUrl.getQueryParameter("code")?.toInt() != 0) {
-                if (checkLoginCookies(url)) view.loadUrl("https://exhentai.org/")
+                if (isCloudflareBlock) {
+                    xLogD("Cloudflare block detected — skipping logic")
+                    return@evaluateJavascript
+                }
+
+                // Hide distracting content
+                if (!parsedUrl.queryParameterNames.contains(PARAM_SKIP_INJECT)) {
+                    view.evaluateJavascript(HIDE_JS, null)
+                }
+                // Check login result
+
+                if (parsedUrl.getQueryParameter("code")?.toInt() != 0) {
+                    if (checkLoginCookies(url)) view.loadUrl("https://exhentai.org/")
+                }
             }
         } else if (parsedUrl.host.equals("exhentai.org", ignoreCase = true)) {
             // At ExHentai, check that everything worked out...
