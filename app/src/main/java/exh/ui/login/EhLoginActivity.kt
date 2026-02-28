@@ -100,7 +100,7 @@ class EhLoginActivity : BaseActivity() {
                         let html = document.documentElement.innerHTML;
                         return html.includes("/cdn-cgi/");
                     })();
-                    """.trimIndent()
+                """.trimIndent(),
             ) { result ->
                 val isCloudflareBlock = result == "true"
 

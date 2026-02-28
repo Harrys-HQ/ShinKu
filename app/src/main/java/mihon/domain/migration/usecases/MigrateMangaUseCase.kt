@@ -73,7 +73,7 @@ class MigrateMangaUseCase(
                             updatedChapter = updatedChapter.copy(
                                 dateFetch = prevChapter.dateFetch,
                                 bookmark = prevChapter.bookmark,
-                                lastPageRead = prevChapter.lastPageRead
+                                lastPageRead = prevChapter.lastPageRead,
                             )
                         }
 
