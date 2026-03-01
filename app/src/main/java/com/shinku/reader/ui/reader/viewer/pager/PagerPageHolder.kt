@@ -416,6 +416,7 @@ class PagerPageHolder(
     override fun onImageLoaded() {
         super.onImageLoaded()
         progressIndicator?.hide()
+        viewer.activity.viewModel.onPageReady(page)
     }
 
     /**

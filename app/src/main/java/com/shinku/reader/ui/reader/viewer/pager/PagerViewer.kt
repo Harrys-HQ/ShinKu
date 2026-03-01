@@ -174,6 +174,13 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
     }
 
     /**
+     * Set panels for the given page.
+     */
+    fun setPanels(page: ReaderPage, panels: List<android.graphics.RectF>) {
+        getPageHolder(page)?.setPanels(panels)
+    }
+
+    /**
      * Returns the PagerPageHolder for the provided page
      */
     private fun getPageHolder(page: ReaderPage): PagerPageHolder? =
@@ -353,11 +360,16 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
     protected open fun moveRight() {
         if (pager.currentItem != adapter.count - 1) {
             val holder = (currentPage as? ReaderPage)?.let(::getPageHolder)
-            if (holder != null && config.navigateToPan && holder.canPanRight()) {
-                holder.panRight()
-            } else {
-                pager.setCurrentItem(pager.currentItem + 1, config.usePageTransitions)
+            if (holder != null) {
+                if (activity.viewModel.readerPreferences.guidedView().get() && holder.moveToNextPanel()) {
+                    return
+                }
+                if (config.navigateToPan && holder.canPanRight()) {
+                    holder.panRight()
+                    return
+                }
             }
+            pager.setCurrentItem(pager.currentItem + 1, config.usePageTransitions)
         }
     }
 
@@ -367,11 +379,16 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
     protected open fun moveLeft() {
         if (pager.currentItem != 0) {
             val holder = (currentPage as? ReaderPage)?.let(::getPageHolder)
-            if (holder != null && config.navigateToPan && holder.canPanLeft()) {
-                holder.panLeft()
-            } else {
-                pager.setCurrentItem(pager.currentItem - 1, config.usePageTransitions)
+            if (holder != null) {
+                if (activity.viewModel.readerPreferences.guidedView().get() && holder.moveToPreviousPanel()) {
+                    return
+                }
+                if (config.navigateToPan && holder.canPanLeft()) {
+                    holder.panLeft()
+                    return
+                }
             }
+            pager.setCurrentItem(pager.currentItem - 1, config.usePageTransitions)
         }
     }
 

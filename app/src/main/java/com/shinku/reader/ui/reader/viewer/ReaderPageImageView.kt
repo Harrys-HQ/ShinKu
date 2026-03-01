@@ -68,6 +68,9 @@ open class ReaderPageImageView @JvmOverloads constructor(
 
     private var config: Config? = null
 
+    private var panels: List<RectF> = emptyList()
+    private var currentPanelIndex: Int = -1
+
     var onImageLoaded: (() -> Unit)? = null
     var onImageLoadError: ((Throwable?) -> Unit)? = null
     var onScaleChanged: ((newScale: Float) -> Unit)? = null
@@ -167,6 +170,66 @@ open class ReaderPageImageView @JvmOverloads constructor(
             prepareNonAnimatedImageView()
             setNonAnimatedImage(source, config)
         }
+    }
+
+    /**
+     * Set panels for guided view.
+     */
+    fun setPanels(panels: List<RectF>) {
+        this.panels = panels
+        this.currentPanelIndex = -1
+    }
+
+    /**
+     * Move to the next panel. Returns true if moved, false if no more panels.
+     */
+    fun moveToNextPanel(): Boolean {
+        val view = pageView as? SubsamplingScaleImageView ?: return false
+        if (panels.isEmpty()) return false
+        
+        if (currentPanelIndex < panels.size - 1) {
+            currentPanelIndex++
+            animateToPanel(panels[currentPanelIndex])
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Move to the previous panel. Returns true if moved, false if at the beginning.
+     */
+    fun moveToPreviousPanel(): Boolean {
+        val view = pageView as? SubsamplingScaleImageView ?: return false
+        if (panels.isEmpty()) return false
+
+        if (currentPanelIndex > 0) {
+            currentPanelIndex--
+            animateToPanel(panels[currentPanelIndex])
+            return true
+        } else if (currentPanelIndex == 0) {
+            currentPanelIndex = -1
+            view.animateScaleAndCenter(view.minScale, view.center)
+                ?.withDuration(250)
+                ?.start()
+            return true
+        }
+        return false
+    }
+
+    private fun animateToPanel(panel: RectF) {
+        val view = pageView as? SubsamplingScaleImageView ?: return
+        
+        // Calculate scale to fit panel
+        val scaleX = width.toFloat() / panel.width()
+        val scaleY = height.toFloat() / panel.height()
+        val targetScale = minOf(scaleX, scaleY, view.maxScale)
+        
+        val targetCenter = PointF(panel.centerX(), panel.centerY())
+        
+        view.animateScaleAndCenter(targetScale, targetCenter)
+            ?.withDuration(400)
+            ?.withEasing(EASE_IN_OUT_QUAD)
+            ?.start()
     }
 
     fun recycle() = pageView?.let {

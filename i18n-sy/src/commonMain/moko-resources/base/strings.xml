@@ -759,6 +759,7 @@
     <string name="action_ai_fix">Fix with AI</string>
     <string name="ai_fixing_metadata">AI is analyzing and fixing metadata…</string>
     <string name="ai_fix_error">Failed to fix metadata with AI: %1$s</string>
+    <string name="vibe_searching">Gemini is searching for similar vibes…</string>
 
     <!-- Zen Mode -->
     <string name="pref_zen_mode">Zen Mode</string>

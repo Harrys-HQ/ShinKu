@@ -21,7 +21,7 @@ import android.view.View.LAYER_TYPE_HARDWARE
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -165,7 +165,7 @@ class ReaderActivity : BaseActivity() {
 
     lateinit var binding: ReaderActivityBinding
 
-    val viewModel by viewModels<ReaderViewModel>()
+    val viewModel by viewModel<ReaderViewModel>()
     private var assistUrl: String? = null
 
     // SY -->
@@ -300,6 +300,10 @@ class ReaderActivity : BaseActivity() {
 
                     is ReaderViewModel.Event.SetCoverResult -> {
                         onSetAsCoverResult(event.result)
+                    }
+
+                    is ReaderViewModel.Event.PanelsDetected -> {
+                        (viewModel.state.value.viewer as? PagerViewer)?.setPanels(event.page, event.panels)
                     }
                 }
             }

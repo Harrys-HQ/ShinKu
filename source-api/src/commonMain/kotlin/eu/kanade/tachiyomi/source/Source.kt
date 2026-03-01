@@ -31,10 +31,7 @@ interface Source {
      * @param manga the manga to update.
      * @return the updated manga.
      */
-    @Suppress("DEPRECATION")
-    suspend fun getMangaDetails(manga: SManga): SManga {
-        return fetchMangaDetails(manga).awaitSingle()
-    }
+    suspend fun getMangaDetails(manga: SManga): SManga
 
     /**
      * Get all the available chapters for a manga.
@@ -43,10 +40,7 @@ interface Source {
      * @param manga the manga to update.
      * @return the chapters for the manga.
      */
-    @Suppress("DEPRECATION")
-    suspend fun getChapterList(manga: SManga): List<SChapter> {
-        return fetchChapterList(manga).awaitSingle()
-    }
+    suspend fun getChapterList(manga: SManga): List<SChapter>
 
     /**
      * Get the list of pages a chapter has. Pages should be returned
@@ -56,10 +50,7 @@ interface Source {
      * @param chapter the chapter.
      * @return the pages for the chapter.
      */
-    @Suppress("DEPRECATION")
-    suspend fun getPageList(chapter: SChapter): List<Page> {
-        return fetchPageList(chapter).awaitSingle()
-    }
+    suspend fun getPageList(chapter: SChapter): List<Page>
 
     @Deprecated(
         "Use the non-RxJava API instead",

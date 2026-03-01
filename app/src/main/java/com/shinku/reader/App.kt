@@ -74,6 +74,7 @@ import com.shinku.reader.exh.syDebugVersion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import logcat.LogPriority
 import logcat.LogcatLogger
 import com.shinku.reader.core.firebase.FirebaseConfig
@@ -106,9 +107,6 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
         super<Application>.onCreate()
-        FirebaseConfig.init(applicationContext)
-
-        GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
 
         // TLS 1.3 support for Android < 10
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -131,15 +129,33 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         initExpensiveComponents(this)
         // SY <--
 
-        setupExhLogging() // EXH logging
-        LogcatLogger.install()
-        LogcatLogger.loggers += XLogLogcatLogger() // SY Redirect Logcat to XLog
-
-        setupNotificationChannels()
-
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
+        setAppCompatDelegateThemeMode(Injekt.get<UiPreferences>().themeMode().get())
+
         val scope = ProcessLifecycleOwner.get().lifecycleScope
+
+        scope.launch(Dispatchers.IO) {
+            FirebaseConfig.init(applicationContext)
+            GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
+            setupExhLogging() // EXH logging
+            LogcatLogger.install()
+            LogcatLogger.loggers += XLogLogcatLogger() // SY Redirect Logcat to XLog
+
+            setupNotificationChannels()
+            initializeMigrator()
+
+            if (!WorkManager.isInitialized()) {
+                WorkManager.initialize(this@App, Configuration.Builder().build())
+            }
+            val syncPreferences: SyncPreferences = Injekt.get()
+            val syncTriggerOpt = syncPreferences.getSyncTriggerOptions()
+            if (syncPreferences.isSyncEnabled() && syncTriggerOpt.syncOnAppStart) {
+                SyncDataJob.startNow(this@App)
+            }
+
+            RepoHealthScanJob.setupTask(this@App)
+        }
 
         // Show notification to disable Incognito Mode when it's enabled
         basePreferences.incognitoMode().changes()
@@ -188,27 +204,12 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             .onEach { ImageUtil.hardwareBitmapThreshold = it }
             .launchIn(scope)
 
-        setAppCompatDelegateThemeMode(Injekt.get<UiPreferences>().themeMode().get())
-
         // Updates widget update
         WidgetManager(Injekt.get(), Injekt.get()).apply { init(scope) }
 
         /*if (!LogcatLogger.isInstalled && networkPreferences.verboseLogging().get()) {
             LogcatLogger.install(AndroidLogcatLogger(LogPriority.VERBOSE))
         }*/
-
-        if (!WorkManager.isInitialized()) {
-            WorkManager.initialize(this, Configuration.Builder().build())
-        }
-        val syncPreferences: SyncPreferences = Injekt.get()
-        val syncTriggerOpt = syncPreferences.getSyncTriggerOptions()
-        if (syncPreferences.isSyncEnabled() && syncTriggerOpt.syncOnAppStart) {
-            SyncDataJob.startNow(this@App)
-        }
-
-        RepoHealthScanJob.setupTask(this)
-
-        initializeMigrator()
     }
 
     private fun initializeMigrator() {
@@ -282,15 +283,19 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         SecureActivityDelegate.onApplicationStopped()
     }
 
+    private var isChromiumCallCache: Boolean? = null
+
     override fun getPackageName(): String {
         // This causes freezes in Android 6/7 for some reason
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 // Override the value passed as X-Requested-With in WebView requests
-                val stackTrace = Looper.getMainLooper().thread.stackTrace
-                val isChromiumCall = stackTrace.any { trace ->
-                    trace.className.lowercase() in setOf("org.chromium.base.buildinfo", "org.chromium.base.apkinfo") &&
-                        trace.methodName.lowercase() in setOf("getall", "getpackagename", "<init>")
+                val isChromiumCall = isChromiumCallCache ?: run {
+                    val stackTrace = Looper.getMainLooper().thread.stackTrace
+                    stackTrace.any { trace ->
+                        trace.className.lowercase() in setOf("org.chromium.base.buildinfo", "org.chromium.base.apkinfo") &&
+                            trace.methodName.lowercase() in setOf("getall", "getpackagename", "<init>")
+                    }.also { isChromiumCallCache = it }
                 }
 
                 if (isChromiumCall) return WebViewUtil.spoofedPackageName(applicationContext)
@@ -329,7 +334,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
 
         val logFolder = Injekt.get<StorageManager>().getLogsDirectory()
 
-        if (logFolder != null) {
+        if (logFolder != null && (EHLogLevel.shouldLog(EHLogLevel.EXTRA) || BuildConfig.DEBUG)) {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
 
             printers += EnhancedFilePrinter

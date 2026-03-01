@@ -388,6 +388,22 @@ class MangaScreen(
                     },
                 )
             }
+            MangaScreenModel.Dialog.VibeSearching -> {
+                AlertDialog(
+                    onDismissRequest = {},
+                    confirmButton = {},
+                    title = { Text(stringResource(MR.strings.action_find_similar_vibes)) },
+                    text = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            androidx.compose.material3.CircularProgressIndicator()
+                            Text(stringResource(SYMR.strings.vibe_searching))
+                        }
+                    },
+                )
+            }
             MangaScreenModel.Dialog.SyncDiscrepancy -> {
                 AlertDialog(
                     onDismissRequest = { screenModel.resolveSyncDiscrepancy(false) },
