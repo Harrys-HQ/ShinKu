@@ -418,31 +418,19 @@ class EHentai(
         getChapterList(manga, throttleFunc)
     }
 
-    @Deprecated("Use the 1.x API instead", replaceWith = ReplaceWith("getPageList"))
-    override fun fetchPageList(
+    override suspend fun getPageList(
         chapter: SChapter,
-    ): Observable<List<Page>> = fetchChapterPage(chapter, baseUrl + chapter.url)
-        .map {
-            it.mapIndexed { i, s ->
-                Page(i, s)
-            }
-        }!!
-
-    private fun fetchChapterPage(
-        chapter: SChapter,
-        np: String,
-        pastUrls: List<String> = emptyList(),
-    ): Observable<List<String>> {
-        val urls = ArrayList(pastUrls)
-        return chapterPageCall(np).flatMap {
-            val jsoup = it.asJsoup()
+    ): List<Page> {
+        val urls = mutableListOf<String>()
+        var nextUrl: String? = baseUrl + chapter.url
+        while (nextUrl != null) {
+            val response = client.newCall(chapterPageRequest(nextUrl)).awaitSuccess()
+            val jsoup = response.asJsoup()
             urls += parseChapterPage(jsoup)
-            val nextUrl = nextPageUrl(jsoup)
-            if (nextUrl != null) {
-                fetchChapterPage(chapter, nextUrl, urls)
-            } else {
-                Observable.just(urls)
-            }
+            nextUrl = nextPageUrl(jsoup)
+        }
+        return urls.mapIndexed { i, s ->
+            Page(i, s)
         }
     }
 
@@ -456,9 +444,6 @@ class EHentai(
         ).sortedBy(Pair<Int, String>::first).map { it.second }
     }
 
-    private fun chapterPageCall(np: String): Observable<Response> {
-        return client.newCall(chapterPageRequest(np)).asObservableSuccess()
-    }
     private fun chapterPageRequest(np: String): Request {
         return exGet(url = np, additionalHeaders = headers)
     }
@@ -602,53 +587,6 @@ class EHentai(
                 it.newBuilder().cacheControl(cacheControl).build()
             }
         }
-    }
-
-    /**
-     * Returns an observable with the updated details for a manga. Normally it's not needed to
-     * override this method.
-     *
-     * @param manga the manga to be updated.
-     */
-    @Deprecated("Use the 1.x API instead", replaceWith = ReplaceWith("getMangaDetails"))
-    override fun fetchMangaDetails(manga: SManga): Observable<SManga> {
-        return client.newCall(mangaDetailsRequest(manga))
-            .asObservableWithAsyncStacktrace()
-            .flatMap { (stacktrace, response) ->
-                if (response.isSuccessful) {
-                    // Pull to most recent
-                    val doc = response.asJsoup()
-                    val newerGallery = doc.select("#gnd a").lastOrNull()
-                    val pre = if (
-                        newerGallery != null && DebugToggles.PULL_TO_ROOT_WHEN_LOADING_EXH_MANGA_DETAILS.enabled
-                    ) {
-                        manga.url = EHentaiSearchMetadata.normalizeUrl(newerGallery.attr("href"))
-                        client.newCall(mangaDetailsRequest(manga))
-                            .asObservableSuccess().map { it.asJsoup() }
-                    } else {
-                        Observable.just(doc)
-                    }
-
-                    pre.flatMap {
-                        @Suppress("DEPRECATION")
-                        parseToMangaCompletable(manga, it).andThen(
-                            Observable.just(
-                                manga.apply {
-                                    initialized = true
-                                },
-                            ),
-                        )
-                    }
-                } else {
-                    response.close()
-
-                    if (response.code == 404) {
-                        throw GalleryNotFoundException(stacktrace)
-                    } else {
-                        throw Exception("HTTP error ${response.code}", stacktrace)
-                    }
-                }
-            }
     }
 
     override suspend fun getMangaDetails(manga: SManga): SManga {

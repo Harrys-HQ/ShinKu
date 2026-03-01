@@ -60,14 +60,20 @@ object WebViewUtil {
         return context.packageManager.hasSystemFeature(PackageManager.FEATURE_WEBVIEW)
     }
 
-    fun spoofedPackageName(context: Context): String {
-        return try {
-            context.packageManager.getPackageInfo(CHROME_PACKAGE, PackageManager.GET_META_DATA)
+    private var spoofedPackageNameCache: String? = null
 
+    fun spoofedPackageName(context: Context): String {
+        spoofedPackageNameCache?.let { return it }
+
+        val packageName = try {
+            context.packageManager.getPackageInfo(CHROME_PACKAGE, PackageManager.GET_META_DATA)
             CHROME_PACKAGE
         } catch (_: PackageManager.NameNotFoundException) {
             SYSTEM_SETTINGS_PACKAGE
         }
+
+        spoofedPackageNameCache = packageName
+        return packageName
     }
 }
 

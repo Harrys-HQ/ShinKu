@@ -255,10 +255,9 @@ class MangaScreenModel(
         if (apiKey.isBlank()) return
 
         screenModelScope.launch {
-            withContext(Dispatchers.Main) {
-                context.toast(MR.strings.vibe_search_loading)
-            }
+            updateSuccessState { it.copy(dialog = Dialog.VibeSearching) }
             val titles = geminiVibeSearch.getSimilarManga(manga.title, manga.description ?: "", apiKey, model)
+            dismissDialog()
             if (titles.isNotEmpty()) {
                 events.emit(Event.SearchSimilarVibes(titles))
             } else {
@@ -1716,6 +1715,7 @@ class MangaScreenModel(
         // SY <--
 
         data object FixingMetadata : Dialog
+        data object VibeSearching : Dialog
         data object SettingsSheet : Dialog
         data object TrackSheet : Dialog
         data object FullCover : Dialog

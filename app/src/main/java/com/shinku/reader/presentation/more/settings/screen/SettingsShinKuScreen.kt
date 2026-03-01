@@ -19,6 +19,7 @@ import com.shinku.reader.core.common.i18n.stringResource
 import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.domain.library.service.LibraryPreferences
+import com.shinku.reader.ui.reader.setting.ReaderPreferences
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.i18n.stringResource
 import uy.kohesive.injekt.Injekt
@@ -35,11 +36,12 @@ object SettingsShinKuScreen : SearchableSettings {
         val shinkuPreferences = remember { Injekt.get<ShinKuPreferences>() }
         val libraryPreferences = remember { Injekt.get<LibraryPreferences>() }
         val basePreferences = remember { Injekt.get<BasePreferences>() }
+        val readerPreferences = remember { Injekt.get<ReaderPreferences>() }
 
         return listOf(
             getGeminiGroup(shinkuPreferences),
             getPerformanceGroup(basePreferences),
-            getImmersionGroup(shinkuPreferences),
+            getImmersionGroup(shinkuPreferences, readerPreferences),
             getLibraryGroup(libraryPreferences),
         )
     }
@@ -143,7 +145,10 @@ object SettingsShinKuScreen : SearchableSettings {
     }
 
     @Composable
-    private fun getImmersionGroup(shinkuPreferences: ShinKuPreferences): Preference.PreferenceGroup {
+    private fun getImmersionGroup(
+        shinkuPreferences: ShinKuPreferences,
+        readerPreferences: ReaderPreferences,
+    ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.pref_category_immersion_reader),
             preferenceItems = persistentListOf(
@@ -151,6 +156,11 @@ object SettingsShinKuScreen : SearchableSettings {
                     preference = shinkuPreferences.liveTranslation(),
                     title = stringResource(MR.strings.pref_live_translation),
                     subtitle = stringResource(MR.strings.pref_live_translation_summary),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = readerPreferences.guidedView(),
+                    title = "Guided View (Smart Panel Zoom)",
+                    subtitle = "Automatically detect and zoom into manga panels for a more focused reading experience.",
                 ),
             ),
         )

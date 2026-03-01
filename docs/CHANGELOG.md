@@ -1,5 +1,9 @@
 # ShinKu Changelog
 
+## 2.2.1 (2026-03-01)
+### Added
+- **Performance Enhancements:** Completed tracking and optimization tasks to improve application responsiveness.
+
 ## 2.2.0 (2026-02-25)
 ### Added
 - **AI Metadata Enrichment:** New "Fix with AI" button in Edit Info to automatically generate high-quality descriptions and tags using Gemini.

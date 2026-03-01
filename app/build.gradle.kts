@@ -3,6 +3,7 @@
 import shinku.buildlogic.getBuildTime
 import shinku.buildlogic.getCommitCount
 import shinku.buildlogic.getGitSha
+import java.util.Properties
 
 plugins {
     id("shinku.android.application")
@@ -28,13 +29,20 @@ val supportedAbis = setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
 android {
     namespace = "com.shinku.reader"
 
+    val localProperties = Properties().apply {
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { load(it) }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.shinku.reader"
 
         setProperty("archivesBaseName", "ShinKu")
 
-        versionCode = 85
-        versionName = "2.2.0"
+        versionCode = 86
+        versionName = "2.2.1"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -56,6 +64,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = localProperties.getProperty("signing.store.file")?.let { file(it) }
+            storePassword = localProperties.getProperty("signing.store.password")
+            keyAlias = localProperties.getProperty("signing.key.alias")
+            keyPassword = localProperties.getProperty("signing.key.password")
+        }
+    }
+
     buildTypes {
         named("debug") {
             versionNameSuffix = "-${getCommitCount()}"
@@ -70,7 +87,7 @@ android {
             matchingFallbacks.add("release")
         }
         named("release") {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             setProguardFiles(listOf(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"))
@@ -80,7 +97,7 @@ android {
         create("benchmark") {
             initWith(getByName("release"))
 
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             matchingFallbacks.add("release")
             isDebuggable = false
             isProfileable = true

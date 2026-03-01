@@ -110,37 +110,39 @@ import java.util.Date
 /**
  * Presenter used by the activity to perform background operations.
  */
-class ReaderViewModel @JvmOverloads constructor(
+class ReaderViewModel(
+    private val app: Application,
     private val savedState: SavedStateHandle,
-    private val sourceManager: SourceManager = Injekt.get(),
-    private val downloadManager: DownloadManager = Injekt.get(),
-    private val downloadProvider: DownloadProvider = Injekt.get(),
-    private val tempFileManager: UniFileTempFileManager = Injekt.get(),
-    private val imageSaver: ImageSaver = Injekt.get(),
-    val readerPreferences: ReaderPreferences = Injekt.get(),
-    private val basePreferences: BasePreferences = Injekt.get(),
-    private val downloadPreferences: DownloadPreferences = Injekt.get(),
-    private val trackPreferences: TrackPreferences = Injekt.get(),
-    private val trackChapter: TrackChapter = Injekt.get(),
-    private val getManga: GetManga = Injekt.get(),
-    private val getChaptersByMangaId: GetChaptersByMangaId = Injekt.get(),
-    private val getNextChapters: GetNextChapters = Injekt.get(),
-    private val upsertHistory: UpsertHistory = Injekt.get(),
-    private val updateChapter: UpdateChapter = Injekt.get(),
-    private val setMangaViewerFlags: SetMangaViewerFlags = Injekt.get(),
-    private val getIncognitoState: GetIncognitoState = Injekt.get(),
-    private val libraryPreferences: LibraryPreferences = Injekt.get(),
+    private val sourceManager: SourceManager,
+    private val downloadManager: DownloadManager,
+    private val downloadProvider: DownloadProvider,
+    private val tempFileManager: UniFileTempFileManager,
+    private val imageSaver: ImageSaver,
+    val readerPreferences: ReaderPreferences,
+    private val basePreferences: BasePreferences,
+    private val downloadPreferences: DownloadPreferences,
+    private val trackPreferences: TrackPreferences,
+    private val trackChapter: TrackChapter,
+    private val getManga: GetManga,
+    private val getChaptersByMangaId: GetChaptersByMangaId,
+    private val getNextChapters: GetNextChapters,
+    private val upsertHistory: UpsertHistory,
+    private val updateChapter: UpdateChapter,
+    private val setMangaViewerFlags: SetMangaViewerFlags,
+    private val getIncognitoState: GetIncognitoState,
+    private val libraryPreferences: LibraryPreferences,
     // SY -->
-    private val syncPreferences: SyncPreferences = Injekt.get(),
-    private val uiPreferences: UiPreferences = Injekt.get(),
-    private val getFlatMetadataById: GetFlatMetadataById = Injekt.get(),
-    private val getMergedMangaById: GetMergedMangaById = Injekt.get(),
-    private val getMergedReferencesById: GetMergedReferencesById = Injekt.get(),
-    private val getMergedChaptersByMangaId: GetMergedChaptersByMangaId = Injekt.get(),
-    private val setReadStatus: SetReadStatus = Injekt.get(),
-    private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
-    private val textRecognitionInteractor: com.shinku.reader.domain.source.interactor.TextRecognitionInteractor = Injekt.get(),
-    private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
+    private val syncPreferences: SyncPreferences,
+    private val uiPreferences: UiPreferences,
+    private val getFlatMetadataById: GetFlatMetadataById,
+    private val getMergedMangaById: GetMergedMangaById,
+    private val getMergedReferencesById: GetMergedReferencesById,
+    private val getMergedChaptersByMangaId: GetMergedChaptersByMangaId,
+    private val setReadStatus: SetReadStatus,
+    private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch,
+    private val textRecognitionInteractor: com.shinku.reader.domain.source.interactor.TextRecognitionInteractor,
+    private val panelDetectionInteractor: com.shinku.reader.domain.source.interactor.PanelDetectionInteractor,
+    private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences,
     // SY <--
 ) : ViewModel() {
 
@@ -396,7 +398,7 @@ class ReaderViewModel @JvmOverloads constructor(
                     }
                     if (chapterId == -1L) chapterId = initialChapterId
 
-                    val context = Injekt.get<Application>()
+                    val context = app
                     // val source = sourceManager.getOrStub(manga.source)
                     loader = ChapterLoader(
                         context = context,
@@ -716,7 +718,7 @@ class ReaderViewModel @JvmOverloads constructor(
 
                 // Check if syncing is enabled for chapter read:
                 if (isSyncEnabled && syncTriggerOpt.syncOnChapterRead) {
-                    SyncDataJob.startNow(Injekt.get<Application>())
+                    SyncDataJob.startNow(app)
                 }
             }
 
@@ -731,7 +733,7 @@ class ReaderViewModel @JvmOverloads constructor(
             // SY -->
             // Check if syncing is enabled for chapter open:
             if (isSyncEnabled && syncTriggerOpt.syncOnChapterOpen && readerChapter.chapter.last_page_read == 0) {
-                SyncDataJob.startNow(Injekt.get<Application>())
+                SyncDataJob.startNow(app)
             }
             // SY <--
         }
@@ -1272,6 +1274,23 @@ class ReaderViewModel @JvmOverloads constructor(
         }
     }
 
+    fun onPageReady(page: ReaderPage) {
+        if (!readerPreferences.guidedView().get()) return
+        
+        val stream = page.stream ?: return
+        viewModelScope.launchIO {
+            try {
+                val bitmap = ImageDecoder.newInstance(stream())?.decode() ?: return@launchIO
+                val panels = panelDetectionInteractor.detectPanels(bitmap)
+                if (panels.isNotEmpty()) {
+                    eventChannel.send(Event.PanelsDetected(page, panels))
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+            }
+        }
+    }
+
     private fun performAiAction(page: ReaderPage, title: String, action: suspend (String) -> String) {
         if (page.status != Page.State.Ready) return
         val stream = page.stream ?: return
@@ -1453,6 +1472,7 @@ class ReaderViewModel @JvmOverloads constructor(
         data object PageChanged : Event
         data class SetOrientation(val orientation: Int) : Event
         data class SetCoverResult(val result: SetAsCoverResult) : Event
+        data class PanelsDetected(val page: ReaderPage, val panels: List<android.graphics.RectF>) : Event
 
         data class SavedImage(val result: SaveImageResult) : Event
         data class ShareImage(

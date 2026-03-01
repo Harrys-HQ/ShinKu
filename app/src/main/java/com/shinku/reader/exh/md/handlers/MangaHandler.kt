@@ -61,36 +61,6 @@ class MangaHandler(
         }
     }
 
-    fun fetchMangaDetailsObservable(
-        manga: SManga,
-        sourceId: Long,
-        coverQuality: String,
-        tryUsingFirstVolumeCover: Boolean,
-        altTitlesInDesc: Boolean,
-        finalChapterInDesc: Boolean,
-        preferExtensionLangTitle: Boolean,
-    ): Observable<SManga> {
-        return runAsObservable {
-            getMangaDetails(
-                manga,
-                sourceId,
-                coverQuality,
-                tryUsingFirstVolumeCover,
-                altTitlesInDesc,
-                finalChapterInDesc,
-                preferExtensionLangTitle,
-            )
-        }
-    }
-
-    fun fetchChapterListObservable(
-        manga: SManga,
-        blockedGroups: String,
-        blockedUploaders: String,
-    ): Observable<List<SChapter>> = runAsObservable {
-        getChapterList(manga, blockedGroups, blockedUploaders)
-    }
-
     suspend fun getChapterList(manga: SManga, blockedGroups: String, blockedUploaders: String): List<SChapter> {
         return withIOContext {
             val results = mdListCall {

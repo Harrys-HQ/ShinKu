@@ -67,6 +67,8 @@ class ReaderPreferences(
 
     fun landscapeZoom() = preferenceStore.getBoolean("landscape_zoom", true)
 
+    fun guidedView() = preferenceStore.getBoolean("guided_view", false)
+
     fun cropBordersWebtoon() = preferenceStore.getBoolean("crop_borders_webtoon", false)
 
     fun webtoonSidePadding() = preferenceStore.getInt("webtoon_side_padding", WEBTOON_PADDING_MIN)

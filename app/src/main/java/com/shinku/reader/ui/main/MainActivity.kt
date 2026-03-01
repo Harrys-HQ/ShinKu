@@ -124,6 +124,7 @@ class MainActivity : BaseActivity() {
 
     // To be checked by splash screen. If true then splash screen will be removed.
     var ready = false
+    var migrationDone = false
 
     private var navigator: Navigator? = null
 
@@ -159,13 +160,6 @@ class MainActivity : BaseActivity() {
 
         window.setHighRefreshRate(preferences.highRefreshRate().get())
 
-        val didMigration = if (isLaunch) {
-            addAnalytics()
-            Migrator.awaitAndRelease()
-        } else {
-            false
-        }
-
         // Do not let the launcher create a new activity http://stackoverflow.com/questions/16283079
         if (!isTaskRoot) {
             finish()
@@ -179,6 +173,18 @@ class MainActivity : BaseActivity() {
 
         setComposeContent {
             val context = LocalContext.current
+
+            var didMigration by remember { mutableStateOf(false) }
+            LaunchedEffect(Unit) {
+                if (isLaunch) {
+                    addAnalytics()
+                    didMigration = Migrator.await()
+                    migrationDone = true
+                    Migrator.release()
+                } else {
+                    migrationDone = true
+                }
+            }
 
             var incognito by remember { mutableStateOf(getIncognitoState.await(null)) }
             val downloadOnly by preferences.downloadedOnly().collectAsState()
@@ -279,10 +285,9 @@ class MainActivity : BaseActivity() {
                 CheckForUpdates()
                 ShowOnboarding()
 
-                var showChangelog by remember { mutableStateOf(didMigration) }
-                if (showChangelog) {
+                if (didMigration) {
                     // SY -->
-                    WhatsNewDialog(onDismissRequest = { showChangelog = false })
+                    WhatsNewDialog(onDismissRequest = { didMigration = false })
                     // SY <--
                 }
             }
@@ -291,7 +296,7 @@ class MainActivity : BaseActivity() {
         val startTime = System.currentTimeMillis()
         splashScreen?.setKeepOnScreenCondition {
             val elapsed = System.currentTimeMillis() - startTime
-            elapsed <= SPLASH_MIN_DURATION || (!ready && elapsed <= SPLASH_MAX_DURATION)
+            elapsed <= SPLASH_MIN_DURATION || (!ready && elapsed <= SPLASH_MAX_DURATION) || !migrationDone
         }
         setSplashScreenExitAnimation(splashScreen)
 
@@ -467,7 +472,7 @@ class MainActivity : BaseActivity() {
                     navigator.push(RestoreBackupScreen(intent.data.toString()))
                 }
                 // Deep link to add extension repo
-                else if (intent.scheme == "com.shinku.reader" && intent.data?.host == "add-repo") {
+                else if ((intent.scheme == "com.shinku.reader" || intent.scheme == "tachiyomi" || intent.scheme == "mihon") && intent.data?.host == "add-repo") {
                     intent.data?.getQueryParameter("url")?.let { repoUrl ->
                         navigator.popUntilRoot()
                         navigator.push(ExtensionReposScreen(repoUrl))

@@ -112,6 +112,11 @@ private fun ColumnScope.PagerViewerSettings(screenModel: ReaderSettingsScreenMod
     // SY <--
 
     CheckboxItem(
+        label = "Guided View (Smart Panel Zoom)",
+        pref = screenModel.preferences.guidedView(),
+    )
+
+    CheckboxItem(
         label = stringResource(MR.strings.pref_crop_borders),
         pref = screenModel.preferences.cropBorders(),
     )

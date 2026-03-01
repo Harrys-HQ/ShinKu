@@ -35,7 +35,7 @@ object InjektKoinBridge {
                 },
             )
             androidContext(context)
-            modules(modules.values.toList())
+            modules(modules.values.toList() + viewModelModule)
         }
     }
 }

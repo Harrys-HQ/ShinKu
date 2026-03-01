@@ -69,6 +69,11 @@ internal fun Project.configureCompose(commonExtension: CommonExtension<*, *, *, 
     extensions.configure<ComposeCompilerGradlePluginExtension> {
         featureFlags.set(setOf(ComposeFeatureFlag.OptimizeNonSkippingGroups))
 
+        val stabilityFile = rootProject.layout.projectDirectory.file("compose-stability.conf")
+        if (stabilityFile.asFile.exists()) {
+            stabilityConfigurationFile.set(stabilityFile)
+        }
+
         val enableMetrics = project.providers.gradleProperty("enableComposeCompilerMetrics").orNull.toBoolean()
         val enableReports = project.providers.gradleProperty("enableComposeCompilerReports").orNull.toBoolean()
 

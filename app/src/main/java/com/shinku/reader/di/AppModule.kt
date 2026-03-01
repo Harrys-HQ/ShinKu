@@ -3,6 +3,9 @@ package com.shinku.reader.di
 import android.app.Application
 import android.os.Build
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import app.cash.sqldelight.db.SqlDriver
@@ -173,7 +176,7 @@ class AppModule(val app: Application) : InjektModule {
 
 fun initExpensiveComponents(app: Application) {
     // Asynchronously init expensive components for a faster cold start
-    ContextCompat.getMainExecutor(app).execute {
+    CoroutineScope(Dispatchers.IO).launch {
         Injekt.get<NetworkHelper>()
 
         Injekt.get<SourceManager>()
