@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch
 class CloudflareInterceptor(
     private val context: Context,
     private val cookieManager: AndroidCookieJar,
+    private val isCloudflareGuardEnabled: () -> Boolean,
     defaultUserAgentProvider: () -> String,
 ) : WebViewInterceptor(context, defaultUserAgentProvider) {
 
@@ -29,7 +30,9 @@ class CloudflareInterceptor(
 
     override fun shouldIntercept(response: Response): Boolean {
         // Check if Cloudflare anti-bot is on
-        return response.code in ERROR_CODES && response.header("Server") in SERVER_CHECK
+        return isCloudflareGuardEnabled() &&
+            response.code in ERROR_CODES &&
+            response.header("Server") in SERVER_CHECK
     }
 
     override fun intercept(

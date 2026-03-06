@@ -1,10 +1,10 @@
 [versions]
 agp_version = "8.13.2"
 lifecycle_version = "2.10.0"
-paging_version = "3.3.6"
+paging_version = "3.4.1"
 interpolator_version = "1.0.0"
-compose-bom = "2025.12.01"
-kotlin_version = "2.3.0"
+compose-bom = "2026.02.00"
+kotlin_version = "2.3.10"
 serialization_version = "1.9.0"
 xml_serialization_version = "0.91.3"
 koin = "4.1.1"
@@ -105,7 +105,7 @@ sqlite-ktx = { module = "androidx.sqlite:sqlite-ktx", version.ref = "sqlite" }
 sqlite-android = "com.github.requery:sqlite-android:3.49.0"
 preferencektx = "androidx.preference:preference-ktx:1.2.1"
 injekt = "com.github.null2264:injekt-koin:ee267b2e27"
-coil-bom = { module = "io.coil-kt.coil3:coil-bom", version = "3.3.0" }
+coil-bom = { module = "io.coil-kt.coil3:coil-bom", version = "3.4.0" }
 coil-core = { module = "io.coil-kt.coil3:coil" }
 coil-gif = { module = "io.coil-kt.coil3:coil-gif" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose" }

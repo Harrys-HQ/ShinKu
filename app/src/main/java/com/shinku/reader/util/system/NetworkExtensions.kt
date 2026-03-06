@@ -24,6 +24,13 @@ fun Context.isOnline(): Boolean {
     return (NetworkCapabilities.TRANSPORT_CELLULAR..maxTransport).any(networkCapabilities::hasTransport)
 }
 
+fun Context.isConnectedToVpn(): Boolean {
+    val activeNetwork = connectivityManager.activeNetwork ?: return false
+    val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+
+    return networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
+}
+
 /**
  * Returns true if device is connected to Wifi.
  */

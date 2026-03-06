@@ -1,5 +1,23 @@
 # ShinKu Changelog
 
+## 2.2.2 (2026-03-06)
+### Added
+- **Upstream Sync 2026:** Comprehensive synchronization with Mihon and TachiyomiSY (Feb 2026).
+- **Library Duplicate Detection:** Detect and filter duplicate manga entries in the library using tracker IDs.
+- **VPN Support:** New "Only on VPN" restriction for automatic library updates.
+- **Bookmarked Chapters Download:** Option to automatically download bookmarked chapters during library updates.
+- **Cloudflare Guard:** New automated system to bypass Cloudflare challenges in the background.
+
+### Improved
+- **Database Performance:** Optimized History view with a new index on `last_read` for faster sorting.
+- **Migration Progress:** Reading progress (`lastPageRead`) is now preserved when migrating manga between sources.
+- **Dependency Updates:** Updated core libraries to **Kotlin 2.3.10**, **Compose BOM 2026.02.00**, **Paging 3.4.1**, and **Coil 3.4.0**.
+
+### Fixed
+- **Extension Installer:** Resolved issues where extensions would get stuck in a "Pending" state on Android 12+.
+- **Thread Starvation:** Fixed potential app hangs and UI freezes during intensive background tasks (Mihon #2955).
+- **Migration Sorting:** Fixed source order resetting during batch migration.
+
 ## 2.2.1 (2026-03-01)
 ### Added
 - **Performance Enhancements:** Completed tracking and optimization tasks to improve application responsiveness.
