@@ -26,7 +26,10 @@ class MigrateSearchScreenModel(
     override val sortComparator = { map: Map<CatalogueSource, SearchItemResult> ->
         compareBy<CatalogueSource>(
             { (map[it] as? SearchItemResult.Success)?.isEmpty ?: true },
-            { migrationSources.indexOf(it.id) },
+            {
+                val index = migrationSources.indexOf(it.id)
+                if (index != -1) index else Int.MAX_VALUE
+            },
         )
     }
 

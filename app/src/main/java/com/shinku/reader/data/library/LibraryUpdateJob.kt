@@ -19,6 +19,7 @@ import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.shinku.reader.domain.chapter.interactor.SyncChaptersWithSource
+import com.shinku.reader.domain.chapter.interactor.GetChaptersByMangaId
 import com.shinku.reader.domain.manga.interactor.UpdateManga
 import com.shinku.reader.domain.manga.model.copyFrom
 import com.shinku.reader.domain.manga.model.toSManga
@@ -38,6 +39,7 @@ import eu.kanade.tachiyomi.source.online.all.MergedSource
 import com.shinku.reader.util.prepUpdateCover
 import com.shinku.reader.util.storage.getUriCompat
 import com.shinku.reader.util.system.createFileInCacheDir
+import com.shinku.reader.util.system.isConnectedToVpn
 import com.shinku.reader.util.system.isConnectedToWifi
 import com.shinku.reader.util.system.isRunning
 import com.shinku.reader.util.system.setForegroundSafely
@@ -73,6 +75,7 @@ import com.shinku.reader.domain.library.model.LibraryManga
 import com.shinku.reader.domain.library.service.LibraryPreferences
 import com.shinku.reader.domain.library.service.LibraryPreferences.Companion.DEVICE_CHARGING
 import com.shinku.reader.domain.library.service.LibraryPreferences.Companion.DEVICE_NETWORK_NOT_METERED
+import com.shinku.reader.domain.library.service.LibraryPreferences.Companion.DEVICE_ONLY_ON_VPN
 import com.shinku.reader.domain.library.service.LibraryPreferences.Companion.DEVICE_ONLY_ON_WIFI
 import com.shinku.reader.domain.library.service.LibraryPreferences.Companion.MANGA_HAS_UNREAD
 import com.shinku.reader.domain.library.service.LibraryPreferences.Companion.MANGA_NON_COMPLETED
@@ -120,6 +123,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
     private val getManga: GetManga = Injekt.get()
     private val updateManga: UpdateManga = Injekt.get()
     private val syncChaptersWithSource: SyncChaptersWithSource = Injekt.get()
+    private val getChaptersByMangaId: GetChaptersByMangaId = Injekt.get()
     private val fetchInterval: FetchInterval = Injekt.get()
     private val filterChaptersForDownload: FilterChaptersForDownload = Injekt.get()
 
@@ -147,6 +151,9 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 val preferences = Injekt.get<LibraryPreferences>()
                 val restrictions = preferences.autoUpdateDeviceRestrictions().get()
                 if ((DEVICE_ONLY_ON_WIFI in restrictions) && !context.isConnectedToWifi()) {
+                    return Result.retry()
+                }
+                if ((DEVICE_ONLY_ON_VPN in restrictions) && !context.isConnectedToVpn()) {
                     return Result.retry()
                 }
             }
@@ -422,6 +429,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                             val mangaSemaphore = Semaphore(dynamicMaxManga)
                             coroutineScope {
                                 mangaInSource.forEach { libraryManga ->
+                                    kotlinx.coroutines.yield()
                                     val manga = libraryManga.manga
                                     ensureActive()
 
@@ -464,6 +472,17 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
                                                             // Convert to the manga that contains new chapters
                                                             newUpdates.add(manga to newChapters.toTypedArray())
+                                                        }
+
+                                                        if (libraryPreferences.downloadBookmarked().get()) {
+                                                            val bookmarkedChapters = getChaptersByMangaId.await(manga.id)
+                                                                .filter { it.bookmark && !it.read }
+                                                                .filter { !downloadManager.isChapterDownloaded(it.name, it.scanlator, it.url, manga.ogTitle, manga.source) }
+
+                                                            if (bookmarkedChapters.isNotEmpty()) {
+                                                                downloadChapters(manga, bookmarkedChapters)
+                                                                hasDownloads.store(true)
+                                                            }
                                                         }
                                                         updateManga.await(MangaUpdate(manga.id, lastUpdateError = false))
                                                         success = true
@@ -603,6 +622,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                             val mangaSemaphore = Semaphore(maxMangaPerSource)
                             coroutineScope {
                                 mangaInSource.forEach { libraryManga ->
+                                    kotlinx.coroutines.yield()
                                     val manga = libraryManga.manga
                                     ensureActive()
 
@@ -665,6 +685,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
             }
             .also { size = it.size }
             .forEach { (networkManga, metadata) ->
+                kotlinx.coroutines.yield()
                 ensureActive()
 
                 count++
@@ -708,6 +729,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         // filter all follows from Mangadex and only add reading or rereading manga to library
         if (mdList.isLoggedIn) {
             listManga.forEach { manga ->
+                kotlinx.coroutines.yield()
                 ensureActive()
 
                 count++
@@ -853,6 +875,9 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 val networkRequestBuilder = NetworkRequest.Builder()
                 if (DEVICE_ONLY_ON_WIFI in restrictions) {
                     networkRequestBuilder.addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                }
+                if (DEVICE_ONLY_ON_VPN in restrictions) {
+                    networkRequestBuilder.addTransportType(NetworkCapabilities.TRANSPORT_VPN)
                 }
                 if (DEVICE_NETWORK_NOT_METERED in restrictions) {
                     networkRequestBuilder.addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)

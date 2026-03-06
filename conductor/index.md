@@ -8,6 +8,7 @@
 ## Tracks
 - [Initial Setup & Branding](./tracks/initial-setup/index.md)
 - [Upstream Synchronization](./tracks/upstream-sync/index.md)
+- [Upstream Sync 2026](./tracks/upstream-sync-2026/index.md)
 - [Internal Tooling](./tracks/internal-tooling/index.md)
 - [New Features](./tracks/features/index.md)
 - [UI & Visual Identity](./tracks/ui-visual-identity/index.md)

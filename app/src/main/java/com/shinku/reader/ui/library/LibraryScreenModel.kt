@@ -408,6 +408,24 @@ class LibraryScreenModel(
             !isExcluded && isIncluded
         }
 
+        val seenTrackerIds = mutableSetOf<String>()
+        val filterFnDuplicate: (LibraryItem) -> Boolean = { item ->
+            if (!preferences.duplicateDetection) {
+                true
+            } else {
+                val mangaTracks = trackMap[item.id].orEmpty()
+                val trackerIds = mangaTracks.map { "${it.trackerId}:${it.remoteId}" }
+                if (trackerIds.isEmpty()) {
+                    true
+                } else if (trackerIds.any { it in seenTrackerIds }) {
+                    false
+                } else {
+                    seenTrackerIds.addAll(trackerIds)
+                    true
+                }
+            }
+        }
+
         return fastFilter {
             filterFnDownloaded(it) &&
                 filterFnUnread(it) &&
@@ -417,7 +435,8 @@ class LibraryScreenModel(
                 filterFnIntervalCustom(it) &&
                 filterFnTracking(it) &&
                 // SY -->
-                filterFnLewd(it)
+                filterFnLewd(it) &&
+                filterFnDuplicate(it)
             // SY <--
         }
     }
@@ -609,6 +628,7 @@ class LibraryScreenModel(
             libraryPreferences.filterIntervalCustom().changes(),
             // SY -->
             libraryPreferences.filterLewd().changes(),
+            libraryPreferences.duplicateDetection().changes(),
             // SY <--
         ) {
             ItemPreferences(
@@ -626,6 +646,7 @@ class LibraryScreenModel(
                 filterIntervalCustom = it[11] as TriState,
                 // SY -->
                 filterLewd = it[12] as TriState,
+                duplicateDetection = it[13] as Boolean,
                 // SY <--
             )
         }
@@ -1409,6 +1430,7 @@ class LibraryScreenModel(
         val filterIntervalCustom: TriState,
         // SY -->
         val filterLewd: TriState,
+        val duplicateDetection: Boolean,
         // SY <--
     )
 

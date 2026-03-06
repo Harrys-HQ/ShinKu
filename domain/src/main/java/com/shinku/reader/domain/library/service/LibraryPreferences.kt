@@ -225,10 +225,15 @@ class LibraryPreferences(
 
     fun deadSourceIds() = preferenceStore.getStringSet("dead_source_ids", emptySet())
 
+    fun downloadBookmarked() = preferenceStore.getBoolean("pref_download_bookmarked", false)
+
+    fun duplicateDetection() = preferenceStore.getBoolean("pref_library_duplicate_detection", false)
+
     // SY <--
 
     companion object {
         const val DEVICE_ONLY_ON_WIFI = "wifi"
+        const val DEVICE_ONLY_ON_VPN = "vpn"
         const val DEVICE_NETWORK_NOT_METERED = "network_not_metered"
         const val DEVICE_CHARGING = "ac"
 

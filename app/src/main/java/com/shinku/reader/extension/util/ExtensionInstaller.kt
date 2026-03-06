@@ -191,8 +191,13 @@ internal class ExtensionInstaller(private val context: Context) {
                 tempFile.delete()
             }
             else -> {
-                val intent = ExtensionInstallService.getIntent(context, downloadId, uri, installer)
-                ContextCompat.startForegroundService(context, intent)
+                try {
+                    val intent = ExtensionInstallService.getIntent(context, downloadId, uri, installer)
+                    ContextCompat.startForegroundService(context, intent)
+                } catch (e: Exception) {
+                    logcat(LogPriority.ERROR, e) { "Failed to start extension install service." }
+                    Injekt.get<ExtensionManager>().updateInstallStep(downloadId, InstallStep.Error)
+                }
             }
         }
     }
