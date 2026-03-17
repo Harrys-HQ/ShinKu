@@ -1,5 +1,19 @@
 # ShinKu Changelog
 
+## 2.2.3 (2026-03-13)
+### Added
+- **Storage & Speed overhaul:** New dedicated settings category under ShinKu Features.
+- **Download Migration Tool:** One-click utility to fix missing/broken chapters when migrating from other forks.
+- **Aggressive Reader Prefetch:** Optimized background loading for gapless chapter transitions.
+- **Image Transcoding:** Experimental Auto-WebP support to reduce library storage footprint by up to 50%.
+- **Enhanced Caching:** Dedicated 100MB Coil 3 DiskCache for significantly faster cover loading.
+
+### Improved
+- **Library Accuracy:** Guaranteed 100% accurate unread counts that update instantly upon reading.
+- **UI Performance:** GPU-accelerated scrolling optimized for 120Hz displays.
+- **Reader Buffer:** Expanded 30-page background buffer for a snappier reading experience.
+- **E-Ink Optimizations:** Moved ghosting and flash controls to the Storage & Speed menu for easier access.
+
 ## 2.2.2 (2026-03-06)
 ### Added
 - **Upstream Sync 2026:** Comprehensive synchronization with Mihon and TachiyomiSY (Feb 2026).
