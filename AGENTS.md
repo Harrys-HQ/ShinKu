@@ -13,6 +13,11 @@ This document outlines the protocols for development to ensure efficiency and av
 2. **Database Integrity**: Migrations must be numbered sequentially. Always update both the `.sq` files and create a new `.sqm` migration.
 3. **UI Consistency**: Use existing components from `eu.kanade.tachiyomi.presentation.core` and `com.shinku.reader.presentation`.
 
+## Versioning & Build Protocol
+1. **Build Flavor Mandate**: The 'standard' build flavor is discontinued due to R8-related instability. All build verifications and developments MUST use the 'devDebug' variant (e.g., `./gradlew assembleDevDebug`).
+2. **Atomic Versioning**: Versioning must be applied consistently across the entire application (app/build.gradle.kts), all project documentation (version.json, CHANGELOG, README), and all commit messages. No tag should exist without corresponding version bumps in the codebase.
+3. **Commit Alignment**: Every release commit or tag MUST have the corresponding version strings already applied in the codebase.
+
 ## Rebranding & Compatibility Protocol
 1. **Source-API Integrity**: Do NOT move `source-api` or `network` packages out of `eu.kanade.tachiyomi`. These are the binary interface for external extensions.
 2. **Backup Compatibility**: Use `@SerialName` with the legacy `eu.kanade.tachiyomi` prefix for all backup models to ensure old backups can be restored.

@@ -3,7 +3,7 @@
 ## Development Process
 1. **Upstream Monitoring:** Regularly check `com.shinku.reader.mihon/main` and `sy/master` for updates.
 2. **Feature Development:** Implement custom features on top of the base.
-3. **Build Verification:** Ensure every change builds successfully using `./gradlew assembleStandardDebug`.
+3. **Build Verification:** Ensure every change builds successfully using `./gradlew assembleDevDebug`.
 
 ## Syncing with Upstream
 - Use `git fetch sy` and `git fetch com.shinku.reader.mihon`.
