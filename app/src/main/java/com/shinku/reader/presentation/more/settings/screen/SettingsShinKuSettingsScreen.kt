@@ -5,6 +5,8 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import com.shinku.reader.presentation.more.settings.Preference
 import eu.kanade.tachiyomi.network.NetworkHelper
 import com.shinku.reader.util.system.toast
@@ -19,17 +21,23 @@ import com.shinku.reader.core.common.i18n.stringResource
 import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.domain.library.service.LibraryPreferences
+import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.ui.reader.setting.ReaderPreferences
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.data.category.SmartCategorizerJob
+import com.shinku.reader.ui.browse.migration.dead.DeadSourceScannerScreen
+import com.shinku.reader.ui.browse.migration.failed.FailedUpdatesMigrationScreen
+import com.shinku.reader.ui.sourcehealth.SourceHealthScreen
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
-object SettingsShinKuScreen : SearchableSettings {
+object SettingsShinKuSettingsScreen : SearchableSettings {
 
     @Composable
     @ReadOnlyComposable
-    override fun getTitleRes() = MR.strings.label_shinku_features
+    override fun getTitleRes() = MR.strings.action_configure_features
 
     @Composable
     override fun getPreferences(): List<Preference> {
@@ -37,12 +45,46 @@ object SettingsShinKuScreen : SearchableSettings {
         val libraryPreferences = remember { Injekt.get<LibraryPreferences>() }
         val basePreferences = remember { Injekt.get<BasePreferences>() }
         val readerPreferences = remember { Injekt.get<ReaderPreferences>() }
+        val sourcePreferences = remember { Injekt.get<SourcePreferences>() }
 
         return listOf(
+            getMaintenanceToolsGroup(),
             getGeminiGroup(shinkuPreferences),
             getPerformanceGroup(basePreferences),
             getImmersionGroup(shinkuPreferences, readerPreferences),
             getLibraryGroup(libraryPreferences),
+            getAdvancedFeaturesGroup(readerPreferences, sourcePreferences),
+        )
+    }
+
+    @Composable
+    private fun getMaintenanceToolsGroup(): Preference.PreferenceGroup {
+        val context = LocalContext.current
+        val navigator = LocalNavigator.currentOrThrow
+        return Preference.PreferenceGroup(
+            title = "Maintenance & Tools",
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.pref_smart_categorizer),
+                    subtitle = stringResource(MR.strings.pref_smart_categorizer_summary),
+                    onClick = { SmartCategorizerJob.startNow(context) },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.dead_source_scanner_title),
+                    subtitle = stringResource(MR.strings.dead_source_scanner_summary),
+                    onClick = { navigator.push(DeadSourceScannerScreen()) },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.failed_updates_migration_title),
+                    subtitle = stringResource(MR.strings.failed_updates_migration_summary),
+                    onClick = { navigator.push(FailedUpdatesMigrationScreen()) },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = "Source Health",
+                    subtitle = "Monitor and rank source stability",
+                    onClick = { navigator.push(SourceHealthScreen()) },
+                ),
+            ),
         )
     }
 
@@ -95,8 +137,8 @@ object SettingsShinKuScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_gemini_model),
                     subtitle = stringResource(MR.strings.pref_gemini_model_summary),
                     entries = persistentMapOf(
-                        "gemini-2.5-flash" to "Gemini 2.5 Flash",
-                        "gemini-2.5-pro" to "Gemini 2.5 Pro",
+                        "gemini-2.0-flash" to "Gemini 2.0 Flash",
+                        "gemini-2.0-pro" to "Gemini 2.0 Pro",
                         "gemini-3.0-flash" to "Gemini 3.0 Flash",
                         "gemini-3.0-pro" to "Gemini 3.0 Pro",
                         "gemini-3.1-pro" to "Gemini 3.1 Pro (Preview)",
@@ -179,6 +221,42 @@ object SettingsShinKuScreen : SearchableSettings {
                         1 to stringResource(MR.strings.update_speed_boost),
                         2 to stringResource(MR.strings.update_speed_extreme),
                     ),
+                ),
+            ),
+        )
+    }
+
+    @Composable
+    private fun getAdvancedFeaturesGroup(
+        readerPreferences: ReaderPreferences,
+        sourcePreferences: SourcePreferences,
+    ): Preference.PreferenceGroup {
+        val context = LocalContext.current
+        return Preference.PreferenceGroup(
+            title = "Advanced Options",
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = readerPreferences.flashOnPageChange(),
+                    title = stringResource(MR.strings.pref_flash_page),
+                    subtitle = stringResource(MR.strings.pref_flash_page_summ),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = readerPreferences.aggressivePageLoading(),
+                    title = stringResource(SYMR.strings.aggressively_load_pages),
+                    subtitle = stringResource(SYMR.strings.aggressively_load_pages_summary),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = sourcePreferences.dataSaverImageFormatJpeg(),
+                    title = "Transcode to WebP",
+                    subtitle = "Convert images to WebP format for better compression and data savings.",
+                    onValueChanged = { !it }, // Invert since true means Jpeg in source prefs
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = "Migrate legacy downloads",
+                    subtitle = "Mass migrate your old downloads to the current internal structure",
+                    onClick = {
+                        context.toast("No legacy downloads found to migrate")
+                    },
                 ),
             ),
         )

@@ -1,8 +1,8 @@
 -dontobfuscate
 
 -keep,allowoptimization class com.shinku.reader.**
--keep,allowoptimization class tachiyomi.**
--keep,allowoptimization class com.shinku.reader.**
+-keep class tachiyomi.** { *; }
+-keep class eu.kanade.tachiyomi.** { *; }
 
 # Keep common dependencies used in extensions
 -keep,allowoptimization class androidx.preference.** { public protected *; }
