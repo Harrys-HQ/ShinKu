@@ -333,7 +333,7 @@
     <string name="failed_updates_migration_title">Failed Updates Migration</string>
     <string name="failed_updates_migration_summary">Migrate manga that failed during the last library update</string>
     <string name="failed_updates_migration_empty">No failed updates found in the recent refresh.</string>
-    <string name="action_configure_features">Configure Features</string>
+    <string name="action_configure_features">ShinKu Settings</string>
 
     <string name="pref_gemini_model">Gemini Model</string>
     <string name="pref_gemini_model_summary">Select the Gemini model to use for AI features (Gemini 2.5 Flash and above supported)</string>

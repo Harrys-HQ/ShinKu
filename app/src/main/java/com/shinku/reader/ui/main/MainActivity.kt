@@ -494,7 +494,9 @@ class MainActivity : BaseActivity() {
     // SY -->
     private fun addAnalytics() {
         if (!BuildConfig.DEBUG && isPreviewBuildType) {
-            Firebase.analytics.setUserProperty("preview_version", syDebugVersion)
+            runCatching {
+                Firebase.analytics.setUserProperty("preview_version", syDebugVersion)
+            }
         }
     }
     // SY <--

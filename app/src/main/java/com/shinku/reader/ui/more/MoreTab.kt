@@ -20,17 +20,13 @@ import com.shinku.reader.core.preference.asState
 import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.domain.ui.UiPreferences
 import com.shinku.reader.presentation.more.MoreScreen
-import com.shinku.reader.presentation.more.settings.screen.SettingsShinKuScreen
+import com.shinku.reader.presentation.more.settings.screen.SettingsShinKuSettingsScreen
 import com.shinku.reader.presentation.util.Tab
 import com.shinku.reader.R
-import com.shinku.reader.data.category.SmartCategorizerJob
 import com.shinku.reader.data.download.DownloadManager
-import com.shinku.reader.ui.browse.migration.dead.DeadSourceScannerScreen
-import com.shinku.reader.ui.browse.migration.failed.FailedUpdatesMigrationScreen
 import com.shinku.reader.ui.download.DownloadQueueScreen
 import com.shinku.reader.ui.history.HistoryTab
 import com.shinku.reader.ui.setting.SettingsScreen
-import com.shinku.reader.ui.sourcehealth.SourceHealthScreen
 import com.shinku.reader.ui.stats.StatsScreen
 import com.shinku.reader.ui.updates.UpdatesTab
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,7 +62,6 @@ data object MoreTab : Tab {
 
     @Composable
     override fun Content() {
-        val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = rememberScreenModel { MoreScreenModel() }
         val downloadQueueState by screenModel.downloadQueueState.collectAsState()
@@ -88,11 +83,7 @@ data object MoreTab : Tab {
             // SY <--
             onClickDownloadQueue = { navigator.push(DownloadQueueScreen) },
             onClickDataAndStorage = { navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage)) },
-            onClickSmartCategorizer = { SmartCategorizerJob.startNow(context) },
-            onClickDeadSourceScanner = { navigator.push(DeadSourceScannerScreen()) },
-            onClickFailedUpdatesMigration = { navigator.push(FailedUpdatesMigrationScreen()) },
-            onClickConfigureFeatures = { navigator.push(SettingsShinKuScreen) },
-            onClickSourceHealth = { navigator.push(SourceHealthScreen()) },
+            onClickConfigureFeatures = { navigator.push(SettingsShinKuSettingsScreen) },
             onClickStats = { navigator.push(StatsScreen()) },
             onClickSettings = { navigator.push(SettingsScreen()) },
             onClickAbout = { navigator.push(SettingsScreen(SettingsScreen.Destination.About)) },

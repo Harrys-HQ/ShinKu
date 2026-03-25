@@ -51,7 +51,7 @@ internal object ExtensionLoader {
     private const val METADATA_SOURCE_FACTORY = "tachiyomi.extension.factory"
     private const val METADATA_NSFW = "tachiyomi.extension.nsfw"
     const val LIB_VERSION_MIN = 1.4
-    const val LIB_VERSION_MAX = 1.5
+    const val LIB_VERSION_MAX = 1.6
 
     @Suppress("DEPRECATION")
     private val PACKAGE_FLAGS = PackageManager.GET_CONFIGURATIONS or
@@ -157,15 +157,23 @@ internal object ExtensionLoader {
             }
             .toList()
 
+        logcat(LogPriority.DEBUG) { "Found ${extPkgs.size} extension packages to load" }
+
         if (extPkgs.isEmpty()) return emptyList()
 
         // Load each extension concurrently and wait for completion
-        return runBlocking {
+        val results = runBlocking {
             val deferred = extPkgs.map {
-                async { loadExtension(context, it) }
+                async { 
+                    runCatching { loadExtension(context, it) }
+                        .getOrElse { LoadResult.Error } 
+                }
             }
             deferred.awaitAll()
         }
+
+        logcat(LogPriority.DEBUG) { "Successfully loaded ${results.count { it is LoadResult.Success }} extensions" }
+        return results
     }
 
     /**
@@ -361,7 +369,10 @@ internal object ExtensionLoader {
      * @param pkgInfo The package info of the application.
      */
     private fun isPackageAnExtension(pkgInfo: PackageInfo): Boolean {
-        return pkgInfo.reqFeatures.orEmpty().any { it.name == EXTENSION_FEATURE }
+        return pkgInfo.reqFeatures.orEmpty().any { it.name == EXTENSION_FEATURE } ||
+            pkgInfo.packageName.startsWith("eu.kanade.tachiyomi.extension") ||
+            pkgInfo.packageName.startsWith("mihon.extension") ||
+            pkgInfo.applicationInfo?.metaData?.containsKey(METADATA_SOURCE_CLASS) == true
     }
 
     /**
