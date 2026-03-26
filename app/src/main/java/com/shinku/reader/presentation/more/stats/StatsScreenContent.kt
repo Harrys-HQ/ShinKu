@@ -16,9 +16,11 @@ import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.LocalLibrary
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.presentation.more.stats.components.StatsItem
@@ -29,6 +31,7 @@ import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.components.SectionCard
 import com.shinku.reader.presentation.core.i18n.stringResource
+import androidx.compose.material.icons.outlined.History
 import java.util.Locale
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -61,7 +64,137 @@ fun StatsScreenContent(
         item {
             GenreSection(state.genres)
         }
+        item {
+            AuthorSection(state.authors)
+        }
+        item {
+            TimeOfDaySection(state.timeStats)
+        }
+        item {
+            MilestoneSection(state.milestones)
+        }
         // SY <--
+    }
+}
+
+@Composable
+private fun LazyItemScope.MilestoneSection(
+    data: StatsData.Milestones,
+) {
+    if (data.earnedBadges.isEmpty()) return
+
+    SectionCard(SYMR.strings.label_milestones) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            data.earnedBadges.chunked(2).forEach { rowBadges ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowBadges.forEach { badge ->
+                        val icon = when (badge.iconId) {
+                            "time" -> Icons.Outlined.Schedule
+                            "streak" -> Icons.Outlined.History
+                            "genre" -> Icons.Outlined.CollectionsBookmark
+                            else -> Icons.Outlined.LocalLibrary
+                        }
+                        Row(modifier = Modifier.weight(1f)) {
+                            StatsItem(
+                                title = badge.name,
+                                subtitle = badge.description,
+                                icon = icon,
+                            )
+                        }
+                    }
+                    if (rowBadges.size == 1) {
+                        Box(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LazyItemScope.AuthorSection(
+    data: StatsData.Authors,
+) {
+    SectionCard(SYMR.strings.label_top_authors) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            data.topAuthors.chunked(2).forEach { rowAuthors ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowAuthors.forEach { author ->
+                        Row(modifier = Modifier.weight(1f)) {
+                            StatsItem(
+                                title = author,
+                                subtitle = "",
+                            )
+                        }
+                    }
+                    if (rowAuthors.size == 1) {
+                        Box(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LazyItemScope.TimeOfDaySection(
+    data: StatsData.TimeStats,
+) {
+    val maxDuration = remember(data.timeOfDayHistory) {
+        data.timeOfDayHistory.values.maxOrNull() ?: 1L
+    }
+
+    SectionCard(SYMR.strings.label_reading_time_patterns) {
+        val primaryColor = MaterialTheme.colorScheme.primary
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                (0..23).forEach { hour ->
+                    val duration = data.timeOfDayHistory[hour] ?: 0L
+                    val alpha = (duration.toFloat() / maxDuration.toFloat()).coerceIn(0.1f, 1f)
+                    androidx.compose.foundation.Canvas(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .height(40.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                    ) {
+                        drawRect(
+                            color = primaryColor.copy(alpha = alpha)
+                        )
+                    }
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("12am", style = MaterialTheme.typography.labelSmall)
+                Text("6am", style = MaterialTheme.typography.labelSmall)
+                Text("12pm", style = MaterialTheme.typography.labelSmall)
+                Text("6pm", style = MaterialTheme.typography.labelSmall)
+                Text("11pm", style = MaterialTheme.typography.labelSmall)
+            }
+        }
     }
 }
 

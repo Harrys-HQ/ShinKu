@@ -29,9 +29,20 @@ fun Uri.toShareIntent(context: Context, type: String = "image/*", message: Strin
     }
 
     return Intent.createChooser(shareIntent, context.stringResource(MR.strings.action_share)).apply {
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
-}
+    }
+
+    fun String.toShareIntent(context: Context): Intent {
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, this@toShareIntent)
+    }
+    return Intent.createChooser(shareIntent, context.stringResource(MR.strings.action_share)).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    }
+
 
 inline fun <reified T> Intent.getParcelableExtraCompat(name: String): T? {
     return IntentCompat.getParcelableExtra(this, name, T::class.java)

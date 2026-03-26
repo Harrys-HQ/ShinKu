@@ -101,6 +101,15 @@ class StatsScreenModel(
             val genresStatData = StatsData.Genres(
                 topGenres = readingStats.bestGenres,
             )
+            val authorsStatData = StatsData.Authors(
+                topAuthors = readingStats.bestAuthors,
+            )
+            val timeStatData = StatsData.TimeStats(
+                timeOfDayHistory = readingStats.timeOfDayHistory,
+            )
+            val milestonesStatData = StatsData.Milestones(
+                earnedBadges = readingStats.badges,
+            )
             // SY <--
 
             mutableState.update {
@@ -112,6 +121,9 @@ class StatsScreenModel(
                     // SY -->
                     streaks = streaksStatData,
                     genres = genresStatData,
+                    authors = authorsStatData,
+                    timeStats = timeStatData,
+                    milestones = milestonesStatData,
                     // SY <--
                 )
             }
@@ -173,5 +185,35 @@ class StatsScreenModel(
 
     fun toggleReadManga() {
         _allRead.value = !_allRead.value
+    }
+
+    fun getWrappedSummary(context: android.content.Context): String {
+        val state = state.value as? StatsScreenState.Success ?: return ""
+        val none = context.getString(com.shinku.reader.i18n.MR.strings.none.resourceId)
+        
+        val duration = state.overview.totalReadDuration
+            .kotlin.time.DurationUnit.MILLISECONDS.toDuration(kotlin.time.DurationUnit.MILLISECONDS)
+            .let { d ->
+                val hours = d.inWholeHours
+                val minutes = d.inWholeMinutes % 60
+                if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
+            }
+
+        return buildString {
+            append("📖 My ShinKu Reading Journey\n\n")
+            append("⏱ Total Time: $duration\n")
+            append("📚 Titles in Library: ${state.overview.libraryMangaCount}\n")
+            append("✅ Completed: ${state.overview.completedMangaCount}\n")
+            append("🔥 Current Streak: ${state.streaks.currentStreak} days\n\n")
+            
+            if (state.genres.topGenres.isNotEmpty()) {
+                append("🎭 Top Genres: ${state.genres.topGenres.take(3).joinToString(", ")}\n")
+            }
+            if (state.authors.topAuthors.isNotEmpty()) {
+                append("✍️ Top Authors: ${state.authors.topAuthors.take(3).joinToString(", ")}\n")
+            }
+            
+            append("\n#ShinKuReader #Manga")
+        }
     }
 }

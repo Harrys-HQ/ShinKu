@@ -1,8 +1,11 @@
 package com.shinku.reader.ui.stats
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -11,6 +14,7 @@ import com.shinku.reader.presentation.components.AppBarActions
 import com.shinku.reader.presentation.more.stats.StatsScreenContent
 import com.shinku.reader.presentation.more.stats.StatsScreenState
 import com.shinku.reader.presentation.util.Screen
+import com.shinku.reader.util.system.toShareIntent
 import kotlinx.collections.immutable.persistentListOf
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
@@ -35,9 +39,20 @@ class StatsScreen : Screen() {
                     scrollBehavior = scrollBehavior,
                     // SY -->
                     actions = {
+                        val context = LocalContext.current
                         val allRead by screenModel.allRead.collectAsState()
                         AppBarActions(
                             persistentListOf(
+                                AppBar.Action(
+                                    title = stringResource(SYMR.strings.action_share_wrapped),
+                                    icon = Icons.Outlined.Share,
+                                    onClick = {
+                                        val summary = screenModel.getWrappedSummary(context)
+                                        if (summary.isNotBlank()) {
+                                            context.startActivity(summary.toShareIntent(context))
+                                        }
+                                    },
+                                ),
                                 AppBar.OverflowAction(
                                     title = if (allRead) {
                                         stringResource(SYMR.strings.ignore_non_library_entries)

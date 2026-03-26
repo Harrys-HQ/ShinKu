@@ -34,5 +34,17 @@ sealed interface StatsData {
     data class Genres(
         val topGenres: List<String>,
     ) : StatsData
+
+    data class Authors(
+        val topAuthors: List<String>,
+    ) : StatsData
+
+    data class TimeStats(
+        val timeOfDayHistory: Map<Int, Long>,
+    ) : StatsData
+
+    data class Milestones(
+        val earnedBadges: List<com.shinku.reader.domain.history.model.Badge>,
+    ) : StatsData
     // SY <--
 }
