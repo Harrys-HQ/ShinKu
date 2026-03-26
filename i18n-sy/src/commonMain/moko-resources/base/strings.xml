@@ -758,6 +758,7 @@
     <string name="label_reading_time_patterns">Reading Patterns</string>
     <string name="label_milestones">Milestones</string>
     <string name="action_share_wrapped">Share Reading Wrapped</string>
+    <string name="action_image_search">Search by Image</string>
 
     <!-- AI Enrichment -->
     <string name="action_ai_fix">Fix with AI</string>

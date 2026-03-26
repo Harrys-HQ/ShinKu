@@ -40,6 +40,7 @@ fun GlobalSearchToolbar(
     navigateUp: () -> Unit,
     onChangeSearchQuery: (String?) -> Unit,
     onSearch: (String) -> Unit,
+    onClickImageSearch: () -> Unit,
     hideSourceFilter: Boolean,
     sourceFilter: SourceFilter,
     onChangeSearchFilter: (SourceFilter) -> Unit,
@@ -54,6 +55,7 @@ fun GlobalSearchToolbar(
                 onChangeSearchQuery = onChangeSearchQuery,
                 onSearch = onSearch,
                 onClickCloseSearch = navigateUp,
+                onClickImageSearch = onClickImageSearch,
                 navigateUp = navigateUp,
                 scrollBehavior = scrollBehavior,
             )

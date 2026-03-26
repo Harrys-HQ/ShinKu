@@ -71,6 +71,7 @@ open class FeedScreenModel(
     private val insertFeedSavedSearch: InsertFeedSavedSearch = Injekt.get(),
     private val deleteFeedSavedSearchById: DeleteFeedSavedSearchById = Injekt.get(),
     private val getReadingStats: com.shinku.reader.domain.history.interactor.GetReadingStats = Injekt.get(),
+    private val getHistory: com.shinku.reader.domain.history.interactor.GetHistory = Injekt.get(),
     private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
     private val getRemoteManga: GetRemoteManga = Injekt.get(),
@@ -118,8 +119,15 @@ open class FeedScreenModel(
                 val stats = getReadingStats.await()
                 if (stats.bestGenres.isEmpty()) return@launchIO
 
-                val prompt = "Based on my top genres: ${stats.bestGenres.joinToString()}, suggest 5 real manga titles I might like. Return ONLY a JSON array of strings."
-                val titles = geminiVibeSearch.getMangaTitles(prompt, apiKey, model)
+                val recentHistory = getHistory.subscribe("").first()
+                val recentTitles = recentHistory.take(10).map { it.mangaTitle }.distinct()
+
+                val titles = geminiVibeSearch.getForYouRecommendations(
+                    historyTitles = recentTitles,
+                    topGenres = stats.bestGenres,
+                    apiKey = apiKey,
+                    model = model
+                )
                 
                 if (titles.isNotEmpty()) {
                     val sourceId = sourcePreferences.lastUsedSource().get()

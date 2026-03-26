@@ -42,6 +42,10 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.concurrent.Executors
 
+import android.net.Uri
+import android.util.Base64
+import java.io.InputStream
+
 abstract class SearchScreenModel(
     initialState: State = State(),
     sourcePreferences: SourcePreferences = Injekt.get(),
@@ -138,6 +142,99 @@ abstract class SearchScreenModel(
         preferences.globalSearchFilterState().toggle()
     }
 
+    fun searchImage(uri: Uri, context: android.content.Context) {
+        searchJob?.cancel()
+        
+        val sources = getSelectedSources()
+        updateItems(
+            sources
+                .associateWith { SearchItemResult.Loading }
+                .toPersistentMap(),
+        )
+
+        searchJob = ioCoroutineScope.launch {
+            val apiKey = shinkuPreferences.geminiApiKey().get()
+            val model = shinkuPreferences.geminiModel().get()
+
+            if (apiKey.isBlank()) {
+                withContext(Dispatchers.Main) {
+                    context.toast(MR.strings.gemini_api_key_not_set)
+                }
+                return@launch
+            }
+
+            withContext(Dispatchers.Main) {
+                context.toast(MR.strings.vibe_search_loading)
+            }
+
+            try {
+                val base64Image = uri.toBase64(context)
+                if (base64Image == null) {
+                    updateItems(persistentMapOf())
+                    return@launch
+                }
+
+                val identifiedTitles = geminiVibeSearch.searchByImage(base64Image, apiKey, model)
+                if (identifiedTitles.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        context.toast(MR.strings.no_results_found)
+                    }
+                    updateItems(persistentMapOf())
+                    return@launch
+                }
+
+                performSearch(identifiedTitles, sources)
+            } catch (e: Exception) {
+                logcat(logcat.LogPriority.ERROR, e)
+                updateItems(persistentMapOf())
+            }
+        }
+    }
+
+    private fun Uri.toBase64(context: android.content.Context): String? {
+        return try {
+            val inputStream: InputStream? = context.contentResolver.openInputStream(this)
+            val bytes = inputStream?.readBytes()
+            inputStream?.close()
+            if (bytes != null) {
+                Base64.encodeToString(bytes, Base64.NO_WRAP)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private suspend fun performSearch(finalQueries: List<String>, sources: List<CatalogueSource>) {
+        sources.map { source ->
+            async {
+                try {
+                    val allResults = mutableListOf<Manga>()
+                    for (q in finalQueries) {
+                        ensureActive()
+                        val page = withContext(coroutineDispatcher) {
+                            source.getSearchManga(1, q, source.getFilterList())
+                        }
+                        val titles = page.mangas
+                            .map { it.toDomainManga(source.id) }
+                            .distinctBy { it.url }
+                            .let { networkToLocalManga(it) }
+                        allResults.addAll(titles)
+                    }
+
+                    if (isActive) {
+                        updateItem(source, SearchItemResult.Success(allResults.distinctBy { it.url }))
+                    }
+                } catch (e: Exception) {
+                    if (isActive) {
+                        updateItem(source, SearchItemResult.Error(e))
+                    }
+                }
+            }
+        }.awaitAll()
+    }
+
     fun search() {
         val query = state.value.searchQuery
         val sourceFilter = state.value.sourceFilter
@@ -186,37 +283,7 @@ abstract class SearchScreenModel(
                 listOf(query)
             }
 
-            sources.map { source ->
-                async {
-                    if (state.value.items[source] !is SearchItemResult.Loading) {
-                        return@async
-                    }
-
-                    try {
-                        val allResults = mutableListOf<Manga>()
-                        for (q in finalQueries) {
-                            ensureActive()
-                            val page = withContext(coroutineDispatcher) {
-                                source.getSearchManga(1, q, source.getFilterList())
-                            }
-                            val titles = page.mangas
-                                .map { it.toDomainManga(source.id) }
-                                .distinctBy { it.url }
-                                .let { networkToLocalManga(it) }
-                            allResults.addAll(titles)
-                        }
-
-                        if (isActive) {
-                            updateItem(source, SearchItemResult.Success(allResults.distinctBy { it.url }))
-                        }
-                    } catch (e: Exception) {
-                        if (isActive) {
-                            updateItem(source, SearchItemResult.Error(e))
-                        }
-                    }
-                }
-            }
-                .awaitAll()
+            performSearch(finalQueries, sources)
         }
     }
 

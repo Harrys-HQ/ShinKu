@@ -1793,7 +1793,7 @@ class MangaScreenModel(
                         artist = null,
                         thumbnailUrl = null,
                         description = enriched.description,
-                        tags = enriched.genres,
+                        tags = (enriched.genres + enriched.tags).distinct(),
                         status = null,
                     )
                     withUIContext {
