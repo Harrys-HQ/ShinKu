@@ -37,12 +37,14 @@ fun RowScope.StatsOverviewItem(
 fun RowScope.StatsItem(
     title: String,
     subtitle: String,
+    icon: ImageVector? = null,
 ) {
     BaseStatsItem(
         title = title,
         titleStyle = MaterialTheme.typography.bodyMedium,
         subtitle = subtitle,
         subtitleStyle = MaterialTheme.typography.labelSmall,
+        icon = icon,
     )
 }
 
@@ -61,6 +63,13 @@ private fun RowScope.BaseStatsItem(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }
         Text(
             text = title,
             style = titleStyle
@@ -77,13 +86,5 @@ private fun RowScope.BaseStatsItem(
                 ),
             textAlign = TextAlign.Center,
         )
-        if (icon != null) {
-            Spacer(modifier = Modifier.weight(1f))
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
     }
 }
