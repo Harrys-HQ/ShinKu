@@ -144,9 +144,10 @@ class GeminiVibeSearch(
                     Return ONLY a JSON object with:
                     1. "description": A high-quality, professional, and engaging summary in English.
                     2. "genres": A list of relevant genre tags (e.g., ["Action", "Psychological"]).
+                    3. "tags": A list of specific content tags (e.g., ["Time Travel", "Gore", "Romance"]).
                     
                     JSON format:
-                    {"description": "...", "genres": ["...", "..."]}
+                    {"description": "...", "genres": ["...", "..."], "tags": ["...", "..."]}
                 """.trimIndent()
                 
                 val bodyJson = """
@@ -187,11 +188,85 @@ class GeminiVibeSearch(
         }
     }
 
+    suspend fun getForYouRecommendations(
+        historyTitles: List<String>,
+        topGenres: List<String>,
+        apiKey: String,
+        model: String
+    ): List<String> {
+        val prompt = """
+            You are a manga discovery expert. Based on my recent reading history and favorite genres, suggest 10 real manga titles I might enjoy.
+            
+            My recent titles: ${historyTitles.joinToString(", ")}
+            My favorite genres: ${topGenres.joinToString(", ")}
+            
+            Return ONLY a JSON array of strings containing the suggested titles.
+        """.trimIndent()
+        
+        return withIOContext {
+            try {
+                callGemini(prompt, apiKey, model)
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+    }
+
     @kotlinx.serialization.Serializable
     data class EnrichedMetadata(
         val description: String,
         val genres: List<String>,
+        val tags: List<String> = emptyList(),
     )
+
+    suspend fun searchByImage(base64Image: String, apiKey: String, model: String): List<String> {
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+        
+        val bodyJson = """
+            {
+              "contents": [{
+                "parts":[
+                  {"text": "Identify the manga in this image. Return ONLY a JSON array of up to 5 real manga titles that match this image or its style."},
+                  {"inline_data": {
+                    "mime_type":"image/jpeg",
+                    "data": "$base64Image"
+                  }}
+                ]
+              }]
+            }
+        """.trimIndent()
+
+        return withIOContext {
+            try {
+                val request = Request.Builder()
+                    .url(url)
+                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
+                    .build()
+
+                networkHelper.client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@withIOContext emptyList()
+                    val responseBody = response.body.string()
+                    val result = json.parseToJsonElement(responseBody)
+                    val text = result.jsonObject["candidates"]!!
+                        .jsonArray[0].jsonObject["content"]!!
+                        .jsonObject["parts"]!!
+                        .jsonArray[0].jsonObject["text"]!!
+                        .jsonPrimitive.content
+
+                    val start = text.indexOf("[")
+                    val end = text.lastIndexOf("]") + 1
+                    if (start != -1 && end > start) {
+                        val jsonArray = text.substring(start, end)
+                        json.decodeFromString<List<String>>(jsonArray)
+                    } else {
+                        emptyList()
+                    }
+                }
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+    }
 
     private suspend fun callGeminiForText(prompt: String, apiKey: String, model: String): String {
         return withIOContext {

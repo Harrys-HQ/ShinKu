@@ -12,8 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -272,6 +273,7 @@ fun SearchToolbar(
     placeholderText: String? = null,
     onSearch: (String) -> Unit = {},
     onClickCloseSearch: () -> Unit = { onChangeSearchQuery(null) },
+    onClickImageSearch: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     scrollBehavior: TopAppBarScrollBehavior? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
@@ -368,6 +370,27 @@ fun SearchToolbar(
                         }
                     }
                 } else if (searchQuery.isNotEmpty()) {
+                    if (onClickImageSearch != null) {
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(SYMR.strings.action_image_search))
+                                }
+                            },
+                            state = rememberTooltipState(),
+                            focusable = false,
+                        ) {
+                            IconButton(
+                                onClick = onClickImageSearch,
+                            ) {
+                                Icon(
+                                    Icons.Outlined.PhotoCamera,
+                                    contentDescription = stringResource(SYMR.strings.action_image_search),
+                                )
+                            }
+                        }
+                    }
                     TooltipBox(
                         positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
                         tooltip = {

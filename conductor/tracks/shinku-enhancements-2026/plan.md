@@ -17,9 +17,9 @@ The Reading Journey Card is a unique selling point of ShinKu. Enhancing its dept
 ### Phase 2: AI-Powered Discovery & Enrichment
 Enhancing the existing Gemini integration to make the app feel "smarter."
 
-- [ ]  **"For You" AI Feed:** Add a new tab or section that uses reading history as a prompt for Gemini to suggest titles.
-- [ ]  **AI Metadata Enrichment:** Improve the "enrichMetadata" tool to automatically fix missing or poor descriptions/tags in the library.
-- [ ]  **Multimodal Vibe Search:** Research and prototype using Gemini Vision for image-based search.
+- [x]  **"For You" AI Feed:** Add a new tab or section that uses reading history as a prompt for Gemini to suggest titles.
+- [x]  **AI Metadata Enrichment:** Improve the "enrichMetadata" tool to automatically fix missing or poor descriptions/tags in the library.
+- [x]  **Multimodal Vibe Search:** Research and prototype using Gemini Vision for image-based search.
 
 ### Phase 3: Immersive Reader & Performance
 Focused on the core reading experience.
