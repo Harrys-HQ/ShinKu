@@ -279,6 +279,7 @@ dependencies {
     implementation(libs.richeditor.compose)
     implementation(libs.aboutLibraries.compose)
     implementation(libs.bundles.voyager)
+    implementation(libs.voyager.koin)
     implementation(libs.compose.materialmotion)
     implementation(libs.swipe)
     implementation(libs.compose.webview)

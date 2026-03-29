@@ -6,9 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.koin.koinScreenModel
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.AppBarActions
 import com.shinku.reader.presentation.more.stats.StatsScreenContent
@@ -28,7 +28,7 @@ class StatsScreen : Screen() {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = rememberScreenModel { StatsScreenModel() }
+        val screenModel = koinScreenModel<StatsScreenModel>()
         val state by screenModel.state.collectAsState()
 
         Scaffold(

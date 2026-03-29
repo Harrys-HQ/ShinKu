@@ -15,6 +15,12 @@ class ShinKuPreferences(
 
     fun atmosphericAudio() = preferenceStore.getBoolean("pref_atmospheric_audio", false)
 
+    fun moodLighting() = preferenceStore.getBoolean("pref_mood_lighting", false)
+
+    fun backdropBlur() = preferenceStore.getBoolean("pref_backdrop_blur", false)
+
+    fun hapticFeedback() = preferenceStore.getBoolean("pref_haptic_feedback", false)
+
     fun predictiveLoading() = preferenceStore.getBoolean("pref_predictive_loading", false)
 
     fun aiUpscaling() = preferenceStore.getBoolean("pref_ai_upscaling", false)
