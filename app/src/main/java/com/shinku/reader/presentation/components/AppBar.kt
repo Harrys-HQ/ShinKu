@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.collections.immutable.ImmutableList
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.util.clearFocusOnSoftKeyboardHide
 import com.shinku.reader.presentation.core.util.runOnEnterKeyPressed
@@ -194,7 +196,7 @@ fun AppBarActions(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    actions.filterIsInstance<AppBar.Action>().map {
+    actions.filterIsInstance<AppBar.Action>().forEach {
         TooltipBox(
             positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
             tooltip = {

@@ -10,8 +10,11 @@ data class Category(
 ) : Serializable {
 
     val isSystemCategory: Boolean = id == UNCATEGORIZED_ID
+    val isSmartCategory: Boolean = id == HOT_ID || id == UPDATE_SOON_ID
 
     companion object {
         const val UNCATEGORIZED_ID = 0L
+        const val HOT_ID = -1L
+        const val UPDATE_SOON_ID = -2L
     }
 }

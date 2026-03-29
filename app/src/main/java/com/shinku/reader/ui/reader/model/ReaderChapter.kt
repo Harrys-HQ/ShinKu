@@ -2,11 +2,15 @@ package com.shinku.reader.ui.reader.model
 
 import com.shinku.reader.domain.chapter.model.toDbChapter
 import com.shinku.reader.data.database.models.Chapter
+import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.ui.reader.loader.PageLoader
 import kotlinx.coroutines.flow.MutableStateFlow
 import com.shinku.reader.core.common.util.system.logcat
 
-data class ReaderChapter(val chapter: Chapter) {
+data class ReaderChapter(
+    val chapter: Chapter,
+    var manga: Manga? = null,
+) {
 
     val stateFlow = MutableStateFlow<State>(State.Wait)
     var state: State

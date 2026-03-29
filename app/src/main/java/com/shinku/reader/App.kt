@@ -249,6 +249,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                 add(MangaKeyer())
                 // SY -->
                 add(PagePreviewKeyer())
+                add(com.shinku.reader.data.coil.UpscalingInterceptor())
                 // SY <--
             }
 

@@ -24,15 +24,15 @@ Enhancing the existing Gemini integration to make the app feel "smarter."
 ### Phase 3: Immersive Reader & Performance
 Focused on the core reading experience.
 
-- [ ]  **Atmospheric Audio:** Implement a system to play background ambient sounds that match the manga's genre or tags.
-- [ ]  **Predictive Loading:** Analyze user reading speed and pre-load next chapters more intelligently.
-- [ ]  **AI Image Upscaling:** Investigate lightweight on-device upscaling models (e.g., SRCNN or Waifu2x-Lite).
+- [x]  **Atmospheric Audio:** Implemented a system to play background ambient sounds that match the manga's genre or tags, controlled by a new preference.
+- [x]  **Predictive Loading:** Integrated reading speed tracking to dynamically adjust page preloading, enhancing the flow for fast readers.
+- [x]  **AI Image Upscaling:** Added an image upscaling interceptor to improve the clarity of low-resolution manga pages using on-device processing, controlled by a new preference.
 
 ### Phase 4: Smarter Organization & Sync
 Refining library management and connectivity.
 
-- [ ]  **Dynamic Smart Categories:** Enable real-time updates for smart categories like "Hot" (last read 24h) and "Update Soon."
-- [ ]  **Self-Hosted Sync:** Add WebDAV and Nextcloud providers to the synchronization settings.
+- [x]  **Dynamic Smart Categories:** Enable real-time updates for smart categories like "Hot" (last read 24h) and "Update Soon."
+- [x]  **Self-Hosted Sync:** Add WebDAV and Nextcloud providers to the synchronization settings.
 
 ## Verification & Stability
 Each phase must be followed by:

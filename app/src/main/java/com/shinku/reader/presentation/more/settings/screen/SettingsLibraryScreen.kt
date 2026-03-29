@@ -62,6 +62,7 @@ object SettingsLibraryScreen : SearchableSettings {
 
         return listOf(
             getCategoriesGroup(LocalNavigator.currentOrThrow, allCategories, libraryPreferences),
+            getSmartCategoriesGroup(libraryPreferences),
             getGlobalUpdateGroup(allCategories, libraryPreferences),
             getBehaviorGroup(libraryPreferences),
             // SY -->
@@ -114,6 +115,27 @@ object SettingsLibraryScreen : SearchableSettings {
                         }
                         true
                     },
+                ),
+            ),
+        )
+    }
+
+    @Composable
+    private fun getSmartCategoriesGroup(
+        libraryPreferences: LibraryPreferences,
+    ): Preference.PreferenceGroup {
+        return Preference.PreferenceGroup(
+            title = stringResource(SYMR.strings.label_shinku_features),
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = libraryPreferences.showHotCategory(),
+                    title = stringResource(SYMR.strings.pref_smart_category_hot),
+                    subtitle = stringResource(SYMR.strings.pref_smart_category_hot_summary),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = libraryPreferences.showUpdateSoonCategory(),
+                    title = stringResource(SYMR.strings.pref_smart_category_update_soon),
+                    subtitle = stringResource(SYMR.strings.pref_smart_category_update_soon_summary),
                 ),
             ),
         )

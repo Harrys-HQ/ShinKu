@@ -182,6 +182,28 @@ class LibraryScreenModel(
                 getLibraryItemPreferencesFlow(),
             ) { (searchQuery, categories, favorites), (tracksMap, trackingFilters), /* SY --> */ (groupType, sortingMode)/* <-- SY */, itemPreferences ->
                 val showSystemCategory = favorites.any { it.libraryManga.categories.contains(0) }
+                val smartCategories = mutableListOf<Category>()
+                if (libraryPreferences.showHotCategory().get()) {
+                    smartCategories.add(
+                        Category(
+                            id = Category.HOT_ID,
+                            name = preferences.context.stringResource(SYMR.strings.label_hot),
+                            order = -100,
+                            flags = 0,
+                        ),
+                    )
+                }
+                if (libraryPreferences.showUpdateSoonCategory().get()) {
+                    smartCategories.add(
+                        Category(
+                            id = Category.UPDATE_SOON_ID,
+                            name = preferences.context.stringResource(SYMR.strings.label_update_soon),
+                            order = -99,
+                            flags = 0,
+                        ),
+                    )
+                }
+
                 val filteredFavorites = favorites
                     .applyFilters(tracksMap, trackingFilters, itemPreferences)
                     .let {
@@ -198,7 +220,7 @@ class LibraryScreenModel(
                 LibraryData(
                     isInitialized = true,
                     showSystemCategory = showSystemCategory,
-                    categories = categories,
+                    categories = smartCategories + categories,
                     favorites = filteredFavorites,
                     tracksMap = tracksMap,
                     loggedInTrackerIds = trackingFilters.keys,
@@ -459,8 +481,21 @@ class LibraryScreenModel(
                     }
                 }
 
+                val now = System.currentTimeMillis()
+                val dayAgo = now - 24 * 60 * 60 * 1000
+                val twoDaysFromNow = now + 48 * 60 * 60 * 1000
+
                 return categories.filter { showSystemCategory || !it.isSystemCategory }
-                    .associateWith { groupCache[it.id]?.toList().orEmpty() }
+                    .associateWith { category ->
+                        when (category.id) {
+                            Category.HOT_ID -> filter { it.libraryManga.lastRead >= dayAgo }.fastMap { it.id }
+                            Category.UPDATE_SOON_ID -> filter {
+                                val nextUpdate = it.libraryManga.manga.nextUpdate
+                                nextUpdate != 0L && nextUpdate <= twoDaysFromNow
+                            }.fastMap { it.id }
+                            else -> groupCache[category.id]?.toList().orEmpty()
+                        }
+                    }
             }
             // SY -->
             LibraryGroup.UNGROUPED -> {

@@ -143,6 +143,7 @@ class ReaderViewModel(
     private val textRecognitionInteractor: com.shinku.reader.domain.source.interactor.TextRecognitionInteractor,
     private val panelDetectionInteractor: com.shinku.reader.domain.source.interactor.PanelDetectionInteractor,
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences,
+    private val atmosphericAudioManager: com.shinku.reader.ui.reader.audio.AtmosphericAudioManager = com.shinku.reader.ui.reader.audio.AtmosphericAudioManager(app, shinkuPreferences),
     // SY <--
 ) : ViewModel() {
 
@@ -185,6 +186,9 @@ class ReaderViewModel(
      * The time the chapter was started reading
      */
     private var chapterReadStartTime: Long? = null
+
+    private var lastPageChangeTime: Long = System.currentTimeMillis()
+    private val pageTurnTimes = mutableListOf<Long>()
 
     private var chapterToDownload: Download? = null
 
@@ -275,7 +279,7 @@ class ReaderViewModel(
                 }
             }
             .map { it.toDbChapter() }
-            .map(::ReaderChapter)
+            .map { ReaderChapter(it, mangaMap?.get(it.manga_id) ?: manga) }
     }
 
     private val incognitoMode: Boolean by lazy { getIncognitoState.await(manga?.source) }
@@ -596,7 +600,21 @@ class ReaderViewModel(
         }
 
         // SY -->
-        mutableState.update { it.copy(currentPageText = currentPageText) }
+        val now = System.currentTimeMillis()
+        val duration = now - lastPageChangeTime
+        lastPageChangeTime = now
+        
+        // Filter out durations that are too short (< 500ms) or too long (> 2 mins)
+        if (duration in 500..120_000) {
+            pageTurnTimes.add(duration)
+            if (pageTurnTimes.size > 10) {
+                pageTurnTimes.removeAt(0)
+            }
+            val avg = if (pageTurnTimes.isNotEmpty()) pageTurnTimes.average().toLong() else 0L
+            mutableState.update { it.copy(currentPageText = currentPageText, avgPageTime = avg) }
+        } else {
+            mutableState.update { it.copy(currentPageText = currentPageText) }
+        }
         // SY <--
 
         val selectedChapter = page.chapter
@@ -1412,6 +1430,7 @@ class ReaderViewModel(
         val bookmarked: Boolean = false,
         val isLoadingAdjacentChapter: Boolean = false,
         val currentPage: Int = -1,
+        val avgPageTime: Long = 0L,
 
         /**
          * Viewer used to display the pages (pager, webtoon, ...).

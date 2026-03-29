@@ -29,6 +29,9 @@ import eu.kanade.tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
+
 class StatsScreenModel(
     private val downloadManager: DownloadManager = Injekt.get(),
     private val getLibraryManga: GetLibraryManga = Injekt.get(),
@@ -192,7 +195,7 @@ class StatsScreenModel(
         val none = context.getString(com.shinku.reader.i18n.MR.strings.none.resourceId)
         
         val duration = state.overview.totalReadDuration
-            .kotlin.time.DurationUnit.MILLISECONDS.toDuration(kotlin.time.DurationUnit.MILLISECONDS)
+            .toDuration(DurationUnit.MILLISECONDS)
             .let { d ->
                 val hours = d.inWholeHours
                 val minutes = d.inWholeMinutes % 60
