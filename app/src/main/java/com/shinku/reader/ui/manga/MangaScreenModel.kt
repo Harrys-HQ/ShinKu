@@ -406,6 +406,16 @@ class MangaScreenModel(
         }
 
         screenModelScope.launchIO {
+            shinkuPreferences.backdropBlur().changes()
+                .flowWithLifecycle(lifecycle)
+                .collectLatest { enabled ->
+                    updateSuccessState {
+                        it.copy(backdropBlurEnabled = enabled)
+                    }
+                }
+        }
+
+        screenModelScope.launchIO {
             getAvailableScanlators.subscribe(mangaId)
                 .flowWithLifecycle(lifecycle)
                 .distinctUntilChanged()
@@ -497,6 +507,7 @@ class MangaScreenModel(
                     readerPreferences.preserveReadingPosition().get() && manga.isEhBasedManga(),
                     previewsRowCount = uiPreferences.previewsRowCount().get(),
                     showVibeButton = shinkuPreferences.geminiApiKey().get().isNotBlank(),
+                    backdropBlurEnabled = shinkuPreferences.backdropBlur().get(),
                     // SY <--
                 )
             }
@@ -1872,6 +1883,7 @@ class MangaScreenModel(
             val alwaysShowReadingProgress: Boolean,
             val previewsRowCount: Int,
             val showVibeButton: Boolean = false,
+            val backdropBlurEnabled: Boolean = false,
             // SY <--
         ) : State {
             val processedChapters by lazy {

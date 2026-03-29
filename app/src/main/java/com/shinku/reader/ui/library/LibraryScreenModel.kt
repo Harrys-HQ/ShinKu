@@ -145,6 +145,7 @@ class LibraryScreenModel(
     private val getMergedChaptersByMangaId: GetMergedChaptersByMangaId = Injekt.get(),
 
     syncPreferences: SyncPreferences = Injekt.get(),
+    private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
     // SY <--
 ) : StateScreenModel<LibraryScreenModel.State>(State()) {
 
@@ -350,6 +351,12 @@ class LibraryScreenModel(
             .distinctUntilChanged()
             .onEach { syncService ->
                 mutableState.update { it.copy(isSyncEnabled = syncService != 0) }
+            }
+            .launchIn(screenModelScope)
+
+        shinkuPreferences.backdropBlur().changes()
+            .onEach { enabled ->
+                mutableState.update { it.copy(backdropBlurEnabled = enabled) }
             }
             .launchIn(screenModelScope)
         // SY <--
@@ -1499,6 +1506,7 @@ class LibraryScreenModel(
         val showSyncExh: Boolean = false,
         val isSyncEnabled: Boolean = false,
         val groupType: Int = LibraryGroup.BY_DEFAULT,
+        val backdropBlurEnabled: Boolean = false,
         // SY <--
     ) {
         val displayedCategories: List<Category> = groupedFavorites.keys.toList()

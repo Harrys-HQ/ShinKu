@@ -32,6 +32,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +62,7 @@ import com.shinku.reader.presentation.reader.ChapterListDialog
 import com.shinku.reader.presentation.reader.DisplayRefreshHost
 import com.shinku.reader.presentation.reader.OrientationSelectDialog
 import com.shinku.reader.presentation.reader.ReaderContentOverlay
+import com.shinku.reader.presentation.reader.ReaderMoodLighting
 import com.shinku.reader.presentation.reader.ReaderPageActionsDialog
 import com.shinku.reader.presentation.reader.ReaderPageIndicator
 import com.shinku.reader.presentation.reader.ReadingModeSelectDialog
@@ -124,6 +126,7 @@ import com.shinku.reader.core.common.i18n.stringResource
 import com.shinku.reader.core.common.util.lang.launchIO
 import com.shinku.reader.core.common.util.lang.launchNonCancellable
 import com.shinku.reader.core.common.util.lang.withUIContext
+import com.shinku.reader.core.common.util.system.HapticGenerator
 import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.i18n.MR
@@ -170,6 +173,7 @@ class ReaderActivity : BaseActivity() {
 
     // SY -->
     private val sourceManager = Injekt.get<SourceManager>()
+    private val shinkuPreferences = Injekt.get<com.shinku.reader.exh.source.ShinKuPreferences>()
     // SY <--
 
     /**
@@ -320,6 +324,15 @@ class ReaderActivity : BaseActivity() {
                 onChangeReadingMode = viewModel::setMangaReadingMode,
                 onChangeOrientation = viewModel::setMangaOrientationType,
             )
+        }
+
+        val hapticGenerator = remember { HapticGenerator(this@ReaderActivity) { shinkuPreferences.hapticFeedback().get() } }
+
+        LaunchedEffect(state.currentPage) {
+            // Only vibrate if it's not the initial page load
+            if (state.currentPage != -1) {
+                hapticGenerator.shortPress()
+            }
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
@@ -604,6 +617,13 @@ class ReaderActivity : BaseActivity() {
         val colorOverlayBlendMode = remember(colorOverlayMode) {
             ReaderPreferences.ColorFilterMode.getOrNull(colorOverlayMode)?.second
         }
+
+        val moodLightingEnabled by shinkuPreferences.moodLighting().collectAsState()
+
+        ReaderMoodLighting(
+            manga = state.manga,
+            enabled = moodLightingEnabled,
+        )
 
         ReaderContentOverlay(
             brightness = state.brightnessOverlayValue,

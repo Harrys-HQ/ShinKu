@@ -1,6 +1,7 @@
 package com.shinku.reader.di
 
 import com.shinku.reader.ui.reader.ReaderViewModel
+import com.shinku.reader.ui.stats.StatsScreenModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -40,4 +41,18 @@ val viewModelModule = module {
             shinkuPreferences = get(),
         )
     }
-}
+
+    factory {
+        StatsScreenModel(
+            downloadManager = get(),
+            getLibraryManga = get(),
+            getTotalReadDuration = get(),
+            getTracks = get(),
+            preferences = get(),
+            trackerManager = get(),
+            getReadMangaNotInLibraryView = get(),
+            getReadingStats = get(),
+        )
+    }
+    }
+

@@ -26,22 +26,20 @@ import com.shinku.reader.domain.manga.interactor.GetReadMangaNotInLibraryView
 import com.shinku.reader.domain.track.interactor.GetTracks
 import com.shinku.reader.domain.track.model.Track
 import eu.kanade.tachiyomi.source.local.isLocal
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
 
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 class StatsScreenModel(
-    private val downloadManager: DownloadManager = Injekt.get(),
-    private val getLibraryManga: GetLibraryManga = Injekt.get(),
-    private val getTotalReadDuration: GetTotalReadDuration = Injekt.get(),
-    private val getTracks: GetTracks = Injekt.get(),
-    private val preferences: LibraryPreferences = Injekt.get(),
-    private val trackerManager: TrackerManager = Injekt.get(),
+    private val downloadManager: DownloadManager,
+    private val getLibraryManga: GetLibraryManga,
+    private val getTotalReadDuration: GetTotalReadDuration,
+    private val getTracks: GetTracks,
+    private val preferences: LibraryPreferences,
+    private val trackerManager: TrackerManager,
     // SY -->
-    private val getReadMangaNotInLibraryView: GetReadMangaNotInLibraryView = Injekt.get(),
-    private val getReadingStats: com.shinku.reader.domain.history.interactor.GetReadingStats = Injekt.get(),
+    private val getReadMangaNotInLibraryView: GetReadMangaNotInLibraryView,
+    private val getReadingStats: com.shinku.reader.domain.history.interactor.GetReadingStats,
     // SY <--
 ) : StateScreenModel<StatsScreenState>(StatsScreenState.Loading) {
 
