@@ -38,6 +38,8 @@ import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.core.common.util.system.logcat
+import logcat.LogPriority
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.concurrent.Executors
@@ -45,6 +47,7 @@ import java.util.concurrent.Executors
 import android.net.Uri
 import android.util.Base64
 import java.io.InputStream
+import kotlinx.coroutines.coroutineScope
 
 abstract class SearchScreenModel(
     initialState: State = State(),
@@ -207,32 +210,34 @@ abstract class SearchScreenModel(
     }
 
     private suspend fun performSearch(finalQueries: List<String>, sources: List<CatalogueSource>) {
-        sources.map { source ->
-            async {
-                try {
-                    val allResults = mutableListOf<Manga>()
-                    for (q in finalQueries) {
-                        ensureActive()
-                        val page = withContext(coroutineDispatcher) {
-                            source.getSearchManga(1, q, source.getFilterList())
+        coroutineScope {
+            sources.map { source ->
+                async {
+                    try {
+                        val allResults = mutableListOf<Manga>()
+                        for (q in finalQueries) {
+                            ensureActive()
+                            val page = withContext(coroutineDispatcher) {
+                                source.getSearchManga(1, q, source.getFilterList())
+                            }
+                            val titles = page.mangas
+                                .map { it.toDomainManga(source.id) }
+                                .distinctBy { it.url }
+                                .let { networkToLocalManga(it) }
+                            allResults.addAll(titles)
                         }
-                        val titles = page.mangas
-                            .map { it.toDomainManga(source.id) }
-                            .distinctBy { it.url }
-                            .let { networkToLocalManga(it) }
-                        allResults.addAll(titles)
-                    }
 
-                    if (isActive) {
-                        updateItem(source, SearchItemResult.Success(allResults.distinctBy { it.url }))
-                    }
-                } catch (e: Exception) {
-                    if (isActive) {
-                        updateItem(source, SearchItemResult.Error(e))
+                        if (isActive) {
+                            updateItem(source, SearchItemResult.Success(allResults.distinctBy { it.url }))
+                        }
+                    } catch (e: Exception) {
+                        if (isActive) {
+                            updateItem(source, SearchItemResult.Error(e))
+                        }
                     }
                 }
-            }
-        }.awaitAll()
+            }.awaitAll()
+        }
     }
 
     fun search() {

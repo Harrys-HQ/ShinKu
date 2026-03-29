@@ -4,3 +4,4 @@ This file acts as a central registry for all active, completed, or planned work 
 
 - [Upstream Sync 2026](./tracks/upstream-sync-2026/index.md) - Synchronizing upstream fixes from Mihon and TachiyomiSY (Feb 2026).
 - [ShinKu Enhancements 2026](./tracks/shinku-enhancements-2026/index.md) - Deep reading analytics, AI discovery, and reader immersion.
+- [Fluidity & Refinement 2026](./tracks/fluidity-refinement-2026/index.md) - Architectural modernization, immersive UI, and AI chapter recaps.

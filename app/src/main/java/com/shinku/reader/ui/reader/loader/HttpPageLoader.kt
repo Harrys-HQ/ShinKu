@@ -57,6 +57,20 @@ internal class HttpPageLoader(
         if (performanceMode == 2) 2 else readerPreferences.preloadSize().get()
     }
 
+    private fun getDynamicPreloadSize(): Int {
+        if (!Injekt.get<com.shinku.reader.exh.source.ShinKuPreferences>().predictiveLoading().get()) {
+            return preloadSize
+        }
+        
+        // If average page time is less than 5 seconds, double the preload
+        val avgTime = chapter.manga?.let {
+            // TODO: get avgPageTime from Stats or Preference if we track it
+            0L 
+        } ?: 0L
+        
+        return preloadSize // TODO: properly pass avgPageTime to loaders
+    }
+
     // SY -->
     private val dataSaver = DataSaver(source, sourcePreferences)
     // SY <--

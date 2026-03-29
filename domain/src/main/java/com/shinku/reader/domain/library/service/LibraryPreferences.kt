@@ -229,6 +229,9 @@ class LibraryPreferences(
 
     fun duplicateDetection() = preferenceStore.getBoolean("pref_library_duplicate_detection", false)
 
+    fun showHotCategory() = preferenceStore.getBoolean("pref_smart_category_hot", false)
+    fun showUpdateSoonCategory() = preferenceStore.getBoolean("pref_smart_category_update_soon", false)
+
     // SY <--
 
     companion object {

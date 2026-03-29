@@ -53,6 +53,8 @@ class SyncManager(
     enum class SyncService(val value: Int) {
         NONE(0),
         DROPBOX(1),
+        WEBDAV(2),
+        NEXTCLOUD(3),
         ;
 
         companion object {
@@ -120,6 +122,12 @@ class SyncManager(
         val syncService = when (val syncService = SyncService.fromInt(syncPreferences.syncService().get())) {
             SyncService.DROPBOX -> {
                 DropboxSyncService(context, json, syncPreferences)
+            }
+            SyncService.WEBDAV -> {
+                com.shinku.reader.data.sync.service.WebDavSyncService(context, json, syncPreferences)
+            }
+            SyncService.NEXTCLOUD -> {
+                com.shinku.reader.data.sync.service.NextcloudSyncService(context, json, syncPreferences)
             }
 
             else -> {

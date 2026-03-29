@@ -521,6 +521,8 @@ object SettingsDataScreen : SearchableSettings {
                         entries = persistentMapOf(
                             SyncManager.SyncService.NONE.value to stringResource(MR.strings.off),
                             SyncManager.SyncService.DROPBOX.value to stringResource(SYMR.strings.dropbox),
+                            SyncManager.SyncService.WEBDAV.value to stringResource(SYMR.strings.webdav),
+                            SyncManager.SyncService.NEXTCLOUD.value to stringResource(SYMR.strings.nextcloud),
                         ),
                         onValueChanged = { true },
                     ),
@@ -551,6 +553,7 @@ object SettingsDataScreen : SearchableSettings {
         val preferences = when (syncServiceType) {
             SyncManager.SyncService.NONE -> emptyList()
             SyncManager.SyncService.DROPBOX -> getDropboxPreferences()
+            SyncManager.SyncService.WEBDAV, SyncManager.SyncService.NEXTCLOUD -> getWebDavPreferences(syncPreferences)
         }
 
         return if (syncServiceType != SyncManager.SyncService.NONE) {
@@ -563,6 +566,24 @@ object SettingsDataScreen : SearchableSettings {
         } else {
             preferences
         }
+    }
+
+    @Composable
+    private fun getWebDavPreferences(syncPreferences: SyncPreferences): List<Preference> {
+        return listOf(
+            Preference.PreferenceItem.EditTextPreference(
+                title = stringResource(SYMR.strings.pref_webdav_url),
+                preference = syncPreferences.webdavUrl(),
+            ),
+            Preference.PreferenceItem.EditTextPreference(
+                title = stringResource(SYMR.strings.pref_webdav_username),
+                preference = syncPreferences.webdavUsername(),
+            ),
+            Preference.PreferenceItem.EditTextPreference(
+                title = stringResource(SYMR.strings.pref_webdav_password),
+                preference = syncPreferences.webdavPassword(),
+            ),
+        )
     }
 
     @Composable

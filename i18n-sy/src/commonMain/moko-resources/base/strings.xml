@@ -254,6 +254,18 @@
     <string name="sync_on_app_start">Sync on App Start</string>
     <string name="sync_on_app_resume">Sync on App Resume</string>
     <string name="sync_library">Sync library</string>
+    <string name="webdav">WebDAV</string>
+    <string name="nextcloud">Nextcloud</string>
+    <string name="pref_webdav_url">Server URL</string>
+    <string name="pref_webdav_username">Username</string>
+    <string name="pref_webdav_password">Password</string>
+    <string name="pref_smart_category_hot">Show "Hot" Category</string>
+    <string name="pref_smart_category_hot_summary">Show entries read within the last 24 hours</string>
+    <string name="pref_smart_category_update_soon">Show "Update Soon" Category</string>
+    <string name="pref_smart_category_update_soon_summary">Show entries expected to update within the next 48 hours</string>
+    <string name="label_shinku_features">ShinKu Features</string>
+    <string name="label_hot">Hot</string>
+    <string name="label_update_soon">Update Soon</string>
 
     <!-- Security settings -->
     <string name="biometric_lock_times">Biometric lock times</string>
@@ -759,6 +771,12 @@
     <string name="label_milestones">Milestones</string>
     <string name="action_share_wrapped">Share Reading Wrapped</string>
     <string name="action_image_search">Search by Image</string>
+    <string name="pref_atmospheric_audio">Atmospheric Audio</string>
+    <string name="pref_atmospheric_audio_summary">Play ambient background sounds matching the manga genre for better immersion.</string>
+    <string name="pref_ai_upscaling">AI Image Upscaling</string>
+    <string name="pref_ai_upscaling_summary">Use on-device AI to improve the clarity of low-resolution manga pages.</string>
+    <string name="pref_predictive_loading">Predictive Page Loading</string>
+    <string name="pref_predictive_loading_summary">Dynamically adjust preloading based on your reading speed for zero-latency page turns.</string>
 
     <!-- AI Enrichment -->
     <string name="action_ai_fix">Fix with AI</string>

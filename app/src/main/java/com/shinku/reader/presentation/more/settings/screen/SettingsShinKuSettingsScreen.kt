@@ -52,6 +52,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
             getGeminiGroup(shinkuPreferences),
             getPerformanceGroup(basePreferences),
             getImmersionGroup(shinkuPreferences, readerPreferences),
+            getAiPerformanceGroup(shinkuPreferences),
             getLibraryGroup(libraryPreferences),
             getAdvancedFeaturesGroup(readerPreferences, sourcePreferences),
         )
@@ -200,9 +201,35 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     subtitle = stringResource(MR.strings.pref_live_translation_summary),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.atmosphericAudio(),
+                    title = stringResource(SYMR.strings.pref_atmospheric_audio),
+                    subtitle = stringResource(SYMR.strings.pref_atmospheric_audio_summary),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.guidedView(),
                     title = "Guided View (Smart Panel Zoom)",
                     subtitle = "Automatically detect and zoom into manga panels for a more focused reading experience.",
+                ),
+            ),
+        )
+    }
+
+    @Composable
+    private fun getAiPerformanceGroup(
+        shinkuPreferences: ShinKuPreferences,
+    ): Preference.PreferenceGroup {
+        return Preference.PreferenceGroup(
+            title = "AI & Smart Performance",
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.aiUpscaling(),
+                    title = stringResource(SYMR.strings.pref_ai_upscaling),
+                    subtitle = stringResource(SYMR.strings.pref_ai_upscaling_summary),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.predictiveLoading(),
+                    title = stringResource(SYMR.strings.pref_predictive_loading),
+                    subtitle = stringResource(SYMR.strings.pref_predictive_loading_summary),
                 ),
             ),
         )
@@ -252,13 +279,13 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     onValueChanged = { !it }, // Invert since true means Jpeg in source prefs
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = "Migrate legacy downloads",
-                    subtitle = "Mass migrate your old downloads to the current internal structure",
-                    onClick = {
-                        context.toast("No legacy downloads found to migrate")
-                    },
-                ),
-            ),
+                   title = "Migrate legacy downloads",
+                   subtitle = "Mass migrate your old downloads to the current internal structure",
+                   onClick = {
+                       com.shinku.reader.data.download.DownloadMigrationJob.startNow(context)
+                       context.toast("Migration started in background")
+                   },
+                ),            ),
         )
     }
 }

@@ -37,6 +37,7 @@ import com.shinku.reader.core.common.util.lang.launchIO
 import com.shinku.reader.core.common.util.lang.launchNonCancellable
 import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.core.common.util.lang.withUIContext
+import com.shinku.reader.domain.history.model.HistoryWithRelations
 import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.source.interactor.GetRemoteManga
@@ -120,7 +121,7 @@ open class FeedScreenModel(
                 if (stats.bestGenres.isEmpty()) return@launchIO
 
                 val recentHistory = getHistory.subscribe("").first()
-                val recentTitles = recentHistory.take(10).map { it.mangaTitle }.distinct()
+                val recentTitles = recentHistory.take(10).map<HistoryWithRelations, String> { it.title }.distinct()
 
                 val titles = geminiVibeSearch.getForYouRecommendations(
                     historyTitles = recentTitles,
@@ -133,7 +134,7 @@ open class FeedScreenModel(
                     val sourceId = sourcePreferences.lastUsedSource().get()
                     val source = sourceManager.get(sourceId) as? CatalogueSource ?: return@launchIO
                     
-                    val recommendedManga = titles.mapNotNull { title ->
+                    val recommendedManga = titles.mapNotNull<String, DomainManga> { title ->
                         try {
                             val searchResult = withContext(coroutineDispatcher) {
                                 source.getSearchManga(1, title, FilterList())
