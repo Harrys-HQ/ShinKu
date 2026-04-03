@@ -1,5 +1,30 @@
 # ShinKu Changelog
 
+## 2.3.0 "Fluidity" (2026-04-03)
+### Added
+- **Atmospheric Audio:** New preference to play ambient sounds matching the manga's genre for a more immersive reading experience.
+- **Mood Lighting:** Subtly adjusts screen color temperature based on genre (e.g., warmer for Romance, cooler for Horror).
+- **Haptic Profiles:** Subtle tactile feedback for page turns, long-presses, and milestone achievements.
+- **Deep Reading Stats:** Advanced tracking of reading time and volume per genre and author.
+- **Reading Milestones:** New badge system to celebrate reading goals and achievements.
+- **AI "For You" Feed:** Personalized recommendations powered by Gemini based on your recent library activity.
+- **AI Image Upscaling:** Optional on-device processing to improve the clarity of low-resolution pages.
+- **Backdrop Blurs:** Dynamic cover-based blurs added to Library and Manga Info screens for increased UI depth.
+- **Bookmarked Chapters:** Added a dedicated option to download only bookmarked chapters.
+- **VPN Support:** Automatic library updates now support VPN-aware connection handling.
+
+### Improved
+- **Architectural Modernization:** Commenced migration from Injekt to Koin for better stability and Compose integration.
+- **Database Performance:** Optimized history and manga tables with new composite indexes for faster loading.
+- **Predictive Pre-loading:** Reader now dynamically adjusts prefetching based on your average reading speed.
+- **Self-Hosted Sync:** Added native support for WebDAV and Nextcloud synchronization.
+- **Migration Logic:** Improved manga migration to preserve page progress and source order correctly.
+
+### Fixed
+- **Cloudflare Guard:** Resolved the "blank page" issue when encountering Cloudflare protection.
+- **Extension Stability:** Fixed "Pending" state bugs in the extension installer.
+- **Thread Starvation:** Ported upstream fixes for smoother performance during heavy background tasks.
+
 ## 2.0.0 "Reborn" (2026-03-24)
 ### Added
 - **Full Rebrand:** Transitioned entire application to the `com.shinku.reader` namespace for a clean slate.

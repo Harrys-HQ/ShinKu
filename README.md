@@ -18,14 +18,15 @@
 
 In addition to all features from TachiyomiSY and Mihon, ShinKu introduces:
 
-*   **Vibe Search (AI Discovery):** Search for manga using natural language descriptions (e.g., "dark psychological thriller with a female protagonist") powered by Google Gemini AI.
-*   **Reading Journey Card:** A beautiful, interactive statistics card at the top of your "More" tab tracking your total chapters read and time spent reading.
-*   **Dynamic Theme Overhaul:** An immersive UI where the application colors shift dynamically to match the palette of the manga cover you are currently viewing.
-*   **Smart Categorizer:** Automatically organize your library into clean, one-word categories: *Library, Reading, Queue, Finished, and Dropped* based on your reading progress and series status.
+*   **Vibe Search & "For You" (AI Discovery):** Search for manga using natural language or receive personalized recommendations based on your library activity, powered by Google Gemini AI.
+*   **Reading Journey Card:** A beautiful, interactive statistics card at the top of your "More" tab tracking your total chapters read, time patterns, and genre heatmaps.
+*   **Immersive Atmosphere:** Experience manga with **Atmospheric Audio** (genre-matching ambient sounds) and **Mood Lighting** (color temperature adjustments matching the manga's vibe).
+*   **Dynamic UI & Depth:** An immersive UI where colors shift dynamically to match the manga cover, now enhanced with **Backdrop Blurs** in the Library and Info screens.
+*   **Tactile Haptics:** Subtle haptic feedback for page turns, milestone achievements, and library interactions.
+*   **Smart Categorizer:** Automatically organize your library into clean, one-word categories: *Library, Reading, Queue, Finished, and Dropped*.
 *   **Dead Source Scanner:** Specialized tool to find and quickly migrate manga from uninstalled extensions.
 *   **Failed Updates Migration:** A dedicated menu to easily handle and migrate manga that failed to refresh in your last library update.
 *   **Library Update Speed Toggle:** Control your update concurrency with three specialized modes: Standard, Boost, and Extreme.
-*   **Metadata Refresh Cooldown:** Enforced 7-day cooldown on automatic metadata refreshes to save network data and prioritize speed.
 
 ---
 
