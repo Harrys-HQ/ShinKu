@@ -149,3 +149,8 @@ WHERE _id = :chapterId;
 
 selectLastInsertedRowId:
 SELECT last_insert_rowid();
+
+deleteByMangaIdAndUrls:
+DELETE FROM chapters
+WHERE manga_id = :mangaId
+AND url IN :urls;

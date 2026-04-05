@@ -97,6 +97,7 @@ class AppModule(val app: Application) : InjektModule {
                         setPragma(db, "foreign_keys = ON")
                         setPragma(db, "journal_mode = WAL")
                         setPragma(db, "synchronous = NORMAL")
+                        setPragma(db, "busy_timeout = 5000")
                     }
                     private fun setPragma(db: SupportSQLiteDatabase, pragma: String) {
                         val cursor = db.query("PRAGMA $pragma")
