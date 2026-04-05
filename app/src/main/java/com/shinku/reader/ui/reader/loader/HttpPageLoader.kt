@@ -165,10 +165,8 @@ internal class HttpPageLoader(
             page.status = Page.State.Queue
         }
         // EXH -->
-        // Grab a new image URL on EXH sources
-        if (source.isEhBasedSource()) {
-            page.imageUrl = null
-        }
+        // Force re-fetch the image URL on retry
+        page.imageUrl = null
 
         if (readerPreferences.readerInstantRetry().get()) {
             boostPage(page)

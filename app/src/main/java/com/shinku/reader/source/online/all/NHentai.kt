@@ -11,6 +11,7 @@ import eu.kanade.tachiyomi.source.PagePreviewPage
 import eu.kanade.tachiyomi.source.PagePreviewSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
+import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -28,6 +29,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.CacheControl
+import okhttp3.Request
 import okhttp3.Response
 
 class NHentai(delegate: HttpSource, val context: Context) :
@@ -64,17 +66,19 @@ class NHentai(delegate: HttpSource, val context: Context) :
         }
     }
 
+    override fun mangaDetailsRequest(manga: SManga): Request {
+        if (manga.url.startsWith("http")) return GET(manga.url, headers)
+        val id = NHentaiSearchMetadata.nhUrlToId(manga.url)
+        return GET("$baseUrl/api/gallery/$id", headers)
+    }
+
     override suspend fun getMangaDetails(manga: SManga): SManga {
         val response = client.newCall(mangaDetailsRequest(manga)).awaitSuccess()
         return parseToManga(manga, response)
     }
 
     override suspend fun parseIntoMetadata(metadata: NHentaiSearchMetadata, input: Response) {
-        val body = input.body.string()
-        val server = MEDIA_SERVER_REGEX.find(body)?.groupValues?.get(1)?.toInt() ?: 1
-        val json = GALLERY_JSON_REGEX.find(body)!!.groupValues[1].replace(
-            UNICODE_ESCAPE_REGEX,
-        ) { it.groupValues[1].toInt(radix = 16).toChar().toString() }
+        val json = input.body.string()
         val jsonResponse = jsonParser.decodeFromString<JsonResponse>(json)
 
         with(metadata) {
@@ -86,7 +90,9 @@ class NHentai(delegate: HttpSource, val context: Context) :
 
             mediaId = jsonResponse.mediaId
 
-            mediaServer = server
+            // Server is not always in the API response, default to 1 if missing
+            // The previous regex used 'media_server' from HTML, V2 API doesn't seem to have it
+            mediaServer = 1 
 
             jsonResponse.title?.let { title ->
                 japaneseTitle = title.japanese
@@ -123,6 +129,37 @@ class NHentai(delegate: HttpSource, val context: Context) :
                 )
             }
         }
+    }
+
+    override suspend fun getChapterList(manga: SManga): List<SChapter> {
+        val metadata = fetchOrLoadMetadata(manga.id()) {
+            client.newCall(mangaDetailsRequest(manga)).awaitSuccess()
+        }
+        return listOf(
+            SChapter.create().apply {
+                url = manga.url
+                name = "Chapter"
+                date_upload = metadata.uploadDate?.let { it * 1000 } ?: 0
+                chapter_number = 1f
+            },
+        )
+    }
+
+    override suspend fun getPageList(chapter: SChapter): List<Page> {
+        val mangaId = getMangaId.awaitId(chapter.url, id)
+        val metadata = fetchOrLoadMetadata(mangaId) {
+            client.newCall(mangaDetailsRequest(chapter.toSManga())).awaitSuccess()
+        }
+
+        return metadata.pageImageTypes.mapIndexed { index, s ->
+            val extension = NHentaiSearchMetadata.typeToExtension(s)
+            Page(index, imageUrl = "https://i${metadata.mediaServer ?: 1}.nhentai.net/galleries/${metadata.mediaId}/${index + 1}.$extension")
+        }
+    }
+
+    private fun SChapter.toSManga(): SManga = SManga.create().also {
+        it.url = this.url
+        it.title = "Manga"
     }
 
     @Serializable
@@ -231,9 +268,6 @@ class NHentai(delegate: HttpSource, val context: Context) :
             ignoreUnknownKeys = true
         }
 
-        private val GALLERY_JSON_REGEX = Regex(".parse\\(\"(.*)\"\\);")
-        private val MEDIA_SERVER_REGEX = Regex("media_server\\s*:\\s*(\\d+)")
-        private val UNICODE_ESCAPE_REGEX = Regex("\\\\u([0-9a-fA-F]{4})")
         private const val TITLE_PREF = "Display manga title as:"
     }
 }

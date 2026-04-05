@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.3.1" changeDate="Apr 4,2026">
+        <changelogtext>[b]Database Stability[/b]: Implemented busy_timeout to resolve "database is locked" crashes</changelogtext>
+        <changelogtext>[b]Security &amp; Performance[/b]: Updated SQLCipher to v4.14.1 for improved encryption efficiency</changelogtext>
+        <changelogtext>[b]Source Reliability[/b]: Migrated NHentai to the V2 JSON API for faster metadata retrieval</changelogtext>
+        <changelogtext>[b]Sync Integrity[/b]: Fixed "Ghost Chapters" issue where deleted chapters could reappear</changelogtext>
+        <changelogtext>[b]Reader Robustness[/b]: Improved Retry button logic to force fresh image URL fetching</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="2.3.0" changeDate="Apr 3,2026">
+        <changelogtext>[b]Atmospheric Audio[/b]: New preference to play ambient sounds matching the manga genre</changelogtext>
+        <changelogtext>[b]Mood Lighting[/b]: Subtly adjusts screen color temperature based on genre</changelogtext>
+        <changelogtext>[b]AI "For You" Feed[/b]: Personalized recommendations powered by Gemini AI</changelogtext>
+        <changelogtext>[b]Haptic Profiles[/b]: Subtle tactile feedback for page turns and milestones</changelogtext>
+        <changelogtext>[b]Deep Reading Stats[/b]: Advanced tracking of reading time and volume</changelogtext>
+        <changelogtext>[b]Bookmarked Chapters[/b]: New option to download only bookmarked chapters</changelogtext>
+        <changelogtext>[b]VPN Support[/b]: Automatic library updates now support VPN-aware connection handling</changelogtext>
+        <changelogtext>Architectural Modernization: Commenced migration from Injekt to Koin</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.2.1" changeDate="Mar 1,2026">
         <changelogtext>[b]Performance enhancements[/b]: Improved tracking and overall application responsiveness</changelogtext>
     </changelogversion>

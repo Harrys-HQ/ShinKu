@@ -1,5 +1,13 @@
 # ShinKu Changelog
 
+## 2.3.1 "Spring Stability" (2026-04-04)
+### Fixed
+- **Database Stability:** Implemented `busy_timeout` to resolve "database is locked" crashes during high-concurrency tasks.
+- **Security & Performance:** Updated SQLCipher to v4.14.1 for improved encrypted database efficiency.
+- **Source Reliability:** Migrated NHentai to the V2 JSON API for more stable and faster metadata retrieval.
+- **Sync Integrity:** Fixed "Ghost Chapters" issue where deleted chapters could reappear after backup restoration or sync.
+- **Reader Robustness:** Improved "Retry" button logic to force a fresh fetch of image URLs on failure.
+
 ## 2.3.0 "Fluidity" (2026-04-03)
 ### Added
 - **Atmospheric Audio:** New preference to play ambient sounds matching the manga's genre for a more immersive reading experience.

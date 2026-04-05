@@ -30,7 +30,14 @@ This plan breaks down the synchronization process from Mihon and TachiyomiSY int
 - [x] Add "Bookmarked Chapters" download option.
 - [x] Add VPN Support for automatic library updates.
 
+### Phase 6: Spring 2026 Maintenance (March/April)
+- [x] Update `sqlcipher-android` to `v4.14.1` for improved performance and security.
+- [x] Implement `PRAGMA busy_timeout = 5000` to resolve database locking crashes.
+- [x] Migrate NHentai to V2 JSON API for improved stability and removal of fragile Regex parsing.
+- [x] Implement "Ghost Chapters" fix in `MangaRestorer.kt` to prevent deleted chapters from reappearing during sync.
+- [x] Enhance Reader Retry logic to force image URL re-fetching on failure.
+
 ## Current Status
 **Active Phase:** Completed
-**Status:** All upstream sync tasks for February 2026 have been successfully implemented, verified with a full build, and are ready for release.
+**Status:** All upstream sync tasks for February, March, and April 2026 have been successfully implemented, verified with a full build, and are ready for release.
 

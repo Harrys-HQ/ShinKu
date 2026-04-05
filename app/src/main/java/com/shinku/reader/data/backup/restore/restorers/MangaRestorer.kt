@@ -178,8 +178,8 @@ class MangaRestorer(
     }
 
     private suspend fun restoreChapters(manga: Manga, backupChapters: List<BackupChapter>) {
-        val dbChaptersByUrl = getChaptersByMangaId.await(manga.id)
-            .associateBy { it.url }
+        val dbChapters = getChaptersByMangaId.await(manga.id)
+        val dbChaptersByUrl = dbChapters.associateBy { it.url }
 
         val (existingChapters, newChapters) = backupChapters
             .mapNotNull { backupChapter ->
@@ -196,6 +196,19 @@ class MangaRestorer(
 
         insertNewChapters(newChapters)
         updateExistingChapters(existingChapters)
+
+        // SY -->
+        // Fix for ghost chapters: remove chapters that are not in the backup
+        if (isSync) {
+            val backupUrls = backupChapters.map { it.url }.toSet()
+            val toDelete = dbChapters.filter { !backupUrls.contains(it.url) }
+            if (toDelete.isNotEmpty()) {
+                handler.await(true) {
+                    chaptersQueries.deleteByMangaIdAndUrls(manga.id, toDelete.map { it.url })
+                }
+            }
+        }
+        // SY <--
     }
 
     private fun updateChapterBasedOnSyncState(chapter: Chapter, dbChapter: Chapter): Chapter {
