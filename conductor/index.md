@@ -14,3 +14,5 @@
 - [Performance Enhancements](./tracks/performance-enhancements/index.md)
 - [Documentation Renewal](./tracks/documentation-renewal/index.md)
 - [Anime Support Research](./tracks/anime-support-research/index.md)
+- [Stability & Performance 2026](./tracks/stability-and-performance-2026/index.md)
+- [Performance & Maintenance 2026](./tracks/performance-and-maintenance-2026/index.md)

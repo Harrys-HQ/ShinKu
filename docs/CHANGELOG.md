@@ -1,5 +1,18 @@
 # ShinKu Changelog
 
+## 2.3.2 "Performance Refinement" (2026-04-06)
+### Fixed
+- **Startup Stability:** Resolved a critical race condition where logging was attempted before `XLog` initialization.
+- **Database Optimization:** Added missing indexes to `mangas_categories` and `merged` tables to resolve "automatic index" performance warnings during joins.
+
+### Improved
+- **Network Performance:** Increased default network cache from 5MB to 100MB to significantly reduce redundant image re-downloads.
+- **Image Loading:** Optimized Coil's memory cache (increased to 40% RAM) and fine-tuned parallelism for smoother page transitions on multi-core devices.
+- **Startup Speed:** Offloaded `WidgetManager` initialization to a background thread to prevent blocking the main UI thread during application launch.
+
+### Maintenance
+- **Build Cleanup:** Completely removed the discontinued `standard` build flavor to improve R8 stability and reduce project complexity.
+
 ## 2.3.1 "Spring Stability" (2026-04-04)
 ### Fixed
 - **Database Stability:** Implemented `busy_timeout` to resolve "database is locked" crashes during high-concurrency tasks.

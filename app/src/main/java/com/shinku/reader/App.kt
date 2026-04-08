@@ -126,6 +126,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         Injekt.importModule(SYPreferenceModule(this))
         Injekt.importModule(SYDomainModule())
         InjektKoinBridge.startKoin(this)
+        setupExhLogging() // EXH logging
         initExpensiveComponents(this)
         // SY <--
 
@@ -138,7 +139,6 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         scope.launch(Dispatchers.IO) {
             FirebaseConfig.init(applicationContext)
             GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
-            setupExhLogging() // EXH logging
             LogcatLogger.install()
             LogcatLogger.loggers += XLogLogcatLogger() // SY Redirect Logcat to XLog
 
@@ -155,6 +155,9 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             }
 
             RepoHealthScanJob.setupTask(this@App)
+
+            // Updates widget update
+            WidgetManager(Injekt.get(), Injekt.get()).apply { init(scope) }
         }
 
         // Show notification to disable Incognito Mode when it's enabled
@@ -204,9 +207,6 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             .onEach { ImageUtil.hardwareBitmapThreshold = it }
             .launchIn(scope)
 
-        // Updates widget update
-        WidgetManager(Injekt.get(), Injekt.get()).apply { init(scope) }
-
         /*if (!LogcatLogger.isInstalled && networkPreferences.verboseLogging().get()) {
             LogcatLogger.install(AndroidLogcatLogger(LogPriority.VERBOSE))
         }*/
@@ -255,7 +255,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
 
             memoryCache(
                 MemoryCache.Builder()
-                    .maxSizePercent(context)
+                    .maxSizePercent(context, 0.4)
                     .build(),
             )
 
@@ -264,8 +264,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             if (networkPreferences.verboseLogging().get()) logger(DebugLogger())
 
             // Coil spawns a new thread for every image load by default
-            fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))
-            decoderCoroutineContext(Dispatchers.IO.limitedParallelism(3))
+            fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(32))
+            decoderCoroutineContext(Dispatchers.IO.limitedParallelism(12))
         }
             .build()
     }

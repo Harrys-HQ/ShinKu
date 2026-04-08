@@ -33,7 +33,7 @@ open /* SY <-- */ class NetworkHelper(
             .cache(
                 Cache(
                     directory = File(context.cacheDir, "network_cache"),
-                    maxSize = 5L * 1024 * 1024, // 5 MiB
+                    maxSize = 100L * 1024 * 1024, // 100 MiB
                 ),
             )
             .addInterceptor(UncaughtExceptionInterceptor())
