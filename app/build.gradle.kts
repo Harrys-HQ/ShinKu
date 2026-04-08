@@ -15,7 +15,7 @@ plugins {
     id("com.github.ben-manes.versions")
 }
 
-if (gradle.startParameter.taskRequests.toString().contains("Standard") && file("google-services.json").exists()) {
+if (file("google-services.json").exists()) {
     pluginManager.apply {
         apply(libs.plugins.google.services.get().pluginId)
         apply(libs.plugins.firebase.crashlytics.get().pluginId)
@@ -41,8 +41,8 @@ android {
 
         setProperty("archivesBaseName", "ShinKu")
 
-        versionCode = 111
-        versionName = "2.3.1"
+        versionCode = 112
+        versionName = "2.3.2"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -113,10 +113,6 @@ android {
     flavorDimensions.add("default")
 
     productFlavors {
-        create("standard") {
-            buildConfigField("boolean", "INCLUDE_UPDATER", "true")
-            dimension = "default"
-        }
         create("fdroid") {
             dimension = "default"
         }
@@ -340,14 +336,6 @@ dependencies {
     implementation(libs.zxing.android.embedded)
 
     implementation(libs.mlkit.text.recognition)
-}
-
-androidComponents {
-    onVariants(selector().withFlavor("default" to "standard")) {
-        // Only excluding in standard flavor because this breaks
-        // Layout Inspector's Compose tree
-        it.packaging.resources.excludes.add("META-INF/*.version")
-    }
 }
 
 buildscript {
