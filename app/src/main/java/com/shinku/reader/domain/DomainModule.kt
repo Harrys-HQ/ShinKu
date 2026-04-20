@@ -32,6 +32,10 @@ import com.shinku.reader.di.InjektModule
 import com.shinku.reader.di.addFactory
 import com.shinku.reader.di.addSingletonFactory
 import com.shinku.reader.data.repository.ExtensionRepoRepositoryImpl
+import com.shinku.reader.domain.ai.interactor.AiClustering
+import com.shinku.reader.domain.ai.interactor.GetMangaEmbeddings
+import com.shinku.reader.domain.ai.interactor.GetSimilarManga
+import com.shinku.reader.domain.ai.interactor.UpdateMangaEmbedding
 import com.shinku.reader.domain.chapter.interactor.FilterChaptersForDownload
 import com.shinku.reader.domain.extensionrepo.interactor.CreateExtensionRepo
 import com.shinku.reader.domain.extensionrepo.interactor.DeleteExtensionRepo
@@ -193,6 +197,10 @@ class DomainModule : InjektModule {
         addSingletonFactory<SourceRepository> { SourceRepositoryImpl(get(), get()) }
         addSingletonFactory<StubSourceRepository> { StubSourceRepositoryImpl(get()) }
         addSingletonFactory<SourceHealthRepository> { SourceHealthRepositoryImpl(get()) }
+        addFactory { GetMangaEmbeddings(get()) }
+        addFactory { GetSimilarManga(get(), get()) }
+        addFactory { UpdateMangaEmbedding(get()) }
+        addFactory { AiClustering(get(), get(), get(), get(), get()) }
         addFactory { GetEnabledSources(get(), get()) }
         addFactory { GetLanguagesWithSources(get(), get()) }
         addFactory { GetRemoteManga(get()) }

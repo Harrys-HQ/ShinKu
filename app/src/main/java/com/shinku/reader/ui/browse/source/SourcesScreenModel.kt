@@ -37,6 +37,8 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.TreeMap
 
+import com.shinku.reader.domain.source.interactor.GetSourceHealth
+
 class SourcesScreenModel(
     private val getEnabledSources: GetEnabledSources = Injekt.get(),
     private val toggleSource: ToggleSource = Injekt.get(),
@@ -48,6 +50,7 @@ class SourcesScreenModel(
     private val toggleExcludeFromDataSaver: ToggleExcludeFromDataSaver = Injekt.get(),
     private val setSourceCategories: SetSourceCategories = Injekt.get(),
     private val sourcePreferences: SourcePreferences = Injekt.get(),
+    private val getSourceHealth: GetSourceHealth = Injekt.get(),
     val smartSearchConfig: SourcesScreen.SmartSearchConfig?,
     // SY <--
 ) : StateScreenModel<SourcesScreenModel.State>(State()) {
@@ -64,6 +67,7 @@ class SourcesScreenModel(
             getSourceCategories.subscribe(),
             getShowLatest.subscribe(smartSearchConfig != null),
             flowOf(smartSearchConfig == null),
+            getSourceHealth.subscribeAll(),
             ::collectLatestSources,
         )
             .catch {
@@ -72,6 +76,7 @@ class SourcesScreenModel(
             }
             .flowOn(Dispatchers.IO)
             .launchIn(screenModelScope)
+
 
         sourcePreferences.dataSaver().changes()
             .onEach {
@@ -85,7 +90,8 @@ class SourcesScreenModel(
         // SY <--
     }
 
-    private fun collectLatestSources(sources: List<Source>, categories: List<String>, showLatest: Boolean, showPin: Boolean) {
+    private fun collectLatestSources(sources: List<Source>, categories: List<String>, showLatest: Boolean, showPin: Boolean, healths: List<com.shinku.reader.domain.source.model.SourceHealth>) {
+        val healthMap = healths.associateBy { it.sourceId }
         mutableState.update { state ->
             val map = TreeMap<String, MutableList<Source>> { d1, d2 ->
                 // Sources without a lang defined will be placed at the end
@@ -124,7 +130,7 @@ class SourcesScreenModel(
                                 it.value.firstOrNull()?.category != null,
                             ),
                             *it.value.map { source ->
-                                SourceUiModel.Item(source)
+                                SourceUiModel.Item(source, healthMap[source.id])
                             }.toTypedArray(),
                         )
                     }

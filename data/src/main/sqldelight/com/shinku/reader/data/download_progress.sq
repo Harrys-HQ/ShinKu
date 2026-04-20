@@ -1,0 +1,27 @@
+CREATE TABLE download_chunk_progress(
+    page_url TEXT NOT NULL,
+    chunk_index INTEGER NOT NULL,
+    download_id INTEGER NOT NULL,
+    start_byte INTEGER NOT NULL,
+    end_byte INTEGER NOT NULL,
+    bytes_downloaded INTEGER NOT NULL DEFAULT 0,
+    is_complete INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY(page_url, chunk_index)
+);
+
+getChunkProgress:
+SELECT *
+FROM download_chunk_progress
+WHERE page_url = :pageUrl;
+
+updateChunkProgress:
+INSERT OR REPLACE INTO download_chunk_progress(page_url, chunk_index, download_id, start_byte, end_byte, bytes_downloaded, is_complete)
+VALUES (:pageUrl, :chunkIndex, :downloadId, :startByte, :endByte, :bytesDownloaded, :isComplete);
+
+deleteByDownloadId:
+DELETE FROM download_chunk_progress
+WHERE download_id = :downloadId;
+
+deleteByPageUrl:
+DELETE FROM download_chunk_progress
+WHERE page_url = :pageUrl;

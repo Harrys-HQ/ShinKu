@@ -41,8 +41,8 @@ android {
 
         setProperty("archivesBaseName", "ShinKu")
 
-        versionCode = 112
-        versionName = "2.3.2"
+        versionCode = 113
+        versionName = "2.4.0"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -336,6 +336,7 @@ dependencies {
     implementation(libs.zxing.android.embedded)
 
     implementation(libs.mlkit.text.recognition)
+    implementation(libs.mediapipe.tasks.text)
 }
 
 buildscript {

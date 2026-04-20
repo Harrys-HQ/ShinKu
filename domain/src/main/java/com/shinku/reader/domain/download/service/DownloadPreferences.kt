@@ -41,6 +41,8 @@ class DownloadPreferences(
 
     fun parallelPageLimit() = preferenceStore.getInt("download_parallel_page_limit", 5)
 
+    fun downloadThreadsPerPage() = preferenceStore.getInt("download_threads_per_page", 1)
+
     fun includeChapterUrlHash() = preferenceStore.getBoolean("download_include_chapter_url_hash", true)
 
     companion object {

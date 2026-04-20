@@ -27,6 +27,8 @@ import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.data.category.SmartCategorizerJob
+import com.shinku.reader.data.ai.AiClusteringJob
+import com.shinku.reader.data.ai.MangaEmbeddingJob
 import com.shinku.reader.ui.browse.migration.dead.DeadSourceScannerScreen
 import com.shinku.reader.ui.browse.migration.failed.FailedUpdatesMigrationScreen
 import com.shinku.reader.ui.sourcehealth.SourceHealthScreen
@@ -69,6 +71,14 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_smart_categorizer),
                     subtitle = stringResource(MR.strings.pref_smart_categorizer_summary),
                     onClick = { SmartCategorizerJob.startNow(context) },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = "AI Categorizer (Experimental)",
+                    subtitle = "Use AI to group library into 'vibe-based' categories",
+                    onClick = {
+                        MangaEmbeddingJob.startNow(context)
+                        AiClusteringJob.startNow(context)
+                    },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.dead_source_scanner_title),

@@ -217,7 +217,8 @@ class MangaScreen(
                 }
             },
             onTagSearch = { scope.launch { performGenreSearch(navigator, it, screenModel.source!!) } },
-            onFilterButtonClicked = screenModel::showSettingsDialog,
+            onCopyTagToClipboard = { context.copyToClipboard(it, it) },
+            onFilterClicked = screenModel::showSettingsDialog,
             onRefresh = screenModel::fetchAllFromSource,
             onContinueReading = { continueReading(context, screenModel.getNextUnreadChapter()) },
             onSearch = { query, global -> scope.launch { performSearch(navigator, query, global) } },
@@ -225,7 +226,7 @@ class MangaScreen(
             onShareClicked = { shareManga(context, screenModel.manga, screenModel.source) }.takeIf { isHttpSource },
             onDownloadActionClicked = screenModel::runDownloadAction.takeIf { !successState.source.isLocalOrStub() },
             onEditCategoryClicked = screenModel::showChangeCategoryDialog.takeIf { successState.manga.favorite },
-            onEditFetchIntervalClicked = screenModel::showSetFetchIntervalDialog.takeIf {
+            onEditIntervalClicked = screenModel::showSetFetchIntervalDialog.takeIf {
                 successState.manga.favorite
             },
             previewsRowCount = successState.previewsRowCount,

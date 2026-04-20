@@ -44,6 +44,8 @@ import com.shinku.reader.data.History
 import com.shinku.reader.data.Mangas
 import com.shinku.reader.data.StringListColumnAdapter
 import com.shinku.reader.data.UpdateStrategyColumnAdapter
+import com.shinku.reader.data.ai.AiRepositoryImpl
+import com.shinku.reader.domain.ai.repository.AiRepository
 import com.shinku.reader.domain.manga.interactor.GetCustomMangaInfo
 import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.domain.storage.service.StorageManager
@@ -120,6 +122,7 @@ class AppModule(val app: Application) : InjektModule {
             )
         }
         addSingletonFactory<DatabaseHandler> { AndroidDatabaseHandler(get(), get()) }
+        addSingletonFactory<AiRepository> { AiRepositoryImpl(get()) }
 
         addSingletonFactory {
             Json {
