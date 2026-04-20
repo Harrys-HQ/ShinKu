@@ -72,6 +72,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
     private var currentPanelIndex: Int = -1
 
     var onImageLoaded: (() -> Unit)? = null
+    var onImageDimensionsLoaded: ((width: Int, height: Int) -> Unit)? = null
     var onImageLoadError: ((Throwable?) -> Unit)? = null
     var onScaleChanged: ((newScale: Float) -> Unit)? = null
     var onViewClicked: (() -> Unit)? = null
@@ -349,6 +350,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
                 override fun onReady() {
                     setupZoom(config)
                     if (isVisibleOnScreen()) landscapeZoom(true)
+                    this@ReaderPageImageView.onImageDimensionsLoaded?.invoke(sWidth, sHeight)
                     this@ReaderPageImageView.onImageLoaded()
                 }
 
@@ -458,6 +460,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
                     setImageDrawable(drawable)
                     (drawable as? Animatable)?.start()
                     isVisible = true
+                    this@ReaderPageImageView.onImageDimensionsLoaded?.invoke(drawable.intrinsicWidth, drawable.intrinsicHeight)
                     this@ReaderPageImageView.onImageLoaded()
                 },
             )

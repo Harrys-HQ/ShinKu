@@ -1,5 +1,22 @@
 # ShinKu Changelog
 
+## 2.4.0 "Fluidity & Power" (2026-04-20)
+### Added
+- **Dynamic Theming:** Immersive reader and details UI that adapts its color palette to the current manga cover.
+- **On-Device AI Engine:** Integrated MediaPipe Universal Sentence Encoder for privacy-first, local text embeddings.
+- **Similar Vibes:** New carousel in Manga Info to discover similar titles in your library based on AI "vibe" similarity.
+- **AI Categorizer:** Experimental feature to automatically group your library into theme-based categories using K-Means clustering.
+- **Source Health Monitoring:** Real-time reliability indicators (Green/Yellow/Red) in the source list.
+- **Multi-threaded Downloader:** High-performance engine that splits single images into parallel chunks for faster downloads.
+- **Resumable Downloads:** Granular byte-offset tracking in SQLite for resuming interrupted downloads.
+- **Gesture Preview:** Visual playground in Reader Settings to map and test your tap zones.
+- **Auto Webtoon Detection:** Smart switching to long-strip mode based on page aspect ratio analysis.
+
+### Improved
+- **Stability:** Patched critical `IllegalStateException` on hardware-backed bitmaps during color extraction.
+- **Security:** Resolved `SecurityException` during notification channel management.
+- **Infrastructure:** Upgraded project to **Min SDK 24** to support modern ML and networking tasks.
+
 ## 2.3.2 "Performance Refinement" (2026-04-06)
 ### Fixed
 - **Startup Stability:** Resolved a critical race condition where logging was attempted before `XLog` initialization.

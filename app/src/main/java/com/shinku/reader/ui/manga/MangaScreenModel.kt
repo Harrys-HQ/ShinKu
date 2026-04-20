@@ -198,6 +198,7 @@ class MangaScreenModel(
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
     private val syncPreferences: com.shinku.reader.domain.sync.SyncPreferences = Injekt.get(),
     private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
+    private val getSimilarManga: com.shinku.reader.domain.ai.interactor.GetSimilarManga = Injekt.get(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
 
@@ -441,6 +442,11 @@ class MangaScreenModel(
         }
 
         observeDownloads()
+
+        screenModelScope.launchIO {
+            val similar = getSimilarManga.await(mangaId)
+            updateSuccessState { it.copy(similarVibes = similar) }
+        }
 
         screenModelScope.launchIO {
             val manga = getMangaAndChapters.awaitManga(mangaId)
@@ -1884,6 +1890,7 @@ class MangaScreenModel(
             val previewsRowCount: Int,
             val showVibeButton: Boolean = false,
             val backdropBlurEnabled: Boolean = false,
+            val similarVibes: List<Manga> = emptyList(),
             // SY <--
         ) : State {
             val processedChapters by lazy {

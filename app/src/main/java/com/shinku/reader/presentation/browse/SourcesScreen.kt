@@ -24,6 +24,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
+import com.shinku.reader.presentation.core.util.secondaryItemAlpha
 import com.shinku.reader.presentation.browse.components.BaseSourceItem
 import com.shinku.reader.ui.browse.source.SourcesScreenModel
 import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreenModel.Listing
@@ -91,6 +100,7 @@ fun SourcesScreen(
                         is SourceUiModel.Item -> SourceItem(
                             modifier = Modifier.animateItem(),
                             source = model.source,
+                            health = model.health,
                             // SY -->
                             showLatest = state.showLatest,
                             showPin = state.showPin,
@@ -132,6 +142,7 @@ private fun SourceHeader(
 @Composable
 private fun SourceItem(
     source: Source,
+    health: com.shinku.reader.domain.source.model.SourceHealth?,
     // SY -->
     showLatest: Boolean,
     showPin: Boolean,
@@ -146,6 +157,50 @@ private fun SourceItem(
         source = source,
         onClickItem = { onClickItem(source, Listing.Popular) },
         onLongClickItem = { onLongClickItem(source) },
+        content = { _, sourceLangString ->
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = MaterialTheme.padding.medium)
+                    .weight(1f),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = source.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (health != null) {
+                        val color = when {
+                            health.healthScore >= 80 -> Color(0xFF4CAF50)
+                            health.healthScore >= 50 -> Color(0xFFFFC107)
+                            else -> Color(0xFFF44336)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .size(8.dp)
+                                .background(
+                                    color = color,
+                                    shape = CircleShape,
+                                ),
+                        )
+                    }
+                }
+                if (sourceLangString != null) {
+                    Text(
+                        modifier = Modifier.secondaryItemAlpha(),
+                        text = sourceLangString,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
         action = {
             if (source.supportsLatest /* SY --> */ && showLatest /* SY <-- */) {
                 TextButton(onClick = { onClickItem(source, Listing.Latest) }) {
@@ -258,7 +313,7 @@ fun SourceOptionsDialog(
 }
 
 sealed interface SourceUiModel {
-    data class Item(val source: Source) : SourceUiModel
+    data class Item(val source: Source, val health: com.shinku.reader.domain.source.model.SourceHealth? = null) : SourceUiModel
     data class Header(val language: String, val isCategory: Boolean) : SourceUiModel
 }
 

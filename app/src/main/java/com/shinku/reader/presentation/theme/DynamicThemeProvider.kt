@@ -38,12 +38,19 @@ fun DynamicThemeProvider(
         if (cover is BitmapDrawable) {
             val bitmap = cover.bitmap
             if (bitmap != null && !bitmap.isRecycled) {
-                Palette.from(bitmap).generate().let { palette ->
-                    val color = palette.getVibrantColor(
-                        palette.getDominantColor(0),
-                    )
-                    if (color != 0) {
-                        seedColor = Color(color)
+                val paletteBitmap = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O && bitmap.config == android.graphics.Bitmap.Config.HARDWARE) {
+                    bitmap.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
+                } else {
+                    bitmap
+                }
+                if (paletteBitmap != null) {
+                    Palette.from(paletteBitmap).generate().let { palette ->
+                        val color = palette.getVibrantColor(
+                            palette.getDominantColor(0),
+                        )
+                        if (color != 0) {
+                            seedColor = Color(color)
+                        }
                     }
                 }
             }
@@ -75,12 +82,19 @@ fun rememberCoverColor(cover: Drawable?): Color? {
         if (cover is BitmapDrawable) {
             val bitmap = cover.bitmap
             if (bitmap != null && !bitmap.isRecycled) {
-                Palette.from(bitmap).generate().let { palette ->
-                    val extracted = palette.getVibrantColor(
-                        palette.getDominantColor(0),
-                    )
-                    if (extracted != 0) {
-                        color = Color(extracted)
+                val paletteBitmap = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O && bitmap.config == android.graphics.Bitmap.Config.HARDWARE) {
+                    bitmap.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
+                } else {
+                    bitmap
+                }
+                if (paletteBitmap != null) {
+                    Palette.from(paletteBitmap).generate().let { palette ->
+                        val extracted = palette.getVibrantColor(
+                            palette.getDominantColor(0),
+                        )
+                        if (extracted != 0) {
+                            color = Color(extracted)
+                        }
                     }
                 }
             }

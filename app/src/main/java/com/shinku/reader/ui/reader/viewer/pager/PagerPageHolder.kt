@@ -73,6 +73,9 @@ class PagerPageHolder(
     private var extraLoadJob: Job? = null
 
     init {
+        onImageDimensionsLoaded = { width, height ->
+            viewer.activity.viewModel.onPageDimensionsLoaded(page, width, height)
+        }
         loadJob = scope.launch { loadPageAndProcessStatus(1) }
         extraLoadJob = scope.launch { loadPageAndProcessStatus(2) }
     }

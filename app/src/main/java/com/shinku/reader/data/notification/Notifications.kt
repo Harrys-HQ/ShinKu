@@ -89,7 +89,6 @@ object Notifications {
         "downloader_complete_channel",
         "backup_restore_complete_channel",
         "library_channel",
-        "library_progress_channel",
         "updates_ext_channel",
         "downloader_cache_renewal",
         "crash_logs_channel",

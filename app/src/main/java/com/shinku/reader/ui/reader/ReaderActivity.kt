@@ -94,7 +94,10 @@ import com.shinku.reader.ui.reader.viewer.pager.PagerConfig
 import com.shinku.reader.ui.reader.viewer.pager.PagerViewer
 import com.shinku.reader.ui.reader.viewer.pager.VerticalPagerViewer
 import com.shinku.reader.ui.reader.viewer.webtoon.WebtoonViewer
+import com.shinku.reader.presentation.theme.DynamicThemeProvider
+import com.shinku.reader.presentation.util.isTabletUi
 import com.shinku.reader.ui.webview.WebViewActivity
+import android.graphics.drawable.ColorDrawable
 import com.shinku.reader.util.system.isNightMode
 import com.shinku.reader.util.system.openInBrowser
 import com.shinku.reader.util.system.setHighRefreshRate
@@ -245,6 +248,16 @@ class ReaderActivity : BaseActivity() {
             }
         }
 
+        viewModel.state
+            .map { it.coverColor }
+            .distinctUntilChanged()
+            .onEach {
+                if (readerPreferences.readerTheme().get() == 3) {
+                    binding.readerContainer.setBackgroundColor(automaticBackgroundColor())
+                }
+            }
+            .launchIn(lifecycleScope)
+
         config = ReaderConfig()
         setMenuVisibility(viewModel.state.value.menuVisible)
         enableExhAutoScroll()
@@ -308,6 +321,13 @@ class ReaderActivity : BaseActivity() {
 
                     is ReaderViewModel.Event.PanelsDetected -> {
                         (viewModel.state.value.viewer as? PagerViewer)?.setPanels(event.page, event.panels)
+                    }
+
+                    is ReaderViewModel.Event.ShowSnackbar -> {
+                        lifecycleScope.launch {
+                            val msg = stringResource(event.stringRes)
+                            toast(msg)
+                        }
                     }
                 }
             }
@@ -409,16 +429,17 @@ class ReaderActivity : BaseActivity() {
             }
 
             is ReaderViewModel.Dialog.PageActions -> {
+                val dialog = state.dialog as ReaderViewModel.Dialog.PageActions
                 ReaderPageActionsDialog(
                     onDismissRequest = onDismissRequest,
-                    onSetAsCover = viewModel::setAsCover,
-                    onShare = viewModel::shareImage,
-                    onSave = viewModel::saveImage,
-                    onShareCombined = viewModel::shareImages,
-                    onSaveCombined = viewModel::saveImages,
-                    onFootnotes = viewModel::onFootnotes,
-                    onTranslation = viewModel::onTranslation,
-                    hasExtraPage = (state.dialog as? ReaderViewModel.Dialog.PageActions)?.extraPage != null,
+                    onSetAsCover = { viewModel.setAsCover(it) },
+                    onShare = { copy, useExtraPage -> viewModel.shareImage(copy, useExtraPage) },
+                    onSave = { viewModel.saveImage(it) },
+                    onShareCombined = { viewModel.shareImages(it) },
+                    onSaveCombined = { viewModel.saveImages() },
+                    onFootnotes = { viewModel.onFootnotes() },
+                    onTranslation = { viewModel.onTranslation() },
+                    hasExtraPage = dialog.extraPage != null,
                 )
             }
 
@@ -1286,6 +1307,31 @@ class ReaderActivity : BaseActivity() {
         setPadding(insets.left, insets.top, insets.right, insets.bottom)
     }
 
+    private val grayBackgroundColor = Color.rgb(0x20, 0x21, 0x25)
+
+    /**
+     * Picks background color for [ReaderActivity] based on light/dark theme preference
+     */
+    private fun automaticBackgroundColor(): Int {
+        val coverColor = viewModel.state.value.coverColor
+        if (coverColor != null) {
+            val isNightMode = baseContext.isNightMode()
+            val hsl = FloatArray(3)
+            androidx.core.graphics.ColorUtils.colorToHSL(coverColor, hsl)
+            if (isNightMode) {
+                hsl[2] = 0.05f // Darker for night mode
+            } else {
+                hsl[2] = 0.95f // Lighter for light mode
+            }
+            return androidx.core.graphics.ColorUtils.HSLToColor(hsl)
+        }
+        return if (baseContext.isNightMode()) {
+            grayBackgroundColor
+        } else {
+            Color.WHITE
+        }
+    }
+
     /**
      * Class that handles the user preferences of the reader.
      */
@@ -1314,8 +1360,6 @@ class ReaderActivity : BaseActivity() {
                 )
             }
         }
-
-        private val grayBackgroundColor = Color.rgb(0x20, 0x21, 0x25)
 
         /*
          * Initializes the reader subscriptions.
@@ -1412,89 +1456,102 @@ class ReaderActivity : BaseActivity() {
             }
             // SY <--
         }
+    }
 
-        /**
-         * Picks background color for [ReaderActivity] based on light/dark theme preference
-         */
-        private fun automaticBackgroundColor(): Int {
-            return if (baseContext.isNightMode()) {
-                grayBackgroundColor
-            } else {
-                Color.WHITE
+    /**
+     * Sets the display profile to [path].
+     */
+    private fun setDisplayProfile(path: String) {
+        val file = UniFile.fromUri(baseContext, path.toUri())
+        if (file != null && file.exists()) {
+            val inputStream = file.openInputStream()
+            val outputStream = ByteArrayOutputStream()
+            inputStream.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
             }
+            val data = outputStream.toByteArray()
+            SubsamplingScaleImageView.setDisplayProfile(data)
+            TachiyomiImageDecoder.displayProfile = data
         }
+    }
 
-        /**
-         * Sets the display profile to [path].
-         */
-        private fun setDisplayProfile(path: String) {
-            val file = UniFile.fromUri(baseContext, path.toUri())
-            if (file != null && file.exists()) {
-                val inputStream = file.openInputStream()
-                val outputStream = ByteArrayOutputStream()
-                inputStream.use { input ->
-                    outputStream.use { output ->
-                        input.copyTo(output)
+    /**
+     * Sets the keep screen on mode according to [enabled].
+     */
+    private fun setKeepScreenOn(enabled: Boolean) {
+        if (enabled) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    /**
+     * Sets the custom brightness overlay according to [enabled].
+     */
+    private fun setCustomBrightness(enabled: Boolean) {
+        if (enabled) {
+            readerPreferences.customBrightnessValue().changes()
+                .sample(100)
+                .onEach(::setCustomBrightnessValue)
+                .launchIn(lifecycleScope)
+        } else {
+            setCustomBrightnessValue(0)
+        }
+    }
+
+    /**
+     * Sets the brightness of the screen. Range is [-75, 100].
+     * From -75 to -1 a semi-transparent black view is overlaid with the minimum brightness.
+     * From 1 to 100 it sets that value as brightness.
+     * 0 sets system brightness and hides the overlay.
+     */
+    private fun setCustomBrightnessValue(value: Int) {
+        // Calculate and set reader brightness.
+        val readerBrightness = when {
+            value > 0 -> {
+                value / 100f
+            }
+
+            value < 0 -> {
+                0.01f
+            }
+
+            else -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        }
+        window.attributes = window.attributes.apply { screenBrightness = readerBrightness }
+
+        viewModel.setBrightnessOverlayValue(value)
+    }
+
+    private fun setLayerPaint(grayscale: Boolean, invertedColors: Boolean) {
+        val paint = if (grayscale || invertedColors) getCombinedPaint(grayscale, invertedColors) else null
+        binding.viewerContainer.setLayerType(LAYER_TYPE_HARDWARE, paint)
+    }
+
+    private fun getCombinedPaint(grayscale: Boolean, invertedColors: Boolean): Paint {
+        return Paint().apply {
+            colorFilter = ColorMatrixColorFilter(
+                ColorMatrix().apply {
+                    if (grayscale) {
+                        setSaturation(0f)
                     }
-                }
-                val data = outputStream.toByteArray()
-                SubsamplingScaleImageView.setDisplayProfile(data)
-                TachiyomiImageDecoder.displayProfile = data
-            }
-        }
-
-        /**
-         * Sets the keep screen on mode according to [enabled].
-         */
-        private fun setKeepScreenOn(enabled: Boolean) {
-            if (enabled) {
-                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            } else {
-                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            }
-        }
-
-        /**
-         * Sets the custom brightness overlay according to [enabled].
-         */
-        private fun setCustomBrightness(enabled: Boolean) {
-            if (enabled) {
-                readerPreferences.customBrightnessValue().changes()
-                    .sample(100)
-                    .onEach(::setCustomBrightnessValue)
-                    .launchIn(lifecycleScope)
-            } else {
-                setCustomBrightnessValue(0)
-            }
-        }
-
-        /**
-         * Sets the brightness of the screen. Range is [-75, 100].
-         * From -75 to -1 a semi-transparent black view is overlaid with the minimum brightness.
-         * From 1 to 100 it sets that value as brightness.
-         * 0 sets system brightness and hides the overlay.
-         */
-        private fun setCustomBrightnessValue(value: Int) {
-            // Calculate and set reader brightness.
-            val readerBrightness = when {
-                value > 0 -> {
-                    value / 100f
-                }
-
-                value < 0 -> {
-                    0.01f
-                }
-
-                else -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-            }
-            window.attributes = window.attributes.apply { screenBrightness = readerBrightness }
-
-            viewModel.setBrightnessOverlayValue(value)
-        }
-
-        private fun setLayerPaint(grayscale: Boolean, invertedColors: Boolean) {
-            val paint = if (grayscale || invertedColors) getCombinedPaint(grayscale, invertedColors) else null
-            binding.viewerContainer.setLayerType(LAYER_TYPE_HARDWARE, paint)
+                    if (invertedColors) {
+                        postConcat(
+                            ColorMatrix(
+                                floatArrayOf(
+                                    -1f, 0f, 0f, 0f, 255f,
+                                    0f, -1f, 0f, 0f, 255f,
+                                    0f, 0f, -1f, 0f, 255f,
+                                    0f, 0f, 0f, 1f, 0f,
+                                ),
+                            ),
+                        )
+                    }
+                },
+            )
         }
     }
 }

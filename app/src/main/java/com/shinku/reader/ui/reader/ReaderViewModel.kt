@@ -31,6 +31,14 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.MetadataSource
 import eu.kanade.tachiyomi.source.online.all.MergedSource
+import coil3.asDrawable
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import androidx.palette.graphics.Palette
+import com.shinku.reader.util.system.getBitmapOrNull
+import com.shinku.reader.i18n.sy.SYMR
+import dev.icerock.moko.resources.StringResource
 import com.shinku.reader.ui.reader.chapter.ReaderChapterItem
 import com.shinku.reader.ui.reader.loader.ChapterLoader
 import com.shinku.reader.ui.reader.loader.DownloadPageLoader
@@ -190,6 +198,9 @@ class ReaderViewModel(
     private var lastPageChangeTime: Long = System.currentTimeMillis()
     private val pageTurnTimes = mutableListOf<Long>()
 
+    private var sampledMangaId: Long? = null
+    private val pageAspectRatios = mutableListOf<Float>()
+
     private var chapterToDownload: Download? = null
 
     private val unfilteredChapterList by lazy {
@@ -305,6 +316,36 @@ class ReaderViewModel(
             .launchIn(viewModelScope)
 
         // SY -->
+        state.map { it.manga }
+            .distinctUntilChanged()
+            .filterNotNull()
+            .onEach { manga ->
+                val request = ImageRequest.Builder(app)
+                    .data(manga)
+                    .build()
+                val result = app.imageLoader.execute(request)
+                if (result is SuccessResult) {
+                    val bitmap = result.image.asDrawable(app.resources).getBitmapOrNull()
+                    if (bitmap != null) {
+                        val paletteBitmap = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O && bitmap.config == android.graphics.Bitmap.Config.HARDWARE) {
+                            bitmap.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
+                        } else {
+                            bitmap
+                        }
+                        if (paletteBitmap != null) {
+                            val palette = Palette.from(paletteBitmap).generate()
+                            val color = palette.getVibrantColor(
+                                palette.getDominantColor(0),
+                            )
+                            if (color != 0) {
+                                mutableState.update { it.copy(coverColor = color) }
+                            }
+                        }
+                    }
+                }
+            }
+            .launchIn(viewModelScope)
+
         state.mapLatest { it.ehAutoscrollFreq }
             .distinctUntilChanged()
             .drop(1)
@@ -585,6 +626,38 @@ class ReaderViewModel(
     fun onViewerLoaded(viewer: Viewer?) {
         mutableState.update {
             it.copy(viewer = viewer)
+        }
+    }
+
+    /**
+     * Called from the viewer whenever a [page] has its dimensions loaded.
+     */
+    fun onPageDimensionsLoaded(page: ReaderPage, width: Int, height: Int) {
+        val manga = manga ?: return
+        if (readerPreferences.useAutoWebtoon().get() &&
+            manga.readingMode.toInt() == ReadingMode.DEFAULT.flagValue
+        ) {
+            val mangaId = manga?.id
+            if (mangaId != null) {
+                if (sampledMangaId != mangaId) {
+                    sampledMangaId = mangaId
+                    pageAspectRatios.clear()
+                }
+
+                if (pageAspectRatios.size < 5) {
+                    if (width > 0 && height > 0) {
+                        pageAspectRatios.add(height.toFloat() / width.toFloat())
+                    }
+
+                    if (pageAspectRatios.size == 5) {
+                        val webtoonCount = pageAspectRatios.count { it > 2.0f }
+                        if (webtoonCount >= 3) {
+                            setMangaReadingMode(ReadingMode.WEBTOON)
+                            eventChannel.trySend(Event.ShowSnackbar(SYMR.strings.eh_auto_webtoon_snack))
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1453,6 +1526,7 @@ class ReaderViewModel(
         val autoScroll: Boolean = false,
         val isAutoScrollEnabled: Boolean = false,
         val ehAutoscrollFreq: String = "",
+        val coverColor: Int? = null,
         // SY <--
     ) {
         val currentChapter: ReaderChapter?
@@ -1500,5 +1574,6 @@ class ReaderViewModel(
             val secondPage: ReaderPage? = null, /* SY <-- */
         ) : Event
         data class CopyImage(val uri: Uri) : Event
+        data class ShowSnackbar(val stringRes: StringResource) : Event
     }
 }

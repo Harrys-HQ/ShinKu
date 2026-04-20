@@ -176,6 +176,7 @@ object SettingsReaderScreen : SearchableSettings {
 
     @Composable
     private fun getPagedGroup(readerPreferences: ReaderPreferences): Preference.PreferenceGroup {
+        val navigator = cafe.adriel.voyager.navigator.LocalNavigator.current
         val navModePref = readerPreferences.navigationModePager()
         val imageScaleTypePref = readerPreferences.imageScaleType()
         val dualPageSplitPref = readerPreferences.dualPageSplitPaged()
@@ -196,6 +197,11 @@ object SettingsReaderScreen : SearchableSettings {
                         .toMap()
                         .toImmutableMap(),
                     title = stringResource(MR.strings.pref_viewer_nav),
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = "Live Preview",
+                    subtitle = "Test your tap zones",
+                    onClick = { navigator?.push(com.shinku.reader.presentation.more.settings.screen.GesturePreviewScreen()) },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.pagerNavInverted(),
@@ -279,6 +285,7 @@ object SettingsReaderScreen : SearchableSettings {
 
     @Composable
     private fun getWebtoonGroup(readerPreferences: ReaderPreferences): Preference.PreferenceGroup {
+        val navigator = cafe.adriel.voyager.navigator.LocalNavigator.current
         val numberFormat = remember { NumberFormat.getPercentInstance() }
 
         val navModePref = readerPreferences.navigationModeWebtoon()
@@ -301,6 +308,11 @@ object SettingsReaderScreen : SearchableSettings {
                         .toMap()
                         .toImmutableMap(),
                     title = stringResource(MR.strings.pref_viewer_nav),
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = "Live Preview",
+                    subtitle = "Test your tap zones",
+                    onClick = { navigator?.push(com.shinku.reader.presentation.more.settings.screen.GesturePreviewScreen()) },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.webtoonNavInverted(),

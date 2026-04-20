@@ -39,6 +39,7 @@ object SettingsDownloadScreen : SearchableSettings {
         val downloadPreferences = remember { Injekt.get<DownloadPreferences>() }
         val parallelSourceLimit by downloadPreferences.parallelSourceLimit().collectAsState()
         val parallelPageLimit by downloadPreferences.parallelPageLimit().collectAsState()
+        val downloadThreadsPerPage by downloadPreferences.downloadThreadsPerPage().collectAsState()
         return listOf(
             Preference.PreferenceItem.SwitchPreference(
                 preference = downloadPreferences.downloadOnlyOverWifi(),
@@ -65,6 +66,13 @@ object SettingsDownloadScreen : SearchableSettings {
                 title = stringResource(MR.strings.pref_download_concurrent_pages),
                 subtitle = stringResource(MR.strings.pref_download_concurrent_pages_summary),
                 onValueChanged = { downloadPreferences.parallelPageLimit().set(it) },
+            ),
+            Preference.PreferenceItem.SliderPreference(
+                value = downloadThreadsPerPage,
+                valueRange = 1..8,
+                title = "Download threads per page",
+                subtitle = "Number of parallel connections for a single image",
+                onValueChanged = { downloadPreferences.downloadThreadsPerPage().set(it) },
             ),
             getDeleteChaptersGroup(
                 downloadPreferences = downloadPreferences,

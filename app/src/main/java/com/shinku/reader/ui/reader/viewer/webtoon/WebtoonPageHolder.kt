@@ -83,6 +83,9 @@ class WebtoonPageHolder(
     init {
         refreshLayoutParams()
 
+        frame.onImageDimensionsLoaded = { width, height ->
+            page?.let { viewer.activity.viewModel.onPageDimensionsLoaded(it, width, height) }
+        }
         frame.onImageLoaded = { onImageDecoded() }
         frame.onImageLoadError = { error -> setError(error) }
         frame.onScaleChanged = { viewer.activity.hideMenu() }

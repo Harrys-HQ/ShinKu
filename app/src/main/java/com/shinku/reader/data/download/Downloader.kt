@@ -47,7 +47,13 @@ import logcat.LogPriority
 import com.shinku.reader.core.common.archive.ZipWriter
 import nl.adaptivity.xmlutil.serialization.XML
 import okhttp3.Response
+import okhttp3.Request
 import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.storage.openFileDescriptor
+import eu.kanade.tachiyomi.network.awaitSuccess
+import kotlinx.coroutines.awaitAll
+import java.io.FileOutputStream
+import java.nio.channels.FileChannel
 import com.shinku.reader.core.common.storage.extension
 import com.shinku.reader.core.common.util.lang.launchIO
 import com.shinku.reader.core.common.util.lang.launchNow
@@ -84,6 +90,7 @@ class Downloader(
     private val xml: XML = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
     private val getTracks: GetTracks = Injekt.get(),
+    private val handler: com.shinku.reader.data.DatabaseHandler = Injekt.get(),
     // SY -->
     private val sourcePreferences: SourcePreferences = Injekt.get(),
     // SY <--
@@ -482,7 +489,7 @@ class Downloader(
                 chapterCache.isImageInCache(page.imageUrl!!) ->
                     copyImageFromCache(chapterCache.getImageFile(page.imageUrl!!), tmpDir, filename)
 
-                else -> downloadImage(page, download.source, tmpDir, filename, dataSaver)
+                else -> downloadImage(page, download, tmpDir, filename, dataSaver)
             }
 
             // When the page is ready, set page path, progress (just in case) and status
@@ -510,13 +517,35 @@ class Downloader(
      */
     private suspend fun downloadImage(
         page: Page,
-        source: HttpSource,
+        download: Download,
         tmpDir: UniFile,
         filename: String,
         dataSaver: DataSaver,
     ): UniFile {
         page.status = Page.State.DownloadImage
         page.progress = 0
+
+        val source = download.source
+        val threads = downloadPreferences.downloadThreadsPerPage().get()
+        return if (threads > 1 && !source.isEhBasedSource()) {
+            try {
+                chunkedDownload(page, download, tmpDir, filename, threads)
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Chunked download failed for ${page.number}, falling back" }
+                downloadImageSingleThreaded(page, source, tmpDir, filename, dataSaver)
+            }
+        } else {
+            downloadImageSingleThreaded(page, source, tmpDir, filename, dataSaver)
+        }
+    }
+
+    private suspend fun downloadImageSingleThreaded(
+        page: Page,
+        source: HttpSource,
+        tmpDir: UniFile,
+        filename: String,
+        dataSaver: DataSaver,
+    ): UniFile {
         return flow {
             val response = source.getImage(page, dataSaver)
             val file = tmpDir.createFile("$filename.tmp")!!
@@ -578,6 +607,153 @@ class Downloader(
         return ImageUtil.getExtensionFromMimeType(mime) { file.openInputStream() }
     }
 
+    private suspend fun chunkedDownload(
+        page: Page,
+        download: Download,
+        tmpDir: UniFile,
+        filename: String,
+        threads: Int,
+    ): UniFile {
+        val url = page.imageUrl ?: download.source.getImageUrl(page)
+        val source = download.source
+        val client = source.client
+        val downloadId = download.chapter.id!!
+
+        // 1. Check for range support
+        val headRequest = Request.Builder().url(url).head().build()
+        val headResponse = client.newCall(headRequest).awaitSuccess()
+        val contentLength = headResponse.header("Content-Length")?.toLong() ?: -1L
+        val acceptRanges = headResponse.header("Accept-Ranges") == "bytes"
+        val contentType = headResponse.header("Content-Type")
+        headResponse.close()
+
+        if (contentLength <= 1024 * 512 || !acceptRanges) { // Skip for < 512KB or no range support
+            return downloadImageSingleThreaded(page, source, tmpDir, filename, DataSaver.NoOp)
+        }
+
+        val file = tmpDir.findFile("$filename.tmp") ?: tmpDir.createFile("$filename.tmp")!!
+
+        // Load existing progress if any
+        val existingChunks = handler.awaitListExecutable {
+            download_progressQueries.getChunkProgress(url)
+        }
+
+        val chunks = if (existingChunks.isNotEmpty() && existingChunks.size == threads) {
+            existingChunks.map {
+                Chunk(it.chunk_index.toInt(), it.start_byte, it.end_byte, it.bytes_downloaded, it.is_complete == 1L)
+            }
+        } else {
+            // Clean up old progress if mismatch or new download
+            handler.await { download_progressQueries.deleteByPageUrl(url) }
+            val chunkSize = contentLength / threads
+            (0 until threads).map { i ->
+                val start = i * chunkSize
+                val end = if (i == threads - 1) contentLength - 1 else (i + 1) * chunkSize - 1
+                Chunk(i, start, end, 0, false)
+            }
+        }
+
+        // Pre-allocate if new file
+        if (file.length() == 0L) {
+            file.openFileDescriptor(context, "rw").use { pfd ->
+                try {
+                    android.system.Os.posix_fallocate(pfd.fileDescriptor, 0, contentLength)
+                } catch (e: Exception) {
+                    // Ignore if not supported on the filesystem
+                }
+            }
+        }
+
+        val progressMap = java.util.concurrent.ConcurrentHashMap<Int, Long>()
+        chunks.forEach { progressMap[it.index] = it.bytesDownloaded }
+
+        supervisorScope {
+            chunks.filter { !it.isComplete }.map { chunk ->
+                async(Dispatchers.IO) {
+                    val actualStart = chunk.startByte + chunk.bytesDownloaded
+                    if (actualStart >= chunk.endByte) return@async
+
+                    val request = Request.Builder()
+                        .url(url)
+                        .addHeader("Range", "bytes=$actualStart-${chunk.endByte}")
+                        .build()
+
+                    client.newCall(request).awaitSuccess().use { res ->
+                        if (!res.isSuccessful) throw Exception("Chunk ${chunk.index} failed: ${res.code}")
+
+                        file.openFileDescriptor(context, "rw").use { pfd ->
+                            val outStream = FileOutputStream(pfd.fileDescriptor)
+                            val channel = outStream.channel
+                            channel.position(actualStart)
+
+                            val sourceBuffer = res.body.source()
+                            val buffer = ByteArray(8192)
+                            var bytesRead: Int
+                            var downloadedInThisSession = 0L
+
+                            while (sourceBuffer.read(buffer).also { bytesRead = it } != -1) {
+                                channel.write(java.nio.ByteBuffer.wrap(buffer, 0, bytesRead))
+                                downloadedInThisSession += bytesRead
+                                val totalChunkDownloaded = chunk.bytesDownloaded + downloadedInThisSession
+                                progressMap[chunk.index] = totalChunkDownloaded
+
+                                // Update total progress
+                                val totalDownloaded = progressMap.values.sum()
+                                page.progress = (totalDownloaded * 100 / contentLength).toInt()
+
+                                // Persist chunk progress periodically
+                                if (downloadedInThisSession % (1024 * 100) == 0L) { // Every 100KB
+                                    handler.await {
+                                        download_progressQueries.updateChunkProgress(
+                                            pageUrl = url,
+                                            chunkIndex = chunk.index.toLong(),
+                                            downloadId = downloadId,
+                                            startByte = chunk.startByte,
+                                            endByte = chunk.endByte,
+                                            bytesDownloaded = totalChunkDownloaded,
+                                            isComplete = if (totalChunkDownloaded >= (chunk.endByte - chunk.startByte + 1)) 1L else 0L
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Final chunk update
+                            val finalChunkDownloaded = chunk.bytesDownloaded + downloadedInThisSession
+                            handler.await {
+                                download_progressQueries.updateChunkProgress(
+                                    pageUrl = url,
+                                    chunkIndex = chunk.index.toLong(),
+                                    downloadId = downloadId,
+                                    startByte = chunk.startByte,
+                                    endByte = chunk.endByte,
+                                    bytesDownloaded = finalChunkDownloaded,
+                                    isComplete = 1L
+                                )
+                            }
+                        }
+                    }
+                }
+            }.awaitAll()
+        }
+
+        val extension = ImageUtil.getExtensionFromMimeType(contentType) { file.openInputStream() }
+        file.renameTo("$filename.$extension")
+
+        // Clean up DB on success
+        handler.await {
+            download_progressQueries.deleteByPageUrl(url)
+        }
+
+        return file
+    }
+
+    private data class Chunk(
+        val index: Int,
+        val startByte: Long,
+        val endByte: Long,
+        val bytesDownloaded: Long,
+        val isComplete: Boolean,
+    )
     private fun splitTallImageIfNeeded(page: Page, tmpDir: UniFile) {
         if (!downloadPreferences.splitTallImages().get()) return
 
