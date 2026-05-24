@@ -56,6 +56,8 @@ ShinKu preserves the best features from its predecessors, TachiyomiSY and Mihon:
 
 ## 📄 Documentation
 
+- **[Architecture Mapping](./architecture.md)**
+- **[Extension Safeguards (The Freeze Zone)](./extension-safeguards.md)**
 - **[Full Changelog](./CHANGELOG.md)**
 - **[GitHub Repository](https://github.com/shinkureader/shinku)**
 

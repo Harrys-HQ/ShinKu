@@ -9,3 +9,7 @@ This file acts as a central registry for all active, completed, or planned work 
 - [Stability & Performance 2026](./tracks/stability-and-performance-2026/index.md) - Critical startup race condition fixes and database indexing optimizations.
 - [Performance & Maintenance 2026](./tracks/performance-and-maintenance-2026/index.md) - Networking, image loading, and build cleanup optimizations.
 - [Fluidity & Power 2026](./tracks/fluidity-and-power-2026/index.md) - Visual immersion, multi-threaded performance, and on-device intelligence.
+- [Extension Compatibility & Architectural Safeguards](./tracks/extension-compatibility-safeguards/index.md) - Protecting the bridge between ShinKu and APK extensions.
+- [UI Performance & Resource Optimization](./tracks/ui-performance-optimization/index.md) - Jetpack Compose tuning, resource pruning, and database maintenance.
+- [Tracker Synchronization](./tracks/tracker-synchronization/index.md) - Unified architecture for cross-service tracking updates.
+- [Search UX Refinement](./tracks/search-ux-refinement/index.md) - Modernizing the global search experience.

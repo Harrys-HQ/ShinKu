@@ -28,6 +28,7 @@ import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.LoadingScreen
 import com.shinku.reader.presentation.core.util.plus
 
+@androidx.compose.runtime.Immutable
 sealed class SourceFeedUI {
     abstract val id: Long
 
@@ -36,36 +37,41 @@ sealed class SourceFeedUI {
         @ReadOnlyComposable
         get
 
-    abstract val results: List<Manga>?
+    abstract val results: kotlinx.collections.immutable.ImmutableList<Manga>?
 
-    abstract fun withResults(results: List<Manga>?): SourceFeedUI
+    abstract fun withResults(results: kotlinx.collections.immutable.ImmutableList<Manga>?): SourceFeedUI
 
-    data class Latest(override val results: List<Manga>?) : SourceFeedUI() {
+    @androidx.compose.runtime.Immutable
+    data class Latest(override val results: kotlinx.collections.immutable.ImmutableList<Manga>?) : SourceFeedUI() {
         override val id: Long = -1
         override val title: String
             @Composable
             @ReadOnlyComposable
             get() = stringResource(MR.strings.latest)
 
-        override fun withResults(results: List<Manga>?): SourceFeedUI {
+        override fun withResults(results: kotlinx.collections.immutable.ImmutableList<Manga>?): SourceFeedUI {
             return copy(results = results)
         }
     }
-    data class Browse(override val results: List<Manga>?) : SourceFeedUI() {
+
+    @androidx.compose.runtime.Immutable
+    data class Browse(override val results: kotlinx.collections.immutable.ImmutableList<Manga>?) : SourceFeedUI() {
         override val id: Long = -2
         override val title: String
             @Composable
             @ReadOnlyComposable
             get() = stringResource(MR.strings.browse)
 
-        override fun withResults(results: List<Manga>?): SourceFeedUI {
+        override fun withResults(results: kotlinx.collections.immutable.ImmutableList<Manga>?): SourceFeedUI {
             return copy(results = results)
         }
     }
+
+    @androidx.compose.runtime.Immutable
     data class SourceSavedSearch(
         val feed: FeedSavedSearch,
         val savedSearch: SavedSearch,
-        override val results: List<Manga>?,
+        override val results: kotlinx.collections.immutable.ImmutableList<Manga>?,
     ) : SourceFeedUI() {
         override val id: Long
             get() = feed.id
@@ -75,7 +81,7 @@ sealed class SourceFeedUI {
             @ReadOnlyComposable
             get() = savedSearch.name
 
-        override fun withResults(results: List<Manga>?): SourceFeedUI {
+        override fun withResults(results: kotlinx.collections.immutable.ImmutableList<Manga>?): SourceFeedUI {
             return copy(results = results)
         }
     }

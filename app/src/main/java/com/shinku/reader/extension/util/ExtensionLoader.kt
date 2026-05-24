@@ -88,9 +88,11 @@ internal object ExtensionLoader {
             }
         }
 
-        val target = File(getPrivateExtensionDir(context), "${extension.packageName}.$PRIVATE_EXTENSION_EXTENSION")
+        val target = File(getPrivateExtensionDir(context), "${extension.packageName}-${PackageInfoCompat.getLongVersionCode(extension)}.$PRIVATE_EXTENSION_EXTENSION")
         return try {
-            target.delete()
+            getPrivateExtensionDir(context).listFiles()
+                ?.filter { it.name == "${extension.packageName}.$PRIVATE_EXTENSION_EXTENSION" || (it.name.startsWith("${extension.packageName}-") && it.name.endsWith(".$PRIVATE_EXTENSION_EXTENSION")) }
+                ?.forEach { it.delete() }
             file.copyAndSetReadOnlyTo(target, overwrite = true)
             if (currentExtension != null) {
                 ExtensionInstallReceiver.notifyReplaced(context, extension.packageName)
@@ -106,7 +108,9 @@ internal object ExtensionLoader {
     }
 
     fun uninstallPrivateExtension(context: Context, pkgName: String) {
-        File(getPrivateExtensionDir(context), "$pkgName.$PRIVATE_EXTENSION_EXTENSION").delete()
+        getPrivateExtensionDir(context).listFiles()
+            ?.filter { it.name == "$pkgName.$PRIVATE_EXTENSION_EXTENSION" || (it.name.startsWith("$pkgName-") && it.name.endsWith(".$PRIVATE_EXTENSION_EXTENSION")) }
+            ?.forEach { it.delete() }
     }
 
     /**
@@ -194,7 +198,11 @@ internal object ExtensionLoader {
     }
 
     private fun getExtensionInfoFromPkgName(context: Context, pkgName: String): ExtensionInfo? {
-        val privateExtensionFile = File(getPrivateExtensionDir(context), "$pkgName.$PRIVATE_EXTENSION_EXTENSION")
+        val privateExtensionFile = getPrivateExtensionDir(context).listFiles()
+            ?.filter { it.name == "$pkgName.$PRIVATE_EXTENSION_EXTENSION" || (it.name.startsWith("$pkgName-") && it.name.endsWith(".$PRIVATE_EXTENSION_EXTENSION")) }
+            ?.maxByOrNull { it.lastModified() }
+            ?: File(getPrivateExtensionDir(context), "$pkgName.$PRIVATE_EXTENSION_EXTENSION")
+
         val privatePkg = if (privateExtensionFile.isFile) {
             context.packageManager.getPackageArchiveInfo(privateExtensionFile.absolutePath, PACKAGE_FLAGS)
                 ?.takeIf { isPackageAnExtension(it) }

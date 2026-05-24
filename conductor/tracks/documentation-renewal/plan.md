@@ -9,6 +9,10 @@
 ## Phase 2: Implementation
 - [x] Update `docs/index.md` with comprehensive feature lists and setup guide.
 - [x] Update `README.md` to match `docs/index.md` and clarify "Retained Core Features".
+- [x] Create `docs/architecture.md` mapping the data flow.
+- [x] Create `docs/extension-safeguards.md` (The Freeze Zone).
+- [x] Update `CONTRIBUTING.md` with build variant mandates.
+- [x] Expand `conductor/workflow.md` with the track system documentation.
 - [x] Update `conductor/product.md` to be the project's source of truth.
 - [x] Update `docs/CHANGELOG.md` to accurately list 2.0.0 features.
 - [x] Update `docs/version.json` with correct URLs.

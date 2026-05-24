@@ -25,9 +25,9 @@ class AddTracks(
     private val syncChapterProgressWithTrack: SyncChapterProgressWithTrack,
     private val getChaptersByMangaId: GetChaptersByMangaId,
     private val trackerManager: TrackerManager,
+    private val getTracks: GetTracks,
 ) {
 
-    // TODO: update all trackers based on common data
     suspend fun bind(tracker: Tracker, item: Track, mangaId: Long) = withNonCancellableContext {
         withIOContext {
             val allChapters = getChaptersByMangaId.await(mangaId)
@@ -35,6 +35,23 @@ class AddTracks(
             tracker.bind(item, hasReadChapters)
 
             var track = item.toDomainTrack(idRequired = false) ?: return@withIOContext
+
+            // SY --> Progress Inheritance
+            val existingTracks = getTracks.await(mangaId)
+            if (existingTracks.isNotEmpty()) {
+                val bestTrack = existingTracks.maxByOrNull { it.lastChapterRead }
+                if (bestTrack != null) {
+                    if (bestTrack.lastChapterRead > track.lastChapterRead) {
+                        track = track.copy(lastChapterRead = bestTrack.lastChapterRead)
+                        tracker.setRemoteLastChapterRead(track.toDbTrack(), track.lastChapterRead.toInt())
+                    }
+                    if (track.status == tracker.getReadingStatus() && bestTrack.status != tracker.getReadingStatus()) {
+                        track = track.copy(status = bestTrack.status)
+                        tracker.setRemoteStatus(track.toDbTrack(), track.status)
+                    }
+                }
+            }
+            // SY <--
 
             insertTrack.await(track)
 

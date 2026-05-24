@@ -3,7 +3,6 @@ package com.shinku.reader.presentation.browse.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +25,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.shinku.reader.presentation.components.SearchToolbar
 import com.shinku.reader.ui.browse.source.globalsearch.SourceFilter
 import com.shinku.reader.i18n.MR
@@ -48,86 +48,83 @@ fun GlobalSearchToolbar(
     onToggleResults: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
-    Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
-        Box {
-            SearchToolbar(
-                searchQuery = searchQuery,
-                onChangeSearchQuery = onChangeSearchQuery,
-                onSearch = onSearch,
-                onClickCloseSearch = navigateUp,
-                onClickImageSearch = onClickImageSearch,
-                navigateUp = navigateUp,
-                scrollBehavior = scrollBehavior,
-            )
-            if (progress in 1..<total) {
-                LinearProgressIndicator(
-                    progress = { progress / total.toFloat() },
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .fillMaxWidth(),
-                )
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = MaterialTheme.padding.small),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-        ) {
-            // TODO: make this UX better; it only applies when triggering a new search
-            if (!hideSourceFilter) {
-                FilterChip(
-                    selected = sourceFilter == SourceFilter.PinnedOnly,
-                    onClick = { onChangeSearchFilter(SourceFilter.PinnedOnly) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.PushPin,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(FilterChipDefaults.IconSize),
-                        )
-                    },
-                    label = {
-                        Text(text = stringResource(MR.strings.pinned_sources))
-                    },
-                )
-                FilterChip(
-                    selected = sourceFilter == SourceFilter.All,
-                    onClick = { onChangeSearchFilter(SourceFilter.All) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Outlined.DoneAll,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(FilterChipDefaults.IconSize),
-                        )
-                    },
-                    label = {
-                        Text(text = stringResource(MR.strings.all))
-                    },
-                )
-
-                VerticalDivider()
-            }
-
-            FilterChip(
-                selected = onlyShowHasResults,
-                onClick = { onToggleResults() },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.FilterList,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(FilterChipDefaults.IconSize),
+    SearchToolbar(
+        modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+        searchQuery = searchQuery,
+        onChangeSearchQuery = onChangeSearchQuery,
+        onSearch = onSearch,
+        onClickCloseSearch = navigateUp,
+        onClickImageSearch = onClickImageSearch,
+        navigateUp = navigateUp,
+        scrollBehavior = scrollBehavior,
+        bottomContent = {
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                if (progress in 1..<total) {
+                    LinearProgressIndicator(
+                        progress = { progress / total.toFloat() },
+                        modifier = Modifier.fillMaxWidth(),
                     )
-                },
-                label = {
-                    Text(text = stringResource(MR.strings.has_results))
-                },
-            )
-        }
+                }
 
-        HorizontalDivider()
-    }
+                Row(
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = MaterialTheme.padding.small)
+                        .padding(bottom = MaterialTheme.padding.small),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (!hideSourceFilter) {
+                        FilterChip(
+                            selected = sourceFilter == SourceFilter.PinnedOnly,
+                            onClick = { onChangeSearchFilter(SourceFilter.PinnedOnly) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.PushPin,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                )
+                            },
+                            label = {
+                                Text(text = stringResource(MR.strings.pinned_sources))
+                            },
+                        )
+                        FilterChip(
+                            selected = sourceFilter == SourceFilter.All,
+                            onClick = { onChangeSearchFilter(SourceFilter.All) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.DoneAll,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                )
+                            },
+                            label = {
+                                Text(text = stringResource(MR.strings.all))
+                            },
+                        )
+
+                        VerticalDivider(modifier = Modifier.size(height = 32.dp, width = 1.dp))
+                    }
+
+                    FilterChip(
+                        selected = onlyShowHasResults,
+                        onClick = { onToggleResults() },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.FilterList,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize),
+                            )
+                        },
+                        label = {
+                            Text(text = stringResource(MR.strings.has_results))
+                        },
+                    )
+                }
+
+                HorizontalDivider()
+            }
+        },
+    )
 }

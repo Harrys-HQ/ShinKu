@@ -1,3 +1,9 @@
+/*
+ * DANGER: DO NOT RENAME THIS PACKAGE OR CLASS.
+ *
+ * This file is part of the "Freeze Zone" required for APK extension compatibility.
+ * Renaming or moving this file will break all installed extensions.
+ */
 @file:Suppress("PropertyName")
 
 package eu.kanade.tachiyomi.source.model

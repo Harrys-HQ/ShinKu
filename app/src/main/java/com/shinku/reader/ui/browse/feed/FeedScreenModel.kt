@@ -99,7 +99,7 @@ open class FeedScreenModel(
                 }
                 mutableState.update { state ->
                     state.copy(
-                        items = items,
+                        items = items.toImmutableList(),
                     )
                 }
                 getFeed(items)
@@ -146,7 +146,7 @@ open class FeedScreenModel(
                     }
                     
                     val localManga = networkToLocalManga(recommendedManga)
-                    mutableState.update { it.copy(recommendations = localManga) }
+                    mutableState.update { it.copy(recommendations = localManga.toImmutableList()) }
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
@@ -161,7 +161,7 @@ open class FeedScreenModel(
             val newItems = state.value.items?.map { it.copy(results = null) } ?: return@launchIO
             mutableState.update { state ->
                 state.copy(
-                    items = newItems,
+                    items = newItems.toImmutableList(),
                 )
             }
             getFeed(newItems)
@@ -275,7 +275,7 @@ open class FeedScreenModel(
             } else {
                 LocaleHelper.getLocalizedDisplayName(source?.lang)
             },
-            results,
+            results?.toImmutableList(),
         )
     }
 
@@ -308,13 +308,13 @@ open class FeedScreenModel(
 
                     val result = withIOContext {
                         itemUI.copy(
-                            results = networkToLocalManga(page.map { it.toDomainManga(itemUI.source!!.id) }),
+                            results = networkToLocalManga(page.map { it.toDomainManga(itemUI.source!!.id) }).toImmutableList(),
                         )
                     }
 
                     mutableState.update { state ->
                         state.copy(
-                            items = state.items?.map { if (it.feed.id == result.feed.id) result else it },
+                            items = state.items?.map { if (it.feed.id == result.feed.id) result else it }?.toImmutableList(),
                         )
                     }
                 }
@@ -367,10 +367,11 @@ open class FeedScreenModel(
     }
 }
 
+@androidx.compose.runtime.Immutable
 data class FeedScreenState(
     val dialog: FeedScreenModel.Dialog? = null,
-    val items: List<FeedItemUI>? = null,
-    val recommendations: List<DomainManga>? = null,
+    val items: kotlinx.collections.immutable.ImmutableList<FeedItemUI>? = null,
+    val recommendations: kotlinx.collections.immutable.ImmutableList<DomainManga>? = null,
 ) {
     val isLoading
         get() = items == null && recommendations == null
