@@ -172,7 +172,7 @@ open class SourceFeedScreenModel(
                     }
 
                     val titles = withIOContext {
-                        networkToLocalManga(page.map { it.toDomainManga(source.id) })
+                        networkToLocalManga(page.map { it.toDomainManga(source.id) }).toImmutableList()
                     }
 
                     mutableState.update { state ->

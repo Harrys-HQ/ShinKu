@@ -44,6 +44,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
 import com.shinku.reader.domain.track.interactor.RefreshTracks
+import com.shinku.reader.domain.track.interactor.SyncTrack
 import com.shinku.reader.domain.track.model.toDbTrack
 import com.shinku.reader.domain.track.service.TrackPreferences
 import com.shinku.reader.domain.ui.UiPreferences
@@ -353,7 +354,7 @@ data class TrackInfoDialogHomeScreen(
 
         fun togglePrivate(item: TrackItem) {
             screenModelScope.launchNonCancellable {
-                item.tracker.setRemotePrivate(item.track!!.toDbTrack(), !item.track.private)
+                Injekt.get<SyncTrack>().updatePrivate(mangaId, !item.track!!.private)
             }
         }
 
@@ -419,7 +420,7 @@ private data class TrackStatusSelectorScreen(
 
         fun setStatus() {
             screenModelScope.launchNonCancellable {
-                tracker.setRemoteStatus(track.toDbTrack(), state.value.selection)
+                Injekt.get<SyncTrack>().updateStatus(track.mangaId, state.value.selection)
             }
         }
 
@@ -478,7 +479,7 @@ private data class TrackChapterSelectorScreen(
 
         fun setChapter() {
             screenModelScope.launchNonCancellable {
-                tracker.setRemoteLastChapterRead(track.toDbTrack(), state.value.selection)
+                Injekt.get<SyncTrack>().updateProgress(Injekt.get<Application>(), track.mangaId, state.value.selection.toDouble())
             }
         }
 
@@ -532,7 +533,8 @@ private data class TrackScoreSelectorScreen(
 
         fun setScore() {
             screenModelScope.launchNonCancellable {
-                tracker.setRemoteScore(track.toDbTrack(), state.value.selection)
+                val scoreIndex = tracker.getScoreList().indexOf(state.value.selection)
+                Injekt.get<SyncTrack>().updateScore(track.mangaId, scoreIndex)
             }
         }
 
@@ -650,9 +652,9 @@ private data class TrackDateSelectorScreen(
             val localMillis = millis.convertEpochMillisZone(ZoneOffset.UTC, ZoneOffset.systemDefault())
             screenModelScope.launchNonCancellable {
                 if (start) {
-                    tracker.setRemoteStartDate(track.toDbTrack(), localMillis)
+                    Injekt.get<SyncTrack>().updateStartDate(track.mangaId, localMillis)
                 } else {
-                    tracker.setRemoteFinishDate(track.toDbTrack(), localMillis)
+                    Injekt.get<SyncTrack>().updateFinishDate(track.mangaId, localMillis)
                 }
             }
         }
@@ -739,9 +741,9 @@ private data class TrackDateRemoverScreen(
         fun removeDate() {
             screenModelScope.launchNonCancellable {
                 if (start) {
-                    tracker.setRemoteStartDate(track.toDbTrack(), 0)
+                    Injekt.get<SyncTrack>().updateStartDate(track.mangaId, 0)
                 } else {
-                    tracker.setRemoteFinishDate(track.toDbTrack(), 0)
+                    Injekt.get<SyncTrack>().updateFinishDate(track.mangaId, 0)
                 }
             }
         }
@@ -874,6 +876,7 @@ private data class TrackerRemoveScreen(
                 )
             },
             text = {
+                val context = LocalContext.current
                 Column(
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
                 ) {

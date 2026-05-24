@@ -1,3 +1,9 @@
+/*
+ * DANGER: DO NOT RENAME THIS PACKAGE OR CLASS.
+ *
+ * This file is part of the "Freeze Zone" required for APK extension compatibility.
+ * Renaming or moving this file will break all installed extensions.
+ */
 package eu.kanade.tachiyomi.network
 
 import android.content.Context

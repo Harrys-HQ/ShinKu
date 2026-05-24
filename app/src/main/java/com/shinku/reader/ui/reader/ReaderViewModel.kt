@@ -16,7 +16,7 @@ import com.shinku.reader.domain.manga.model.readerOrientation
 import com.shinku.reader.domain.manga.model.readingMode
 import com.shinku.reader.domain.source.interactor.GetIncognitoState
 import com.shinku.reader.domain.sync.SyncPreferences
-import com.shinku.reader.domain.track.interactor.TrackChapter
+import com.shinku.reader.domain.track.interactor.SyncTrack
 import com.shinku.reader.domain.track.service.TrackPreferences
 import com.shinku.reader.domain.ui.UiPreferences
 import com.shinku.reader.data.database.models.toDomainChapter
@@ -130,7 +130,7 @@ class ReaderViewModel(
     private val basePreferences: BasePreferences,
     private val downloadPreferences: DownloadPreferences,
     private val trackPreferences: TrackPreferences,
-    private val trackChapter: TrackChapter,
+    private val syncTrack: SyncTrack,
     private val getManga: GetManga,
     private val getChaptersByMangaId: GetChaptersByMangaId,
     private val getNextChapters: GetNextChapters,
@@ -1461,7 +1461,7 @@ class ReaderViewModel(
         val context = Injekt.get<Application>()
 
         viewModelScope.launchNonCancellable {
-            trackChapter.await(context, manga.id, readerChapter.chapter.chapter_number.toDouble())
+            syncTrack.updateProgress(context, manga.id, readerChapter.chapter.chapter_number.toDouble())
         }
     }
 

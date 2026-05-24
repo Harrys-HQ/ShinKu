@@ -27,6 +27,7 @@ import com.shinku.reader.domain.source.interactor.ToggleSourcePin
 import com.shinku.reader.domain.track.interactor.AddTracks
 import com.shinku.reader.domain.track.interactor.RefreshTracks
 import com.shinku.reader.domain.track.interactor.SyncChapterProgressWithTrack
+import com.shinku.reader.domain.track.interactor.SyncTrack
 import com.shinku.reader.domain.track.interactor.TrackChapter
 import com.shinku.reader.di.InjektModule
 import com.shinku.reader.di.addFactory
@@ -159,7 +160,8 @@ class DomainModule : InjektModule {
 
         addSingletonFactory<TrackRepository> { TrackRepositoryImpl(get()) }
         addFactory { TrackChapter(get(), get(), get(), get()) }
-        addFactory { AddTracks(get(), get(), get(), get()) }
+        addFactory { SyncTrack(get(), get(), get(), get()) }
+        addFactory { AddTracks(get(), get(), get(), get(), get()) }
         addFactory { RefreshTracks(get(), get(), get(), get()) }
         addFactory { DeleteTrack(get()) }
         addFactory { GetTracksPerManga(get(), get()) }

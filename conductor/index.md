@@ -16,3 +16,7 @@
 - [Anime Support Research](./tracks/anime-support-research/index.md)
 - [Stability & Performance 2026](./tracks/stability-and-performance-2026/index.md)
 - [Performance & Maintenance 2026](./tracks/performance-and-maintenance-2026/index.md)
+- [Extension Compatibility & Architectural Safeguards](./tracks/extension-compatibility-safeguards/index.md)
+- [UI Performance & Resource Optimization](./tracks/ui-performance-optimization/index.md)
+- [Tracker Synchronization](./tracks/tracker-synchronization/index.md)
+- [Search UX Refinement](./tracks/search-ux-refinement/index.md)

@@ -129,6 +129,7 @@ fun AppBar(
     onCancelActionMode: () -> Unit = {},
 
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    bottomContent: @Composable () -> Unit = {},
 ) {
     Column(
         modifier = modifier,
@@ -159,6 +160,8 @@ fun AppBar(
             ),
             scrollBehavior = scrollBehavior,
         )
+
+        bottomContent()
     }
 }
 
@@ -280,6 +283,7 @@ fun SearchToolbar(
     scrollBehavior: TopAppBarScrollBehavior? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    bottomContent: @Composable () -> Unit = {},
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -422,6 +426,7 @@ fun SearchToolbar(
         },
         isActionMode = false,
         scrollBehavior = scrollBehavior,
+        bottomContent = bottomContent,
     )
 }
 

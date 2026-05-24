@@ -52,13 +52,14 @@ import com.shinku.reader.presentation.core.screens.LoadingScreen
 import com.shinku.reader.presentation.core.util.plus
 import kotlin.time.Duration.Companion.seconds
 
+@androidx.compose.runtime.Immutable
 data class FeedItemUI(
     val feed: FeedSavedSearch,
     val savedSearch: SavedSearch?,
     val source: CatalogueSource?,
     val title: String,
     val subtitle: String,
-    val results: List<Manga>?,
+    val results: kotlinx.collections.immutable.ImmutableList<Manga>?,
 )
 
 @Composable
