@@ -190,12 +190,12 @@ object SettingsAdvancedScreen : SearchableSettings {
             getDownloadsGroup(downloadPreferences = downloadPreferences),
             getReaderGroup(basePreferences = basePreferences),
             getExtensionsGroup(basePreferences = basePreferences),
-            getDeveloperToolsGroup(),
         )
     }
 
     @Composable
     private fun getBackgroundActivityGroup(): Preference.PreferenceGroup {
+
         val context = LocalContext.current
         val uriHandler = LocalUriHandler.current
 
@@ -594,98 +594,6 @@ object SettingsAdvancedScreen : SearchableSettings {
                         trustExtension.revokeAll()
                         context.toast(MR.strings.requires_app_restart)
                     },
-                ),
-            ),
-        )
-    }
-
-    // SY -->
-    @Composable
-    private fun getDeveloperToolsGroup(): Preference.PreferenceGroup {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-        val sourcePreferences = remember { Injekt.get<SourcePreferences>() }
-        val delegateSourcePreferences = remember { Injekt.get<DelegateSourcePreferences>() }
-        val securityPreferences = remember { Injekt.get<SecurityPreferences>() }
-        return Preference.PreferenceGroup(
-            title = stringResource(SYMR.strings.developer_tools),
-            preferenceItems = persistentListOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = delegateSourcePreferences.delegateSources(),
-                    title = stringResource(SYMR.strings.toggle_delegated_sources),
-                    subtitle = stringResource(
-                        SYMR.strings.toggle_delegated_sources_summary,
-                        stringResource(MR.strings.app_name),
-                        AndroidSourceManager.DELEGATED_SOURCES.values.map { it.sourceName }.distinct()
-                            .joinToString(),
-                    ),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = sourcePreferences.enableSourceBlacklist(),
-                    title = stringResource(SYMR.strings.enable_source_blacklist),
-                    subtitle = stringResource(
-                        SYMR.strings.enable_source_blacklist_summary,
-                        stringResource(MR.strings.app_name),
-                    ),
-                ),
-                kotlin.run {
-                    var enableEncryptDatabase by rememberSaveable { mutableStateOf(false) }
-
-                    if (enableEncryptDatabase) {
-                        val dismiss = { enableEncryptDatabase = false }
-                        AlertDialog(
-                            onDismissRequest = dismiss,
-                            title = { Text(text = stringResource(SYMR.strings.encrypt_database)) },
-                            text = {
-                                Text(
-                                    text = remember {
-                                        HtmlCompat.fromHtml(
-                                            context.stringResource(SYMR.strings.encrypt_database_message),
-                                            HtmlCompat.FROM_HTML_MODE_COMPACT,
-                                        ).toAnnotatedString()
-                                    },
-                                )
-                            },
-                            dismissButton = {
-                                TextButton(onClick = dismiss) {
-                                    Text(text = stringResource(MR.strings.action_cancel))
-                                }
-                            },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = {
-                                        dismiss()
-                                        securityPreferences.encryptDatabase().set(true)
-                                    },
-                                ) {
-                                    Text(text = stringResource(MR.strings.action_ok))
-                                }
-                            },
-                        )
-                    }
-                    Preference.PreferenceItem.SwitchPreference(
-                        title = stringResource(SYMR.strings.encrypt_database),
-                        preference = securityPreferences.encryptDatabase(),
-                        subtitle = stringResource(SYMR.strings.encrypt_database_subtitle),
-                        onValueChanged = {
-                            if (it) {
-                                enableEncryptDatabase = true
-                                false
-                            } else {
-                                true
-                            }
-                        },
-                    )
-                },
-                Preference.PreferenceItem.TextPreference(
-                    title = stringResource(SYMR.strings.open_debug_menu),
-                    subtitle = remember {
-                        HtmlCompat.fromHtml(
-                            context.stringResource(SYMR.strings.open_debug_menu_summary),
-                            HtmlCompat.FROM_HTML_MODE_COMPACT,
-                        ).toAnnotatedString()
-                    },
-                    onClick = { navigator.push(SettingsDebugScreen()) },
                 ),
             ),
         )

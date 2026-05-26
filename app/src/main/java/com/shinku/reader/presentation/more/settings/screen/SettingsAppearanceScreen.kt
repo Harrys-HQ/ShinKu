@@ -43,10 +43,6 @@ object SettingsAppearanceScreen : SearchableSettings {
         return listOf(
             getThemeGroup(uiPreferences = uiPreferences),
             getDisplayGroup(uiPreferences = uiPreferences),
-            // SY -->
-            getNavbarGroup(uiPreferences = uiPreferences),
-            getForkGroup(uiPreferences = uiPreferences),
-            // SY <--
         )
     }
 
@@ -159,70 +155,6 @@ object SettingsAppearanceScreen : SearchableSettings {
         )
     }
 
-    // SY -->
-    @Composable
-    fun getForkGroup(uiPreferences: UiPreferences): Preference.PreferenceGroup {
-        val previewsRowCount by uiPreferences.previewsRowCount().collectAsState()
-
-        return Preference.PreferenceGroup(
-            stringResource(SYMR.strings.pref_category_fork),
-            preferenceItems = persistentListOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.expandFilters(),
-                    title = stringResource(SYMR.strings.toggle_expand_search_filters),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.recommendsInOverflow(),
-                    title = stringResource(SYMR.strings.put_recommends_in_overflow),
-                    subtitle = stringResource(SYMR.strings.put_recommends_in_overflow_summary),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.mergeInOverflow(),
-                    title = stringResource(SYMR.strings.put_merge_in_overflow),
-                    subtitle = stringResource(SYMR.strings.put_merge_in_overflow_summary),
-                ),
-                Preference.PreferenceItem.SliderPreference(
-                    value = previewsRowCount,
-                    title = stringResource(SYMR.strings.pref_previews_row_count),
-                    subtitle = if (previewsRowCount > 0) {
-                        pluralStringResource(
-                            SYMR.plurals.row_count,
-                            previewsRowCount,
-                            previewsRowCount,
-                        )
-                    } else {
-                        stringResource(MR.strings.disabled)
-                    },
-                    valueRange = 0..10,
-                    onValueChanged = {
-                        uiPreferences.previewsRowCount().set(it)
-                        true
-                    },
-                ),
-            ),
-        )
-    }
-
-    @Composable
-    fun getNavbarGroup(uiPreferences: UiPreferences): Preference.PreferenceGroup {
-        return Preference.PreferenceGroup(
-            stringResource(SYMR.strings.pref_category_navbar),
-            preferenceItems = persistentListOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.showNavUpdates(),
-                    title = stringResource(SYMR.strings.pref_hide_updates_button),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.showNavHistory(),
-                    title = stringResource(SYMR.strings.pref_hide_history_button),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = uiPreferences.bottomBarLabels(),
-                    title = stringResource(SYMR.strings.pref_show_bottom_bar_labels),
-                ),
-            ),
-        )
-    }
     // SY <--
 }
 

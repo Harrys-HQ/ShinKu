@@ -98,9 +98,6 @@ object SettingsReaderScreen : SearchableSettings {
             // SY <--
             getNavigationGroup(readerPreferences = readerPref),
             getActionsGroup(readerPreferences = readerPref),
-            // SY -->
-            getForkSettingsGroup(readerPreferences = readerPref),
-            // SY <--
         )
     }
 
@@ -512,68 +509,4 @@ object SettingsReaderScreen : SearchableSettings {
         )
     }
 
-    @Composable
-    private fun getForkSettingsGroup(readerPreferences: ReaderPreferences): Preference.PreferenceGroup {
-        val pageLayout by readerPreferences.pageLayout().collectAsState()
-        return Preference.PreferenceGroup(
-            title = stringResource(SYMR.strings.pref_category_fork),
-            preferenceItems = persistentListOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = readerPreferences.readerInstantRetry(),
-                    title = stringResource(SYMR.strings.skip_queue_on_retry),
-                    subtitle = stringResource(SYMR.strings.skip_queue_on_retry_summary),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = readerPreferences.preserveReadingPosition(),
-                    title = stringResource(SYMR.strings.preserve_reading_position),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = readerPreferences.useAutoWebtoon(),
-                    title = stringResource(SYMR.strings.auto_webtoon_mode),
-                    subtitle = stringResource(SYMR.strings.auto_webtoon_mode_summary),
-                ),
-                Preference.PreferenceItem.MultiSelectListPreference(
-                    preference = readerPreferences.readerBottomButtons(),
-                    title = stringResource(SYMR.strings.reader_bottom_buttons),
-                    subtitle = stringResource(SYMR.strings.reader_bottom_buttons_summary),
-                    entries = ReaderBottomButton.entries
-                        .associate { it.value to stringResource(it.stringRes) }
-                        .toImmutableMap(),
-                ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = readerPreferences.pageLayout(),
-                    title = stringResource(SYMR.strings.page_layout),
-                    subtitle = stringResource(SYMR.strings.automatic_can_still_switch),
-                    entries = ReaderPreferences.PageLayouts
-                        .mapIndexed { index, it -> index to stringResource(it) }
-                        .toMap()
-                        .toImmutableMap(),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = readerPreferences.invertDoublePages(),
-                    title = stringResource(SYMR.strings.invert_double_pages),
-                    enabled = pageLayout != PagerConfig.PageLayout.SINGLE_PAGE,
-                ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = readerPreferences.centerMarginType(),
-                    title = stringResource(SYMR.strings.center_margin),
-                    subtitle = stringResource(SYMR.strings.pref_center_margin_summary),
-                    entries = ReaderPreferences.CenterMarginTypes
-                        .mapIndexed { index, it -> index + 1 to stringResource(it) }
-                        .toMap()
-                        .toImmutableMap(),
-                ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = readerPreferences.archiveReaderMode(),
-                    title = stringResource(SYMR.strings.pref_archive_reader_mode),
-                    subtitle = stringResource(SYMR.strings.pref_archive_reader_mode_summary),
-                    entries = ReaderPreferences.archiveModeTypes
-                        .mapIndexed { index, it -> index to stringResource(it) }
-                        .toMap()
-                        .toImmutableMap(),
-                ),
-            ),
-        )
-    }
-    // SY <--
 }

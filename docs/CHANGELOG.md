@@ -1,5 +1,18 @@
 # ShinKu Changelog
 
+## 2.5.0 "Stability & Refinement" (2026-05-27)
+### Added
+- **Unified Settings Hub:** Consolidated all ShinKu-specific features and SY-legacy preferences into a single "ShinKu Settings" screen for easier navigation.
+- **Enhanced Immersion:** Integrated Mood Lighting, Backdrop Blur, and Haptic Feedback controls directly into the settings.
+- **Tracker Sync Broadcast:** Progress updates, status, and scores are now broadcasted in parallel to all linked tracking services (AniList, MyAnimeList, etc.).
+- **Smart Tracker Inheritance:** Progress is automatically inherited when binding new trackers to existing manga.
+
+### Improved
+- **Search UX:** Refactored Global Search with a responsive toolbar, integrated progress indicators, and scroll-aware chips.
+- **Source Health Intelligence:** Implemented intelligent throttling during library updates based on real-time source health scores (latency/failure rates) without blocking browsing.
+- **Extension Safeguards:** Established a 'Freeze Zone' for legacy packages to protect APK extension compatibility during architectural shifts.
+- **UI Performance:** Leveraged Compose `@Immutable` annotations and `ImmutableList` to further reduce unnecessary recompositions in Feed and Browse screens.
+
 ## 2.4.0 "Fluidity & Power" (2026-04-20)
 ### Added
 - **Dynamic Theming:** Immersive reader and details UI that adapts its color palette to the current manga cover.
