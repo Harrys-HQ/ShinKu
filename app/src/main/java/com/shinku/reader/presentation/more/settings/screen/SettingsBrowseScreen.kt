@@ -44,59 +44,7 @@ object SettingsBrowseScreen : SearchableSettings {
 
         val reposCount by getExtensionRepoCount.subscribe().collectAsState(0)
 
-        // SY -->
-        val scope = rememberCoroutineScope()
-        val hideFeedTab by remember { Injekt.get<UiPreferences>().hideFeedTab().asState(scope) }
-        val uiPreferences = remember { Injekt.get<UiPreferences>() }
-        // SY <--
         return listOf(
-            // SY -->
-            Preference.PreferenceGroup(
-                title = stringResource(MR.strings.label_sources),
-                preferenceItems = persistentListOf(
-                    kotlin.run {
-                        val count by sourcePreferences.sourcesTabCategories().collectAsState()
-                        Preference.PreferenceItem.TextPreference(
-                            title = stringResource(MR.strings.action_edit_categories),
-                            subtitle = pluralStringResource(MR.plurals.num_categories, count.size, count.size),
-                            onClick = {
-                                navigator.push(SourceCategoryScreen())
-                            },
-                        )
-                    },
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = sourcePreferences.sourcesTabCategoriesFilter(),
-                        title = stringResource(SYMR.strings.pref_source_source_filtering),
-                        subtitle = stringResource(SYMR.strings.pref_source_source_filtering_summery),
-                    ),
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = uiPreferences.useNewSourceNavigation(),
-                        title = stringResource(SYMR.strings.pref_source_navigation),
-                        subtitle = stringResource(SYMR.strings.pref_source_navigation_summery),
-                    ),
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = sourcePreferences.allowLocalSourceHiddenFolders(),
-                        title = stringResource(SYMR.strings.pref_local_source_hidden_folders),
-                        subtitle = stringResource(SYMR.strings.pref_local_source_hidden_folders_summery),
-                    ),
-                ),
-            ),
-            Preference.PreferenceGroup(
-                title = stringResource(SYMR.strings.feed),
-                preferenceItems = persistentListOf(
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = uiPreferences.hideFeedTab(),
-                        title = stringResource(SYMR.strings.pref_hide_feed),
-                    ),
-                    Preference.PreferenceItem.SwitchPreference(
-                        preference = uiPreferences.feedTabInFront(),
-                        title = stringResource(SYMR.strings.pref_feed_position),
-                        subtitle = stringResource(SYMR.strings.pref_feed_position_summery),
-                        enabled = hideFeedTab.not(),
-                    ),
-                ),
-            ),
-            // SY <--
             Preference.PreferenceGroup(
                 title = stringResource(MR.strings.label_sources),
                 preferenceItems = persistentListOf(
