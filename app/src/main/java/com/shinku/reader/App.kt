@@ -145,18 +145,21 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             setupNotificationChannels()
             initializeMigrator()
 
-            val syncPreferences: SyncPreferences = Injekt.get()
-            val syncTriggerOpt = syncPreferences.getSyncTriggerOptions()
-            if (syncPreferences.isSyncEnabled() && syncTriggerOpt.syncOnAppStart) {
-                SyncDataJob.startNow(this@App)
+            val isMainProcess = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) packageName == getProcessName() else true
+            if (isMainProcess) {
+                val syncPreferences: SyncPreferences = Injekt.get()
+                val syncTriggerOpt = syncPreferences.getSyncTriggerOptions()
+                if (syncPreferences.isSyncEnabled() && syncTriggerOpt.syncOnAppStart) {
+                    SyncDataJob.startNow(this@App)
+                }
+
+                RepoHealthScanJob.setupTask(this@App)
+                MangaEmbeddingJob.setupTask(this@App)
+                DatabaseMaintenanceWorker.setupPeriodicWork(this@App)
+
+                // Updates widget update
+                WidgetManager(Injekt.get(), Injekt.get()).apply { init(scope) }
             }
-
-            RepoHealthScanJob.setupTask(this@App)
-            MangaEmbeddingJob.setupTask(this@App)
-            DatabaseMaintenanceWorker.setupPeriodicWork(this@App)
-
-            // Updates widget update
-            WidgetManager(Injekt.get(), Injekt.get()).apply { init(scope) }
         }
 
         // Show notification to disable Incognito Mode when it's enabled

@@ -49,7 +49,6 @@ class DatabaseMaintenanceWorker(context: Context, workerParams: WorkerParameters
             )
                 .addTag(TAG)
                 .setConstraints(constraints)
-                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.MINUTES)
                 .build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
