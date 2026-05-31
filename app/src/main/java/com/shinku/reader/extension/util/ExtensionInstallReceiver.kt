@@ -14,6 +14,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import com.shinku.reader.core.common.util.system.logcat
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 
 /**
  * Broadcast receiver that listens for the system's packages installed, updated or removed, and only
@@ -66,9 +68,36 @@ internal class ExtensionInstallReceiver(private val listener: Listener) : Broadc
             Intent.ACTION_PACKAGE_REPLACED, ACTION_EXTENSION_REPLACED -> {
                 scope.launch {
                     val pkgName = getPackageNameFromIntent(intent) ?: return@launch
-                    // Delay to ensure PackageManager returns the updated PackageInfo
+                    // Delay to ensure PackageManager starts processing the updated PackageInfo
                     kotlinx.coroutines.delay(2000)
-                    when (val result = ExtensionLoader.loadExtensionFromPkgName(context, pkgName)) {
+
+                    val expectedVersionCode = try {
+                        Injekt.get<com.shinku.reader.extension.ExtensionManager>()
+                            .availableExtensionsFlow.value.find { it.pkgName == pkgName }?.versionCode
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    var result = ExtensionLoader.loadExtensionFromPkgName(context, pkgName)
+                    if (expectedVersionCode != null) {
+                        val expected = expectedVersionCode.toLong()
+                        var attempts = 0
+                        while (attempts < 5) {
+                            val currentVersionCode = when (result) {
+                                is LoadResult.Success -> result.extension.versionCode
+                                is LoadResult.Untrusted -> result.extension.versionCode
+                                else -> 0L
+                            }
+                            if (currentVersionCode >= expected) {
+                                break
+                            }
+                            attempts++
+                            kotlinx.coroutines.delay(1000)
+                            result = ExtensionLoader.loadExtensionFromPkgName(context, pkgName)
+                        }
+                    }
+
+                    when (result) {
                         is LoadResult.Success -> listener.onExtensionUpdated(result.extension)
                         is LoadResult.Untrusted -> listener.onExtensionUntrusted(result.extension)
                         else -> {}

@@ -5,3 +5,7 @@
 - **MANDATE:** The 'standard' build flavor remains discontinued due to R8-related instability. Use the 'dev' flavor instead.
 - **MANDATE:** For active development and debugging, the **'devRelease'** variant (e.g., `./gradlew assembleDevRelease`) must be used instead of 'devDebug'.
 - **MANDATE:** A successful `./gradlew assembleDevRelease` build is required before proceeding to any new development phase or completing a track.
+
+## Release Mandates
+- **MANDATE:** Every GitHub release MUST include only the changelog notes specific to that version (do not include the full historical changelog).
+- **MANDATE:** Every GitHub release MUST include the compiled APK files (e.g., from the `devRelease` build) as release assets.

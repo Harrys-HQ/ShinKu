@@ -1509,7 +1509,7 @@ class LibraryScreenModel(
         val backdropBlurEnabled: Boolean = false,
         // SY <--
     ) {
-        val displayedCategories: List<Category> = groupedFavorites.keys.toList()
+        val displayedCategories: ImmutableList<Category> = groupedFavorites.keys.toImmutableList()
 
         val coercedActiveCategoryIndex = activeCategoryIndex.coerceIn(
             minimumValue = 0,

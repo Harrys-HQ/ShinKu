@@ -11,12 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.shinku.reader.presentation.category.visualName
+import kotlinx.collections.immutable.ImmutableList
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.presentation.core.components.material.TabText
 
 @Composable
 internal fun LibraryTabs(
-    categories: List<Category>,
+    categories: ImmutableList<Category>,
     pagerState: PagerState,
     getItemCountForCategory: (Category) -> Int?,
     onTabItemClick: (Int) -> Unit,

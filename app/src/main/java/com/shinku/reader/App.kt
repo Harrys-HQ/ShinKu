@@ -49,6 +49,7 @@ import com.shinku.reader.data.notification.Notifications
 import com.shinku.reader.data.sync.SyncDataJob
 import com.shinku.reader.data.library.RepoHealthScanJob
 import com.shinku.reader.data.ai.MangaEmbeddingJob
+import com.shinku.reader.data.database.DatabaseMaintenanceWorker
 import com.shinku.reader.di.AppModule
 import com.shinku.reader.di.InjektKoinBridge
 import com.shinku.reader.di.PreferenceModule
@@ -152,6 +153,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
 
             RepoHealthScanJob.setupTask(this@App)
             MangaEmbeddingJob.setupTask(this@App)
+            DatabaseMaintenanceWorker.setupPeriodicWork(this@App)
 
             // Updates widget update
             WidgetManager(Injekt.get(), Injekt.get()).apply { init(scope) }
