@@ -1,5 +1,14 @@
 # ShinKu Changelog
 
+## 2.5.1 "Safe Sync & Core Optimization" (2026-05-31)
+### Fixed
+- **Extension Update Latency**: Resolved package manager latency issues where updated extensions remained stuck in the updates pending list.
+
+### Added
+- **Database Background Vacuum**: Scheduled a WorkManager-based weekly Database Maintenance periodic task that safely vacuums and optimizes SQLite index fragmentation when the device is idle and charging, completely avoiding startup deadlocks.
+- **Compose Skipping Performance**: Optimized the Library category layouts by mapping `displayedCategories` state to `ImmutableList`, preventing redundant recompositions during scrolling.
+- **Enforced Core Safeguards**: Integrated a dependency-free directory package consistency scanner unit test to programmatically verify frozen zone paths.
+
 ## 2.5.0 "Stability & Refinement" (2026-05-27)
 ### Added
 - **Unified Settings Hub:** Consolidated all ShinKu-specific features and SY-legacy preferences into a single "ShinKu Settings" screen for easier navigation.
