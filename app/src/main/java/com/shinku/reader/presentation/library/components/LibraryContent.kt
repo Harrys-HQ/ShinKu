@@ -19,6 +19,7 @@ import com.shinku.reader.core.preference.PreferenceMutableState
 import com.shinku.reader.ui.library.LibraryItem
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.collections.immutable.ImmutableList
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.domain.library.model.LibraryDisplayMode
 import com.shinku.reader.domain.library.model.LibraryManga
@@ -27,7 +28,7 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun LibraryContent(
-    categories: List<Category>,
+    categories: ImmutableList<Category>,
     searchQuery: String?,
     selection: Set<Long>,
     contentPadding: PaddingValues,
