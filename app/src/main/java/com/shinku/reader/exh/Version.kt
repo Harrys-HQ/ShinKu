@@ -1,1 +1,1 @@
-package com.shinku.reader.exh const val syDebugVersion: String = "81"
+package com.shinku.reader.exh const val syDebugVersion: String = "0"
