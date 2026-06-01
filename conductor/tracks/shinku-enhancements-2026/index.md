@@ -29,5 +29,6 @@ This large-scale enhancement is broken down into thematic tracks:
 
 ## Current Status
 - **Baseline:** Committed (`08789ed1b`)
-- **Status:** All planned phases (1-4) completed and verified with `assembleDevRelease`.
-- **Latest Build:** Successful `devRelease` (Preview) build on March 27, 2026.
+- **Status:** All planned phases (1-4) completed, verified, and released as version 2.6.0.
+- **Latest Build:** Successful `devRelease` (Preview) build on June 1, 2026.
+- **Pushed:** Changes pushed to `main` branch.
