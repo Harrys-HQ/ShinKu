@@ -24,4 +24,6 @@ class ShinKuPreferences(
     fun predictiveLoading() = preferenceStore.getBoolean("pref_predictive_loading", false)
 
     fun aiUpscaling() = preferenceStore.getBoolean("pref_ai_upscaling", false)
+
+    fun adaptiveNightRead() = preferenceStore.getBoolean("pref_adaptive_night_read", false)
 }

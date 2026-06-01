@@ -281,6 +281,11 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     subtitle = "Subtle vibrations during page turns and interface interactions.",
                 ),
                 Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.adaptiveNightRead(),
+                    title = "Ambient Adaptive Night-Read",
+                    subtitle = "Optimize contrast and reduce screen brightness automatically in low-light environments.",
+                ),
+                Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.guidedView(),
                     title = "Guided View (Smart Panel Zoom)",
                     subtitle = "Automatically detect and zoom into manga panels for a more focused reading experience.",
