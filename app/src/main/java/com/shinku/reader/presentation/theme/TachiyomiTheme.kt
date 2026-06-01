@@ -1,5 +1,8 @@
 package com.shinku.reader.presentation.theme
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +33,62 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
 @Composable
+fun animateColorScheme(scheme: ColorScheme): ColorScheme {
+    val duration = 500
+    val primary by animateColorAsState(scheme.primary, tween(duration))
+    val primaryContainer by animateColorAsState(scheme.primaryContainer, tween(duration))
+    val secondary by animateColorAsState(scheme.secondary, tween(duration))
+    val secondaryContainer by animateColorAsState(scheme.secondaryContainer, tween(duration))
+    val tertiary by animateColorAsState(scheme.tertiary, tween(duration))
+    val tertiaryContainer by animateColorAsState(scheme.tertiaryContainer, tween(duration))
+    val background by animateColorAsState(scheme.background, tween(duration))
+    val surface by animateColorAsState(scheme.surface, tween(duration))
+    val surfaceVariant by animateColorAsState(scheme.surfaceVariant, tween(duration))
+    val onPrimary by animateColorAsState(scheme.onPrimary, tween(duration))
+    val onPrimaryContainer by animateColorAsState(scheme.onPrimaryContainer, tween(duration))
+    val onSecondary by animateColorAsState(scheme.onSecondary, tween(duration))
+    val onSecondaryContainer by animateColorAsState(scheme.onSecondaryContainer, tween(duration))
+    val onTertiary by animateColorAsState(scheme.onTertiary, tween(duration))
+    val onTertiaryContainer by animateColorAsState(scheme.onTertiaryContainer, tween(duration))
+    val onBackground by animateColorAsState(scheme.onBackground, tween(duration))
+    val onSurface by animateColorAsState(scheme.onSurface, tween(duration))
+    val onSurfaceVariant by animateColorAsState(scheme.onSurfaceVariant, tween(duration))
+    val outline by animateColorAsState(scheme.outline, tween(duration))
+    val outlineVariant by animateColorAsState(scheme.outlineVariant, tween(duration))
+    val error by animateColorAsState(scheme.error, tween(duration))
+    val onError by animateColorAsState(scheme.onError, tween(duration))
+    val errorContainer by animateColorAsState(scheme.errorContainer, tween(duration))
+    val onErrorContainer by animateColorAsState(scheme.onErrorContainer, tween(duration))
+
+    return scheme.copy(
+        primary = primary,
+        primaryContainer = primaryContainer,
+        secondary = secondary,
+        secondaryContainer = secondaryContainer,
+        tertiary = tertiary,
+        tertiaryContainer = tertiaryContainer,
+        background = background,
+        surface = surface,
+        surfaceVariant = surfaceVariant,
+        onPrimary = onPrimary,
+        onPrimaryContainer = onPrimaryContainer,
+        onSecondary = onSecondary,
+        onSecondaryContainer = onSecondaryContainer,
+        onTertiary = onTertiary,
+        onTertiaryContainer = onTertiaryContainer,
+        onBackground = onBackground,
+        onSurface = onSurface,
+        onSurfaceVariant = onSurfaceVariant,
+        outline = outline,
+        outlineVariant = outlineVariant,
+        error = error,
+        onError = onError,
+        errorContainer = errorContainer,
+        onErrorContainer = onErrorContainer,
+    )
+}
+
+@Composable
 fun TachiyomiTheme(
     appTheme: AppTheme? = null,
     amoled: Boolean? = null,
@@ -47,8 +106,10 @@ fun TachiyomiTheme(
         colorScheme = applyGenreTone(colorScheme, genres)
     }
 
+    val animatedColorScheme = animateColorScheme(colorScheme)
+
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = animatedColorScheme,
         content = content,
     )
 }

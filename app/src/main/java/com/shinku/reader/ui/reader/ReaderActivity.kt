@@ -177,6 +177,9 @@ class ReaderActivity : BaseActivity() {
     // SY -->
     private val sourceManager = Injekt.get<SourceManager>()
     private val shinkuPreferences = Injekt.get<com.shinku.reader.exh.source.ShinKuPreferences>()
+    private var sensorManager: android.hardware.SensorManager? = null
+    private var lightSensor: android.hardware.Sensor? = null
+    private var lightSensorListener: android.hardware.SensorEventListener? = null
     // SY <--
 
     /**
@@ -549,10 +552,50 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onPause() {
+        disableLightSensor()
         lifecycleScope.launchNonCancellable {
             viewModel.updateHistory()
         }
         super.onPause()
+    }
+
+    private fun setupLightSensor() {
+        if (!shinkuPreferences.adaptiveNightRead().get()) {
+            disableLightSensor()
+            return
+        }
+        if (sensorManager == null) {
+            sensorManager = getSystemService(Context.SENSOR_SERVICE) as android.hardware.SensorManager
+            lightSensor = sensorManager?.getDefaultSensor(android.hardware.Sensor.TYPE_LIGHT)
+        }
+        if (lightSensor != null && lightSensorListener == null) {
+            lightSensorListener = object : android.hardware.SensorEventListener {
+                override fun onSensorChanged(event: android.hardware.SensorEvent?) {
+                    if (event == null) return
+                    val lux = event.values[0]
+                    if (lux < 15.0f) {
+                        setCustomBrightnessValue(-45)
+                    } else {
+                        val prefVal = readerPreferences.customBrightnessValue().get()
+                        setCustomBrightnessValue(if (readerPreferences.customBrightness().get()) prefVal else 0)
+                    }
+                }
+
+                override fun onAccuracyChanged(sensor: android.hardware.Sensor?, accuracy: Int) {}
+            }
+            sensorManager?.registerListener(
+                lightSensorListener,
+                lightSensor,
+                android.hardware.SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
+    }
+
+    private fun disableLightSensor() {
+        lightSensorListener?.let {
+            sensorManager?.unregisterListener(it)
+        }
+        lightSensorListener = null
     }
 
     /**
@@ -563,6 +606,7 @@ class ReaderActivity : BaseActivity() {
         super.onResume()
         viewModel.restartReadTimer()
         setMenuVisibility(viewModel.state.value.menuVisible)
+        setupLightSensor()
     }
 
     /**
