@@ -60,7 +60,7 @@ abstract class ViewerConfig(readerPreferences: ReaderPreferences, private val sc
             )
 
         readerPreferences.readWithVolumeKeys()
-            .register({ volumeKeysEnabled = it })
+            .register({ volumeKeysEnabled = it || com.shinku.reader.util.system.DeviceUtil.isEInkDevice })
 
         readerPreferences.readWithVolumeKeysInverted()
             .register({ volumeKeysInverted = it })
