@@ -13,9 +13,9 @@ This track covers the phase-by-phase implementation of top-of-the-line features 
 - [x] **Ambient Light Adaptive Night-Read**: Automatically optimize screen contrast and warm-light filters in the reader when ambient brightness drops, using the device's light sensor.
 
 ### Phase 2: On-Device AI Intelligence & Enrichment
-- [ ] **Lightweight AI Super-Resolution**: Research/integrate a TFLite model or Glide/Coil interceptor to upscale low-res manga scans on the fly.
-- [ ] **"Story So Far" AI Recaps**: Integrate local/API-based automated contextual recaps of previous chapters when resuming an inactive manga.
-- [ ] **Deep Vibe Natural Language Search**: Leverage our MediaPipe embeds to allow semantic description searches in global search.
+- [x] **Lightweight AI Super-Resolution**: Research/integrate a TFLite model or Glide/Coil interceptor to upscale low-res manga scans on the fly.
+- [x] **"Story So Far" AI Recaps**: Integrate local/API-based automated contextual recaps of previous chapters when resuming an inactive manga.
+- [x] **Deep Vibe Natural Language Search**: Leverage our MediaPipe embeds to allow semantic description searches in global search.
 
 ### Phase 3: Deep Reading Analytics & Gamification
 - [ ] **"ShinKu Wrapped" Dashboard**: A stunning, full-featured statistics screen showcasing genre heatmaps, page-velocity graphs, and reading time-patterns.

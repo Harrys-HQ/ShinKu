@@ -176,6 +176,8 @@ fun MangaScreen(
     onChapterSelected: (ChapterList.Item, Boolean, Boolean, Boolean) -> Unit,
     onAllChapterSelected: (Boolean) -> Unit,
     onInvertSelection: () -> Unit,
+    onGenerateRecap: (() -> Unit)? = null,
+    onDismissRecap: (() -> Unit)? = null,
 ) {
     if (!isTabletUi) {
         MangaScreenSmallImpl(
@@ -222,6 +224,8 @@ fun MangaScreen(
             onChapterSelected = onChapterSelected,
             onAllChapterSelected = onAllChapterSelected,
             onInvertSelection = onInvertSelection,
+            onGenerateRecap = onGenerateRecap,
+            onDismissRecap = onDismissRecap,
         )
     } else {
         // Implement Tablet UI if needed, for now reuse small
@@ -269,6 +273,8 @@ fun MangaScreen(
             onChapterSelected = onChapterSelected,
             onAllChapterSelected = onAllChapterSelected,
             onInvertSelection = onInvertSelection,
+            onGenerateRecap = onGenerateRecap,
+            onDismissRecap = onDismissRecap,
         )
     }
 }
@@ -318,6 +324,8 @@ private fun MangaScreenSmallImpl(
     onChapterSelected: (ChapterList.Item, Boolean, Boolean, Boolean) -> Unit,
     onAllChapterSelected: (Boolean) -> Unit,
     onInvertSelection: () -> Unit,
+    onGenerateRecap: (() -> Unit)? = null,
+    onDismissRecap: (() -> Unit)? = null,
 ) {
     val chapterListState = rememberLazyListState()
 
@@ -461,6 +469,68 @@ private fun MangaScreenSmallImpl(
                         SearchMetadataChips(state.meta, state.source.id, state.manga.genre)
                     },
                 )
+            }
+
+            if (state.showRecapPrompt) {
+                item(key = "ai_chapter_recap_prompt") {
+                    androidx.compose.material3.ElevatedCard(
+                        modifier = Modifier.padding(16.dp),
+                        colors = androidx.compose.material3.CardDefaults.elevatedCardColors(
+                            containerColor = androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                text = "Welcome Back!",
+                                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                text = "It has been over 2 weeks since you last read this manga. Would you like a quick AI summary of what happened in the last read chapters to get you back up to speed?",
+                                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                            if (state.isLoadingRecap) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            } else if (state.recapText != null) {
+                                Text(
+                                    text = state.recapText,
+                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.End,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    androidx.compose.material3.TextButton(onClick = { onDismissRecap?.invoke() }) {
+                                        Text("Close", color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                            } else {
+                                Row(
+                                    horizontalArrangement = Arrangement.End,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    androidx.compose.material3.TextButton(onClick = { onDismissRecap?.invoke() }) {
+                                        Text("Ignore", color = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f))
+                                    }
+                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
+                                    androidx.compose.material3.Button(
+                                        onClick = { onGenerateRecap?.invoke() }
+                                    ) {
+                                        Text("Generate AI Recap")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if (state.similarVibes.isNotEmpty()) {

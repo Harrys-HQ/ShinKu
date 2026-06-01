@@ -259,6 +259,8 @@ class MangaScreen(
             onChapterSelected = screenModel::toggleSelection,
             onAllChapterSelected = screenModel::toggleAllSelection,
             onInvertSelection = screenModel::invertSelection,
+            onGenerateRecap = { screenModel.generateAIChapterRecap(context) },
+            onDismissRecap = screenModel::dismissRecap,
         )
 
         var showScanlatorsDialog by remember { mutableStateOf(false) }

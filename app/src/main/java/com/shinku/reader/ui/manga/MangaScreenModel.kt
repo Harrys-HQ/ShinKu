@@ -199,6 +199,7 @@ class MangaScreenModel(
     private val syncPreferences: com.shinku.reader.domain.sync.SyncPreferences = Injekt.get(),
     private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
     private val getSimilarManga: com.shinku.reader.domain.ai.interactor.GetSimilarManga = Injekt.get(),
+    private val historyRepository: com.shinku.reader.domain.history.repository.HistoryRepository = Injekt.get(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
 
@@ -479,6 +480,16 @@ class MangaScreenModel(
             val needRefreshInfo = !manga.initialized
             val needRefreshChapter = chapters.isEmpty()
 
+            val history = historyRepository.getHistoryByMangaId(mangaId)
+            val lastReadHistory = history.maxByOrNull { it.readAt?.time ?: 0L }
+            val showRecap = if (lastReadHistory != null && lastReadHistory.readAt != null) {
+                val lastReadTime = lastReadHistory.readAt!!.time
+                val fourteenDaysMs = 14L * 24L * 60L * 60L * 1000L
+                System.currentTimeMillis() - lastReadTime > fourteenDaysMs && shinkuPreferences.geminiApiKey().get().isNotBlank()
+            } else {
+                false
+            }
+
             // Show what we have earlier
             mutableState.update {
                 val source = sourceManager.getOrStub(manga.source)
@@ -514,6 +525,7 @@ class MangaScreenModel(
                     previewsRowCount = uiPreferences.previewsRowCount().get(),
                     showVibeButton = shinkuPreferences.geminiApiKey().get().isNotBlank(),
                     backdropBlurEnabled = shinkuPreferences.backdropBlur().get(),
+                    showRecapPrompt = showRecap,
                     // SY <--
                 )
             }
@@ -1832,6 +1844,43 @@ class MangaScreenModel(
         }
     }
 
+    fun generateAIChapterRecap(context: Context) {
+        val state = successState ?: return
+        val apiKey = shinkuPreferences.geminiApiKey().get()
+        val model = shinkuPreferences.geminiModel().get()
+        if (apiKey.isBlank()) {
+            context.toast(MR.strings.gemini_api_key_not_set)
+            return
+        }
+
+        val readChapters = state.chapters.filter { it.chapter.read }.sortedBy { it.chapter.chapterNumber }
+        if (readChapters.isEmpty()) {
+            context.toast("No read chapters to summarize.")
+            return
+        }
+
+        val lastReadChapters = readChapters.takeLast(5).map { it.chapter.name }
+
+        screenModelScope.launchIO {
+            updateSuccessState { it.copy(isLoadingRecap = true, recapText = null) }
+            try {
+                val recap = geminiVibeSearch.getChapterRecap(
+                    state.manga.title,
+                    lastReadChapters,
+                    apiKey,
+                    model
+                )
+                updateSuccessState { it.copy(isLoadingRecap = false, recapText = recap) }
+            } catch (e: Exception) {
+                updateSuccessState { it.copy(isLoadingRecap = false, recapText = "Failed to generate recap: ${e.message}") }
+            }
+        }
+    }
+
+    fun dismissRecap() {
+        updateSuccessState { it.copy(showRecapPrompt = false, recapText = null) }
+    }
+
     fun showEditMergedSettingsDialog() {
         val mergedData = successState?.mergedData ?: return
         mutableState.update { state ->
@@ -1891,6 +1940,9 @@ class MangaScreenModel(
             val showVibeButton: Boolean = false,
             val backdropBlurEnabled: Boolean = false,
             val similarVibes: List<Manga> = emptyList(),
+            val showRecapPrompt: Boolean = false,
+            val recapText: String? = null,
+            val isLoadingRecap: Boolean = false,
             // SY <--
         ) : State {
             val processedChapters by lazy {

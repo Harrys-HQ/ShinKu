@@ -212,6 +212,24 @@ class GeminiVibeSearch(
         }
     }
 
+    suspend fun getChapterRecap(
+        title: String,
+        chapterNames: List<String>,
+        apiKey: String,
+        model: String
+    ): String {
+        val prompt = """
+            You are a manga story recapper. Based on the manga "$title", 
+            provide a short, engaging, and professional story recap/summary of the events up to or including these chapters:
+            ${chapterNames.joinToString(", ")}
+            
+            Keep the summary in English, spoilers allowed (as it is for someone who already read them but forgot), 
+            and keep it under 3 paragraphs. Focus on key plot points and character developments.
+        """.trimIndent()
+        
+        return callGeminiForText(prompt, apiKey, model)
+    }
+
     @kotlinx.serialization.Serializable
     data class EnrichedMetadata(
         val description: String,
