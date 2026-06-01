@@ -769,6 +769,8 @@
     <string name="label_top_authors">Top Authors</string>
     <string name="label_reading_time_patterns">Reading Patterns</string>
     <string name="label_milestones">Milestones</string>
+    <string name="label_reading_velocity">Reading Velocity</string>
+    <string name="label_velocity_subtitle">Reading Speed (Pages/min)</string>
     <string name="action_share_wrapped">Share Reading Wrapped</string>
     <string name="action_image_search">Search by Image</string>
     <string name="pref_atmospheric_audio">Atmospheric Audio</string>
