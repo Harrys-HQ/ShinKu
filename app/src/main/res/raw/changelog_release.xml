@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.6.0" changeDate="June 1,2026">
+        <changelogtext>[b]Immersive Reader[/b]: Added Atmospheric Audio, Adaptive Palette transitions, and Light Adaptive Night-Read mode</changelogtext>
+        <changelogtext>[b]AI Intelligence[/b]: Integrated Gemini-powered Story Recaps and high-fidelity Unsharp Sharpening Upscale</changelogtext>
+        <changelogtext>[b]ShinKu Wrapped[/b]: New reading velocity stats and shareable year-in-review graphics</changelogtext>
+        <changelogtext>[b]Hardware Optimization[/b]: New E-Ink profile with instant transitions and Volume Keys override</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.5.1" changeDate="May 31,2026">
         <changelogtext>[b]Extension Updates[/b]: Fixed packages stuck in updates pending list due to PackageManager lag</changelogtext>
         <changelogtext>[b]Database Tuning[/b]: Scheduled safe background VACUUM to prevent startup deadlocks</changelogtext>
