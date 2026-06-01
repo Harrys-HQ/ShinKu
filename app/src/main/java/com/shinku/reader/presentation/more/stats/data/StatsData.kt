@@ -43,6 +43,11 @@ sealed interface StatsData {
         val timeOfDayHistory: Map<Int, Long>,
     ) : StatsData
 
+    data class VelocityStats(
+        val averageVelocity: Double,
+        val dailyVelocity: Map<java.util.Date, Double>,
+    ) : StatsData
+
     data class Milestones(
         val earnedBadges: List<com.shinku.reader.domain.history.model.Badge>,
     ) : StatsData

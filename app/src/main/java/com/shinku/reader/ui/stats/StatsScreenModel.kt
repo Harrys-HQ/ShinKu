@@ -108,6 +108,10 @@ class StatsScreenModel(
             val timeStatData = StatsData.TimeStats(
                 timeOfDayHistory = readingStats.timeOfDayHistory,
             )
+            val velocityStatData = StatsData.VelocityStats(
+                averageVelocity = readingStats.averageVelocity,
+                dailyVelocity = readingStats.dailyVelocity,
+            )
             val milestonesStatData = StatsData.Milestones(
                 earnedBadges = readingStats.badges,
             )
@@ -124,6 +128,7 @@ class StatsScreenModel(
                     genres = genresStatData,
                     authors = authorsStatData,
                     timeStats = timeStatData,
+                    velocity = velocityStatData,
                     milestones = milestonesStatData,
                     // SY <--
                 )
@@ -203,9 +208,11 @@ class StatsScreenModel(
         return buildString {
             append("📖 My ShinKu Reading Journey\n\n")
             append("⏱ Total Time: $duration\n")
+            append("⚡ Speed: %.2f pages/min\n".format(java.util.Locale.ENGLISH, state.velocity.averageVelocity))
             append("📚 Titles in Library: ${state.overview.libraryMangaCount}\n")
             append("✅ Completed: ${state.overview.completedMangaCount}\n")
-            append("🔥 Current Streak: ${state.streaks.currentStreak} days\n\n")
+            append("🔥 Current Streak: ${state.streaks.currentStreak} days\n")
+            append("🏆 Badges Unlocked: ${state.milestones.earnedBadges.size}\n\n")
             
             if (state.genres.topGenres.isNotEmpty()) {
                 append("🎭 Top Genres: ${state.genres.topGenres.take(3).joinToString(", ")}\n")

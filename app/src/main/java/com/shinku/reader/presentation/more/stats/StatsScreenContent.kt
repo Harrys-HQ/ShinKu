@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -63,6 +64,9 @@ fun StatsScreenContent(
         }
         item {
             GenreSection(state.genres)
+        }
+        item {
+            VelocitySection(state.velocity)
         }
         item {
             AuthorSection(state.authors)
@@ -216,26 +220,118 @@ private fun LazyItemScope.StreakSection(
 private fun LazyItemScope.GenreSection(
     data: StatsData.Genres,
 ) {
+    if (data.topGenres.isEmpty()) return
+
     SectionCard(SYMR.strings.label_top_genres) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            data.topGenres.take(5).forEachIndexed { index, genre ->
+                val progress = (5 - index).toFloat() / 5f
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = genre,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "#${index + 1}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    androidx.compose.material3.LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(MaterialTheme.shapes.small),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LazyItemScope.VelocitySection(
+    data: StatsData.VelocityStats,
+) {
+    SectionCard(SYMR.strings.label_reading_velocity) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            data.topGenres.chunked(2).forEach { rowGenres ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "%.2f".format(Locale.ENGLISH, data.averageVelocity),
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(SYMR.strings.label_velocity_subtitle),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            val dailyList = remember(data.dailyVelocity) {
+                data.dailyVelocity.entries.sortedBy { it.key }.takeLast(7)
+            }
+            if (dailyList.isNotEmpty()) {
+                val maxVelocity = dailyList.maxOf { it.value }.coerceAtLeast(1.0).toFloat()
+                val primaryColor = MaterialTheme.colorScheme.primary
+                
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.Bottom
                 ) {
-                    rowGenres.forEach { genre ->
-                        Row(modifier = Modifier.weight(1f)) {
-                            StatsItem(
-                                title = genre,
-                                subtitle = "",
+                    dailyList.forEach { entry ->
+                        val velocityVal = entry.value.toFloat()
+                        val ratio = velocityVal / maxVelocity
+                        
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                contentAlignment = androidx.compose.ui.Alignment.BottomCenter
+                            ) {
+                                androidx.compose.foundation.Canvas(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight(ratio.coerceIn(0.05f, 1f))
+                                        .clip(MaterialTheme.shapes.small)
+                                ) {
+                                    drawRect(color = primaryColor)
+                                }
+                            }
+                            Text(
+                                text = "%.1f".format(Locale.ENGLISH, velocityVal),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-                    if (rowGenres.size == 1) {
-                        Box(modifier = Modifier.weight(1f))
                     }
                 }
             }

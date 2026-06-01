@@ -18,6 +18,7 @@ sealed interface StatsScreenState {
         val genres: StatsData.Genres,
         val authors: StatsData.Authors,
         val timeStats: StatsData.TimeStats,
+        val velocity: StatsData.VelocityStats,
         val milestones: StatsData.Milestones,
         // SY <--
     ) : StatsScreenState

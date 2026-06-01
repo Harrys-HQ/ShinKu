@@ -18,8 +18,8 @@ This track covers the phase-by-phase implementation of top-of-the-line features 
 - [x] **Deep Vibe Natural Language Search**: Leverage our MediaPipe embeds to allow semantic description searches in global search.
 
 ### Phase 3: Deep Reading Analytics & Gamification
-- [ ] **"ShinKu Wrapped" Dashboard**: A stunning, full-featured statistics screen showcasing genre heatmaps, page-velocity graphs, and reading time-patterns.
-- [ ] **Reader Badges & Achievements**: Implement gamified reader milestones.
+- [x] **"ShinKu Wrapped" Dashboard**: A stunning, full-featured statistics screen showcasing genre heatmaps, page-velocity graphs, and reading time-patterns.
+- [x] **Reader Badges & Achievements**: Implement gamified reader milestones.
 
 ### Phase 4: Extreme Performance & Adaptability
 - [ ] **E-Ink Hardware Optimization Profile**: Auto-detect E-ink devices and optimize UI contrast, disable transition animations, and map physical hardware volume keys for page turns.
