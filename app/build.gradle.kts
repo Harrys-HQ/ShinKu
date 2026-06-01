@@ -41,8 +41,8 @@ android {
 
         setProperty("archivesBaseName", "ShinKu")
 
-        versionCode = 115
-        versionName = "2.5.1"
+        versionCode = 116
+        versionName = "2.6.0"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")

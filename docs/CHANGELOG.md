@@ -1,5 +1,17 @@
 # ShinKu Changelog
 
+## 2.6.0 "Manga Reader Perfection" (2026-06-01)
+### Added
+- **Immersive Reader (Phase 1-4)**:
+    - **Atmospheric Audio**: Dynamic, genre-matching ambient sounds for total immersion.
+    - **Adaptive Palette**: The reader UI now seamlessly transitions colors based on page content.
+    - **Light Adaptive Night-Read**: Automatically adjusts contrast and brightness for low-light environments.
+    - **AI Story Recaps**: Gemini-powered summaries of previous chapters to keep you up to speed.
+    - **Unsharp Sharpening Upscale**: High-fidelity on-device upscaling for crisp lines and text.
+    - **ShinKu Reading Wrapped**: Beautiful, shareable year-in-review and reading velocity stats.
+    - **E-Ink Hardware Profile**: Specialized optimization for E-Ink displays, including instant transitions and auto-monochrome.
+    - **Volume Keys Override**: Precise control mapping for physical volume buttons in the reader.
+
 ## 2.5.1 "Safe Sync & Core Optimization" (2026-05-31)
 ### Fixed
 - **Extension Update Latency**: Resolved package manager latency issues where updated extensions remained stuck in the updates pending list.
