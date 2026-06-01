@@ -97,16 +97,22 @@ fun TachiyomiTheme(
     content: @Composable () -> Unit,
 ) {
     val uiPreferences = Injekt.get<UiPreferences>()
-    var colorScheme = overrideColorScheme ?: getThemeColorScheme(
-        appTheme = appTheme ?: uiPreferences.appTheme().get(),
-        isAmoled = amoled ?: uiPreferences.themeDarkAmoled().get(),
-    )
+    val isEInk = com.shinku.reader.util.system.DeviceUtil.isEInkDevice
+    
+    var colorScheme = if (isEInk) {
+        if (isSystemInDarkTheme()) MonochromeColorScheme.darkScheme else MonochromeColorScheme.lightScheme
+    } else {
+        overrideColorScheme ?: getThemeColorScheme(
+            appTheme = appTheme ?: uiPreferences.appTheme().get(),
+            isAmoled = amoled ?: uiPreferences.themeDarkAmoled().get(),
+        )
+    }
 
-    if (genres != null && (appTheme ?: uiPreferences.appTheme().get()) == AppTheme.STRAWBERRY_DAIQUIRI) {
+    if (!isEInk && genres != null && (appTheme ?: uiPreferences.appTheme().get()) == AppTheme.STRAWBERRY_DAIQUIRI) {
         colorScheme = applyGenreTone(colorScheme, genres)
     }
 
-    val animatedColorScheme = animateColorScheme(colorScheme)
+    val animatedColorScheme = if (isEInk) colorScheme else animateColorScheme(colorScheme)
 
     MaterialTheme(
         colorScheme = animatedColorScheme,

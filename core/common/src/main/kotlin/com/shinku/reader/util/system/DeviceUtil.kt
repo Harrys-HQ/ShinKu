@@ -99,6 +99,21 @@ object DeviceUtil {
         return totalMemBytes < 3L * 1024 * 1024 * 1024
     }
 
+    val isEInkDevice: Boolean by lazy {
+        val brand = Build.BRAND.lowercase()
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        val model = Build.MODEL.lowercase()
+        val hardware = Build.HARDWARE.lowercase()
+        
+        brand.contains("onyx") || manufacturer.contains("onyx") ||
+            brand.contains("boyue") || manufacturer.contains("boyue") ||
+            model.contains("e-ink") || model.contains("eink") ||
+            brand.contains("tolino") || manufacturer.contains("tolino") ||
+            brand.contains("kobo") || manufacturer.contains("kobo") ||
+            brand.contains("pocketbook") || manufacturer.contains("pocketbook") ||
+            hardware.contains("eink") || hardware.contains("epd")
+    }
+
     @SuppressLint("PrivateApi")
     private fun getSystemProperty(key: String?): String? {
         return try {

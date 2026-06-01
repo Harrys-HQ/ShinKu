@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -66,13 +67,19 @@ fun DefaultNavigatorScreenTransition(
     modifier: Modifier = Modifier,
 ) {
     val slideDistance = rememberSlideDistance()
+    val isEInk = com.shinku.reader.util.system.DeviceUtil.isEInkDevice
     ScreenTransition(
         navigator = navigator,
         transition = {
-            materialSharedAxisX(
-                forward = navigator.lastEvent != StackEvent.Pop,
-                slideDistance = slideDistance,
-            )
+            if (isEInk) {
+                androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.snap()) togetherWith 
+                androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.snap())
+            } else {
+                materialSharedAxisX(
+                    forward = navigator.lastEvent != StackEvent.Pop,
+                    slideDistance = slideDistance,
+                )
+            }
         },
         modifier = modifier,
     )
