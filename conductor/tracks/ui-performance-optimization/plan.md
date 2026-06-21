@@ -7,7 +7,7 @@
 
 ## Phase 2: Resource Pruning
 - [x] **Unused Resource Analysis:** Audited `res/drawable` for legacy Tachiyomi/Mihon remnants.
-- [ ] **Icon Optimization:** Convert remaining PNG icons to WebP or Vector Drawables where possible.
+- [x] **Icon Optimization:** Convert remaining PNG icons to WebP or Vector Drawables where possible.
 
 ## Phase 3: Database & Network Tuning
 - [x] **Implement DB Vacuum:** Safely scheduled weekly Database Maintenance / VACUUM periodic task via background WorkManager.

@@ -73,10 +73,11 @@ internal class ExtensionInstallReceiver(private val listener: Listener) : Broadc
 
                     val expectedVersionCode = try {
                         Injekt.get<com.shinku.reader.extension.ExtensionManager>()
-                            .availableExtensionsFlow.value.find { it.pkgName == pkgName }?.versionCode
+                            .getAvailableExtension(pkgName)?.versionCode
                     } catch (e: Exception) {
                         null
                     }
+
 
                     var result = ExtensionLoader.loadExtensionFromPkgName(context, pkgName)
                     if (expectedVersionCode != null) {

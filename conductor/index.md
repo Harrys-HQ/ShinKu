@@ -20,3 +20,5 @@
 - [UI Performance & Resource Optimization](./tracks/ui-performance-optimization/index.md)
 - [Tracker Synchronization](./tracks/tracker-synchronization/index.md)
 - [Search UX Refinement](./tracks/search-ux-refinement/index.md)
+- [Extension Updates Fix](./tracks/extension-updates-fix/index.md)
+
