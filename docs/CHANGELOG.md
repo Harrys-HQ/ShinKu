@@ -1,5 +1,13 @@
 # ShinKu Changelog
 
+## 2.6.1 "Extension Updates Fix & Resource Optimization" (2026-06-20)
+### Fixed
+- **Extension Update Latency**: Resolved package manager latency where updated extensions remained stuck in the updates pending list.
+- **Deduplicated Extension Repositories**: Deduplicated available extensions by package name in ExtensionApi to resolve version code mismatches between multiple repositories.
+
+### Optimized
+- **Resource Footprint**: Converted logo, splash, and source icons from PNG to lossless WebP, optimizing APK size.
+
 ## 2.6.0 "Manga Reader Perfection" (2026-06-01)
 ### Added
 - **Immersive Reader (Phase 1-4)**:

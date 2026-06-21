@@ -79,8 +79,13 @@ class ExtensionManager(
 
     // SY -->
     val availableExtensionsFlow = availableExtensionMapFlow.map { it.filterNotBlacklisted().values.toList() }
-        .stateIn(scope, SharingStarted.Lazily, availableExtensionMapFlow.value.values.toList())
+        .stateIn(scope, SharingStarted.Eagerly, availableExtensionMapFlow.value.values.toList())
     // SY <--
+
+    fun getAvailableExtension(pkgName: String): Extension.Available? {
+        return availableExtensionMapFlow.value[pkgName]
+    }
+
 
     private val untrustedExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Untrusted>())
     val untrustedExtensionsFlow = untrustedExtensionMapFlow.mapExtensions(scope)
@@ -457,6 +462,7 @@ class ExtensionManager(
     private operator fun <T : Extension> Map<String, T>.plus(extension: T) = plus(extension.pkgName to extension)
 
     private fun <T : Extension> StateFlow<Map<String, T>>.mapExtensions(scope: CoroutineScope): StateFlow<List<T>> {
-        return map { it.values.toList() }.stateIn(scope, SharingStarted.Lazily, value.values.toList())
+        return map { it.values.toList() }.stateIn(scope, SharingStarted.Eagerly, value.values.toList())
     }
+
 }

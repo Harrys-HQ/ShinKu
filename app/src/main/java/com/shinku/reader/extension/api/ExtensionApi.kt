@@ -47,12 +47,24 @@ internal class ExtensionApi {
 
     suspend fun findExtensions(): List<Extension.Available> {
         return withIOContext {
-            getExtensionRepo.getAll()
+            val extensions = getExtensionRepo.getAll()
                 .map { async { getExtensions(it) } }
                 .awaitAll()
                 .flatten()
+
+            extensions
+                .groupBy { it.pkgName }
+                .mapValues { (_, list) ->
+                    list.maxWith(
+                        compareBy<Extension.Available> { it.versionCode }
+                            .thenBy { it.libVersion }
+                    )
+                }
+                .values
+                .toList()
         }
     }
+
 
     private suspend fun getExtensions(extRepo: ExtensionRepo): List<Extension.Available> {
         val repoBaseUrl = extRepo.baseUrl

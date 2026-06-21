@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.6.1" changeDate="June 20,2026">
+        <changelogtext>[b]Extension Updates[/b]: Fixed extension update latency and package duplication issues</changelogtext>
+        <changelogtext>[b]Resource Footprint[/b]: Converted assets from PNG to lossless WebP for optimal size</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.6.0" changeDate="June 1,2026">
         <changelogtext>[b]Immersive Reader[/b]: Added Atmospheric Audio, Adaptive Palette transitions, and Light Adaptive Night-Read mode</changelogtext>
         <changelogtext>[b]AI Intelligence[/b]: Integrated Gemini-powered Story Recaps and high-fidelity Unsharp Sharpening Upscale</changelogtext>
