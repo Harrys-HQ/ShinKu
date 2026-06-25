@@ -136,9 +136,7 @@ abstract class HttpSource : CatalogueSource {
      * @param page the page number to retrieve.
      */
     override suspend fun getPopularManga(page: Int): MangasPage {
-        return client.newCall(popularMangaRequest(page))
-            .awaitSuccess()
-            .use { popularMangaParse(it) }
+        return fetchPopularManga(page).awaitSingle()
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getPopularManga"))
@@ -177,9 +175,7 @@ abstract class HttpSource : CatalogueSource {
         query: String,
         filters: FilterList,
     ): MangasPage {
-        return client.newCall(searchMangaRequest(page, query, filters))
-            .awaitSuccess()
-            .use { searchMangaParse(it) }
+        return fetchSearchManga(page, query, filters).awaitSingle()
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getSearchManga"))
@@ -229,9 +225,7 @@ abstract class HttpSource : CatalogueSource {
      * @param page the page number to retrieve.
      */
     override suspend fun getLatestUpdates(page: Int): MangasPage {
-        return client.newCall(latestUpdatesRequest(page))
-            .awaitSuccess()
-            .use { latestUpdatesParse(it) }
+        return fetchLatestUpdates(page).awaitSingle()
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getLatestUpdates"))
@@ -267,11 +261,7 @@ abstract class HttpSource : CatalogueSource {
      * @return the updated manga.
      */
     override suspend fun getMangaDetails(manga: SManga): SManga {
-        return client.newCall(mangaDetailsRequest(manga))
-            .awaitSuccess()
-            .use { response ->
-                mangaDetailsParse(response).apply { initialized = true }
-            }
+        return fetchMangaDetails(manga).awaitSingle()
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getMangaDetails"))
@@ -308,11 +298,7 @@ abstract class HttpSource : CatalogueSource {
      * @return the chapters for the manga.
      */
     override suspend fun getChapterList(manga: SManga): List<SChapter> {
-        return client.newCall(chapterListRequest(manga))
-            .awaitSuccess()
-            .use { response ->
-                chapterListParse(response)
-            }
+        return fetchChapterList(manga).awaitSingle()
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getChapterList"))
@@ -356,11 +342,7 @@ abstract class HttpSource : CatalogueSource {
      * @return the pages for the chapter.
      */
     override suspend fun getPageList(chapter: SChapter): List<Page> {
-        return client.newCall(pageListRequest(chapter))
-            .awaitSuccess()
-            .use { response ->
-                pageListParse(response)
-            }
+        return fetchPageList(chapter).awaitSingle()
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getPageList"))
@@ -397,9 +379,7 @@ abstract class HttpSource : CatalogueSource {
      * @param page the page whose source image has to be fetched.
      */
     open suspend fun getImageUrl(page: Page): String {
-        return client.newCall(imageUrlRequest(page))
-            .awaitSuccess()
-            .use { imageUrlParse(it) }
+        return fetchImageUrl(page).awaitSingle()
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getImageUrl"))
