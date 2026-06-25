@@ -1,5 +1,9 @@
 # ShinKu Changelog
 
+## 2.6.2 "Extension Compatibility Update" (2026-06-25)
+### Fixed
+- **Extension Interface Compatibility**: Restored full compatibility with all compiled extensions (such as AllManga) by delegating coroutine methods in `HttpSource` to their legacy RxJava counterparts using `awaitSingle()`. This resolves runtime errors such as `UnsupportedOperationException: null` when opening titles or loading chapters.
+
 ## 2.6.1 "Extension Updates Fix & Resource Optimization" (2026-06-20)
 ### Fixed
 - **Extension Update Latency**: Resolved package manager latency where updated extensions remained stuck in the updates pending list.
