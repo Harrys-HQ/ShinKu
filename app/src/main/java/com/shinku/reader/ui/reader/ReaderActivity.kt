@@ -22,11 +22,27 @@ import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Translate
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -326,6 +342,10 @@ class ReaderActivity : BaseActivity() {
                         (viewModel.state.value.viewer as? PagerViewer)?.setPanels(event.page, event.panels)
                     }
 
+                    is ReaderViewModel.Event.TranslationOverlayReady -> {
+                        viewModel.state.value.viewer?.updateTranslation(event.page)
+                    }
+
                     is ReaderViewModel.Event.ShowSnackbar -> {
                         lifecycleScope.launch {
                             val msg = stringResource(event.stringRes)
@@ -349,6 +369,7 @@ class ReaderActivity : BaseActivity() {
             )
         }
 
+        val shinkuPreferences = remember { Injekt.get<com.shinku.reader.exh.source.ShinKuPreferences>() }
         val hapticGenerator = remember { HapticGenerator(this@ReaderActivity) { shinkuPreferences.hapticFeedback().get() } }
 
         LaunchedEffect(state.currentPage) {
@@ -370,6 +391,39 @@ class ReaderActivity : BaseActivity() {
             }
 
             ContentOverlay(state = state)
+
+            // Floating Translate Button
+            val isLiveTranslationEnabled = remember { shinkuPreferences.liveTranslation().get() }
+            val isTranslationActive = state.activePage?.showTranslation ?: false
+            val apiKey = remember { shinkuPreferences.geminiApiKey().get() }
+            
+            if (isLiveTranslationEnabled && apiKey.isNotBlank() && !state.menuVisible && !zenMode) {
+                @OptIn(ExperimentalFoundationApi::class)
+                androidx.compose.material3.Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 80.dp, end = 16.dp)
+                        .alpha(0.6f)
+                        .combinedClickable(
+                            onClick = { viewModel.onTranslation() },
+                            onLongClick = { viewModel.openTranslationLanguageSelectDialog() }
+                        ),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    color = if (isTranslationActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (isTranslationActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    shadowElevation = 6.dp,
+                ) {
+                    Box(
+                        modifier = Modifier.padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Outlined.Translate,
+                            contentDescription = "Live Translation",
+                        )
+                    }
+                }
+            }
 
             Box(
                 modifier = Modifier
@@ -460,6 +514,199 @@ class ReaderActivity : BaseActivity() {
                             Text("Analyzing page content...")
                         }
                     },
+                )
+            }
+
+            is ReaderViewModel.Dialog.TranslationLanguageSelect -> {
+                val currentSourceLanguage = remember { shinkuPreferences.translationSourceLanguage().get() }
+                val currentTargetLanguage = remember { shinkuPreferences.translationTargetLanguage().get() }
+                
+                var selectedSource by remember { mutableStateOf(currentSourceLanguage) }
+                var selectedTarget by remember { mutableStateOf(currentTargetLanguage) }
+                
+                val sourceLanguages = remember {
+                    listOf(
+                        "Auto-Detect" to "Auto-Detect (自动检测)",
+                        "Japanese" to "Japanese (日本語)",
+                        "Chinese" to "Chinese (中文)",
+                        "Korean" to "Korean (한국어)",
+                        "English" to "English",
+                        "Spanish" to "Spanish (Español)",
+                        "French" to "French (Français)",
+                        "German" to "German (Deutsch)",
+                        "Italian" to "Italian (Italiano)"
+                    )
+                }
+                
+                val targetLanguages = remember {
+                    listOf(
+                        "English" to "English",
+                        "Spanish" to "Spanish (Español)",
+                        "French" to "French (Français)",
+                        "German" to "German (Deutsch)",
+                        "Portuguese" to "Portuguese (Português)",
+                        "Italian" to "Italian (Italiano)",
+                        "Russian" to "Russian (Русский)",
+                        "Indonesian" to "Indonesian (Bahasa Indonesia)",
+                        "Tagalog" to "Tagalog (Filipino)",
+                        "Arabic" to "Arabic (العربية)"
+                    )
+                }
+
+                AlertDialog(
+                    onDismissRequest = onDismissRequest,
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.changeTranslationSourceLanguage(selectedSource)
+                                viewModel.changeTranslationTargetLanguage(selectedTarget)
+                                onDismissRequest()
+                            }
+                        ) {
+                            Text(stringResource(MR.strings.action_ok))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = onDismissRequest) {
+                            Text(stringResource(MR.strings.action_cancel))
+                        }
+                    },
+                    title = { Text("Translation Settings") },
+                    text = {
+                        androidx.compose.foundation.layout.Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Source Language Dropdown
+                            var sourceExpanded by remember { mutableStateOf(false) }
+                            androidx.compose.foundation.layout.Column {
+                                Text(
+                                    text = "Translate From",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .clickable { sourceExpanded = true }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        val displayName = sourceLanguages.find { it.first == selectedSource }?.second ?: selectedSource
+                                        Text(
+                                            text = displayName,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        androidx.compose.material3.Icon(
+                                            imageVector = androidx.compose.material.icons.Icons.Default.ArrowDropDown,
+                                            contentDescription = "Expand",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    androidx.compose.material3.DropdownMenu(
+                                        expanded = sourceExpanded,
+                                        onDismissRequest = { sourceExpanded = false }
+                                    ) {
+                                        sourceLanguages.forEach { (code, name) ->
+                                            androidx.compose.material3.DropdownMenuItem(
+                                                text = { Text(name) },
+                                                onClick = {
+                                                    selectedSource = code
+                                                    sourceExpanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Swap Button
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        val temp = selectedSource
+                                        if (temp != "Auto-Detect") {
+                                            val targetAsSource = targetLanguages.find { it.first == selectedTarget }
+                                            val sourceAsTarget = targetLanguages.find { it.first == temp }
+                                            if (targetAsSource != null && sourceAsTarget != null) {
+                                                selectedSource = selectedTarget
+                                                selectedTarget = temp
+                                            }
+                                        }
+                                    },
+                                    enabled = selectedSource != "Auto-Detect"
+                                ) {
+                                    Text("⇅ Swap Languages")
+                                }
+                            }
+
+                            // Target Language Dropdown
+                            var targetExpanded by remember { mutableStateOf(false) }
+                            androidx.compose.foundation.layout.Column {
+                                Text(
+                                    text = "Translate To",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                        .clickable { targetExpanded = true }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        val displayName = targetLanguages.find { it.first == selectedTarget }?.second ?: selectedTarget
+                                        Text(
+                                            text = displayName,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        androidx.compose.material3.Icon(
+                                            imageVector = androidx.compose.material.icons.Icons.Default.ArrowDropDown,
+                                            contentDescription = "Expand",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    androidx.compose.material3.DropdownMenu(
+                                        expanded = targetExpanded,
+                                        onDismissRequest = { targetExpanded = false }
+                                    ) {
+                                        targetLanguages.forEach { (code, name) ->
+                                            androidx.compose.material3.DropdownMenuItem(
+                                                text = { Text(name) },
+                                                onClick = {
+                                                    selectedTarget = code
+                                                    targetExpanded = false
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 )
             }
 

@@ -1,5 +1,16 @@
 # ShinKu Changelog
 
+## 2.6.3 "Live Translation Overhaul" (2026-06-26)
+### Added
+- **Multi-Language Translation Settings**: Added an on-the-fly, dual-dropdown translation settings dialog to the reader (accessible via FAB long-press). Allows readers to explicitly set both the source language (with a robust Auto-Detect default) and the target language, as well as instantly swap languages.
+- **Global Default Preferences**: Added global default controls for translation source and target languages under ShinKu Settings.
+
+### Fixed
+- **Speech Bubble Text Merging**: Implemented vertical and horizontal layout proximity-aware line clustering in `TextRecognitionInteractor.kt`, preventing speech segmentation and reading order errors.
+- **OCR Deduplication**: Replaced overlapping text resolution with a quality-based length check to preserve long translated paragraphs while removing single-character OCR noise.
+- **Smart Padding**: Inflated balloon bounding boxes by 15% to ensure clean background color sampling, preventing color conflicts with black text glyphs.
+- **FAB Gestures**: Resolved click listener interception, ensuring both single-taps (toggling translation) and long-presses work seamlessly.
+
 ## 2.6.2 "Extension Compatibility Update" (2026-06-25)
 ### Fixed
 - **Extension Interface Compatibility**: Restored full compatibility with all compiled extensions (such as AllManga) by delegating coroutine methods in `HttpSource` to their legacy RxJava counterparts using `awaitSingle()`. This resolves runtime errors such as `UnsupportedOperationException: null` when opening titles or loading chapters.

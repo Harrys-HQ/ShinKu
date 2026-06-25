@@ -7,7 +7,11 @@ class ShinKuPreferences(
 ) {
     fun geminiApiKey() = preferenceStore.getString("pref_gemini_api_key", "")
 
-    fun geminiModel() = preferenceStore.getString("pref_gemini_model", "gemini-2.0-flash-exp")
+    fun geminiModel() = preferenceStore.getString("pref_gemini_model", "gemini-3.5-flash")
+
+    fun translationTargetLanguage() = preferenceStore.getString("pref_translation_target_language", "English")
+
+    fun translationSourceLanguage() = preferenceStore.getString("pref_translation_source_language", "Auto-Detect")
 
     fun aiProTier() = preferenceStore.getBoolean("pref_ai_pro_tier", false)
 

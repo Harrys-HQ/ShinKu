@@ -28,6 +28,7 @@ import com.shinku.reader.data.saver.ImageSaver
 import com.shinku.reader.data.saver.Location
 import com.shinku.reader.data.sync.SyncDataJob
 import eu.kanade.tachiyomi.source.model.Page
+import android.graphics.Bitmap
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.MetadataSource
 import eu.kanade.tachiyomi.source.online.all.MergedSource
@@ -45,6 +46,7 @@ import com.shinku.reader.ui.reader.loader.DownloadPageLoader
 import com.shinku.reader.ui.reader.model.InsertPage
 import com.shinku.reader.ui.reader.model.ReaderChapter
 import com.shinku.reader.ui.reader.model.ReaderPage
+import com.shinku.reader.ui.reader.model.TranslatedBlock
 import com.shinku.reader.ui.reader.model.ViewerChapters
 import com.shinku.reader.ui.reader.setting.ReaderOrientation
 import com.shinku.reader.ui.reader.setting.ReaderPreferences
@@ -667,6 +669,7 @@ class ReaderViewModel(
      * [page]'s chapter is different from the currently active.
      */
     fun onPageSelected(page: ReaderPage, currentPageText: String /* SY --> */, hasExtraPage: Boolean /* SY <-- */) {
+        mutableState.update { it.copy(activePage = page) }
         // InsertPage doesn't change page progress
         if (page is InsertPage) {
             return
@@ -1148,6 +1151,23 @@ class ReaderViewModel(
         mutableState.update { it.copy(dialog = Dialog.Settings) }
     }
 
+    fun openTranslationLanguageSelectDialog() {
+        mutableState.update { it.copy(dialog = Dialog.TranslationLanguageSelect) }
+    }
+
+    fun changeTranslationLanguage(lang: String) {
+        shinkuPreferences.translationTargetLanguage().set(lang)
+        closeDialog()
+    }
+
+    fun changeTranslationSourceLanguage(lang: String) {
+        shinkuPreferences.translationSourceLanguage().set(lang)
+    }
+
+    fun changeTranslationTargetLanguage(lang: String) {
+        shinkuPreferences.translationTargetLanguage().set(lang)
+    }
+
     fun closeDialog() {
         mutableState.update { it.copy(dialog = null) }
     }
@@ -1348,12 +1368,129 @@ class ReaderViewModel(
 
     // SY -->
     fun onTranslation() {
-        val page = (state.value.dialog as? Dialog.PageActions)?.page ?: return
-        performAiAction(page, "Translation") { text ->
-            val apiKey = shinkuPreferences.geminiApiKey().get()
-            val model = shinkuPreferences.geminiModel().get()
-            geminiVibeSearch.translateText(text, apiKey, model)
+        val page = (state.value.dialog as? Dialog.PageActions)?.page ?: state.value.activePage ?: return
+        if (page.status != Page.State.Ready) return
+        val stream = page.stream ?: return
+
+        // Toggle off if already showing
+        if (page.showTranslation) {
+            page.showTranslation = false
+            eventChannel.trySend(Event.TranslationOverlayReady(page))
+            return
         }
+
+        // If already translated, just show it!
+        if (page.translationBlocks != null) {
+            page.showTranslation = true
+            eventChannel.trySend(Event.TranslationOverlayReady(page))
+            return
+        }
+
+        viewModelScope.launchIO {
+            mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
+            try {
+                val bitmap = ImageDecoder.newInstance(stream())?.decode() ?: throw Exception("Failed to decode image")
+                val ocrResults = textRecognitionInteractor.recognizeText(bitmap)
+
+                if (ocrResults.isEmpty()) {
+                    mutableState.update { it.copy(dialog = Dialog.AiInsight("Translation", "No text detected on page.")) }
+                    return@launchIO
+                }
+
+                val apiKey = shinkuPreferences.geminiApiKey().get()
+                val model = shinkuPreferences.geminiModel().get()
+                val sourceLanguage = shinkuPreferences.translationSourceLanguage().get()
+                val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
+
+                if (apiKey.isBlank()) {
+                    mutableState.update { it.copy(dialog = Dialog.AiInsight("Translation", "Please set your Gemini API Key in Settings > ShinKu Features.")) }
+                    return@launchIO
+                }
+
+                val inputs = ocrResults.mapIndexed { index, result ->
+                    com.shinku.reader.domain.source.interactor.GeminiVibeSearch.TranslationBlockInput(id = index, text = result.text)
+                }
+
+                val translated = geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage)
+                if (translated.isEmpty()) {
+                    throw Exception("Translation returned empty results from Gemini.")
+                }
+                val translationMap = translated.associate { it.id to it.text }
+
+                val translatedBlocks = ocrResults.mapIndexed { index, result ->
+                    val translation = translationMap[index] ?: result.text
+                    val rect = result.boundingBox ?: android.graphics.Rect(0, 0, 0, 0)
+
+                    // Auto detect speech balloon background color
+                    val bgColor = detectBackgroundColor(bitmap, rect)
+                    val textColor = if (isDarkColor(bgColor)) android.graphics.Color.WHITE else android.graphics.Color.BLACK
+
+                    TranslatedBlock(
+                        originalText = result.text,
+                        translatedText = translation,
+                        boundingBox = rect,
+                        bgColor = bgColor,
+                        textColor = textColor
+                    )
+                }
+
+                page.translationBlocks = translatedBlocks
+                page.showTranslation = true
+
+                mutableState.update { it.copy(dialog = null) } // Close loading dialog
+                eventChannel.send(Event.TranslationOverlayReady(page))
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+                mutableState.update { it.copy(dialog = Dialog.AiInsight("Translation Error", e.message ?: "Unknown error")) }
+            }
+        }
+    }
+
+    private fun detectBackgroundColor(bitmap: Bitmap, rect: android.graphics.Rect): Int {
+        // Inflate the bounding box slightly (by 15%) to sample the actual speech balloon area rather than text glyphs
+        val paddingX = (rect.width() * 0.15).toInt().coerceAtLeast(8)
+        val paddingY = (rect.height() * 0.15).toInt().coerceAtLeast(8)
+        
+        val left = (rect.left - paddingX).coerceIn(0, bitmap.width - 1)
+        val top = (rect.top - paddingY).coerceIn(0, bitmap.height - 1)
+        val right = (rect.right + paddingX).coerceIn(0, bitmap.width - 1)
+        val bottom = (rect.bottom + paddingY).coerceIn(0, bitmap.height - 1)
+
+        val colors = mutableListOf<Int>()
+        val stepX = kotlin.math.max(1, (right - left) / 10)
+        val stepY = kotlin.math.max(1, (bottom - top) / 10)
+
+        // Sample top and bottom borders
+        for (x in left..right step stepX) {
+            colors.add(bitmap.getPixel(x, top))
+            colors.add(bitmap.getPixel(x, bottom))
+        }
+        // Sample left and right borders
+        for (y in top..bottom step stepY) {
+            colors.add(bitmap.getPixel(left, y))
+            colors.add(bitmap.getPixel(right, y))
+        }
+
+        if (colors.isEmpty()) return android.graphics.Color.WHITE
+
+        var totalR = 0L
+        var totalG = 0L
+        var totalB = 0L
+        for (c in colors) {
+            totalR += android.graphics.Color.red(c)
+            totalG += android.graphics.Color.green(c)
+            totalB += android.graphics.Color.blue(c)
+        }
+        val count = colors.size.toLong()
+        return android.graphics.Color.rgb((totalR / count).toInt(), (totalG / count).toInt(), (totalB / count).toInt())
+    }
+
+    private fun isDarkColor(color: Int): Boolean {
+        val r = android.graphics.Color.red(color)
+        val g = android.graphics.Color.green(color)
+        val b = android.graphics.Color.blue(color)
+        val luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        return luminance < 128
     }
 
     fun onFootnotes() {
@@ -1527,6 +1664,7 @@ class ReaderViewModel(
         val isAutoScrollEnabled: Boolean = false,
         val ehAutoscrollFreq: String = "",
         val coverColor: Int? = null,
+        val activePage: ReaderPage? = null,
         // SY <--
     ) {
         val currentChapter: ReaderChapter?
@@ -1557,6 +1695,7 @@ class ReaderViewModel(
         data object BoostPageHelp : Dialog
         data object AiProcessing : Dialog
         data class AiInsight(val title: String, val content: String) : Dialog
+        data object TranslationLanguageSelect : Dialog
         // SY <--
     }
 
@@ -1566,6 +1705,7 @@ class ReaderViewModel(
         data class SetOrientation(val orientation: Int) : Event
         data class SetCoverResult(val result: SetAsCoverResult) : Event
         data class PanelsDetected(val page: ReaderPage, val panels: List<android.graphics.RectF>) : Event
+        data class TranslationOverlayReady(val page: ReaderPage) : Event
 
         data class SavedImage(val result: SaveImageResult) : Event
         data class ShareImage(
