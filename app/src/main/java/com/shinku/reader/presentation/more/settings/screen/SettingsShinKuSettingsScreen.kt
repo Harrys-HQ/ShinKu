@@ -82,6 +82,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         return listOf(
             getMaintenanceToolsGroup(),
             getGeminiGroup(shinkuPreferences),
+            getTranslationGroup(shinkuPreferences),
             getPerformanceGroup(shinkuPreferences, basePreferences),
             getImmersionGroup(shinkuPreferences, readerPreferences),
             getReaderEnhancementsGroup(readerPreferences),
@@ -198,11 +199,13 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_gemini_model),
                     subtitle = stringResource(MR.strings.pref_gemini_model_summary),
                     entries = persistentMapOf(
-                        "gemini-2.0-flash" to "Gemini 2.0 Flash",
-                        "gemini-2.0-pro" to "Gemini 2.0 Pro",
-                        "gemini-3.0-flash" to "Gemini 3.0 Flash",
-                        "gemini-3.0-pro" to "Gemini 3.0 Pro",
-                        "gemini-3.1-pro" to "Gemini 3.1 Pro (Preview)",
+                        "gemini-3.5-flash" to "Gemini 3.5 Flash (Stable)",
+                        "gemini-3.1-flash-lite" to "Gemini 3.1 Flash-Lite",
+                        "gemini-3.1-pro-preview" to "Gemini 3.1 Pro (Preview)",
+                        "gemini-3-pro-preview" to "Gemini 3 Pro (Preview)",
+                        "gemini-3-flash-preview" to "Gemini 3 Flash (Preview)",
+                        "gemini-2.5-flash" to "Gemini 2.5 Flash",
+                        "gemini-2.5-pro" to "Gemini 2.5 Pro",
                     ),
                 ),
                 Preference.PreferenceItem.TextPreference(
@@ -248,6 +251,53 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
     }
 
     @Composable
+    private fun getTranslationGroup(shinkuPreferences: ShinKuPreferences): Preference.PreferenceGroup {
+        return Preference.PreferenceGroup(
+            title = "AI Translation Settings",
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.liveTranslation(),
+                    title = stringResource(MR.strings.pref_live_translation),
+                    subtitle = stringResource(MR.strings.pref_live_translation_summary),
+                ),
+                Preference.PreferenceItem.ListPreference(
+                    preference = shinkuPreferences.translationSourceLanguage(),
+                    title = "Translation Source Language",
+                    subtitle = "Select the default language to translate from",
+                    entries = persistentMapOf(
+                        "Auto-Detect" to "Auto-Detect (自动检测)",
+                        "Japanese" to "Japanese (日本語)",
+                        "Chinese" to "Chinese (中文)",
+                        "Korean" to "Korean (한국어)",
+                        "English" to "English",
+                        "Spanish" to "Spanish (Español)",
+                        "French" to "French (Français)",
+                        "German" to "German (Deutsch)",
+                        "Italian" to "Italian (Italiano)",
+                    ),
+                ),
+                Preference.PreferenceItem.ListPreference(
+                    preference = shinkuPreferences.translationTargetLanguage(),
+                    title = "Translation Target Language",
+                    subtitle = "Select the language to translate manga pages into",
+                    entries = persistentMapOf(
+                        "English" to "English",
+                        "Spanish" to "Spanish (Español)",
+                        "French" to "French (Français)",
+                        "German" to "German (Deutsch)",
+                        "Portuguese" to "Portuguese (Português)",
+                        "Italian" to "Italian (Italiano)",
+                        "Russian" to "Russian (Русский)",
+                        "Indonesian" to "Indonesian (Bahasa Indonesia)",
+                        "Tagalog" to "Tagalog (Filipino)",
+                        "Arabic" to "Arabic (العربية)",
+                    ),
+                ),
+            ),
+        )
+    }
+
+    @Composable
     private fun getImmersionGroup(
         shinkuPreferences: ShinKuPreferences,
         readerPreferences: ReaderPreferences,
@@ -255,11 +305,6 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.pref_category_immersion_reader),
             preferenceItems = persistentListOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = shinkuPreferences.liveTranslation(),
-                    title = stringResource(MR.strings.pref_live_translation),
-                    subtitle = stringResource(MR.strings.pref_live_translation_summary),
-                ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = shinkuPreferences.atmosphericAudio(),
                     title = stringResource(SYMR.strings.pref_atmospheric_audio),

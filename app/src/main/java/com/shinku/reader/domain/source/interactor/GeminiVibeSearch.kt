@@ -124,12 +124,66 @@ class GeminiVibeSearch(
         )
     }
 
-    suspend fun translateText(text: String, apiKey: String, model: String): String {
+    suspend fun translateText(text: String, apiKey: String, model: String, targetLanguage: String = "English"): String {
         return callGeminiForText(
-            "Translate this manga text to English, preserving the tone and style: \"$text\". Return ONLY the translation.",
+            "Translate this manga text to $targetLanguage, preserving the tone and style: \"$text\". Return ONLY the translation.",
             apiKey,
             model,
         )
+    }
+
+    @kotlinx.serialization.Serializable
+    data class TranslationBlockInput(
+        val id: Int,
+        val text: String,
+    )
+
+    @kotlinx.serialization.Serializable
+    data class TranslationBlockOutput(
+        val id: Int,
+        val text: String,
+    )
+
+    suspend fun translateBlocks(
+        blocks: List<TranslationBlockInput>,
+        apiKey: String,
+        model: String,
+        targetLanguage: String,
+        sourceLanguage: String = "Auto-Detect"
+    ): List<TranslationBlockOutput> {
+        if (blocks.isEmpty()) return emptyList()
+        val blocksJson = json.encodeToString(blocks)
+        val translationContext = if (sourceLanguage == "Auto-Detect") {
+            "to $targetLanguage"
+        } else {
+            "from $sourceLanguage to $targetLanguage"
+        }
+        val prompt = """
+            You are a professional manga translator. Translate the following text blocks (JSON array of ID and text) $translationContext, preserving the tone, style, character nuances, and context of the page.
+            Return the translations in a JSON array of objects with the exact same 'id' and the translated 'text'.
+            Return ONLY the valid JSON array, do not wrap it in markdown block or any additional text.
+            
+            Input:
+            ${blocksJson}
+        """.trimIndent()
+        
+        val resultText = callGeminiForText(prompt, apiKey, model)
+        if (resultText.startsWith("Error:")) {
+            throw Exception(resultText)
+        }
+        
+        return try {
+            val start = resultText.indexOf("[")
+            val end = resultText.lastIndexOf("]") + 1
+            if (start != -1 && end > start) {
+                val jsonArray = resultText.substring(start, end)
+                json.decodeFromString<List<TranslationBlockOutput>>(jsonArray)
+            } else {
+                throw Exception("Invalid response format from Gemini: $resultText")
+            }
+        } catch (e: Exception) {
+            throw Exception("Failed to parse translation: ${e.message}. Raw response: $resultText")
+        }
     }
 
     suspend fun enrichMetadata(title: String, currentDescription: String, apiKey: String, model: String): EnrichedMetadata? {
@@ -238,7 +292,8 @@ class GeminiVibeSearch(
     )
 
     suspend fun searchByImage(base64Image: String, apiKey: String, model: String): List<String> {
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+        val resolvedModel = resolveModel(model)
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/$resolvedModel:generateContent?key=$apiKey"
         
         val bodyJson = """
             {
@@ -290,7 +345,8 @@ class GeminiVibeSearch(
         return withIOContext {
             if (apiKey.isBlank()) return@withIOContext "API Key not set"
             try {
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+                val resolvedModel = resolveModel(model)
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/$resolvedModel:generateContent?key=$apiKey"
                 val bodyJson = """
                     {
                       "contents": [{
@@ -305,14 +361,21 @@ class GeminiVibeSearch(
                     .build()
 
                 networkHelper.client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@withIOContext "Error: ${response.code}"
                     val responseBody = response.body.string()
+                    if (!response.isSuccessful) {
+                        return@withIOContext "Error: API returned HTTP ${response.code}. Response: $responseBody"
+                    }
                     val result = json.parseToJsonElement(responseBody)
-                    result.jsonObject["candidates"]!!
-                        .jsonArray[0].jsonObject["content"]!!
-                        .jsonObject["parts"]!!
-                        .jsonArray[0].jsonObject["text"]!!
-                        .jsonPrimitive.content
+                    val candidates = result.jsonObject["candidates"]?.jsonArray
+                    if (candidates.isNullOrEmpty()) {
+                        val promptFeedback = result.jsonObject["promptFeedback"]
+                        return@withIOContext "Error: No candidates returned. Prompt feedback: $promptFeedback"
+                    }
+                    val parts = candidates[0].jsonObject["content"]?.jsonObject["parts"]?.jsonArray
+                    if (parts.isNullOrEmpty()) {
+                        return@withIOContext "Error: Content parts are empty."
+                    }
+                    parts[0].jsonObject["text"]?.jsonPrimitive?.content ?: "Error: Text content is null."
                 }
             } catch (e: Exception) {
                 "Error: ${e.message}"
@@ -321,7 +384,8 @@ class GeminiVibeSearch(
     }
 
     private fun callGemini(query: String, apiKey: String, model: String): List<String> {
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+        val resolvedModel = resolveModel(model)
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/$resolvedModel:generateContent?key=$apiKey"
 
         val prompt = """
             You are a manga discovery expert. Based on the following user description, provide a list of up to 10 real manga titles that match the "vibe".
@@ -367,6 +431,20 @@ class GeminiVibeSearch(
             } catch (e: Exception) {
                 emptyList()
             }
+        }
+    }
+
+    private fun resolveModel(model: String): String {
+        return when (model) {
+            "gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "gemini-2.0-flash",
+            "gemini-2.0-pro",
+            "gemini-2.0-flash-exp",
+            "gemini-3.0-flash",
+            "gemini-3.0-pro",
+            "gemini-3.1-pro" -> "gemini-3.5-flash"
+            else -> model
         }
     }
 }
