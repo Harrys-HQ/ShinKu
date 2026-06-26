@@ -3,6 +3,15 @@ package com.shinku.reader.ui.reader.viewer
 import android.content.Context
 import android.graphics.PointF
 import android.graphics.RectF
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
+import android.text.StaticLayout
+import android.text.TextPaint
+import android.text.Layout
+import android.os.Build
+import com.shinku.reader.ui.reader.model.ReaderPage
+import kotlin.math.max
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
@@ -67,6 +76,14 @@ open class ReaderPageImageView @JvmOverloads constructor(
     private var pageView: View? = null
 
     private var config: Config? = null
+
+    var currentPage: ReaderPage? = null
+        set(value) {
+            field = value
+            translationOverlay?.page = value
+        }
+
+    private var translationOverlay: TranslationOverlay? = null
 
     private var panels: List<RectF> = emptyList()
     private var currentPanelIndex: Int = -1
@@ -312,16 +329,18 @@ open class ReaderPageImageView @JvmOverloads constructor(
                 object : SubsamplingScaleImageView.OnStateChangedListener {
                     override fun onScaleChanged(newScale: Float, origin: Int) {
                         this@ReaderPageImageView.onScaleChanged(newScale)
+                        translationOverlay?.invalidate()
                     }
 
                     override fun onCenterChanged(newCenter: PointF?, origin: Int) {
-                        // Not used
+                        translationOverlay?.invalidate()
                     }
                 },
             )
             setOnClickListener { this@ReaderPageImageView.onViewClicked() }
         }
         addView(pageView, MATCH_PARENT, MATCH_PARENT)
+        ensureTranslationOverlay()
     }
 
     private fun SubsamplingScaleImageView.setupZoom(config: Config?) {
@@ -440,6 +459,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
             }
         }
         addView(pageView, MATCH_PARENT, MATCH_PARENT)
+        ensureTranslationOverlay()
     }
 
     private fun setAnimatedImage(
@@ -493,6 +513,116 @@ open class ReaderPageImageView @JvmOverloads constructor(
         LEFT,
         CENTER,
         RIGHT,
+    }
+
+    private fun ensureTranslationOverlay() {
+        if (translationOverlay == null) {
+            translationOverlay = TranslationOverlay(context).apply {
+                this.pageView = this@ReaderPageImageView.pageView
+                this.page = this@ReaderPageImageView.currentPage
+            }
+            addView(translationOverlay, MATCH_PARENT, MATCH_PARENT)
+        } else {
+            translationOverlay?.pageView = this.pageView
+            translationOverlay?.page = this@ReaderPageImageView.currentPage
+            translationOverlay?.bringToFront()
+        }
+    }
+
+    fun updateTranslationOverlay() {
+        ensureTranslationOverlay()
+        translationOverlay?.invalidate()
+    }
+}
+
+class TranslationOverlay(context: Context) : View(context) {
+    var page: ReaderPage? = null
+    var pageView: View? = null
+
+    private val maskPaint = Paint().apply {
+        style = Paint.Style.FILL
+        isAntiAlias = true
+    }
+
+    private val sTopLeft = PointF()
+    private val vTopLeft = PointF()
+    private val sBottomRight = PointF()
+    private val vBottomRight = PointF()
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val page = page ?: return
+        if (!page.showTranslation) return
+        val blocks = page.translationBlocks ?: return
+        val view = pageView as? com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView ?: return
+
+        if (!view.isReady) return
+
+        for (block in blocks) {
+            val box = block.boundingBox ?: continue
+
+            sTopLeft.set(box.left.toFloat(), box.top.toFloat())
+            sBottomRight.set(box.right.toFloat(), box.bottom.toFloat())
+
+            view.sourceToViewCoord(sTopLeft, vTopLeft)
+            view.sourceToViewCoord(sBottomRight, vBottomRight)
+
+            val left = vTopLeft.x
+            val top = vTopLeft.y
+            val right = vBottomRight.x
+            val bottom = vBottomRight.y
+
+            // Draw background mask with smooth rounded corners matching speech balloons
+            maskPaint.color = block.bgColor
+            val rx = 8f * view.scale
+            val ry = 8f * view.scale
+            canvas.drawRoundRect(left, top, right, bottom, rx, ry, maskPaint)
+
+            // Draw translated text
+            val width = (right - left).toInt()
+            val height = (bottom - top).toInt()
+            if (width <= 0 || height <= 0) continue
+
+            val text = block.translatedText
+            var fontSizePx = (height * 0.35f).coerceIn(12f, 48f)
+            var layout: StaticLayout? = null
+            val textPaint = TextPaint().apply {
+                color = block.textColor
+                isAntiAlias = true
+                typeface = android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.NORMAL)
+            }
+
+            val minFontSize = 8f
+            while (fontSizePx >= minFontSize) {
+                textPaint.textSize = fontSizePx
+                layout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    StaticLayout.Builder.obtain(text, 0, text.length, textPaint, width)
+                        .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                        .setLineSpacing(0f, 1f)
+                        .setIncludePad(false)
+                        .build()
+                } else {
+                    @Suppress("DEPRECATION")
+                    StaticLayout(
+                        text, textPaint, width,
+                        Layout.Alignment.ALIGN_CENTER, 1f, 0f, false
+                    )
+                }
+                if (layout.height <= height) {
+                    break
+                }
+                fontSizePx -= 1.5f
+            }
+
+            if (layout != null) {
+                canvas.save()
+                val textHeight = layout.height
+                val dy = top + (height - textHeight) / 2f
+                canvas.translate(left, dy)
+                layout.draw(canvas)
+                canvas.restore()
+            }
+        }
     }
 }
 
