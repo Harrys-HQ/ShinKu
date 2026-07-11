@@ -340,6 +340,10 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
         }
     }
 
+    override fun updateTranslation(page: ReaderPage) {
+        getPageHolder(page)?.updateTranslationOverlay()
+    }
+
     /**
      * Moves to the next page.
      */

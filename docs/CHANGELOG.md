@@ -1,5 +1,13 @@
 # ShinKu Changelog
 
+## 2.6.4 "Upstream Synchronization & CDN Fix" (2026-07-12)
+### Fixed
+- **Reader Page Retry Crash:** Fixed a reader crash where clicking "Retry" on page load failures threw an `UnsupportedOperationException: null` for standard sources (like Mangabat) by only clearing image URLs on EHentai-based sources.
+
+### Changed
+- **Upstream Dependency Sync:** Updated SQLDelight to `2.3.2`, activity-compose to `1.13.0`, moko-resources to `0.26.1`, and Okio to `3.17.0` to keep in sync with modern upstream Mihon features.
+- **Automatic Download Cache Invalidation:** Automated invalidation of local download directory cache references upon completing database restoration to prevent broken local links.
+
 ## 2.6.3 "Live Translation Overhaul" (2026-06-26)
 ### Added
 - **Multi-Language Translation Settings**: Added an on-the-fly, dual-dropdown translation settings dialog to the reader (accessible via FAB long-press). Allows readers to explicitly set both the source language (with a robust Auto-Detect default) and the target language, as well as instantly swap languages.
