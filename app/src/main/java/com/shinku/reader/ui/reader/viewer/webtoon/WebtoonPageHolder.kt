@@ -96,9 +96,14 @@ class WebtoonPageHolder(
      */
     fun bind(page: ReaderPage) {
         this.page = page
+        frame.currentPage = page
         loadJob?.cancel()
         loadJob = scope.launch { loadPageAndProcessStatus() }
         refreshLayoutParams()
+    }
+
+    fun updateTranslationOverlay() {
+        frame.updateTranslationOverlay()
     }
 
     private fun refreshLayoutParams() {

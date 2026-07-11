@@ -22,6 +22,9 @@ import logcat.LogPriority
 import com.shinku.reader.core.common.i18n.stringResource
 import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.data.download.DownloadCache
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 
 class BackupRestoreJob(private val context: Context, workerParams: WorkerParameters) :
     CoroutineWorker(context, workerParams) {
@@ -42,6 +45,11 @@ class BackupRestoreJob(private val context: Context, workerParams: WorkerParamet
 
         return try {
             BackupRestorer(context, notifier, isSync).restore(uri, options)
+            try {
+                Injekt.get<DownloadCache>().invalidateCache()
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to invalidate download cache after restore" }
+            }
             Result.success()
         } catch (e: Exception) {
             if (e is CancellationException) {

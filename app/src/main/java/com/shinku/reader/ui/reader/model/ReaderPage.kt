@@ -25,4 +25,16 @@ open class ReaderPage(
             field = value
             if (value) shiftedPage = false
         }
+
+    // Translation Overlay Data
+    var translationBlocks: List<TranslatedBlock>? = null
+    var showTranslation: Boolean = false
 }
+
+data class TranslatedBlock(
+    val originalText: String,
+    val translatedText: String,
+    val boundingBox: android.graphics.Rect?,
+    val bgColor: Int,
+    val textColor: Int,
+)

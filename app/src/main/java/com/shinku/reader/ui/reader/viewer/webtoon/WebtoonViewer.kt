@@ -274,6 +274,14 @@ class WebtoonViewer(
         }
     }
 
+    override fun updateTranslation(page: ReaderPage) {
+        val index = adapter.items.indexOf(page)
+        if (index != -1) {
+            val viewHolder = recycler.findViewHolderForAdapterPosition(index) as? WebtoonPageHolder
+            viewHolder?.updateTranslationOverlay()
+        }
+    }
+
     fun onScrolled(pos: Int? = null) {
         val position = pos ?: layoutManager.findLastEndVisibleItemPosition()
         val item = adapter.items.getOrNull(position)

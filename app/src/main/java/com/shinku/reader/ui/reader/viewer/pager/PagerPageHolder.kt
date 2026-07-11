@@ -73,6 +73,7 @@ class PagerPageHolder(
     private var extraLoadJob: Job? = null
 
     init {
+        this.currentPage = page
         onImageDimensionsLoaded = { width, height ->
             viewer.activity.viewModel.onPageDimensionsLoaded(page, width, height)
         }

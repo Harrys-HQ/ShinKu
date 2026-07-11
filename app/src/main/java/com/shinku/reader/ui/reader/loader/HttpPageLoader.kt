@@ -166,7 +166,9 @@ internal class HttpPageLoader(
         }
         // EXH -->
         // Force re-fetch the image URL on retry
-        page.imageUrl = null
+        if (source.isEhBasedSource()) {
+            page.imageUrl = null
+        }
 
         if (readerPreferences.readerInstantRetry().get()) {
             boostPage(page)
