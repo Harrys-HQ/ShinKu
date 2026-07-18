@@ -1,5 +1,10 @@
 # ShinKu Changelog
 
+## 2.6.5 "AsuraScans & Library Refresh Fix" (2026-07-18)
+### Fixed
+- **Chapter Memo Caching:** Resolved `Refresh Chapter List` error toast when opening chapters on extensions relying on `SChapter.memo` (such as AsuraScans) by dynamically caching and restoring the memo field using a normalized URL and suffix matcher.
+- **Library Refresh Deadlock:** Resolved a deadlock issue where library refresh would freeze at 2% by replacing the global source-wide update lock with a fine-grained, per-manga lock mapping.
+
 ## 2.6.4 "Upstream Synchronization & CDN Fix" (2026-07-12)
 ### Fixed
 - **Reader Page Retry Crash:** Fixed a reader crash where clicking "Retry" on page load failures threw an `UnsupportedOperationException: null` for standard sources (like Mangabat) by only clearing image URLs on EHentai-based sources.

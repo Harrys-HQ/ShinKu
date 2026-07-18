@@ -300,3 +300,7 @@
 -dontwarn org.ietf.jgss.GSSName
 -dontwarn org.ietf.jgss.Oid
 -dontwarn javax.lang.model.**
+
+# Zstd compression rules to avoid native crash on JNI FindClass in minified builds
+-keep class com.squareup.zstd.** { *; }
+-dontwarn com.squareup.zstd.**

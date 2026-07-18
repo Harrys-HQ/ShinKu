@@ -58,6 +58,22 @@ interface Source {
      */
     suspend fun getPageList(chapter: SChapter): List<Page>
 
+    /**
+     * Fetches updated information for a manga.
+     *
+     * @since extensions-lib 1.6
+     */
+    suspend fun getMangaUpdate(
+        manga: SManga,
+        chapters: List<SChapter>,
+        fetchDetails: Boolean,
+        fetchChapters: Boolean,
+    ): eu.kanade.tachiyomi.source.model.SMangaUpdate {
+        val details = if (fetchDetails) getMangaDetails(manga) else manga
+        val chapterList = if (fetchChapters) getChapterList(manga) else chapters
+        return eu.kanade.tachiyomi.source.model.SMangaUpdate(details, chapterList)
+    }
+
     @Deprecated(
         "Use the non-RxJava API instead",
         ReplaceWith("getMangaDetails"),

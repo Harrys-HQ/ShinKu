@@ -3,6 +3,7 @@ package com.shinku.reader.ui.reader.loader
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.data.cache.ChapterCache
 import com.shinku.reader.data.database.models.toDomainChapter
+import com.shinku.reader.domain.manga.model.toSManga
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import com.shinku.reader.ui.reader.model.ReaderChapter
@@ -105,6 +106,28 @@ internal class HttpPageLoader(
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
+            }
+            if (chapter.chapter.memo == null || chapter.chapter.memo!!.isEmpty()) {
+                var cachedMemo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(source.id, chapter.chapter.url)
+                if (cachedMemo == null) {
+                    val manga = chapter.manga
+                    if (manga != null) {
+                        try {
+                            val networkChapters = source.getChapterList(manga.toSManga())
+                            networkChapters.forEach { netChapter ->
+                                netChapter.memo?.let { m ->
+                                    eu.kanade.tachiyomi.source.online.ChapterMemoCache.put(source.id, netChapter.url, m)
+                                }
+                            }
+                            cachedMemo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(source.id, chapter.chapter.url)
+                        } catch (t: Throwable) {
+                            // ignore
+                        }
+                    }
+                }
+                cachedMemo?.let {
+                    chapter.chapter.memo = it
+                }
             }
             source.getPageList(chapter.chapter)
         }

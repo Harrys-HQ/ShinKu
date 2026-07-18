@@ -120,9 +120,20 @@ class ExtensionManager(
         val pkgName = getExtensionPackage(sourceId)
 
         if (pkgName != null) {
-            return iconMap[pkgName] ?: iconMap.getOrPut(pkgName) {
-                ExtensionLoader.getExtensionPackageInfoFromPkgName(context, pkgName)!!.applicationInfo!!
-                    .loadIcon(context.packageManager)
+            val cached = iconMap[pkgName]
+            if (cached != null) {
+                return cached
+            }
+            try {
+                val icon = ExtensionLoader.getExtensionPackageInfoFromPkgName(context, pkgName)
+                    ?.applicationInfo
+                    ?.loadIcon(context.packageManager)
+                if (icon != null) {
+                    iconMap[pkgName] = icon
+                    return icon
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to load icon for package $pkgName" }
             }
         }
 
