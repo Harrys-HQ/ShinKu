@@ -22,6 +22,8 @@ import okhttp3.Request
 import okhttp3.Response
 import rx.Observable
 import com.shinku.reader.core.common.util.lang.awaitSingle
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.net.URI
@@ -93,6 +95,21 @@ abstract class HttpSource : CatalogueSource {
         // SY -->
         get() = delegate?.baseHttpClient ?: network.client
     // SY <--
+
+    private val hasGetMangaUpdate by lazy {
+        try {
+            val sourceClass = Class.forName("eu.kanade.tachiyomi.source.Source")
+            val httpSourceClass = Class.forName("eu.kanade.tachiyomi.source.online.HttpSource")
+            this.javaClass.methods.any { method ->
+                method.name == "getMangaUpdate" && 
+                method.parameterTypes.size == 5 && 
+                method.declaringClass != httpSourceClass && 
+                method.declaringClass != sourceClass
+            }
+        } catch (e: Throwable) {
+            false
+        }
+    }
 
     /**
      * Generates a unique ID for the source based on the provided [name], [lang] and
@@ -260,8 +277,15 @@ abstract class HttpSource : CatalogueSource {
      * @param manga the manga to update.
      * @return the updated manga.
      */
+    @Suppress("DEPRECATION")
     override suspend fun getMangaDetails(manga: SManga): SManga {
-        return fetchMangaDetails(manga).awaitSingle()
+        return if (hasGetMangaUpdate) {
+            MangaUpdateLock.get(id, manga.url).withLock {
+                getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga
+            }
+        } else {
+            fetchMangaDetails(manga).awaitSingle()
+        }
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getMangaDetails"))
@@ -297,8 +321,27 @@ abstract class HttpSource : CatalogueSource {
      * @param manga the manga to update.
      * @return the chapters for the manga.
      */
+    @Suppress("DEPRECATION")
     override suspend fun getChapterList(manga: SManga): List<SChapter> {
-        return fetchChapterList(manga).awaitSingle()
+        return if (hasGetMangaUpdate) {
+            MangaUpdateLock.get(id, manga.url).withLock {
+                val result = getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true).chapters
+                result.forEach { chapter ->
+                    chapter.memo?.let { memo ->
+                        ChapterMemoCache.put(id, chapter.url, memo)
+                    }
+                }
+                result
+            }
+        } else {
+            val result = fetchChapterList(manga).awaitSingle()
+            result.forEach { chapter ->
+                chapter.memo?.let { memo ->
+                    ChapterMemoCache.put(id, chapter.url, memo)
+                }
+            }
+            result
+        }
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getChapterList"))
@@ -341,6 +384,7 @@ abstract class HttpSource : CatalogueSource {
      * @param chapter the chapter.
      * @return the pages for the chapter.
      */
+    @Suppress("DEPRECATION")
     override suspend fun getPageList(chapter: SChapter): List<Page> {
         return fetchPageList(chapter).awaitSingle()
     }
@@ -517,4 +561,42 @@ abstract class HttpSource : CatalogueSource {
         this.delegate = delegate
     }
     // EXH <--
+}
+
+object ChapterMemoCache {
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, kotlinx.serialization.json.JsonObject>()
+
+    private fun normalizeUrl(url: String): String {
+        return url.removePrefix("http://").removePrefix("https://").removePrefix("www.").trim().trimEnd('/')
+    }
+
+    fun put(sourceId: Long, chapterUrl: String, memo: kotlinx.serialization.json.JsonObject) {
+        val key = "${sourceId}_${normalizeUrl(chapterUrl)}"
+        cache[key] = memo
+    }
+
+    fun get(sourceId: Long, chapterUrl: String): kotlinx.serialization.json.JsonObject? {
+        val normTarget = normalizeUrl(chapterUrl)
+        val keyPrefix = "${sourceId}_"
+        cache["$keyPrefix$normTarget"]?.let { return it }
+
+        for ((key, value) in cache) {
+            if (key.startsWith(keyPrefix)) {
+                val cachedNorm = key.substring(keyPrefix.length)
+                if (cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
+                    return value
+                }
+            }
+        }
+        return null
+    }
+}
+
+object MangaUpdateLock {
+    private val locks = java.util.concurrent.ConcurrentHashMap<String, kotlinx.coroutines.sync.Mutex>()
+
+    fun get(sourceId: Long, mangaUrl: String): kotlinx.coroutines.sync.Mutex {
+        val key = "${sourceId}_$mangaUrl"
+        return locks.computeIfAbsent(key) { kotlinx.coroutines.sync.Mutex() }
+    }
 }

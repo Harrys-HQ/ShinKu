@@ -4,6 +4,7 @@ import android.content.Context
 import com.hippo.unifile.UniFile
 import com.shinku.reader.domain.chapter.model.toSChapter
 import com.shinku.reader.domain.manga.model.getComicInfo
+import com.shinku.reader.domain.manga.model.toSManga
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.data.cache.ChapterCache
 import com.shinku.reader.data.download.model.Download
@@ -375,8 +376,27 @@ class Downloader(
         try {
             // If the page list already exists, start from the file
             val pageList = download.pages ?: run {
-                // Otherwise, pull page list from network and add them to download object
-                val pages = download.source.getPageList(download.chapter.toSChapter())
+                val sChapter = download.chapter.toSChapter()
+                if (sChapter.memo == null || sChapter.memo!!.isEmpty()) {
+                    var cachedMemo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(download.source.id, sChapter.url)
+                    if (cachedMemo == null) {
+                        try {
+                            val networkChapters = download.source.getChapterList(download.manga.toSManga())
+                            networkChapters.forEach { netChapter ->
+                                netChapter.memo?.let { m ->
+                                    eu.kanade.tachiyomi.source.online.ChapterMemoCache.put(download.source.id, netChapter.url, m)
+                                }
+                            }
+                            cachedMemo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(download.source.id, sChapter.url)
+                        } catch (t: Throwable) {
+                            // ignore
+                        }
+                    }
+                    cachedMemo?.let {
+                        sChapter.memo = it
+                    }
+                }
+                val pages = download.source.getPageList(sChapter)
 
                 if (pages.isEmpty()) {
                     throw Exception(context.stringResource(MR.strings.page_list_empty_error))

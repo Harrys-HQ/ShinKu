@@ -44,8 +44,6 @@ open /* SY <-- */ class NetworkHelper(
             )
             .addInterceptor(UncaughtExceptionInterceptor())
             .addInterceptor(UserAgentInterceptor(::defaultUserAgentProvider))
-            .addNetworkInterceptor(IgnoreGzipInterceptor())
-            .addNetworkInterceptor(BrotliInterceptor)
 
         if (isDebugBuild) {
             val httpLoggingInterceptor = HttpLoggingInterceptor().apply {

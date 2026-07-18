@@ -26,6 +26,8 @@ class SMangaImpl : SManga {
 
     override var initialized: Boolean = false
 
+    override var memo: kotlinx.serialization.json.JsonObject? = kotlinx.serialization.json.JsonObject(emptyMap())
+
     // SY -->
     override val originalTitle: String
         get() = title

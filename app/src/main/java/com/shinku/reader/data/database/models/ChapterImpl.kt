@@ -14,6 +14,8 @@ class ChapterImpl : Chapter {
 
     override var scanlator: String? = null
 
+    override var memo: kotlinx.serialization.json.JsonObject? = kotlinx.serialization.json.JsonObject(emptyMap())
+
     override var read: Boolean = false
 
     override var bookmark: Boolean = false

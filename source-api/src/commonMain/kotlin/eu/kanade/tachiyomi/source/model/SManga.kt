@@ -32,6 +32,8 @@ interface SManga : Serializable {
 
     var initialized: Boolean
 
+    var memo: kotlinx.serialization.json.JsonObject?
+
     fun getGenres(): List<String>? {
         if (genre.isNullOrBlank()) return null
         return genre?.split(", ")?.map { it.trim() }?.filterNot { it.isBlank() }?.distinct()
@@ -60,6 +62,7 @@ interface SManga : Serializable {
         // SY <--
         it.update_strategy = update_strategy
         it.initialized = initialized
+        it.memo = memo
     }
 
     companion object {
@@ -86,6 +89,7 @@ interface SManga : Serializable {
             status: Int = 0,
             thumbnail_url: String? = null,
             initialized: Boolean = false,
+            memo: kotlinx.serialization.json.JsonObject? = null,
         ): SManga {
             return create().also {
                 it.url = url
@@ -97,6 +101,7 @@ interface SManga : Serializable {
                 it.status = status
                 it.thumbnail_url = thumbnail_url
                 it.initialized = initialized
+                it.memo = memo
             }
         }
         // SY <--
@@ -114,6 +119,7 @@ fun SManga.copy(
     status: Int = this.status,
     thumbnail_url: String? = this.originalThumbnailUrl,
     initialized: Boolean = this.initialized,
+    memo: kotlinx.serialization.json.JsonObject? = this.memo,
 ) = SManga.create().also {
     it.url = url
     it.title = title
@@ -124,5 +130,6 @@ fun SManga.copy(
     it.status = status
     it.thumbnail_url = thumbnail_url
     it.initialized = initialized
+    it.memo = memo
 }
 // SY <--

@@ -127,7 +127,8 @@ private fun Extension.getIcon(density: Int = DisplayMetrics.DENSITY_DEFAULT): St
     return produceState<Result<ImageBitmap>>(initialValue = Result.Loading, this) {
         withIOContext {
             value = try {
-                val appInfo = ExtensionLoader.getExtensionPackageInfoFromPkgName(context, pkgName)!!.applicationInfo!!
+                val appInfo = ExtensionLoader.getExtensionPackageInfoFromPkgName(context, pkgName)?.applicationInfo
+                    ?: throw Exception("Failed to get application info for $pkgName")
                 val appResources = context.packageManager.getResourcesForApplication(appInfo)
                 Result.Success(
                     appResources.getDrawableForDensity(appInfo.icon, density, null)!!
