@@ -5,7 +5,9 @@
 <h1 align="center">ShinKu</h1>
 
 <p align="center">
-  [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/B0B21RXKG4)
+  <a href="https://ko-fi.com/B0B21RXKG4">
+    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="ko-fi">
+  </a>
 </p>
 
 <p align="center">
