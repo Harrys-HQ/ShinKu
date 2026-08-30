@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.6.7" changeDate="August 30,2026">
+        <changelogtext>[b]Added[/b]: Automatic multi-model rate-limit and quota fallback for Gemini AI</changelogtext>
+        <changelogtext>[b]Added[/b]: In-memory LRU caching for Vibe Search, recommendations, recaps, and translations</changelogtext>
+        <changelogtext>[b]Added[/b]: Vision OCR LRU caching for instantaneous page re-translations</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.6.6" changeDate="August 30,2026">
         <changelogtext>[b]Added[/b]: Native support for Protobuf extension catalogs (index.pb) with gzip decompression, fixing orphaned extensions</changelogtext>
         <changelogtext>[b]Added[/b]: Dual-format index fallback supporting both index.pb and legacy index.min.json/index.json</changelogtext>
