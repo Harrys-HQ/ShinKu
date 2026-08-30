@@ -308,7 +308,7 @@ open class FeedScreenModel(
 
                     val result = withIOContext {
                         itemUI.copy(
-                            results = networkToLocalManga(page.map { it.toDomainManga(itemUI.source!!.id) }).toImmutableList(),
+                            results = networkToLocalManga(page.take(20).map { it.toDomainManga(itemUI.source!!.id) }).toImmutableList(),
                         )
                     }
 

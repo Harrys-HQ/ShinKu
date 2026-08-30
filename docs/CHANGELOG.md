@@ -1,5 +1,17 @@
 # ShinKu Changelog
 
+## 2.6.6 "Protobuf Extension Repo Migration & Safeguards" (2026-08-30)
+### Added
+- **Protobuf Extension Catalog (`index.pb`)**: Added native decoding and gzip decompression for modern Protocol Buffer extension catalogs (`index.pb`), fully resolving the orphaned extensions issue caused by Keiyoushi deprecating legacy `index.min.json`.
+- **Dual-Format Fallback**: Automatically tries `index.pb` first, then seamlessly falls back to `index.min.json` and `index.json` for legacy or self-hosted repositories.
+- **Dynamic APK & Icon Resolution**: Added support for direct and relative `apkUrl` and `iconUrl` schemas in extension catalogs.
+- **Tokyo Night Theme**: Added a new Tokyo Night color scheme option under Appearance settings.
+- **Vibe Search Improvements**: Refined AI engine integration with Gemini for semantic vibe search.
+
+### Fixed
+- **Flexible Repo URL Normalization**: Repository addition now accepts base URLs and automatically strips redundant suffixes (`/index.min.json`, `/index.json`, `/index.pb`, `/repo.json`, or trailing slashes).
+- **Automatic Orphan State Recovery**: Installed extensions automatically clear obsolete/orphaned status upon successful repository synchronization.
+
 ## 2.6.5 "AsuraScans & Library Refresh Fix" (2026-07-18)
 ### Fixed
 - **Chapter Memo Caching:** Resolved `Refresh Chapter List` error toast when opening chapters on extensions relying on `SChapter.memo` (such as AsuraScans) by dynamically caching and restoring the memo field using a normalized URL and suffix matcher.

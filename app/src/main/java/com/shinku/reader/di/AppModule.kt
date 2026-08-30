@@ -27,6 +27,7 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.AndroidSourceManager
 import com.shinku.reader.util.storage.CbzCrypto
 import com.shinku.reader.exh.eh.EHentaiUpdateHelper
+import com.shinku.reader.exh.source.ShinKuPreferences
 import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
@@ -169,6 +170,17 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { LocalSourceFileSystem(get()) }
         addSingletonFactory { LocalCoverManager(app, get()) }
         addSingletonFactory { StorageManager(app, get()) }
+
+        addSingletonFactory<com.shinku.reader.domain.ai.AiEngineRegistry> {
+            val app = get<Application>()
+            val networkHelper = get<NetworkHelper>()
+            val shinkuPreferences = get<ShinKuPreferences>()
+            val engines = listOf(
+                com.shinku.reader.domain.ai.GoogleAiCoreEngine(app),
+                com.shinku.reader.domain.ai.CloudGeminiEngine(networkHelper, shinkuPreferences),
+            )
+            com.shinku.reader.domain.ai.AiEngineRegistry(engines, shinkuPreferences)
+        }
 
         // SY -->
         addSingletonFactory { EHentaiUpdateHelper(app) }

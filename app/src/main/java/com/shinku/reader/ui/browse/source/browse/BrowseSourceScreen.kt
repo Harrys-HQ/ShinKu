@@ -24,6 +24,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -223,7 +225,6 @@ data class BrowseSourceScreen(
                                     )
                                 },
                                 label = {
-                                    // SY -->
                                     Text(
                                         text = if (state.filters.isNotEmpty()) {
                                             stringResource(MR.strings.action_filter)
@@ -231,8 +232,17 @@ data class BrowseSourceScreen(
                                             stringResource(MR.strings.action_search)
                                         },
                                     )
-                                    // SY <--
                                 },
+                            )
+                        }
+
+                        state.savedSearches.take(5).forEach { savedSearchItem ->
+                            FilterChip(
+                                selected = state.listing is Listing.Search && state.toolbarQuery == savedSearchItem.query,
+                                onClick = {
+                                    screenModel.search(savedSearchItem.query.orEmpty())
+                                },
+                                label = { Text(savedSearchItem.name) },
                             )
                         }
                     }

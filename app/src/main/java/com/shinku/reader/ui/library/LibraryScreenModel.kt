@@ -1118,15 +1118,27 @@ class LibraryScreenModel(
                     }
 
                     is Namespace -> {
-                        searchTags != null &&
-                            searchTags.fastAny {
-                                val tag = queryComponent.tag
-                                (
-                                    it.namespace.equals(queryComponent.namespace, true) &&
-                                        tag?.run { it.name.contains(tag.asQuery(), true) } == true
-                                    ) ||
-                                    (tag == null && it.namespace.equals(queryComponent.namespace, true))
-                            }
+                        val tagValue = queryComponent.tag?.asQuery().orEmpty()
+                        val rawTag = queryComponent.tag?.rawTextOnly().orEmpty()
+                        when (queryComponent.namespace.lowercase()) {
+                            "title" -> manga.title.contains(tagValue, true)
+                            "author" -> manga.author?.contains(tagValue, true) == true
+                            "artist" -> manga.artist?.contains(tagValue, true) == true
+                            "desc", "description" -> manga.description?.contains(tagValue, true) == true
+                            "tag", "genre" -> genre.fastAny { it.contains(tagValue, true) }
+                            "src", "source" -> source?.name?.contains(tagValue, true) == true || (sourceIdString != null && sourceIdString == tagValue)
+                            "src_id", "source_id" -> sourceIdString != null && (sourceIdString == tagValue || (tagValue == "local" && sourceIdString == LocalSource.ID.toString()))
+                            "note", "notes" -> false // Placeholder if notes field isn't present on LibraryManga directly
+                            else -> searchTags != null &&
+                                searchTags.fastAny {
+                                    val tag = queryComponent.tag
+                                    (
+                                        it.namespace.equals(queryComponent.namespace, true) &&
+                                            tag?.run { it.name.contains(tag.asQuery(), true) } == true
+                                        ) ||
+                                        (tag == null && it.namespace.equals(queryComponent.namespace, true))
+                                }
+                        }
                     }
 
                     else -> true
@@ -1155,22 +1167,33 @@ class LibraryScreenModel(
                     }
 
                     is Namespace -> {
+                        val tagValue = queryComponent.tag?.asQuery().orEmpty()
                         val searchedTag = queryComponent.tag?.asQuery()
-                        searchTags == null ||
-                            (queryComponent.namespace.isBlank() && searchedTag.isNullOrBlank()) ||
-                            searchTags.fastAll { mangaTag ->
-                                if (queryComponent.namespace.isBlank() && !searchedTag.isNullOrBlank()) {
-                                    !mangaTag.name.contains(searchedTag, true)
-                                } else if (searchedTag.isNullOrBlank()) {
-                                    mangaTag.namespace == null ||
-                                        !mangaTag.namespace.equals(queryComponent.namespace, true)
-                                } else if (mangaTag.namespace.isNullOrBlank()) {
-                                    true
-                                } else {
-                                    !mangaTag.name.contains(searchedTag, true) ||
-                                        !mangaTag.namespace.equals(queryComponent.namespace, true)
+                        when (queryComponent.namespace.lowercase()) {
+                            "title" -> !manga.title.contains(tagValue, true)
+                            "author" -> manga.author?.contains(tagValue, true) != true
+                            "artist" -> manga.artist?.contains(tagValue, true) != true
+                            "desc", "description" -> manga.description?.contains(tagValue, true) != true
+                            "tag", "genre" -> !genre.fastAny { it.contains(tagValue, true) }
+                            "src", "source" -> source?.name?.contains(tagValue, true) != true && (sourceIdString == null || sourceIdString != tagValue)
+                            "src_id", "source_id" -> sourceIdString == null || (sourceIdString != tagValue && !(tagValue == "local" && sourceIdString == LocalSource.ID.toString()))
+                            "note", "notes" -> true
+                            else -> searchTags == null ||
+                                (queryComponent.namespace.isBlank() && searchedTag.isNullOrBlank()) ||
+                                searchTags.fastAll { mangaTag ->
+                                    if (queryComponent.namespace.isBlank() && !searchedTag.isNullOrBlank()) {
+                                        !mangaTag.name.contains(searchedTag, true)
+                                    } else if (searchedTag.isNullOrBlank()) {
+                                        mangaTag.namespace == null ||
+                                            !mangaTag.namespace.equals(queryComponent.namespace, true)
+                                    } else if (mangaTag.namespace.isNullOrBlank()) {
+                                        true
+                                    } else {
+                                        !mangaTag.name.contains(searchedTag, true) ||
+                                            !mangaTag.namespace.equals(queryComponent.namespace, true)
+                                    }
                                 }
-                            }
+                        }
                     }
 
                     else -> true

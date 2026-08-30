@@ -18,15 +18,23 @@ class GeminiVibeSearch(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private val shinkuPreferences: ShinKuPreferences = Injekt.get()
+    private val aiEngineRegistry: com.shinku.reader.domain.ai.AiEngineRegistry = Injekt.get()
 
     suspend fun getMangaTitles(query: String, apiKey: String, model: String): List<String> {
         return withIOContext {
-            // AI Pro Tier logic: Delay if not pro
             if (!shinkuPreferences.aiProTier().get()) {
                 kotlinx.coroutines.delay(1000)
             }
             try {
-                callGemini(query, apiKey, model)
+                val activeEngine = aiEngineRegistry.getActiveEngine()
+                val prompt = """
+                    You are a manga discovery expert. Based on the following user description, provide a list of up to 10 real manga titles that match the "vibe".
+                    User Description: "$query"
+                    Return ONLY a JSON array of strings containing the titles. No extra text.
+                    Example: ["Title 1", "Title 2"]
+                """.trimIndent()
+                val result = activeEngine.generateTitles(prompt)
+                result.getOrDefault(callGemini(query, apiKey, model))
             } catch (e: Exception) {
                 emptyList()
             }

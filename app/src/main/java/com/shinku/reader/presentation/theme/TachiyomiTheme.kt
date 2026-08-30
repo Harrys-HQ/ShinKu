@@ -27,6 +27,7 @@ import com.shinku.reader.presentation.theme.colorscheme.TachiyomiColorScheme
 import com.shinku.reader.presentation.theme.colorscheme.TakoColorScheme
 import com.shinku.reader.presentation.theme.colorscheme.TealTurqoiseColorScheme
 import com.shinku.reader.presentation.theme.colorscheme.TidalWaveColorScheme
+import com.shinku.reader.presentation.theme.colorscheme.TokyoNightColorScheme
 import com.shinku.reader.presentation.theme.colorscheme.YinYangColorScheme
 import com.shinku.reader.presentation.theme.colorscheme.YotsubaColorScheme
 import uy.kohesive.injekt.Injekt
@@ -194,6 +195,7 @@ private val colorSchemes: Map<AppTheme, BaseColorScheme> = mapOf(
     AppTheme.TAKO to TakoColorScheme,
     AppTheme.TEALTURQUOISE to TealTurqoiseColorScheme,
     AppTheme.TIDAL_WAVE to TidalWaveColorScheme,
+    AppTheme.TOKYO_NIGHT to TokyoNightColorScheme,
     AppTheme.YINYANG to YinYangColorScheme,
     AppTheme.YOTSUBA to YotsubaColorScheme,
 )

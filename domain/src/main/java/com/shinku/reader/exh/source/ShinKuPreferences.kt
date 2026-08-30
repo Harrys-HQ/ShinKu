@@ -30,4 +30,8 @@ class ShinKuPreferences(
     fun aiUpscaling() = preferenceStore.getBoolean("pref_ai_upscaling", false)
 
     fun adaptiveNightRead() = preferenceStore.getBoolean("pref_adaptive_night_read", false)
+
+    fun aiEngineProvider() = preferenceStore.getString("pref_ai_engine_provider", "auto")
+
+    fun translationEngine() = preferenceStore.getString("pref_translation_engine", "auto")
 }

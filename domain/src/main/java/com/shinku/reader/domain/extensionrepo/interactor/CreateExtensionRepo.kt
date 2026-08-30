@@ -12,16 +12,24 @@ class CreateExtensionRepo(
     private val repository: ExtensionRepoRepository,
     private val service: ExtensionRepoService,
 ) {
-    private val repoRegex = """^https://.*/index\.min\.json$""".toRegex()
-
     suspend fun await(indexUrl: String): Result {
-        val formattedIndexUrl = indexUrl.toHttpUrlOrNull()
-            ?.toString()
-            ?.takeIf { it.matches(repoRegex) }
-            ?: return Result.InvalidUrl
-
-        val baseUrl = formattedIndexUrl.removeSuffix("/index.min.json")
+        val baseUrl = normalizeUrl(indexUrl) ?: return Result.InvalidUrl
         return service.fetchRepoDetails(baseUrl)?.let { insert(it) } ?: Result.InvalidUrl
+    }
+
+    private fun normalizeUrl(url: String): String? {
+        val trimmed = url.trim()
+        val httpUrl = trimmed.toHttpUrlOrNull() ?: return null
+        if (!httpUrl.isHttps) return null
+
+        var baseUrl = httpUrl.toString().trimEnd('/')
+        baseUrl = baseUrl
+            .removeSuffix("/index.min.json")
+            .removeSuffix("/index.json")
+            .removeSuffix("/index.pb")
+            .removeSuffix("/repo.json")
+            .trimEnd('/')
+        return baseUrl.takeIf { it.isNotBlank() }
     }
 
     private suspend fun insert(repo: ExtensionRepo): Result {

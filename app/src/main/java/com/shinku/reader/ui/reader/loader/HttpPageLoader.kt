@@ -187,16 +187,12 @@ internal class HttpPageLoader(
         if (page.status is Page.State.Error) {
             page.status = Page.State.Queue
         }
-        // EXH -->
-        // Force re-fetch the image URL on retry
-        if (source.isEhBasedSource()) {
-            page.imageUrl = null
-        }
+        // Force re-fetch of CDN image URL on retry
+        page.imageUrl = null
 
         if (readerPreferences.readerInstantRetry().get()) {
             boostPage(page)
         } else {
-            // EXH <--
             queue.offer(PriorityPage(page, 2))
         }
     }
@@ -250,27 +246,52 @@ internal class HttpPageLoader(
      * @param page the page whose source image has to be downloaded.
      */
     private suspend fun internalLoadPage(page: ReaderPage) {
-        try {
-            if (page.imageUrl.isNullOrEmpty()) {
-                page.status = Page.State.LoadPage
-                page.imageUrl = source.getImageUrl(page)
-            }
-            val imageUrl = page.imageUrl!!
+        var attempts = 0
+        val maxAttempts = 3
+        var lastError: Throwable? = null
 
-            if (!chapterCache.isImageInCache(imageUrl)) {
-                page.status = Page.State.DownloadImage
-                val imageResponse = source.getImage(page, dataSaver)
-                chapterCache.putImageToCache(imageUrl, imageResponse)
-            }
+        while (attempts < maxAttempts) {
+            try {
+                attempts++
+                if (page.imageUrl.isNullOrEmpty()) {
+                    page.status = Page.State.LoadPage
+                    page.imageUrl = source.getImageUrl(page)
+                }
+                val imageUrl = page.imageUrl!!
 
-            page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }
-            page.status = Page.State.Ready
-        } catch (e: Throwable) {
-            page.status = Page.State.Error(e)
-            if (e is CancellationException) {
-                throw e
+                if (!chapterCache.isImageInCache(imageUrl)) {
+                    page.status = Page.State.DownloadImage
+                    val imageResponse = source.getImage(page, dataSaver)
+                    chapterCache.putImageToCache(imageUrl, imageResponse)
+                }
+
+                page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }
+                page.status = Page.State.Ready
+                return
+            } catch (e: Throwable) {
+                lastError = e
+                if (e is CancellationException) {
+                    throw e
+                }
+
+                // Invalidate cached CDN URL on failure so the next attempt fetches a fresh CDN node only if the source supports resolving image URLs
+                if (source.isEhBasedSource()) {
+                    page.imageUrl = null
+                }
+
+                // If source throws IndexOutOfBoundsException, website structure changed; don't retry endlessly
+                if (e is IndexOutOfBoundsException) {
+                    lastError = Exception("Source parsing failed (Website layout modified)")
+                    break
+                }
+
+                if (attempts < maxAttempts) {
+                    kotlinx.coroutines.delay(500L * attempts)
+                }
             }
         }
+
+        page.status = Page.State.Error(lastError ?: Exception("CDN attempts failed"))
     }
 
     // EXH -->
