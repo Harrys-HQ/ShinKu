@@ -1,5 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.6.6" changeDate="August 30,2026">
+        <changelogtext>[b]Added[/b]: Native support for Protobuf extension catalogs (index.pb) with gzip decompression, fixing orphaned extensions</changelogtext>
+        <changelogtext>[b]Added[/b]: Dual-format index fallback supporting both index.pb and legacy index.min.json/index.json</changelogtext>
+        <changelogtext>[b]Added[/b]: Dynamic APK and Icon URL resolution for custom and modern repositories</changelogtext>
+        <changelogtext>[b]Added[/b]: Tokyo Night color scheme option under Appearance settings</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Flexible extension store URL normalization accepting bare URLs and various suffixes</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Automatic orphan/obsolete status recovery upon extension catalog sync</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="2.6.5" changeDate="July 18,2026">
+        <changelogtext>[b]Fixed[/b]: Resolved Chapter Memo Caching for extensions like AsuraScans</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Resolved a deadlock issue where library refresh would freeze</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="2.6.4" changeDate="July 12,2026">
+        <changelogtext>[b]Fixed[/b]: Fixed a reader crash where clicking "Retry" on page load failures threw an exception</changelogtext>
+        <changelogtext>[b]Changed[/b]: Upstream Dependency Sync to keep in sync with modern upstream Mihon features</changelogtext>
+        <changelogtext>[b]Changed[/b]: Automated invalidation of local download directory cache references upon completing database restoration</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="2.6.3" changeDate="June 26,2026">
+        <changelogtext>[b]Added[/b]: Multi-Language Translation Settings and Global Default Preferences</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Speech Bubble Text Merging, OCR Deduplication, Smart Padding, and FAB Gestures</changelogtext>
+    </changelogversion>
+    <changelogversion versionName="2.6.2" changeDate="June 25,2026">
+        <changelogtext>[b]Fixed[/b]: Restored full compatibility with all compiled extensions</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.6.1" changeDate="June 20,2026">
         <changelogtext>[b]Extension Updates[/b]: Fixed extension update latency and package duplication issues</changelogtext>
         <changelogtext>[b]Resource Footprint[/b]: Converted assets from PNG to lossless WebP for optimal size</changelogtext>

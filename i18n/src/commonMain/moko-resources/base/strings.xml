@@ -247,6 +247,7 @@
     <string name="theme_yinyang">Yin &amp; Yang</string>
     <string name="theme_yotsuba">Yotsuba</string>
     <string name="theme_tidalwave">Tidal Wave</string>
+    <string name="theme_tokyonight">Tokyo Night</string>
     <string name="pref_dark_theme_pure_black">Pure black dark mode</string>
     <string name="pref_relative_format">Relative timestamps</string>
     <!-- "Today" instead of "2023-12-31" -->
@@ -384,7 +385,7 @@
     <string name="ext_updates_pending">Updates pending</string>
     <string name="ext_update">Update</string>
     <string name="ext_update_all">Update all</string>
-    <string name="ext_obsolete">Obsolete</string>
+    <string name="ext_obsolete">Orphaned</string>
     <string name="ext_install">Install</string>
     <string name="ext_pending">Pending</string>
     <string name="ext_downloading">Downloading</string>
@@ -418,16 +419,16 @@
     <string name="ext_revoke_trust">Revoke trusted unknown extensions</string>
 
     <!-- Extension repos -->
-    <string name="label_extension_repos">Extension repos</string>
-    <string name="information_empty_repos">You have no repos set.</string>
-    <string name="action_add_repo">Add repo</string>
-    <string name="label_add_repo_input">Repo URL</string>
-    <string name="action_add_repo_message">Add additional repos to %s. This should be a URL that ends with \"index.min.json\".</string>
-    <string name="error_repo_exists">This repo already exists!</string>
-    <string name="action_delete_repo">Delete repo</string>
-    <string name="invalid_repo_name">Invalid repo URL</string>
-    <string name="delete_repo_confirmation">Do you wish to delete the repo \"%s\"?</string>
-    <string name="add_repo_confirmation">Do you wish to add the repo \"%s\"?</string>
+    <string name="label_extension_repos">Extension stores</string>
+    <string name="information_empty_repos">You have no extension stores set.</string>
+    <string name="action_add_repo">Add extension store</string>
+    <string name="label_add_repo_input">Extension store URL</string>
+    <string name="action_add_repo_message">Add an extension store repository to %s.</string>
+    <string name="error_repo_exists">This extension store already exists!</string>
+    <string name="action_delete_repo">Delete extension store</string>
+    <string name="invalid_repo_name">Invalid extension store URL</string>
+    <string name="delete_repo_confirmation">Do you wish to delete the extension store \"%s\"?</string>
+    <string name="add_repo_confirmation">Do you wish to add the extension store \"%s\"?</string>
     <string name="action_open_repo">Open source repo</string>
     <string name="action_replace_repo">Replace</string>
     <string name="action_replace_repo_title">Signing Key Fingerprint Already Exists</string>

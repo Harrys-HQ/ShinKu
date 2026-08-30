@@ -423,14 +423,15 @@ abstract class HttpSource : CatalogueSource {
      * @param page the page whose source image has to be fetched.
      */
     open suspend fun getImageUrl(page: Page): String {
-        return fetchImageUrl(page).awaitSingle()
+        return page.imageUrl ?: fetchImageUrl(page).awaitSingle()
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getImageUrl"))
     open fun fetchImageUrl(page: Page): Observable<String> {
-        return client.newCall(imageUrlRequest(page))
-            .asObservableSuccess()
-            .map { imageUrlParse(it) }
+        return page.imageUrl?.let { Observable.just(it) }
+            ?: client.newCall(imageUrlRequest(page))
+                .asObservableSuccess()
+                .map { imageUrlParse(it) }
     }
 
     /**

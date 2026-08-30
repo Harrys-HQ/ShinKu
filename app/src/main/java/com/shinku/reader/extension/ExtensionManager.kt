@@ -278,14 +278,10 @@ class ExtensionManager(
                     // SY <--
                 } else if (availableExt != null) {
                     val hasUpdate = extension.updateExists(availableExt)
-                    if (extension.hasUpdate != hasUpdate) {
+                    if (extension.hasUpdate != hasUpdate || extension.isObsolete || extension.repoUrl != availableExt.repoUrl) {
                         newMap[pkgName] = extension.copy(
                             hasUpdate = hasUpdate,
-                            repoUrl = availableExt.repoUrl,
-                        )
-                        changed = true
-                    } else if (extension.repoUrl != availableExt.repoUrl) {
-                        newMap[pkgName] = extension.copy(
+                            isObsolete = false,
                             repoUrl = availableExt.repoUrl,
                         )
                         changed = true

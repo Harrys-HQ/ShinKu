@@ -66,6 +66,11 @@ enum class ReadingMode(
             return mode.type is ViewerType.Pager
         }
 
+        fun isWebtoonType(preference: Int): Boolean {
+            val mode = fromPreference(preference)
+            return mode.type is ViewerType.Webtoon
+        }
+
         fun toViewer(preference: Int?, activity: ReaderActivity): Viewer {
             return when (fromPreference(preference)) {
                 LEFT_TO_RIGHT -> L2RPagerViewer(activity)

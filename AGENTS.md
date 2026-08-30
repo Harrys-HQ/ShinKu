@@ -1,30 +1,18 @@
-# ShinKu Development Agents Guide
+# ShinKu Development Protocols
 
-This document outlines the protocols for development to ensure efficiency and avoid redundant work.
+## 1. Build Protocol
+- **Active Iteration**: Use fast incremental builds (`./gradlew compileDevDebugKotlin` or `./gradlew assembleDevDebug`).
+- **Feature Completion / Release**: Run full `./gradlew assembleDevRelease`.
+- **Flavor Restrictions**: Use the `dev` flavor only (`standard` flavor is discontinued).
+- **Build Failure Recovery**: Read full log, fix errors modularly, verify constructors before updating DI, and avoid cyclic fix attempts.
 
-## Build Failure Recovery Protocol
-1. **Log Analysis**: Always read the full build log (`build.log`) when a build fails.
-2. **Atomic Fixes**: Fix one module's compilation errors at a time (e.g., fix `domain` before `app`).
-3. **Constructor Verification**: Before updating `DomainModule.kt`, always `read_file` the target class to verify its constructor parameters.
-4. **No Loops**: If a fix causes the same error or a regression, revert and re-analyze the dependency chain.
+## 2. Architecture & Compatibility
+- **Package Stability**: Keep `source-api` and `network` in `eu.kanade.tachiyomi` for extension API binary compatibility.
+- **Backups**: Preserve legacy `@SerialName("eu.kanade.tachiyomi...")` annotations on backup models.
+- **Deep Links**: Retain `tachiyomi://` and `mihon://` intent filters in `AndroidManifest.xml`.
+- **UI & Grouping**: Group new settings under "ShinKu"; reuse components from `eu.kanade.tachiyomi.presentation.core` and `com.shinku.reader.presentation`.
 
-## Feature Implementation Protocol
-1. **ShinKu Grouping**: All new features must be grouped under a "ShinKu" settings section to maintain project identity.
-2. **Database Integrity**: Migrations must be numbered sequentially. Always update both the `.sq` files and create a new `.sqm` migration.
-3. **UI Consistency**: Use existing components from `eu.kanade.tachiyomi.presentation.core` and `com.shinku.reader.presentation`.
+## 3. Database & Versioning
+- **DB Migrations**: Number `.sq` and `.sqm` migration files sequentially.
+- **Atomic Versioning**: Synchronize version bumps across `build.gradle.kts`, `version.json`, `CHANGELOG.md`, and `README.md` prior to release tags.
 
-## Versioning & Build Protocol
-1. **Build Flavor Mandate**: The 'standard' build flavor is discontinued due to R8-related instability. All build verifications and developments MUST use the 'devDebug' variant (e.g., `./gradlew assembleDevDebug`).
-2. **Atomic Versioning**: Versioning must be applied consistently across the entire application (app/build.gradle.kts), all project documentation (version.json, CHANGELOG, README), and all commit messages. No tag should exist without corresponding version bumps in the codebase.
-3. **Commit Alignment**: Every release commit or tag MUST have the corresponding version strings already applied in the codebase.
-
-## Rebranding & Compatibility Protocol
-1. **Source-API Integrity**: Do NOT move `source-api` or `network` packages out of `eu.kanade.tachiyomi`. These are the binary interface for external extensions.
-2. **Backup Compatibility**: Use `@SerialName` with the legacy `eu.kanade.tachiyomi` prefix for all backup models to ensure old backups can be restored.
-3. **Logo Usage**: Use `ic_shinku_foreground` for notifications and monochrome icons to avoid the "cropping" effect caused by the background.
-4. **Link Hijacking**: Always include legacy `tachiyomi://` and `mihon://` intent filters in `AndroidManifest.xml` to catch external ecosystem links.
-
-## Current Focus
-- **Vibe Search**: Expanding natural language search capabilities.
-- **Performance Profiles**: Monitoring stability of E-Ink and Low RAM modes.
-- **Upstream Sync**: Keeping the `eu.kanade.tachiyomi` bridge classes updated with the latest fixes.

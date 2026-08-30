@@ -186,21 +186,37 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
         val networkHelper = remember { Injekt.get<NetworkHelper>() }
 
+        val aiEngineProviderPref = shinkuPreferences.aiEngineProvider()
+        val aiEngineProvider by aiEngineProviderPref.collectAsState()
+
         return Preference.PreferenceGroup(
-            title = "Gemini AI",
+            title = "ShinKu AI & Engines",
             preferenceItems = persistentListOf(
+                Preference.PreferenceItem.ListPreference(
+                    preference = aiEngineProviderPref,
+                    title = "AI Engine Provider",
+                    subtitle = "Select AI backend (Native OS AICore / OxygenOS / Galaxy AI or Cloud)",
+                    entries = persistentMapOf(
+                        "auto" to "Automatic (Native OS Service with Cloud Fallback)",
+                        "aicore" to "On-Device Native OS AI (Google AICore / OxygenOS)",
+                        "cloud" to "Google Gemini (Cloud API Key)",
+                    ),
+                ),
                 Preference.PreferenceItem.EditTextPreference(
                     preference = shinkuPreferences.geminiApiKey(),
                     title = stringResource(MR.strings.pref_gemini_api_key),
                     subtitle = stringResource(MR.strings.pref_gemini_api_key_summary),
+                    enabled = aiEngineProvider != "aicore",
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = shinkuPreferences.geminiModel(),
                     title = stringResource(MR.strings.pref_gemini_model),
                     subtitle = stringResource(MR.strings.pref_gemini_model_summary),
+                    enabled = aiEngineProvider != "aicore",
                     entries = persistentMapOf(
-                        "gemini-3.5-flash" to "Gemini 3.5 Flash (Stable)",
-                        "gemini-3.1-flash-lite" to "Gemini 3.1 Flash-Lite",
+                        "gemini-3.5-flash" to "Gemini 3.5 Flash (Recommended - Fast)",
+                        "gemini-3.5-pro" to "Gemini 3.5 Pro (High Quality)",
+                        "gemini-3.1-flash-lite" to "Gemini 3.1 Flash-Lite (Low Latency)",
                         "gemini-3.1-pro-preview" to "Gemini 3.1 Pro (Preview)",
                         "gemini-3-pro-preview" to "Gemini 3 Pro (Preview)",
                         "gemini-3-flash-preview" to "Gemini 3 Flash (Preview)",
@@ -291,6 +307,17 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                         "Indonesian" to "Indonesian (Bahasa Indonesia)",
                         "Tagalog" to "Tagalog (Filipino)",
                         "Arabic" to "Arabic (العربية)",
+                    ),
+                ),
+                Preference.PreferenceItem.ListPreference(
+                    preference = shinkuPreferences.translationEngine(),
+                    title = "Translation Engine",
+                    subtitle = "Select translation provider (On-Device AICore / OxygenOS, ML Kit, or Gemini Cloud)",
+                    entries = persistentMapOf(
+                        "auto" to "Automatic (Best Available: AICore > ML Kit)",
+                        "aicore" to "On-Device AICore / OxygenOS (Gemini Nano - High Context)",
+                        "mlkit" to "Standard ML Kit (NMT Engine - Instant Speed)",
+                        "gemini_cloud" to "Google Gemini API (Cloud - Highest Quality)",
                     ),
                 ),
             ),
