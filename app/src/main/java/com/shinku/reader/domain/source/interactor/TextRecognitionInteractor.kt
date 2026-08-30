@@ -17,7 +17,18 @@ class TextRecognitionInteractor {
     private val chineseRecognizer = TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
     private val koreanRecognizer = TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
 
+    private val recognitionCache = java.util.Collections.synchronizedMap(object : LinkedHashMap<Int, List<TextRecognitionResult>>(30, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, List<TextRecognitionResult>>?): Boolean = size > 30
+    })
+
     suspend fun recognizeText(bitmap: Bitmap): List<TextRecognitionResult> = kotlinx.coroutines.coroutineScope {
+        val cacheKey = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1 && bitmap.generationId != 0) {
+            bitmap.generationId
+        } else {
+            bitmap.width * 31 + bitmap.height + bitmap.byteCount
+        }
+        recognitionCache[cacheKey]?.let { return@coroutineScope it }
+
         val image = InputImage.fromBitmap(bitmap, 0)
 
         val latinJob = async {
@@ -154,6 +165,7 @@ class TextRecognitionInteractor {
             )
         }
 
+        recognitionCache[cacheKey] = mergedResults
         mergedResults
     }
 

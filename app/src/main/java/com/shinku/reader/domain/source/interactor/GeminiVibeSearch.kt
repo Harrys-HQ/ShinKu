@@ -20,7 +20,26 @@ class GeminiVibeSearch(
     private val shinkuPreferences: ShinKuPreferences = Injekt.get()
     private val aiEngineRegistry: com.shinku.reader.domain.ai.AiEngineRegistry = Injekt.get()
 
+    private val vibeCache = java.util.Collections.synchronizedMap(object : LinkedHashMap<String, List<String>>(50, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<String>>?): Boolean = size > 50
+    })
+
+    private val similarCache = java.util.Collections.synchronizedMap(object : LinkedHashMap<String, List<String>>(50, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<String>>?): Boolean = size > 50
+    })
+
+    private val recapCache = java.util.Collections.synchronizedMap(object : LinkedHashMap<String, String>(30, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean = size > 30
+    })
+
+    private val translationCache = java.util.Collections.synchronizedMap(object : LinkedHashMap<String, List<TranslationBlockOutput>>(50, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<TranslationBlockOutput>>?): Boolean = size > 50
+    })
+
     suspend fun getMangaTitles(query: String, apiKey: String, model: String): List<String> {
+        val cacheKey = query.trim().lowercase()
+        vibeCache[cacheKey]?.let { return it }
+
         return withIOContext {
             if (!shinkuPreferences.aiProTier().get()) {
                 kotlinx.coroutines.delay(1000)
@@ -34,7 +53,11 @@ class GeminiVibeSearch(
                     Example: ["Title 1", "Title 2"]
                 """.trimIndent()
                 val result = activeEngine.generateTitles(prompt)
-                result.getOrDefault(callGemini(query, apiKey, model))
+                val titles = result.getOrDefault(callGemini(query, apiKey, model))
+                if (titles.isNotEmpty()) {
+                    vibeCache[cacheKey] = titles
+                }
+                titles
             } catch (e: Exception) {
                 emptyList()
             }
@@ -45,31 +68,9 @@ class GeminiVibeSearch(
         return withIOContext {
             if (apiKey.isBlank()) return@withIOContext ""
             try {
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
                 val prompt = "Based on this User-Agent string: '$currentUa', provide the latest stable version of it for the same browser and platform. Return ONLY the updated User-Agent string, no extra text."
-                val bodyJson = """
-                    {
-                      "contents": [{
-                        "parts":[{"text": ${Json.encodeToString(prompt)}}]
-                      }]
-                    }
-                """.trimIndent()
-
-                val request = Request.Builder()
-                    .url(url)
-                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                    .build()
-
-                networkHelper.client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@withIOContext ""
-                    val responseBody = response.body.string()
-                    val result = json.parseToJsonElement(responseBody)
-                    result.jsonObject["candidates"]!!
-                        .jsonArray[0].jsonObject["content"]!!
-                        .jsonObject["parts"]!!
-                        .jsonArray[0].jsonObject["text"]!!
-                        .jsonPrimitive.content.trim().removeSurrounding("\"")
-                }
+                val text = callGeminiForText(prompt, apiKey, model)
+                if (text.startsWith("Error:")) "" else text.trim().removeSurrounding("\"")
             } catch (e: Exception) {
                 ""
             }
@@ -77,46 +78,29 @@ class GeminiVibeSearch(
     }
 
     suspend fun getSimilarManga(title: String, description: String, apiKey: String, model: String): List<String> {
+        val cacheKey = "$title::$description".lowercase()
+        similarCache[cacheKey]?.let { return it }
+
         return withIOContext {
             if (apiKey.isBlank()) return@withIOContext emptyList()
             try {
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
                 val prompt = """
                     Based on the manga title "$title" and its description: "$description",
                     suggest 5-10 other real manga titles that have a similar "vibe", tone, or themes.
                     Return ONLY a JSON array of strings.
                 """.trimIndent()
-                val bodyJson = """
-                    {
-                      "contents": [{
-                        "parts":[{"text": ${Json.encodeToString(prompt)}}]
-                      }]
+                val text = callGeminiForText(prompt, apiKey, model)
+                val start = text.indexOf("[")
+                val end = text.lastIndexOf("]") + 1
+                if (start != -1 && end > start) {
+                    val jsonArray = text.substring(start, end)
+                    val titles = json.decodeFromString<List<String>>(jsonArray)
+                    if (titles.isNotEmpty()) {
+                        similarCache[cacheKey] = titles
                     }
-                """.trimIndent()
-
-                val request = Request.Builder()
-                    .url(url)
-                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                    .build()
-
-                networkHelper.client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@withIOContext emptyList()
-                    val responseBody = response.body.string()
-                    val result = json.parseToJsonElement(responseBody)
-                    val text = result.jsonObject["candidates"]!!
-                        .jsonArray[0].jsonObject["content"]!!
-                        .jsonObject["parts"]!!
-                        .jsonArray[0].jsonObject["text"]!!
-                        .jsonPrimitive.content
-
-                    val start = text.indexOf("[")
-                    val end = text.lastIndexOf("]") + 1
-                    if (start != -1 && end > start) {
-                        val jsonArray = text.substring(start, end)
-                        json.decodeFromString<List<String>>(jsonArray)
-                    } else {
-                        emptyList()
-                    }
+                    titles
+                } else {
+                    emptyList()
                 }
             } catch (e: Exception) {
                 emptyList()
@@ -161,6 +145,9 @@ class GeminiVibeSearch(
     ): List<TranslationBlockOutput> {
         if (blocks.isEmpty()) return emptyList()
         val blocksJson = json.encodeToString(blocks)
+        val cacheKey = "$sourceLanguage::$targetLanguage::$blocksJson"
+        translationCache[cacheKey]?.let { return it }
+
         val translationContext = if (sourceLanguage == "Auto-Detect") {
             "to $targetLanguage"
         } else {
@@ -185,7 +172,11 @@ class GeminiVibeSearch(
             val end = resultText.lastIndexOf("]") + 1
             if (start != -1 && end > start) {
                 val jsonArray = resultText.substring(start, end)
-                json.decodeFromString<List<TranslationBlockOutput>>(jsonArray)
+                val outputs = json.decodeFromString<List<TranslationBlockOutput>>(jsonArray)
+                if (outputs.isNotEmpty()) {
+                    translationCache[cacheKey] = outputs
+                }
+                outputs
             } else {
                 throw Exception("Invalid response format from Gemini: $resultText")
             }
@@ -198,7 +189,6 @@ class GeminiVibeSearch(
         return withIOContext {
             if (apiKey.isBlank()) return@withIOContext null
             try {
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
                 val prompt = """
                     You are a manga librarian. Based on the title "$title" and description "$currentDescription", 
                     provide an enriched version of the metadata.
@@ -212,37 +202,14 @@ class GeminiVibeSearch(
                     {"description": "...", "genres": ["...", "..."], "tags": ["...", "..."]}
                 """.trimIndent()
                 
-                val bodyJson = """
-                    {
-                      "contents": [{
-                        "parts":[{"text": ${Json.encodeToString(prompt)}}]
-                      }]
-                    }
-                """.trimIndent()
-
-                val request = Request.Builder()
-                    .url(url)
-                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                    .build()
-
-                networkHelper.client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@withIOContext null
-                    val responseBody = response.body.string()
-                    val result = json.parseToJsonElement(responseBody)
-                    val text = result.jsonObject["candidates"]!!
-                        .jsonArray[0].jsonObject["content"]!!
-                        .jsonObject["parts"]!!
-                        .jsonArray[0].jsonObject["text"]!!
-                        .jsonPrimitive.content
-
-                    val start = text.indexOf("{")
-                    val end = text.lastIndexOf("}") + 1
-                    if (start != -1 && end > start) {
-                        val jsonStr = text.substring(start, end)
-                        json.decodeFromString<EnrichedMetadata>(jsonStr)
-                    } else {
-                        null
-                    }
+                val text = callGeminiForText(prompt, apiKey, model)
+                val start = text.indexOf("{")
+                val end = text.lastIndexOf("}") + 1
+                if (start != -1 && end > start) {
+                    val jsonStr = text.substring(start, end)
+                    json.decodeFromString<EnrichedMetadata>(jsonStr)
+                } else {
+                    null
                 }
             } catch (e: Exception) {
                 null
@@ -280,6 +247,9 @@ class GeminiVibeSearch(
         apiKey: String,
         model: String
     ): String {
+        val cacheKey = "$title::${chapterNames.joinToString(",")}"
+        recapCache[cacheKey]?.let { return it }
+
         val prompt = """
             You are a manga story recapper. Based on the manga "$title", 
             provide a short, engaging, and professional story recap/summary of the events up to or including these chapters:
@@ -289,7 +259,11 @@ class GeminiVibeSearch(
             and keep it under 3 paragraphs. Focus on key plot points and character developments.
         """.trimIndent()
         
-        return callGeminiForText(prompt, apiKey, model)
+        val result = callGeminiForText(prompt, apiKey, model)
+        if (!result.startsWith("Error:")) {
+            recapCache[cacheKey] = result
+        }
+        return result
     }
 
     @kotlinx.serialization.Serializable
@@ -301,7 +275,7 @@ class GeminiVibeSearch(
 
     suspend fun searchByImage(base64Image: String, apiKey: String, model: String): List<String> {
         val resolvedModel = resolveModel(model)
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$resolvedModel:generateContent?key=$apiKey"
+        val modelsToTry = listOf(resolvedModel, "gemini-2.5-flash", "gemini-1.5-flash").distinct()
         
         val bodyJson = """
             {
@@ -318,82 +292,102 @@ class GeminiVibeSearch(
         """.trimIndent()
 
         return withIOContext {
-            try {
-                val request = Request.Builder()
-                    .url(url)
-                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                    .build()
+            for (m in modelsToTry) {
+                try {
+                    val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$apiKey"
+                    val request = Request.Builder()
+                        .url(url)
+                        .post(bodyJson.toRequestBody("application/json".toMediaType()))
+                        .build()
 
-                networkHelper.client.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@withIOContext emptyList()
-                    val responseBody = response.body.string()
-                    val result = json.parseToJsonElement(responseBody)
-                    val text = result.jsonObject["candidates"]!!
-                        .jsonArray[0].jsonObject["content"]!!
-                        .jsonObject["parts"]!!
-                        .jsonArray[0].jsonObject["text"]!!
-                        .jsonPrimitive.content
+                    networkHelper.client.newCall(request).execute().use { response ->
+                        if (response.code in listOf(429, 404, 503)) return@use
+                        if (!response.isSuccessful) return@withIOContext emptyList()
+                        val responseBody = response.body.string()
+                        val result = json.parseToJsonElement(responseBody)
+                        val text = result.jsonObject["candidates"]!!
+                            .jsonArray[0].jsonObject["content"]!!
+                            .jsonObject["parts"]!!
+                            .jsonArray[0].jsonObject["text"]!!
+                            .jsonPrimitive.content
 
-                    val start = text.indexOf("[")
-                    val end = text.lastIndexOf("]") + 1
-                    if (start != -1 && end > start) {
-                        val jsonArray = text.substring(start, end)
-                        json.decodeFromString<List<String>>(jsonArray)
-                    } else {
-                        emptyList()
+                        val start = text.indexOf("[")
+                        val end = text.lastIndexOf("]") + 1
+                        if (start != -1 && end > start) {
+                            val jsonArray = text.substring(start, end)
+                            return@withIOContext json.decodeFromString<List<String>>(jsonArray)
+                        } else {
+                            return@withIOContext emptyList()
+                        }
                     }
+                } catch (_: Exception) {
                 }
-            } catch (e: Exception) {
-                emptyList()
             }
+            emptyList()
         }
     }
 
     private suspend fun callGeminiForText(prompt: String, apiKey: String, model: String): String {
         return withIOContext {
             if (apiKey.isBlank()) return@withIOContext "API Key not set"
-            try {
-                val resolvedModel = resolveModel(model)
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/$resolvedModel:generateContent?key=$apiKey"
-                val bodyJson = """
-                    {
-                      "contents": [{
-                        "parts":[{"text": ${Json.encodeToString(prompt)}}]
-                      }]
-                    }
-                """.trimIndent()
 
-                val request = Request.Builder()
-                    .url(url)
-                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                    .build()
+            val preferredModel = resolveModel(model)
+            val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-1.5-flash").distinct()
 
-                networkHelper.client.newCall(request).execute().use { response ->
-                    val responseBody = response.body.string()
-                    if (!response.isSuccessful) {
-                        return@withIOContext "Error: API returned HTTP ${response.code}. Response: $responseBody"
+            var lastError = "Unknown error"
+            for (m in modelsToTry) {
+                try {
+                    val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$apiKey"
+                    val bodyJson = """
+                        {
+                          "contents": [{
+                            "parts":[{"text": ${Json.encodeToString(prompt)}}]
+                          }]
+                        }
+                    """.trimIndent()
+
+                    val request = Request.Builder()
+                        .url(url)
+                        .post(bodyJson.toRequestBody("application/json".toMediaType()))
+                        .build()
+
+                    networkHelper.client.newCall(request).execute().use { response ->
+                        val responseBody = response.body.string()
+                        if (response.code in listOf(429, 404, 503)) {
+                            lastError = "HTTP ${response.code}: $responseBody"
+                            return@use
+                        }
+                        if (!response.isSuccessful) {
+                            return@withIOContext "Error: API returned HTTP ${response.code}. Response: $responseBody"
+                        }
+                        val result = json.parseToJsonElement(responseBody)
+                        val candidates = result.jsonObject["candidates"]?.jsonArray
+                        if (candidates.isNullOrEmpty()) {
+                            val promptFeedback = result.jsonObject["promptFeedback"]
+                            return@withIOContext "Error: No candidates returned. Prompt feedback: $promptFeedback"
+                        }
+                        val parts = candidates[0].jsonObject["content"]?.jsonObject["parts"]?.jsonArray
+                        if (parts.isNullOrEmpty()) {
+                            return@withIOContext "Error: Content parts are empty."
+                        }
+                        val text = parts[0].jsonObject["text"]?.jsonPrimitive?.content
+                        if (text != null) {
+                            return@withIOContext text
+                        } else {
+                            return@withIOContext "Error: Text content is null."
+                        }
                     }
-                    val result = json.parseToJsonElement(responseBody)
-                    val candidates = result.jsonObject["candidates"]?.jsonArray
-                    if (candidates.isNullOrEmpty()) {
-                        val promptFeedback = result.jsonObject["promptFeedback"]
-                        return@withIOContext "Error: No candidates returned. Prompt feedback: $promptFeedback"
-                    }
-                    val parts = candidates[0].jsonObject["content"]?.jsonObject["parts"]?.jsonArray
-                    if (parts.isNullOrEmpty()) {
-                        return@withIOContext "Error: Content parts are empty."
-                    }
-                    parts[0].jsonObject["text"]?.jsonPrimitive?.content ?: "Error: Text content is null."
+                } catch (e: Exception) {
+                    lastError = e.message ?: "Unknown exception"
                 }
-            } catch (e: Exception) {
-                "Error: ${e.message}"
             }
+            "Error: $lastError"
         }
     }
 
     private fun callGemini(query: String, apiKey: String, model: String): List<String> {
-        val resolvedModel = resolveModel(model)
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$resolvedModel:generateContent?key=$apiKey"
+        val preferredModel = resolveModel(model)
+        val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-1.5-flash").distinct()
 
         val prompt = """
             You are a manga discovery expert. Based on the following user description, provide a list of up to 10 real manga titles that match the "vibe".
@@ -410,36 +404,40 @@ class GeminiVibeSearch(
             }
         """.trimIndent()
 
-        val request = Request.Builder()
-            .url(url)
-            .post(bodyJson.toRequestBody("application/json".toMediaType()))
-            .build()
+        for (m in modelsToTry) {
+            try {
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$apiKey"
+                val request = Request.Builder()
+                    .url(url)
+                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
+                    .build()
 
-        networkHelper.client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw Exception("API Error: ${response.code}")
+                networkHelper.client.newCall(request).execute().use { response ->
+                    if (response.code in listOf(429, 404, 503)) return@use
+                    if (!response.isSuccessful) throw Exception("API Error: ${response.code}")
 
-            val responseBody = response.body.string()
-            val result = json.parseToJsonElement(responseBody)
-            val text = result.jsonObject["candidates"]!!
-                .jsonArray[0].jsonObject["content"]!!
-                .jsonObject["parts"]!!
-                .jsonArray[0].jsonObject["text"]!!
-                .jsonPrimitive.content
+                    val responseBody = response.body.string()
+                    val result = json.parseToJsonElement(responseBody)
+                    val text = result.jsonObject["candidates"]!!
+                        .jsonArray[0].jsonObject["content"]!!
+                        .jsonObject["parts"]!!
+                        .jsonArray[0].jsonObject["text"]!!
+                        .jsonPrimitive.content
 
-            // Extract titles from JSON array in the text
-            return try {
-                val start = text.indexOf("[")
-                val end = text.lastIndexOf("]") + 1
-                if (start != -1 && end > start) {
-                    val jsonArray = text.substring(start, end)
-                    json.decodeFromString<List<String>>(jsonArray)
-                } else {
-                    emptyList()
+                    // Extract titles from JSON array in the text
+                    val start = text.indexOf("[")
+                    val end = text.lastIndexOf("]") + 1
+                    if (start != -1 && end > start) {
+                        val jsonArray = text.substring(start, end)
+                        return json.decodeFromString<List<String>>(jsonArray)
+                    } else {
+                        return emptyList()
+                    }
                 }
-            } catch (e: Exception) {
-                emptyList()
+            } catch (_: Exception) {
             }
         }
+        return emptyList()
     }
 
     private fun resolveModel(model: String): String {

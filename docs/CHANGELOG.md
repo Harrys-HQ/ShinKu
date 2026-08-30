@@ -1,5 +1,11 @@
 # ShinKu Changelog
 
+## 2.6.7 "AI Resilience & Vision Performance" (2026-08-30)
+### Added
+- **Multi-Model Rate-Limit Fallback**: Implemented automatic failover across Gemini model tiers (`preferredModel` ➔ `gemini-2.5-flash` ➔ `gemini-1.5-flash`) on HTTP 429 (quota exhaustion), 404, or 503 errors.
+- **AI Query & Translation Caching**: Added LRU in-memory response caches for Vibe Searches, Similar Manga recommendations, chapter story recaps, and live reader translation blocks.
+- **MLKit Vision OCR Caching**: Added generation/content-based caching for image OCR text recognition, making repeated page translation views instantaneous.
+
 ## 2.6.6 "Protobuf Extension Repo Migration & Safeguards" (2026-08-30)
 ### Added
 - **Protobuf Extension Catalog (`index.pb`)**: Added native decoding and gzip decompression for modern Protocol Buffer extension catalogs (`index.pb`), fully resolving the orphaned extensions issue caused by Keiyoushi deprecating legacy `index.min.json`.

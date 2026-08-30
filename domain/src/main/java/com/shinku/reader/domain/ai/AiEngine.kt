@@ -69,39 +69,49 @@ class CloudGeminiEngine(
         val apiKey = shinkuPreferences.geminiApiKey().get()
         if (apiKey.isBlank()) return@withContext Result.failure(IllegalStateException("API Key not set"))
 
-        try {
-            val model = resolveModel(shinkuPreferences.geminiModel().get())
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
-            val bodyJson = """
-                {
-                  "contents": [{
-                    "parts":[{"text": ${Json.encodeToString(prompt)}}]
-                  }]
-                }
-            """.trimIndent()
+        val preferredModel = resolveModel(shinkuPreferences.geminiModel().get())
+        val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-1.5-flash").distinct()
 
-            val request = Request.Builder()
-                .url(url)
-                .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                .build()
+        var lastError: Exception? = null
+        for (model in modelsToTry) {
+            try {
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+                val bodyJson = """
+                    {
+                      "contents": [{
+                        "parts":[{"text": ${Json.encodeToString(prompt)}}]
+                      }]
+                    }
+                """.trimIndent()
 
-            networkHelper.client.newCall(request).execute().use { response ->
-                val responseBody = response.body.string()
-                if (!response.isSuccessful) {
-                    return@withContext Result.failure(Exception("HTTP ${response.code}: $responseBody"))
+                val request = Request.Builder()
+                    .url(url)
+                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
+                    .build()
+
+                networkHelper.client.newCall(request).execute().use { response ->
+                    val responseBody = response.body.string()
+                    if (response.code in listOf(429, 404, 503)) {
+                        lastError = Exception("HTTP ${response.code}: $responseBody")
+                        return@use // Try next fallback model
+                    }
+                    if (!response.isSuccessful) {
+                        return@withContext Result.failure(Exception("HTTP ${response.code}: $responseBody"))
+                    }
+                    val result = json.parseToJsonElement(responseBody)
+                    val candidate = result.jsonObject["candidates"]?.jsonArray?.getOrNull(0)
+                    val text = candidate?.jsonObject?.get("content")?.jsonObject?.get("parts")?.jsonArray?.getOrNull(0)?.jsonObject?.get("text")?.jsonPrimitive?.content
+                    if (text != null) {
+                        return@withContext Result.success(text)
+                    } else {
+                        return@withContext Result.failure(Exception("Empty content from Gemini response"))
+                    }
                 }
-                val result = json.parseToJsonElement(responseBody)
-                val candidate = result.jsonObject["candidates"]?.jsonArray?.getOrNull(0)
-                val text = candidate?.jsonObject?.get("content")?.jsonObject?.get("parts")?.jsonArray?.getOrNull(0)?.jsonObject?.get("text")?.jsonPrimitive?.content
-                if (text != null) {
-                    Result.success(text)
-                } else {
-                    Result.failure(Exception("Empty content from Gemini response"))
-                }
+            } catch (e: Exception) {
+                lastError = e
             }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
+        Result.failure(lastError ?: Exception("Failed to generate text"))
     }
 
     override suspend fun generateTitles(prompt: String): Result<List<String>> = withContext(Dispatchers.IO) {
