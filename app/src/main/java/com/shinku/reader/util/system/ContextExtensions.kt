@@ -21,6 +21,7 @@ import com.shinku.reader.ui.base.delegate.ThemingDelegate
 import com.shinku.reader.ui.reader.setting.ReaderPreferences
 import com.shinku.reader.util.lang.truncateCenter
 import logcat.LogPriority
+import rikka.shizuku.ShizukuProvider
 import rikka.sui.Sui
 import com.shinku.reader.core.common.i18n.stringResource
 import com.shinku.reader.core.common.util.system.logcat
@@ -154,7 +155,11 @@ fun Context.isPackageInstalled(packageName: String): Boolean {
 
 val Context.hasMiuiPackageInstaller get() = isPackageInstalled("com.miui.packageinstaller")
 
-val Context.isShizukuInstalled get() = isPackageInstalled("moe.shizuku.privileged.api") || Sui.isSui()
+val Context.isShizukuInstalled: Boolean
+    get() = runCatching {
+        packageManager.getPermissionInfo(ShizukuProvider.PERMISSION, 0)
+        true
+    }.getOrDefault(false) || Sui.isSui()
 
 fun Context.launchRequestPackageInstallsPermission() {
     val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

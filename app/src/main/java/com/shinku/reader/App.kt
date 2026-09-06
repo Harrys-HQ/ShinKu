@@ -286,24 +286,19 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         SecureActivityDelegate.onApplicationStopped()
     }
 
-    private var isChromiumCallCache: Boolean? = null
-
     override fun getPackageName(): String {
-        // This causes freezes in Android 6/7 for some reason
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                // Override the value passed as X-Requested-With in WebView requests
-                val isChromiumCall = isChromiumCallCache ?: run {
-                    val stackTrace = Looper.getMainLooper().thread.stackTrace
-                    stackTrace.any { trace ->
-                        trace.className.lowercase() in setOf("org.chromium.base.buildinfo", "org.chromium.base.apkinfo") &&
-                            trace.methodName.lowercase() in setOf("getall", "getpackagename", "<init>")
-                    }.also { isChromiumCallCache = it }
-                }
-
-                if (isChromiumCall) return WebViewUtil.spoofedPackageName(applicationContext)
-            } catch (_: Exception) {
+        try {
+            // Override the value passed as X-Requested-With in WebView requests
+            val stackTrace = Thread.currentThread().stackTrace
+            val isChromiumCall = stackTrace.any { trace ->
+                trace.className.lowercase() in setOf("org.chromium.base.buildinfo", "org.chromium.base.apkinfo") &&
+                    trace.methodName.lowercase() in setOf("getall", "getpackagename", "<init>")
             }
+
+            if (isChromiumCall) {
+                return WebViewUtil.spoofedPackageName(this)
+            }
+        } catch (_: Exception) {
         }
 
         return super.getPackageName()

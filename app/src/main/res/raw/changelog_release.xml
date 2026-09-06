@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.6.8" changeDate="September 7,2026">
+        <changelogtext>[b]Added[/b]: Anti-Bot spoofing &amp; Sec-CH-UA client hints synchronization with Chrome 149</changelogtext>
+        <changelogtext>[b]Added[/b]: Resumable chapter image downloads supporting HTTP 206 byte ranges</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Backup category restore race condition when restoring manga entries</changelogtext>
+        <changelogtext>[b]Fixed[/b]: AniList token expiration timestamp multiplier and refresh detection</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Reader page slider release navigation state synchronization</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Shizuku rootless installer service ProGuard preservation rules</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Prevent duplicate update checks during device orientation changes</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.6.7" changeDate="August 30,2026">
         <changelogtext>[b]Added[/b]: Automatic multi-model rate-limit and quota fallback for Gemini AI</changelogtext>
         <changelogtext>[b]Added[/b]: In-memory LRU caching for Vibe Search, recommendations, recaps, and translations</changelogtext>
