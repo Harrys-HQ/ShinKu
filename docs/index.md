@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/shinkureader/shinku/master/.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
+  <img src="https://raw.githubusercontent.com/Harrys-HQ/ShinKu/master/.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
 </p>
 
 <h1 align="center">ShinKu</h1>
@@ -10,26 +10,27 @@
 
 ---
 
-## 🚀 Latest Release: 2.1.1
+## 🚀 Latest Release: 2.6.8
 
 The latest version of ShinKu is now available! 
 
-- **[Download APK](https://github.com/shinkureader/shinku/releases/latest)**
+- **[Download APK](https://github.com/Harrys-HQ/ShinKu/releases/latest)**
 - **[View Changelog](./CHANGELOG.md)**
 
 ---
 
 ## ✨ Key Features
 
-*   **Vibe Search (AI Discovery):** Natural language manga search powered by Google Gemini AI.
+*   **Vibe Search & "For You" (AI Discovery):** Natural language manga search and personalized recommendations powered by Google Gemini AI.
+*   **Anti-Bot Spoofing:** Dynamic `Sec-CH-UA` client hint metadata and Chrome 149 emulation for seamless Cloudflare Turnstile verification.
+*   **Resumable Downloads:** Byte-range partial content downloads for instant chapter download recovery.
+*   **Live Translation Overhaul:** AI-powered on-the-fly multi-language page translation with MLKit vision caching.
+*   **Atmospheric Audio & Mood Lighting:** Ambient genre sounds and adaptive color temperature for total immersion.
 *   **Reading Journey:** Track your progress with a beautiful statistics card in the "More" tab.
-*   **Dropbox Integration:** Secure, cross-device synchronization replacing old methods.
-*   **Dynamic Theme Overhaul:** Immersive UI that matches the colors of the manga you are reading.
+*   **Protobuf Extension Repositories:** Support for modern `.pb` and legacy JSON extension catalogs with automatic fallback.
 *   **Smart Categorizer:** Automated library organization into clean, progress-based categories.
 *   **Dead Source Scanner:** Quickly find and migrate manga from uninstalled extensions.
 *   **Failed Updates Migration:** Dedicated menu to handle manga that failed to refresh.
-*   **Library Update Speed Toggle:** Control update concurrency with Standard, Boost, and Extreme modes.
-*   **Metadata Refresh Cooldown:** Enforced 7-day cooldown on automatic metadata refreshes to save data.
 
 ---
 
@@ -47,7 +48,7 @@ ShinKu preserves the best features from its predecessors, TachiyomiSY and Mihon:
 
 ## 🛠 Setup & Installation
 
-1.  **Download:** Download the latest APK from the [Releases](https://github.com/shinkureader/shinku/releases/latest) page.
+1.  **Download:** Download the latest APK from the [Releases](https://github.com/Harrys-HQ/ShinKu/releases/latest) page.
 2.  **Dropbox Sync:** Configure your Dropbox account in **Settings > Data > Sync** for cross-device reading.
 3.  **Vibe Search:** Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and add it in **Settings > Advanced > Vibe Search**.
 4.  **Migration:** Coming from SY? Backups are fully compatible!

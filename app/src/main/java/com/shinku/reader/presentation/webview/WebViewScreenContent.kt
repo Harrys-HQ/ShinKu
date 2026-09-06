@@ -48,6 +48,10 @@ import com.shinku.reader.BuildConfig
 import com.shinku.reader.R
 import com.shinku.reader.util.system.getHtml
 import com.shinku.reader.util.system.setDefaultSettings
+import com.shinku.reader.util.system.setUserAgent
+import eu.kanade.tachiyomi.network.NetworkHelper
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 import com.shinku.reader.i18n.MR
@@ -303,9 +307,8 @@ fun WebViewScreenContent(
                         WebView.setWebContentsDebuggingEnabled(true)
                     }
 
-                    headers["user-agent"]?.let {
-                        webView.settings.userAgentString = it
-                    }
+                    val defaultUserAgent = Injekt.get<NetworkHelper>().defaultUserAgentProvider()
+                    webView.setUserAgent(headers["user-agent"] ?: defaultUserAgent)
                 },
                 onDispose = { webView ->
                     val window = windowStack.items.find { it.webView == webView }

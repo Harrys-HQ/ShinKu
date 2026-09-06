@@ -8,6 +8,7 @@ import android.widget.Toast
 import com.shinku.reader.util.system.DeviceUtil
 import com.shinku.reader.util.system.WebViewUtil
 import com.shinku.reader.util.system.setDefaultSettings
+import com.shinku.reader.util.system.setUserAgent
 import com.shinku.reader.util.system.toast
 import kotlinx.coroutines.DelicateCoroutinesApi
 import okhttp3.Headers
@@ -86,7 +87,7 @@ abstract class WebViewInterceptor(
         return WebView(context).apply {
             setDefaultSettings()
             // Avoid sending empty User-Agent, Chromium WebView will reset to default if empty
-            settings.userAgentString = request.header("User-Agent") ?: defaultUserAgentProvider()
+            setUserAgent(request.header("User-Agent") ?: defaultUserAgentProvider())
         }
     }
 }

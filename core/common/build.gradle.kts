@@ -45,6 +45,7 @@ dependencies {
     api(libs.serialization.json.okio)
 
     api(libs.preferencektx)
+    api(libs.webkit)
 
     implementation(libs.jsoup)
 

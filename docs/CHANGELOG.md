@@ -1,5 +1,19 @@
 # ShinKu Changelog
 
+## 2.6.8 "Upstream Sync & Anti-Bot Spoofing" (2026-09-07)
+### Added
+- **Anti-Bot Spoofing & Client Hints (`Sec-CH-UA`)**: Added `androidx.webkit` metadata spoofing to synchronize Client Hints with the HTTP User-Agent (bumped to Chrome 149), resolving Cloudflare Turnstile and Datadome verification loops.
+- **Resumable Chapter Image Downloads**: Added support for HTTP 206 Partial Content downloads and byte ranges; interrupted downloads now resume from their existing progress rather than redownloading from scratch.
+- **Automated Upstream Checker**: Added a new PowerShell automation tool (`scripts/check-upstream-updates.ps1`) to query and categorize live releases, pull requests, and commits from Mihon and TachiyomiSY upstreams.
+
+### Fixed
+- **Backup Category Restore Race Condition**: Ensured category entities finish restoring before manga entries and app preferences are inserted, preventing missing category assignments upon backup restoration.
+- **AniList Token Expiration**: Fixed a timestamp multiplier bug that prevented token refresh detection, and added a proactive 1-minute expiration buffer.
+- **Reader Page Slider Lock**: Added a release listener to the reader page navigator slider to ensure navigation bars and system status bars restore their proper state after page seeking.
+- **Shizuku Service Initialization**: Added ProGuard keep rules for rootless installer interface and broadened permission detection across custom environments.
+- **Update Check on Rotation**: Guarded startup update checks to prevent redundant API queries when rotating the screen.
+- **Async Database Migration Execution**: Fixed cursor contention and deadlock potential when applying category sorting migrations.
+
 ## 2.6.7 "AI Resilience & Vision Performance" (2026-08-30)
 ### Added
 - **Multi-Model Rate-Limit Fallback**: Implemented automatic failover across Gemini model tiers (`preferredModel` ➔ `gemini-2.5-flash` ➔ `gemini-1.5-flash`) on HTTP 429 (quota exhaustion), 404, or 503 errors.

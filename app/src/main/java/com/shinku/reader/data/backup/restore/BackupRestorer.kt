@@ -18,6 +18,7 @@ import com.shinku.reader.data.backup.restore.restorers.SavedSearchRestorer
 import com.shinku.reader.util.system.createFileInCacheDir
 import com.shinku.reader.exh.source.MERGED_SOURCE_ID
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -99,8 +100,10 @@ class BackupRestorer(
         }
 
         coroutineScope {
-            if (options.categories) {
+            val restoreCategoriesJob = if (options.categories) {
                 restoreCategories(backup.backupCategories)
+            } else {
+                null
             }
             // SY -->
             if (options.savedSearches) {
@@ -108,13 +111,21 @@ class BackupRestorer(
             }
             // SY <--
             if (options.appSettings) {
-                restoreAppPreferences(backup.backupPreferences, backup.backupCategories.takeIf { options.categories })
+                restoreAppPreferences(
+                    backup.backupPreferences,
+                    backup.backupCategories.takeIf { options.categories },
+                    restoreCategoriesJob,
+                )
             }
             if (options.sourceSettings) {
                 restoreSourcePreferences(backup.backupSourcePreferences)
             }
             if (options.libraryEntries) {
-                restoreManga(backup.backupManga, if (options.categories) backup.backupCategories else emptyList())
+                restoreManga(
+                    backup.backupManga,
+                    if (options.categories) backup.backupCategories else emptyList(),
+                    restoreCategoriesJob,
+                )
             }
             if (options.extensionRepoSettings) {
                 restoreExtensionRepos(backup.backupExtensionRepo)
@@ -155,7 +166,9 @@ class BackupRestorer(
     private fun CoroutineScope.restoreManga(
         backupMangas: List<BackupManga>,
         backupCategories: List<BackupCategory>,
+        restoreCategoriesJob: Job?,
     ) = launch {
+        restoreCategoriesJob?.join()
         mangaRestorer.sortByNew(backupMangas)
             /* SY --> */.sortedBy { it.source == MERGED_SOURCE_ID } /* SY <-- */
             .forEach {
@@ -176,7 +189,9 @@ class BackupRestorer(
     private fun CoroutineScope.restoreAppPreferences(
         preferences: List<BackupPreference>,
         categories: List<BackupCategory>?,
+        restoreCategoriesJob: Job?,
     ) = launch {
+        restoreCategoriesJob?.join()
         ensureActive()
         preferenceRestorer.restoreApp(
             preferences,

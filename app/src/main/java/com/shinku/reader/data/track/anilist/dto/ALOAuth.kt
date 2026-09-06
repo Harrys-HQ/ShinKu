@@ -9,9 +9,9 @@ data class ALOAuth(
     val accessToken: String,
     @SerialName("token_type")
     val tokenType: String,
-    val expires: Long,
+    val expires: Long = System.currentTimeMillis() + 31536000000L,
     @SerialName("expires_in")
-    val expiresIn: Long,
+    val expiresIn: Long = 0,
 )
 
-fun ALOAuth.isExpired() = System.currentTimeMillis() > expires
+fun ALOAuth.isExpired() = (System.currentTimeMillis() + 60_000L) > expires

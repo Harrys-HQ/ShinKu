@@ -304,3 +304,9 @@
 # Zstd compression rules to avoid native crash on JNI FindClass in minified builds
 -keep class com.squareup.zstd.** { *; }
 -dontwarn com.squareup.zstd.**
+
+# Shizuku
+-keep class com.shinku.reader.app.shizuku.ShellInterface {
+    <init>(...);
+    void destroy();
+}

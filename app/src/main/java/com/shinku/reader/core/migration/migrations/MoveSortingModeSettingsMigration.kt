@@ -31,8 +31,11 @@ class MoveSortingModeSettingsMigration : Migration {
         prefs.edit {
             putString(libraryPreferences.sortingMode().key(), newSortingMode)
         }
+        val categories = handler.awaitList {
+            categoriesQueries.getCategories(CategoryMapper::mapCategory)
+        }
         handler.await(true) {
-            categoriesQueries.getCategories(CategoryMapper::mapCategory).executeAsList()
+            categories
                 .filter { (it.flags and 0b00111100L) == 0b00100000L }
                 .forEach {
                     categoriesQueries.update(
