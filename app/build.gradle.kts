@@ -41,12 +41,13 @@ android {
 
         setProperty("archivesBaseName", "ShinKu")
 
-        versionCode = 124
-        versionName = "2.6.8"
+        versionCode = 125
+        versionName = "2.6.9"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
         buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = false)}\"")
+        buildConfigField("String", "UPSTREAM_VERSION", "\"SY 1.13.2 / Mihon 0.20.4\"")
         buildConfigField("boolean", "INCLUDE_UPDATER", "true")
 
         ndk {
