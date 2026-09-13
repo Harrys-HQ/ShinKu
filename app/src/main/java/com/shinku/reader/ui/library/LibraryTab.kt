@@ -281,6 +281,12 @@ data object LibraryTab : Tab {
                             getDisplayMode = { screenModel.getDisplayMode() },
                             getColumnsForOrientation = { screenModel.getColumnsForOrientation(it) },
                             getItemsForCategory = { state.getItemsForCategory(it) },
+                            lastReadItem = state.lastReadItem,
+                            onClickContinueHero = { mangaId, chapterId ->
+                                context.startActivity(
+                                    ReaderActivity.newIntent(context, mangaId, chapterId),
+                                )
+                            },
                         )
                     }
                 }

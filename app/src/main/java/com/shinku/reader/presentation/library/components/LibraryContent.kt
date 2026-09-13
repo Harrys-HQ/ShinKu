@@ -46,6 +46,8 @@ fun LibraryContent(
     getDisplayMode: (Int) -> PreferenceMutableState<LibraryDisplayMode>,
     getColumnsForOrientation: (Boolean) -> PreferenceMutableState<Int>,
     getItemsForCategory: (Category) -> List<LibraryItem>,
+    lastReadItem: com.shinku.reader.ui.library.LibraryScreenModel.LastReadItem? = null,
+    onClickContinueHero: ((Long, Long) -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier.padding(
@@ -60,6 +62,15 @@ fun LibraryContent(
 
         val scope = rememberCoroutineScope()
         var isRefreshing by remember(pagerState.currentPage) { mutableStateOf(false) }
+
+        if (lastReadItem != null && searchQuery.isNullOrEmpty() && selection.isEmpty()) {
+            HeroJumpBackCard(
+                manga = lastReadItem.manga,
+                chapter = lastReadItem.chapter,
+                onClickContinue = { onClickContinueHero?.invoke(lastReadItem.manga.id, lastReadItem.chapter.id) },
+                onClickDetails = { onClickManga(lastReadItem.manga.id) },
+            )
+        }
 
         if (showPageTabs && categories.isNotEmpty() && (categories.size > 1 || !categories.first().isSystemCategory)) {
             LaunchedEffect(categories) {

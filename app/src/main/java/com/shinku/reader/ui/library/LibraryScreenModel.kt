@@ -146,6 +146,8 @@ class LibraryScreenModel(
 
     syncPreferences: SyncPreferences = Injekt.get(),
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
+    private val getHistory: com.shinku.reader.domain.history.interactor.GetHistory = Injekt.get(),
+    private val getManga: com.shinku.reader.domain.manga.interactor.GetManga = Injekt.get(),
     // SY <--
 ) : StateScreenModel<LibraryScreenModel.State>(State()) {
 
@@ -159,6 +161,26 @@ class LibraryScreenModel(
     init {
         mutableState.update { state ->
             state.copy(activeCategoryIndex = libraryPreferences.lastUsedCategory().get())
+        }
+        screenModelScope.launchIO {
+            combine(
+                getHistory.subscribe(""),
+                libraryPreferences.showSanctuaryHeroCard().changes(),
+            ) { historyList, showHeroCard ->
+                if (!showHeroCard || historyList.isEmpty()) {
+                    null
+                } else {
+                    val latest = historyList.firstOrNull() ?: return@combine null
+                    val manga = getManga.await(latest.mangaId) ?: return@combine null
+                    val chapters = getChaptersByMangaId.await(latest.mangaId)
+                    val chapter = chapters.find { it.id == latest.chapterId }
+                        ?: chapters.firstOrNull()
+                        ?: return@combine null
+                    LastReadItem(manga, chapter)
+                }
+            }.collectLatest { item ->
+                mutableState.update { it.copy(lastReadItem = item) }
+            }
         }
         screenModelScope.launchIO {
             combine(
@@ -1512,6 +1534,12 @@ class LibraryScreenModel(
     }
 
     @Immutable
+    data class LastReadItem(
+        val manga: Manga,
+        val chapter: Chapter,
+    )
+
+    @Immutable
     data class State(
         val isInitialized: Boolean = false,
         val isLoading: Boolean = true,
@@ -1523,6 +1551,7 @@ class LibraryScreenModel(
         val showMangaContinueButton: Boolean = false,
         val dialog: Dialog? = null,
         val libraryData: LibraryData = LibraryData(),
+        val lastReadItem: LastReadItem? = null,
         private val activeCategoryIndex: Int = 0,
         private val groupedFavorites: Map<Category, List</* LibraryItem */ Long>> = emptyMap(),
         // SY -->
