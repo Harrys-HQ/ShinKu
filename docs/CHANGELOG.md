@@ -1,5 +1,14 @@
 # ShinKu Changelog
 
+## 2.6.9 "Upstream Hardening & Obtainium Support" (2026-09-14)
+### Added
+- **Obtainium Package Auto-Discovery**: Added standard Fastlane metadata (`fastlane/metadata/android/en-US/package_name.txt`) with application ID `com.shinku.reader` so Obtainium, IzzyOnDroid, and other FOSS package managers detect and update ShinKu seamlessly without App ID errors.
+- **Upstream Version Diagnostics**: Added upstream tracking (`SY 1.13.2 / Mihon 0.20.4`) into `BuildConfig` and crash log export for streamlined triage between ShinKu-specific logic and upstream behavior.
+
+### Fixed
+- **AniList Rate Limit Tightening**: Lowered API query permits from 85/min to 25/min in accordance with AniList's new rate-limit guidelines, preventing HTTP 429 errors during tracker sync.
+- **Dependencies Bump**: Updated JUnit to 6.1.2.
+
 ## 2.6.8 "Upstream Sync & Anti-Bot Spoofing" (2026-09-07)
 ### Added
 - **Anti-Bot Spoofing & Client Hints (`Sec-CH-UA`)**: Added `androidx.webkit` metadata spoofing to synchronize Client Hints with the HTTP User-Agent (bumped to Chrome 149), resolving Cloudflare Turnstile and Datadome verification loops.
