@@ -60,6 +60,11 @@ class LibraryPreferences(
         false,
     )
 
+    fun showSanctuaryHeroCard() = preferenceStore.getBoolean(
+        "pref_show_sanctuary_hero_card",
+        true,
+    )
+
     fun markDuplicateReadChapterAsRead() = preferenceStore.getStringSet("mark_duplicate_read_chapter_read", emptySet())
 
     // region Filter
