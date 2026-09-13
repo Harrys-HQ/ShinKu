@@ -1,9 +1,10 @@
 # ShinKu Development Protocols
 
 ## 1. Build Protocol
+- **Fast & Secure Assembly**: Run `.\gradlew.bat assembleDevRelease --build-cache --parallel --quiet --console=plain`.
 - **Active Iteration**: Use fast incremental builds (`./gradlew compileDevDebugKotlin` or `./gradlew assembleDevDebug`).
-- **Feature Completion / Release**: Run full `./gradlew assembleDevRelease`.
-- **Flavor Restrictions**: Use the `dev` flavor only (`standard` flavor is discontinued).
+- **Flavor Restrictions**: Use the `dev` flavor only (`devRelease`).
+- **Security & Signing**: Keystore properties read strictly from untracked `local.properties` or environment variables; never commit credentials. R8 optimization enabled on release-tier variants.
 - **Build Failure Recovery**: Read full log, fix errors modularly, verify constructors before updating DI, and avoid cyclic fix attempts.
 
 ## 2. Architecture & Compatibility

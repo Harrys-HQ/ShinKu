@@ -223,18 +223,34 @@ data object LibraryTab : Tab {
                 }
 
                 state.searchQuery.isNullOrEmpty() && !state.hasActiveFilters && state.isLibraryEmpty -> {
+                    val tabNavigator = LocalTabNavigator.current
                     val handler = LocalUriHandler.current
-                    EmptyScreen(
-                        stringRes = MR.strings.information_empty_library,
-                        modifier = Modifier.padding(contentPadding),
-                        actions = persistentListOf(
-                            EmptyScreenAction(
-                                stringRes = MR.strings.getting_started_guide,
-                                icon = Icons.AutoMirrored.Outlined.HelpOutline,
-                                onClick = { handler.openUri(GETTING_STARTED_URL) },
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier
+                            .padding(contentPadding)
+                            .fillMaxWidth()
+                            .fillMaxHeight(),
+                    ) {
+                        com.shinku.reader.presentation.library.components.SanctuaryWelcomeCard(
+                            onExploreClick = { tabNavigator.current = com.shinku.reader.ui.browse.BrowseTab },
+                            onVibeSearchClick = { navigator.push(GlobalSearchScreen("")) },
+                            onRestoreClick = {
+                                navigator.push(com.shinku.reader.ui.setting.SettingsScreen(com.shinku.reader.ui.setting.SettingsScreen.Destination.DataAndStorage))
+                            },
+                        )
+
+                        EmptyScreen(
+                            stringRes = MR.strings.information_empty_library,
+                            modifier = Modifier.weight(1f),
+                            actions = persistentListOf(
+                                EmptyScreenAction(
+                                    stringRes = MR.strings.getting_started_guide,
+                                    icon = Icons.AutoMirrored.Outlined.HelpOutline,
+                                    onClick = { handler.openUri(GETTING_STARTED_URL) },
+                                ),
                             ),
-                        ),
-                    )
+                        )
+                    }
                 }
 
                 else -> {

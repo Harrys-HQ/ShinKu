@@ -23,7 +23,9 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -271,34 +273,43 @@ fun ReaderAppBars(
                         )
                     }
 
-                    ReaderBottomBar(
-                        // SY -->
-                        enabledButtons = enabledButtons,
-                        // SY <--
-                        readingMode = readingMode,
-                        onClickReadingMode = onClickReadingMode,
-                        orientation = orientation,
-                        onClickOrientation = onClickOrientation,
-                        cropEnabled = cropEnabled,
-                        onClickCropBorder = onClickCropBorder,
-                        onClickSettings = onClickSettings,
-                        // SY -->
-                        currentReadingMode = currentReadingMode,
-                        dualPageSplitEnabled = dualPageSplitEnabled,
-                        doublePages = doublePages,
-                        onClickChapterList = onClickChapterList,
-                        onClickWebView = onOpenInWebView,
-                        onClickBrowser = onOpenInBrowser,
-                        onClickShare = onShare,
-                        onClickPageLayout = onClickPageLayout,
-                        onClickShiftPage = onClickShiftPage,
-                        // SY <--
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(backgroundColor)
-                            .padding(horizontal = MaterialTheme.padding.small)
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
                             .windowInsetsPadding(WindowInsets.navigationBars),
-                    )
+                        shape = RoundedCornerShape(24.dp),
+                        color = backgroundColor,
+                        tonalElevation = 4.dp,
+                        shadowElevation = 8.dp,
+                    ) {
+                        ReaderBottomBar(
+                            // SY -->
+                            enabledButtons = enabledButtons,
+                            // SY <--
+                            readingMode = readingMode,
+                            onClickReadingMode = onClickReadingMode,
+                            orientation = orientation,
+                            onClickOrientation = onClickOrientation,
+                            cropEnabled = cropEnabled,
+                            onClickCropBorder = onClickCropBorder,
+                            onClickSettings = onClickSettings,
+                            // SY -->
+                            currentReadingMode = currentReadingMode,
+                            dualPageSplitEnabled = dualPageSplitEnabled,
+                            doublePages = doublePages,
+                            onClickChapterList = onClickChapterList,
+                            onClickWebView = onOpenInWebView,
+                            onClickBrowser = onOpenInBrowser,
+                            onClickShare = onShare,
+                            onClickPageLayout = onClickPageLayout,
+                            onClickShiftPage = onClickShiftPage,
+                            // SY <--
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MaterialTheme.padding.small, vertical = 4.dp),
+                        )
+                    }
                 }
             }
         }
