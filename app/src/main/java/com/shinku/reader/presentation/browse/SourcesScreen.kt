@@ -22,8 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -125,18 +127,32 @@ private fun SourceHeader(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    Text(
-        // SY -->
-        text = if (!isCategory) {
-            LocaleHelper.getSourceDisplayName(language, context)
-        } else {
-            language
-        },
-        // SY <--
+    val title = if (!isCategory) {
+        LocaleHelper.getSourceDisplayName(language, context)
+    } else {
+        language
+    }
+    Row(
         modifier = modifier
-            .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
-        style = MaterialTheme.typography.header,
-    )
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .size(width = 3.dp, height = 14.dp)
+                .background(MaterialTheme.colorScheme.primary, CircleShape),
+        )
+        Text(
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = MaterialTheme.colorScheme.primary,
+            ),
+        )
+    }
 }
 
 @Composable
@@ -170,7 +186,9 @@ private fun SourceItem(
                         text = source.name,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                        ),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     if (health != null) {
@@ -203,11 +221,20 @@ private fun SourceItem(
         },
         action = {
             if (source.supportsLatest /* SY --> */ && showLatest /* SY <-- */) {
-                TextButton(onClick = { onClickItem(source, Listing.Latest) }) {
+                androidx.compose.material3.Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    modifier = Modifier
+                        .padding(end = 4.dp)
+                        .clip(CircleShape)
+                        .clickable { onClickItem(source, Listing.Latest) },
+                ) {
                     Text(
                         text = stringResource(MR.strings.latest),
-                        style = LocalTextStyle.current.copy(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelMedium.copy(
                             color = MaterialTheme.colorScheme.primary,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
                         ),
                     )
                 }
@@ -233,16 +260,20 @@ private fun SourcePinButton(
     val tint = if (isPinned) {
         MaterialTheme.colorScheme.primary
     } else {
-        MaterialTheme.colorScheme.onBackground.copy(
-            alpha = SECONDARY_ALPHA,
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+            alpha = 0.6f,
         )
     }
     val description = if (isPinned) MR.strings.action_unpin else MR.strings.action_pin
-    IconButton(onClick = onClick) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(36.dp),
+    ) {
         Icon(
             imageVector = icon,
             tint = tint,
             contentDescription = stringResource(description),
+            modifier = Modifier.size(20.dp),
         )
     }
 }

@@ -31,6 +31,11 @@ import com.shinku.reader.presentation.core.util.shimmer
 import com.shinku.reader.presentation.util.rememberResourceBitmapPainter
 import com.shinku.reader.R
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
+
+private val DefaultCoverShape = RoundedCornerShape(10.dp)
+
 enum class MangaCover(val ratio: Float) {
     Square(1f / 1f),
     Book(2f / 3f),
@@ -41,7 +46,7 @@ enum class MangaCover(val ratio: Float) {
         data: Any?,
         modifier: Modifier = Modifier,
         contentDescription: String = "",
-        shape: Shape = MaterialTheme.shapes.extraSmall,
+        shape: Shape = DefaultCoverShape,
         onClick: (() -> Unit)? = null,
     ) {
         var isLoading by remember { mutableStateOf(true) }
