@@ -168,18 +168,25 @@ class LibraryScreenModel(
                 libraryPreferences.showSanctuaryHeroCard().changes(),
             ) { historyList, showHeroCard ->
                 if (!showHeroCard || historyList.isEmpty()) {
-                    null
+                    emptyList()
                 } else {
-                    val latest = historyList.firstOrNull() ?: return@combine null
-                    val manga = getManga.await(latest.mangaId) ?: return@combine null
-                    val chapters = getChaptersByMangaId.await(latest.mangaId)
-                    val chapter = chapters.find { it.id == latest.chapterId }
-                        ?: chapters.firstOrNull()
-                        ?: return@combine null
-                    LastReadItem(manga, chapter)
+                    val distinctHistory = historyList.distinctBy { it.mangaId }.take(5)
+                    distinctHistory.mapNotNull { hist ->
+                        val manga = getManga.await(hist.mangaId) ?: return@mapNotNull null
+                        val chapters = getChaptersByMangaId.await(hist.mangaId)
+                        val chapter = chapters.find { it.id == hist.chapterId }
+                            ?: chapters.firstOrNull()
+                            ?: return@mapNotNull null
+                        LastReadItem(manga, chapter)
+                    }
                 }
-            }.collectLatest { item ->
-                mutableState.update { it.copy(lastReadItem = item) }
+            }.collectLatest { items ->
+                mutableState.update {
+                    it.copy(
+                        lastReadItem = items.firstOrNull(),
+                        activeReadingList = items,
+                    )
+                }
             }
         }
         screenModelScope.launchIO {
@@ -1552,6 +1559,7 @@ class LibraryScreenModel(
         val dialog: Dialog? = null,
         val libraryData: LibraryData = LibraryData(),
         val lastReadItem: LastReadItem? = null,
+        val activeReadingList: List<LastReadItem> = emptyList(),
         private val activeCategoryIndex: Int = 0,
         private val groupedFavorites: Map<Category, List</* LibraryItem */ Long>> = emptyMap(),
         // SY -->
