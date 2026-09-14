@@ -1,19 +1,28 @@
 package com.shinku.reader.presentation.library.components
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryScrollableTabRow
-import androidx.compose.material3.Tab
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.unit.sp
+import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.presentation.category.visualName
 import kotlinx.collections.immutable.ImmutableList
-import com.shinku.reader.domain.category.model.Category
-import com.shinku.reader.presentation.core.components.material.TabText
 
 @Composable
 internal fun LibraryTabs(
@@ -23,29 +32,79 @@ internal fun LibraryTabs(
     onTabItemClick: (Int) -> Unit,
 ) {
     val currentPageIndex = pagerState.currentPage.coerceAtMost(categories.lastIndex)
-    Column(modifier = Modifier.zIndex(2f)) {
-        PrimaryScrollableTabRow(
-            selectedTabIndex = currentPageIndex,
-            edgePadding = 0.dp,
-            // TODO: use default when width is fixed upstream
-            // https://issuetracker.google.com/issues/242879624
-            divider = {},
-        ) {
-            categories.forEachIndexed { index, category ->
-                Tab(
-                    selected = currentPageIndex == index,
-                    onClick = { onTabItemClick(index) },
-                    text = {
-                        TabText(
-                            text = category.visualName,
-                            badgeCount = getItemCountForCategory(category),
-                        )
-                    },
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurface,
-                )
+    val scrollState = rememberScrollState()
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(scrollState)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        categories.forEachIndexed { index, category ->
+            val isSelected = currentPageIndex == index
+            val count = getItemCountForCategory(category)
+            val pillShape = CircleShape
+
+            Surface(
+                shape = pillShape,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                },
+                contentColor = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                border = if (!isSelected) {
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                } else {
+                    null
+                },
+                modifier = Modifier
+                    .clip(pillShape)
+                    .clickable { onTabItemClick(index) },
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = category.visualName,
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        ),
+                    )
+                    if (count != null && count > 0) {
+                        Surface(
+                            shape = CircleShape,
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
+                            } else {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            },
+                        ) {
+                            Text(
+                                text = count.toString(),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.onPrimary
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
+                                ),
+                            )
+                        }
+                    }
+                }
             }
         }
-
-        HorizontalDivider()
     }
 }
