@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.AutoAwesome
@@ -216,6 +219,155 @@ private fun formatChapterText(chapter: Chapter): String {
     }
 
     return "$numberStr$pageProgress"
+}
+
+@Composable
+fun JumpBackDeck(
+    items: List<com.shinku.reader.ui.library.LibraryScreenModel.LastReadItem>,
+    onClickContinue: (Long, Long) -> Unit,
+    onClickDetails: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (items.isEmpty()) return
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "CONTINUE READING",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = "${items.size} ONGOING",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(items, key = { it.manga.id }) { item ->
+                JumpBackDeckCard(
+                    item = item,
+                    onClickContinue = { onClickContinue(item.manga.id, item.chapter.id) },
+                    onClickDetails = { onClickDetails(item.manga.id) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun JumpBackDeckCard(
+    item: com.shinku.reader.ui.library.LibraryScreenModel.LastReadItem,
+    onClickContinue: () -> Unit,
+    onClickDetails: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .width(116.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClickContinue),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+        ),
+        shadowElevation = 4.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(6.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(148.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+            ) {
+                MangaCover.Book(
+                    data = item.manga,
+                    contentDescription = item.manga.title,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.matchParentSize(),
+                )
+
+                // Quick Play Pill button overlay
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(6.dp)
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable(onClick = onClickContinue),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = "Resume",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+
+                // Info pill top-end to open details
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.55f))
+                        .clickable(onClick = onClickDetails),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AutoStories,
+                        contentDescription = "Details",
+                        tint = Color.White,
+                        modifier = Modifier.size(13.dp),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = item.manga.title,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            Text(
+                text = formatChapterText(item.chapter),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 @Composable

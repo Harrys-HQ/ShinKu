@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.vectorResource
@@ -53,134 +54,119 @@ fun MoreScreen(
     onClickHistory: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
+    val downloadQueueState = downloadQueueStateProvider()
+    val downloadSummary = when (downloadQueueState) {
+        DownloadQueueState.Stopped -> null
+        is DownloadQueueState.Paused -> {
+            val pending = downloadQueueState.pending
+            if (pending == 0) {
+                stringResource(MR.strings.paused)
+            } else {
+                "${stringResource(MR.strings.paused)} (${pluralStringResource(MR.plurals.download_queue_summary, count = pending, pending)})"
+            }
+        }
+        is DownloadQueueState.Downloading -> {
+            val pending = downloadQueueState.pending
+            pluralStringResource(MR.plurals.download_queue_summary, count = pending, pending)
+        }
+    }
 
     Scaffold { contentPadding ->
         ScrollbarLazyColumn(
-            modifier = Modifier.padding(contentPadding),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                top = contentPadding.calculateTopPadding() + 8.dp,
+                bottom = contentPadding.calculateBottomPadding() + 96.dp,
+            ),
         ) {
+            // 1. Reading Identity & Stats Header
             item {
-                LogoHeader()
-            }
-            item {
-                ReadingJourneyCard(
+                com.shinku.reader.presentation.more.components.CommandProfileHeader(
                     readChapters = readChapters,
                     readDuration = readDuration,
                     readStreak = readStreak,
                     onClick = onClickStats,
                 )
             }
+
+            // 2. Quick Command Grid (Offline, Incognito, Queue, Storage)
             item {
-                SwitchPreferenceWidget(
-                    title = stringResource(MR.strings.label_downloaded_only),
-                    subtitle = stringResource(MR.strings.downloaded_only_summary),
-                    icon = Icons.Outlined.CloudOff,
-                    checked = downloadedOnly,
-                    onCheckedChanged = onDownloadedOnlyChange,
-                )
-            }
-            item {
-                SwitchPreferenceWidget(
-                    title = stringResource(MR.strings.pref_incognito_mode),
-                    subtitle = stringResource(MR.strings.pref_incognito_mode_summary),
-                    icon = ImageVector.vectorResource(R.drawable.ic_glasses_24dp),
-                    checked = incognitoMode,
-                    onCheckedChanged = onIncognitoModeChange,
+                com.shinku.reader.presentation.more.components.QuickCommandGrid(
+                    downloadedOnly = downloadedOnly,
+                    onDownloadedOnlyChange = onDownloadedOnlyChange,
+                    incognitoMode = incognitoMode,
+                    onIncognitoModeChange = onIncognitoModeChange,
+                    downloadQueueSummary = downloadSummary,
+                    onClickDownloadQueue = onClickDownloadQueue,
+                    onClickDataAndStorage = onClickDataAndStorage,
                 )
             }
 
-            item { HorizontalDivider() }
+            // 3. ShinKu Engine
+            item {
+                com.shinku.reader.presentation.more.components.CommandGroup(
+                    title = "ShinKu Engine",
+                ) {
+                    com.shinku.reader.presentation.more.components.CommandRowItem(
+                        title = stringResource(MR.strings.action_configure_features),
+                        subtitle = "Manage Gemini AI, performance, and advanced features",
+                        icon = Icons.Outlined.AutoAwesome,
+                        onClick = onClickConfigureFeatures,
+                    )
+                    if (!showNavUpdates) {
+                        com.shinku.reader.presentation.more.components.CommandRowItem(
+                            title = stringResource(MR.strings.label_recent_updates),
+                            icon = Icons.Outlined.NewReleases,
+                            onClick = onClickUpdates,
+                        )
+                    }
+                    if (!showNavHistory) {
+                        com.shinku.reader.presentation.more.components.CommandRowItem(
+                            title = stringResource(MR.strings.label_recent_manga),
+                            icon = Icons.Outlined.History,
+                            onClick = onClickHistory,
+                        )
+                    }
+                }
+            }
 
-            // SY -->
-            if (!showNavUpdates) {
-                item {
-                    TextPreferenceWidget(
-                        title = stringResource(MR.strings.label_recent_updates),
-                        icon = Icons.Outlined.NewReleases,
-                        onPreferenceClick = onClickUpdates,
+            // 4. Core System & Preferences
+            item {
+                com.shinku.reader.presentation.more.components.CommandGroup(
+                    title = "Preferences & Storage",
+                ) {
+                    com.shinku.reader.presentation.more.components.CommandRowItem(
+                        title = stringResource(MR.strings.label_settings),
+                        subtitle = "Reader, library, downloads, and security",
+                        icon = Icons.Outlined.Settings,
+                        onClick = onClickSettings,
+                    )
+                    com.shinku.reader.presentation.more.components.CommandRowItem(
+                        title = stringResource(MR.strings.label_data_storage),
+                        subtitle = "Backups, storage limits, and cache clearing",
+                        icon = Icons.Outlined.Storage,
+                        onClick = onClickDataAndStorage,
                     )
                 }
             }
-            if (!showNavHistory) {
-                item {
-                    TextPreferenceWidget(
-                        title = stringResource(MR.strings.label_recent_manga),
-                        icon = Icons.Outlined.History,
-                        onPreferenceClick = onClickHistory,
+
+            // 5. System Info & Help
+            item {
+                com.shinku.reader.presentation.more.components.CommandGroup(
+                    title = "About & Support",
+                ) {
+                    com.shinku.reader.presentation.more.components.CommandRowItem(
+                        title = stringResource(MR.strings.pref_category_about),
+                        subtitle = "Version, release notes, and licenses",
+                        icon = Icons.Outlined.Info,
+                        onClick = onClickAbout,
+                    )
+                    com.shinku.reader.presentation.more.components.CommandRowItem(
+                        title = stringResource(MR.strings.label_help),
+                        subtitle = "User guide and website",
+                        icon = Icons.AutoMirrored.Outlined.HelpOutline,
+                        onClick = { uriHandler.openUri(Constants.URL_HELP) },
                     )
                 }
-            }
-            // SY <--
-
-            item {
-                TextPreferenceWidget(
-                    title = stringResource(MR.strings.action_configure_features),
-                    subtitle = "Manage Gemini AI, performance, and advanced features",
-                    icon = Icons.Outlined.AutoAwesome,
-                    onPreferenceClick = onClickConfigureFeatures,
-                )
-            }
-
-            item { HorizontalDivider() }
-
-            item {
-                val downloadQueueState = downloadQueueStateProvider()
-                TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_download_queue),
-                    subtitle = when (downloadQueueState) {
-                        DownloadQueueState.Stopped -> null
-                        is DownloadQueueState.Paused -> {
-                            val pending = downloadQueueState.pending
-                            if (pending == 0) {
-                                stringResource(MR.strings.paused)
-                            } else {
-                                "${stringResource(MR.strings.paused)} • ${
-                                    pluralStringResource(
-                                        MR.plurals.download_queue_summary,
-                                        count = pending,
-                                        pending,
-                                    )
-                                }"
-                            }
-                        }
-                        is DownloadQueueState.Downloading -> {
-                            val pending = downloadQueueState.pending
-                            pluralStringResource(MR.plurals.download_queue_summary, count = pending, pending)
-                        }
-                    },
-                    icon = Icons.Outlined.GetApp,
-                    onPreferenceClick = onClickDownloadQueue,
-                )
-            }
-            item {
-                TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_data_storage),
-                    icon = Icons.Outlined.Storage,
-                    onPreferenceClick = onClickDataAndStorage,
-                )
-            }
-
-            item { HorizontalDivider() }
-
-            item {
-                TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_settings),
-                    icon = Icons.Outlined.Settings,
-                    onPreferenceClick = onClickSettings,
-                )
-            }
-            item {
-                TextPreferenceWidget(
-                    title = stringResource(MR.strings.pref_category_about),
-                    icon = Icons.Outlined.Info,
-                    onPreferenceClick = onClickAbout,
-                )
-            }
-            item {
-                TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_help),
-                    icon = Icons.AutoMirrored.Outlined.HelpOutline,
-                    onPreferenceClick = { uriHandler.openUri(Constants.URL_HELP) },
-                )
             }
         }
     }

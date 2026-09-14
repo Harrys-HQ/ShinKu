@@ -47,6 +47,7 @@ fun LibraryContent(
     getColumnsForOrientation: (Boolean) -> PreferenceMutableState<Int>,
     getItemsForCategory: (Category) -> List<LibraryItem>,
     lastReadItem: com.shinku.reader.ui.library.LibraryScreenModel.LastReadItem? = null,
+    activeReadingList: List<com.shinku.reader.ui.library.LibraryScreenModel.LastReadItem> = emptyList(),
     onClickContinueHero: ((Long, Long) -> Unit)? = null,
 ) {
     Column(
@@ -70,6 +71,15 @@ fun LibraryContent(
                 onClickContinue = { onClickContinueHero?.invoke(lastReadItem.manga.id, lastReadItem.chapter.id) },
                 onClickDetails = { onClickManga(lastReadItem.manga.id) },
             )
+
+            val additionalReads = remember(activeReadingList) { activeReadingList.drop(1) }
+            if (additionalReads.isNotEmpty()) {
+                JumpBackDeck(
+                    items = additionalReads,
+                    onClickContinue = { mangaId, chapterId -> onClickContinueHero?.invoke(mangaId, chapterId) },
+                    onClickDetails = { mangaId -> onClickManga(mangaId) },
+                )
+            }
         }
 
         if (showPageTabs && categories.isNotEmpty() && (categories.size > 1 || !categories.first().isSystemCategory)) {
