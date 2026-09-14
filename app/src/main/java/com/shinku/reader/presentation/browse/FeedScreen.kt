@@ -70,12 +70,18 @@ fun FeedScreen(
     onClickSource: (CatalogueSource) -> Unit,
     onClickDelete: (FeedSavedSearch) -> Unit,
     onClickManga: (Manga) -> Unit,
+    onClickGenre: (String) -> Unit = {},
     onRefresh: () -> Unit,
     getMangaState: @Composable (Manga) -> State<Manga>,
 ) {
+    val hasContent = state.featuredManga.isNotEmpty() ||
+        state.forYouManga.isNotEmpty() ||
+        !state.recommendations.isNullOrEmpty() ||
+        !state.items.isNullOrEmpty()
+
     when {
         state.isLoading -> LoadingScreen()
-        state.items.isNullOrEmpty() -> EmptyScreen(
+        !hasContent -> EmptyScreen(
             SYMR.strings.feed_tab_empty,
             modifier = Modifier.padding(contentPadding),
         )
@@ -96,44 +102,73 @@ fun FeedScreen(
                 enabled = !state.isLoadingItems,
             ) {
                 ScrollbarLazyColumn(
-                    contentPadding = contentPadding + topSmallPaddingValues,
+                    contentPadding = PaddingValues(
+                        top = contentPadding.calculateTopPadding() + 4.dp,
+                        bottom = contentPadding.calculateBottomPadding() + 96.dp,
+                    ),
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    if (!state.recommendations.isNullOrEmpty()) {
+                    // 1. Featured Manga Carousel Banner
+                    if (state.featuredManga.isNotEmpty()) {
                         item {
-                            GlobalSearchResultItem(
-                                title = stringResource(SYMR.strings.label_ai_recommends),
-                                subtitle = stringResource(MR.strings.last_used_source),
-                                onClick = {},
-                            ) {
-                                GlobalSearchCardRow(
-                                    titles = state.recommendations,
-                                    getManga = getMangaState,
-                                    onClick = onClickManga,
-                                    onLongClick = onClickManga,
-                                )
-                            }
+                            com.shinku.reader.presentation.browse.components.DiscoverFeaturedCarousel(
+                                featuredManga = state.featuredManga,
+                                onClickManga = onClickManga,
+                            )
                         }
                     }
-                    items(
-                        state.items.orEmpty(),
-                        key = { it.feed.id },
-                    ) { item ->
-                        GlobalSearchResultItem(
-                            title = item.title,
-                            subtitle = item.subtitle,
-                            onLongClick = {
-                                onClickDelete(item.feed)
-                            },
-                            onClick = {
-                                if (item.savedSearch != null && item.source != null) {
-                                    onClickSavedSearch(item.savedSearch, item.source)
-                                } else if (item.source != null) {
-                                    onClickSource(item.source)
-                                }
-                            },
-                            modifier = Modifier.animateItem(),
-                        ) {
+
+                    // 2. Genre & Mood Cloud Filter Chips
+                    item {
+                        com.shinku.reader.presentation.browse.components.DiscoverGenreCloud(
+                            onSelectGenre = onClickGenre,
+                        )
+                    }
+
+                    // 3. Manga For You Section
+                    if (state.forYouManga.isNotEmpty()) {
+                        item {
+                            com.shinku.reader.presentation.browse.components.DiscoverSectionHeader(
+                                title = "Manga For You",
+                                onSeeAllClick = { onClickGenre("") },
+                            )
+                            com.shinku.reader.presentation.browse.components.DiscoverMangaRow(
+                                mangas = state.forYouManga,
+                                onClickManga = onClickManga,
+                            )
+                        }
+                    }
+
+                    // 4. Recommendations Section
+                    if (!state.recommendations.isNullOrEmpty()) {
+                        item {
+                            com.shinku.reader.presentation.browse.components.DiscoverSectionHeader(
+                                title = "Recommendations",
+                                onSeeAllClick = { onClickGenre("") },
+                            )
+                            com.shinku.reader.presentation.browse.components.DiscoverMangaRow(
+                                mangas = state.recommendations,
+                                onClickManga = onClickManga,
+                            )
+                        }
+                    }
+
+                    // 5. Custom Feeds & Saved Searches
+                    if (!state.items.isNullOrEmpty()) {
+                        items(
+                            state.items.orEmpty(),
+                            key = { it.feed.id },
+                        ) { item ->
+                            com.shinku.reader.presentation.browse.components.DiscoverSectionHeader(
+                                title = item.title,
+                                onSeeAllClick = {
+                                    if (item.savedSearch != null && item.source != null) {
+                                        onClickSavedSearch(item.savedSearch, item.source)
+                                    } else if (item.source != null) {
+                                        onClickSource(item.source)
+                                    }
+                                },
+                            )
                             FeedItem(
                                 item = item,
                                 getMangaState = { getMangaState(it) },
