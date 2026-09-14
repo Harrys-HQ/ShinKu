@@ -50,7 +50,7 @@ class UiPreferences(
 
     fun hideFeedTab() = preferenceStore.getBoolean("hide_latest_tab", false)
 
-    fun feedTabInFront() = preferenceStore.getBoolean("latest_tab_position", false)
+    fun feedTabInFront() = preferenceStore.getBoolean("latest_tab_position", true)
 
     fun recommendsInOverflow() = preferenceStore.getBoolean("recommends_in_overflow", false)
 

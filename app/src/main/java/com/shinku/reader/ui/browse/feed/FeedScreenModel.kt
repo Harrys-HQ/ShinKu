@@ -76,6 +76,7 @@ open class FeedScreenModel(
     private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
     private val getRemoteManga: GetRemoteManga = Injekt.get(),
+    private val getLibraryManga: com.shinku.reader.domain.manga.interactor.GetLibraryManga = Injekt.get(),
 ) : StateScreenModel<FeedScreenState>(FeedScreenState()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
@@ -108,6 +109,7 @@ open class FeedScreenModel(
             .launchIn(screenModelScope)
 
         fetchAiRecommendations()
+        loadFeaturedAndForYou()
     }
 
     private fun fetchAiRecommendations() {
@@ -154,10 +156,54 @@ open class FeedScreenModel(
         }
     }
 
+    private fun loadFeaturedAndForYou() {
+        screenModelScope.launchIO {
+            try {
+                val library = getLibraryManga.await()
+                val libraryManga = library.map { it.manga }
+                if (libraryManga.isNotEmpty()) {
+                    val featured = libraryManga.shuffled().take(5)
+                    val forYou = if (libraryManga.size > 5) libraryManga.filter { it !in featured }.take(10) else libraryManga
+                    mutableState.update {
+                        it.copy(
+                            featuredManga = featured.toImmutableList(),
+                            forYouManga = forYou.toImmutableList(),
+                        )
+                    }
+                } else {
+                    val sourceId = sourcePreferences.lastUsedSource().get()
+                    val source = sourceManager.get(sourceId) as? CatalogueSource
+                        ?: sourceManager.getOnlineSources().filterIsInstance<CatalogueSource>().firstOrNull()
+                    if (source != null) {
+                        val popular = withContext(coroutineDispatcher) {
+                            try {
+                                source.getPopularManga(1).mangas.map { it.toDomainManga(source.id) }
+                            } catch (e: Exception) {
+                                emptyList()
+                            }
+                        }
+                        val localManga = networkToLocalManga(popular)
+                        if (localManga.isNotEmpty()) {
+                            mutableState.update {
+                                it.copy(
+                                    featuredManga = localManga.take(5).toImmutableList(),
+                                    forYouManga = localManga.drop(5).take(10).toImmutableList(),
+                                )
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+            }
+        }
+    }
+
     fun init() {
         pushed = false
         screenModelScope.launchIO {
             fetchAiRecommendations()
+            loadFeaturedAndForYou()
             val newItems = state.value.items?.map { it.copy(results = null) } ?: return@launchIO
             mutableState.update { state ->
                 state.copy(
@@ -372,9 +418,11 @@ data class FeedScreenState(
     val dialog: FeedScreenModel.Dialog? = null,
     val items: kotlinx.collections.immutable.ImmutableList<FeedItemUI>? = null,
     val recommendations: kotlinx.collections.immutable.ImmutableList<DomainManga>? = null,
+    val featuredManga: kotlinx.collections.immutable.ImmutableList<DomainManga> = kotlinx.collections.immutable.persistentListOf(),
+    val forYouManga: kotlinx.collections.immutable.ImmutableList<DomainManga> = kotlinx.collections.immutable.persistentListOf(),
 ) {
     val isLoading
-        get() = items == null && recommendations == null
+        get() = items == null && recommendations == null && featuredManga.isEmpty()
 
     val isLoadingItems
         get() = items?.fastAny { it.results == null } != false

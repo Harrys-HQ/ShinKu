@@ -19,6 +19,7 @@ import com.shinku.reader.presentation.browse.FeedScreen
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.TabContent
 import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreen
+import com.shinku.reader.ui.browse.source.globalsearch.GlobalSearchScreen
 import com.shinku.reader.ui.manga.MangaScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
@@ -85,6 +86,9 @@ fun Screen.feedTab(): TabContent {
                 onClickDelete = screenModel::openDeleteDialog,
                 onClickManga = { manga ->
                     navigator.push(MangaScreen(manga.id, true))
+                },
+                onClickGenre = { genre ->
+                    navigator.push(GlobalSearchScreen(genre))
                 },
                 onRefresh = screenModel::init,
                 getMangaState = { manga -> screenModel.getManga(initialManga = manga) },

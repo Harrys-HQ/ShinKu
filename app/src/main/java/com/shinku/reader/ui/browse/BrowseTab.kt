@@ -81,17 +81,10 @@ data object BrowseTab : Tab {
                 extensionsTab(extensionsScreenModel),
                 migrateSourceTab(),
             )
-        } else if (feedTabInFront) {
-            persistentListOf(
-                feedTab(),
-                sourcesTab(),
-                extensionsTab(extensionsScreenModel),
-                migrateSourceTab(),
-            )
         } else {
             persistentListOf(
-                sourcesTab(),
                 feedTab(),
+                sourcesTab(),
                 extensionsTab(extensionsScreenModel),
                 migrateSourceTab(),
             )
