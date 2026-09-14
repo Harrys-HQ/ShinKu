@@ -35,9 +35,14 @@ import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.domain.source.model.Source
 import eu.kanade.tachiyomi.source.local.isLocal
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+
+private val IconShape = RoundedCornerShape(12.dp)
+
 private val defaultModifier = Modifier
-    .height(40.dp)
-    .aspectRatio(1f)
+    .size(40.dp)
+    .clip(IconShape)
 
 @Composable
 fun SourceIcon(
@@ -93,7 +98,7 @@ fun ExtensionIcon(
                 placeholder = ColorPainter(Color(0x1F888888)),
                 error = rememberResourceBitmapPainter(id = R.drawable.cover_error),
                 modifier = modifier
-                    .clip(MaterialTheme.shapes.extraSmall),
+                    .clip(IconShape),
             )
         }
         is Extension.Installed -> {
@@ -103,12 +108,12 @@ fun ExtensionIcon(
                 is Result.Success -> Image(
                     bitmap = (icon as Result.Success<ImageBitmap>).value,
                     contentDescription = null,
-                    modifier = modifier,
+                    modifier = modifier.clip(IconShape),
                 )
                 Result.Error -> Image(
                     bitmap = ImageBitmap.imageResource(id = R.mipmap.ic_default_source),
                     contentDescription = null,
-                    modifier = modifier,
+                    modifier = modifier.clip(IconShape),
                 )
             }
         }

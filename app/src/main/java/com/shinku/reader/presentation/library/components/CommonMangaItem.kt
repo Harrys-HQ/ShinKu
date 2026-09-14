@@ -127,14 +127,15 @@ private fun BoxScope.CoverTextOverlay(
 ) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp))
+            .clip(RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp))
             .background(
                 Brush.verticalGradient(
                     0f to Color.Transparent,
-                    1f to Color(0xAA000000),
+                    0.4f to Color(0x55000000),
+                    1f to Color(0xDD000000),
                 ),
             )
-            .fillMaxHeight(0.33f)
+            .fillMaxHeight(0.38f)
             .fillMaxWidth()
             .align(Alignment.BottomCenter),
     )
@@ -145,12 +146,13 @@ private fun BoxScope.CoverTextOverlay(
         GridItemTitle(
             modifier = Modifier
                 .weight(1f)
-                .padding(8.dp),
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             title = title,
             style = MaterialTheme.typography.titleSmall.copy(
                 color = Color.White,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
                 shadow = Shadow(
-                    color = Color.Black,
+                    color = Color(0x88000000),
                     blurRadius = 4f,
                 ),
             ),
