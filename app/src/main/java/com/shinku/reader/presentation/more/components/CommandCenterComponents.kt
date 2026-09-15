@@ -15,23 +15,32 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.GetApp
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import com.shinku.reader.presentation.core.util.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +77,49 @@ fun CommandProfileHeader(
             readChapters >= 10 -> "Apprentice"
             else -> "Initiate"
         }
+    }
+
+    val shinkuPreferences = remember { Injekt.get<com.shinku.reader.exh.source.ShinKuPreferences>() }
+    val nickname by shinkuPreferences.readerNickname().collectAsState()
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    if (showEditDialog) {
+        var tempName by remember { mutableStateOf(nickname) }
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Reader Identity") },
+            text = {
+                Column {
+                    Text(
+                        "Set your preferred nickname / reader name for your Reading Sanctuary:",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = tempName,
+                        onValueChange = { tempName = it },
+                        placeholder = { Text("e.g. Solo Leveler, Shadow Reader, Sensei") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        shinkuPreferences.readerNickname().set(tempName.trim())
+                        showEditDialog = false
+                    },
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
     }
 
     ElevatedCard(
@@ -130,7 +182,7 @@ fun CommandProfileHeader(
                             Box(
                                 modifier = Modifier
                                     .size(7.dp)
-                                    .clip(CircleShape)
+                                    .clip(RoundedCornerShape(2.dp))
                                     .background(MaterialTheme.colorScheme.primary),
                             )
                             Spacer(modifier = Modifier.width(5.dp))
@@ -146,13 +198,29 @@ fun CommandProfileHeader(
 
                         Spacer(modifier = Modifier.height(2.dp))
 
-                        Text(
-                            text = "Reader Identity",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { showEditDialog = true },
+                        ) {
+                            Text(
+                                text = nickname.ifBlank { "Reader Identity" },
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "Edit Reader Nickname",
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                     }
 
                     // Rank Pill Badge
@@ -468,7 +536,7 @@ fun CommandGroup(
                 Box(
                     modifier = Modifier
                         .size(6.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(2.dp))
                         .background(MaterialTheme.colorScheme.primary),
                 )
                 Spacer(modifier = Modifier.width(6.dp))

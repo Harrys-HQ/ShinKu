@@ -1,5 +1,19 @@
 # ShinKu Changelog
 
+## 2.7.0 "Discover Feed & Squircle Unification" (2026-09-16)
+### Added
+- **Modern Discover Feed**: Redesigned the Feed tab with a modern Discover interface featuring a dynamic Featured Hero Carousel, interactive Genre Navigation Cloud, personalized "Titles For You", and curated Genre Highlights.
+- **Interactive Skeleton & Instant Preload**: Added 0ms instant local library cache preloading and an interactive Discover Feed Skeleton (`DiscoverFeedSkeleton`), eliminating startup lag and preventing premature empty screen flashes while online sources compile.
+- **Feed Source & Language Filtering**: Added a new Feed Filter & Settings dialog accessible from the top bar to toggle source feeds visibility, filter by specific source, or filter by language.
+- **Offline & Empty State Resilience**: Gracefully clusters library titles by genre when offline or when no extensions return results, ensuring the Feed is always rich and interactive.
+- **Suggested Titles Drilldown Screen**: Added a dedicated screen (`SuggestedTitlesScreen`) with full grid browsing for see-all actions on any feed section or genre.
+
+### Changed
+- **Squircle Unification Pass**: Completely eliminated lingering `CircleShape` usages across the app (dialogs, library indicators, hero cards, browse tabs, calendar days) in favor of cohesive `RoundedCornerShape` squircles.
+- **AI Model Resolution & Zero Latency**: Updated Gemini API model mapping to execute official endpoints directly (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, `gemini-1.5-flash`) on the first attempt, eliminating HTTP 404 retry latency penalties.
+- **Live Translation Hardening**: Added lenient JSON parsing and regex fallback parsers to handle relaxed or code-fenced translation responses seamlessly.
+- **Privacy & Help Documentation**: Updated Privacy Policy and Help settings to route directly to Mihon documentation.
+
 ## 2.6.9 "Upstream Hardening & Obtainium Support" (2026-09-14)
 ### Added
 - **Obtainium Package Auto-Discovery**: Added standard Fastlane metadata (`fastlane/metadata/android/en-US/package_name.txt`) with application ID `com.shinku.reader` so Obtainium, IzzyOnDroid, and other FOSS package managers detect and update ShinKu seamlessly without App ID errors.

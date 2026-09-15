@@ -41,8 +41,8 @@ android {
 
         setProperty("archivesBaseName", "ShinKu")
 
-        versionCode = 125
-        versionName = "2.6.9"
+        versionCode = 126
+        versionName = "2.7.0"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -87,10 +87,11 @@ android {
             setProguardFiles(listOf(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"))
             matchingFallbacks.add("release")
         }
+        val enableMinify = project.findProperty("enableMinify")?.toString()?.toBoolean() ?: false
         named("release") {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = enableMinify
+            isShrinkResources = enableMinify
             setProguardFiles(listOf(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"))
 
             buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = true)}\"")
@@ -155,7 +156,7 @@ android {
 
     lint {
         abortOnError = true
-        checkReleaseBuilds = true
+        checkReleaseBuilds = project.findProperty("lintVital")?.toString()?.toBoolean() ?: false
     }
 }
 

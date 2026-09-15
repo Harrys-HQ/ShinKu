@@ -87,7 +87,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
             getImmersionGroup(shinkuPreferences, readerPreferences),
             getReaderEnhancementsGroup(readerPreferences),
             getNavigationGroup(uiPreferences),
-            getInterfaceGroup(uiPreferences),
+            getInterfaceGroup(uiPreferences, shinkuPreferences),
             getBrowsingGroup(sourcePreferences, uiPreferences),
             getLibraryGroup(libraryPreferences),
             getSecurityDebugGroup(securityPreferences, sourcePreferences, delegateSourcePreferences),
@@ -214,14 +214,12 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     subtitle = stringResource(MR.strings.pref_gemini_model_summary),
                     enabled = aiEngineProvider != "aicore",
                     entries = persistentMapOf(
-                        "gemini-3.5-flash" to "Gemini 3.5 Flash (Recommended - Fast)",
-                        "gemini-3.5-pro" to "Gemini 3.5 Pro (High Quality)",
-                        "gemini-3.1-flash-lite" to "Gemini 3.1 Flash-Lite (Low Latency)",
-                        "gemini-3.1-pro-preview" to "Gemini 3.1 Pro (Preview)",
-                        "gemini-3-pro-preview" to "Gemini 3 Pro (Preview)",
-                        "gemini-3-flash-preview" to "Gemini 3 Flash (Preview)",
-                        "gemini-2.5-flash" to "Gemini 2.5 Flash",
-                        "gemini-2.5-pro" to "Gemini 2.5 Pro",
+                        "gemini-2.5-flash" to "Gemini 2.5 Flash (Recommended - Fast)",
+                        "gemini-2.5-pro" to "Gemini 2.5 Pro (High Quality)",
+                        "gemini-2.0-flash" to "Gemini 2.0 Flash (Low Latency)",
+                        "gemini-2.0-flash-lite" to "Gemini 2.0 Flash-Lite",
+                        "gemini-1.5-flash" to "Gemini 1.5 Flash",
+                        "gemini-1.5-pro" to "Gemini 1.5 Pro",
                     ),
                 ),
                 Preference.PreferenceItem.TextPreference(
@@ -505,12 +503,20 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
     }
 
     @Composable
-    private fun getInterfaceGroup(uiPreferences: UiPreferences): Preference.PreferenceGroup {
+    private fun getInterfaceGroup(
+        uiPreferences: UiPreferences,
+        shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences,
+    ): Preference.PreferenceGroup {
         val previewsRowCount by uiPreferences.previewsRowCount().collectAsState()
 
         return Preference.PreferenceGroup(
             "Interface Enhancements",
             preferenceItems = persistentListOf(
+                Preference.PreferenceItem.EditTextPreference(
+                    preference = shinkuPreferences.readerNickname(),
+                    title = "Reader Identity Nickname",
+                    subtitle = "Personalize your sanctuary welcome name and profile",
+                ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = uiPreferences.expandFilters(),
                     title = stringResource(SYMR.strings.toggle_expand_search_filters),

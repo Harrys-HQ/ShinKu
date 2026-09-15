@@ -63,14 +63,14 @@ class CloudGeminiEngine(
     override val isAvailable: Boolean
         get() = shinkuPreferences.geminiApiKey().get().isNotBlank()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     override suspend fun generateText(prompt: String): Result<String> = withContext(Dispatchers.IO) {
         val apiKey = shinkuPreferences.geminiApiKey().get()
         if (apiKey.isBlank()) return@withContext Result.failure(IllegalStateException("API Key not set"))
 
         val preferredModel = resolveModel(shinkuPreferences.geminiModel().get())
-        val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-1.5-flash").distinct()
+        val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
 
         var lastError: Exception? = null
         for (model in modelsToTry) {
@@ -134,14 +134,16 @@ class CloudGeminiEngine(
 
     private fun resolveModel(model: String): String {
         return when (model) {
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
-            "gemini-2.0-flash",
-            "gemini-2.0-pro",
-            "gemini-2.0-flash-exp",
+            "gemini-3.5-flash",
+            "gemini-3.5-pro",
+            "gemini-3.1-flash-lite",
+            "gemini-3.1-pro-preview",
+            "gemini-3-pro-preview",
+            "gemini-3-flash-preview",
             "gemini-3.0-flash",
             "gemini-3.0-pro",
-            "gemini-3.1-pro" -> "gemini-3.5-flash"
+            "gemini-3.1-pro",
+            "" -> "gemini-2.5-flash"
             else -> model
         }
     }

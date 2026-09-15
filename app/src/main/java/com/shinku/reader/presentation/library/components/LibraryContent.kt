@@ -64,22 +64,15 @@ fun LibraryContent(
         val scope = rememberCoroutineScope()
         var isRefreshing by remember(pagerState.currentPage) { mutableStateOf(false) }
 
-        if (lastReadItem != null && searchQuery.isNullOrEmpty() && selection.isEmpty()) {
-            HeroJumpBackCard(
-                manga = lastReadItem.manga,
-                chapter = lastReadItem.chapter,
-                onClickContinue = { onClickContinueHero?.invoke(lastReadItem.manga.id, lastReadItem.chapter.id) },
-                onClickDetails = { onClickManga(lastReadItem.manga.id) },
+        val readingItems = remember(lastReadItem, activeReadingList) {
+            if (activeReadingList.isNotEmpty()) activeReadingList else listOfNotNull(lastReadItem)
+        }
+        if (readingItems.isNotEmpty() && searchQuery.isNullOrEmpty() && selection.isEmpty()) {
+            HeroJumpBackCarousel(
+                items = readingItems,
+                onClickContinue = { mangaId, chapterId -> onClickContinueHero?.invoke(mangaId, chapterId) },
+                onClickDetails = { mangaId -> onClickManga(mangaId) },
             )
-
-            val additionalReads = remember(activeReadingList) { activeReadingList.drop(1) }
-            if (additionalReads.isNotEmpty()) {
-                JumpBackDeck(
-                    items = additionalReads,
-                    onClickContinue = { mangaId, chapterId -> onClickContinueHero?.invoke(mangaId, chapterId) },
-                    onClickDetails = { mangaId -> onClickManga(mangaId) },
-                )
-            }
         }
 
         if (showPageTabs && categories.isNotEmpty() && (categories.size > 1 || !categories.first().isSystemCategory)) {
