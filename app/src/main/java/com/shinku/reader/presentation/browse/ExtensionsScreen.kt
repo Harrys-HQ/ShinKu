@@ -37,7 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -472,10 +472,10 @@ private fun ExtensionItemActions(
 
                         if (extension.hasUpdate) {
                             Surface(
-                                shape = CircleShape,
+                                shape = RoundedCornerShape(10.dp),
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier
-                                    .clip(CircleShape)
+                                    .clip(RoundedCornerShape(10.dp))
                                     .clickable { onClickItemAction(extension) },
                             ) {
                                 Row(
@@ -502,10 +502,10 @@ private fun ExtensionItemActions(
                     }
                     is Extension.Untrusted -> {
                         Surface(
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(10.dp),
                             color = MaterialTheme.colorScheme.errorContainer,
                             modifier = Modifier
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(10.dp))
                                 .clickable { onClickItemAction(extension) },
                         ) {
                             Row(
@@ -544,10 +544,10 @@ private fun ExtensionItemActions(
                         }
 
                         Surface(
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(10.dp),
                             color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(10.dp))
                                 .clickable { onClickItemAction(extension) },
                         ) {
                             Row(
@@ -606,7 +606,7 @@ private fun ExtensionHeader(
             modifier = Modifier
                 .padding(end = 8.dp)
                 .size(width = 3.dp, height = 14.dp)
-                .background(MaterialTheme.colorScheme.primary, CircleShape),
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(1.5.dp)),
         )
         Text(
             text = text.uppercase(),

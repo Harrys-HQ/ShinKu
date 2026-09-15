@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.0" changeDate="September 16,2026">
+        <changelogtext>[b]Added[/b]: Modern Discover Feed with dynamic Hero Carousel, interactive Genre Cloud, and Titles For You</changelogtext>
+        <changelogtext>[b]Added[/b]: Instant 0ms library preload and interactive Discover Feed Skeleton, removing startup lag</changelogtext>
+        <changelogtext>[b]Added[/b]: Feed Filter &amp; Settings dialog to toggle source feeds, sources, and language filters</changelogtext>
+        <changelogtext>[b]Added[/b]: Suggested Titles drilldown screen for browsing all titles under any feed category</changelogtext>
+        <changelogtext>[b]Changed[/b]: Complete squircle unification pass across all dialogs, indicators, tabs, and components</changelogtext>
+        <changelogtext>[b]Changed[/b]: AI model endpoint resolution to official Gemini models with zero 404 retry latency</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Live translation parser hardening with lenient decoding and regex fallback</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Route Privacy Policy and Help settings to Mihon documentation</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.6.9" changeDate="September 14,2026">
         <changelogtext>[b]Added[/b]: Obtainium package metadata for automatic updates and App ID resolution</changelogtext>
         <changelogtext>[b]Added[/b]: Upstream version tracking in crash and diagnostic log exports</changelogtext>

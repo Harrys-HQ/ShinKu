@@ -16,7 +16,7 @@ import uy.kohesive.injekt.api.get
 class GeminiVibeSearch(
     private val networkHelper: NetworkHelper,
 ) {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
     private val shinkuPreferences: ShinKuPreferences = Injekt.get()
     private val aiEngineRegistry: com.shinku.reader.domain.ai.AiEngineRegistry = Injekt.get()
 
@@ -166,17 +166,40 @@ class GeminiVibeSearch(
         if (resultText.startsWith("Error:")) {
             throw Exception(resultText)
         }
-        
+
+        val cleanResult = resultText
+            .replace("```json", "")
+            .replace("```", "")
+            .trim()
+
         return try {
-            val start = resultText.indexOf("[")
-            val end = resultText.lastIndexOf("]") + 1
+            val start = cleanResult.indexOf("[")
+            val end = cleanResult.lastIndexOf("]") + 1
             if (start != -1 && end > start) {
-                val jsonArray = resultText.substring(start, end)
-                val outputs = json.decodeFromString<List<TranslationBlockOutput>>(jsonArray)
-                if (outputs.isNotEmpty()) {
-                    translationCache[cacheKey] = outputs
+                val jsonArray = cleanResult.substring(start, end)
+                try {
+                    val outputs = json.decodeFromString<List<TranslationBlockOutput>>(jsonArray)
+                    if (outputs.isNotEmpty()) {
+                        translationCache[cacheKey] = outputs
+                    }
+                    outputs
+                } catch (_: Exception) {
+                    val regex = Regex("""\{\s*"id"\s*:\s*(\d+)\s*,\s*"text"\s*:\s*"((?:[^"\\]|\\.)*)"""")
+                    val parsed = regex.findAll(cleanResult).map { match ->
+                        val id = match.groupValues[1].toInt()
+                        val text = match.groupValues[2]
+                            .replace("\\\"", "\"")
+                            .replace("\\n", "\n")
+                            .replace("\\\\", "\\")
+                        TranslationBlockOutput(id, text)
+                    }.toList()
+                    if (parsed.isNotEmpty()) {
+                        translationCache[cacheKey] = parsed
+                        parsed
+                    } else {
+                        throw Exception("Failed to parse translation JSON: $cleanResult")
+                    }
                 }
-                outputs
             } else {
                 throw Exception("Invalid response format from Gemini: $resultText")
             }
@@ -332,7 +355,7 @@ class GeminiVibeSearch(
             if (apiKey.isBlank()) return@withIOContext "API Key not set"
 
             val preferredModel = resolveModel(model)
-            val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-1.5-flash").distinct()
+            val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
 
             var lastError = "Unknown error"
             for (m in modelsToTry) {
@@ -387,7 +410,7 @@ class GeminiVibeSearch(
 
     private fun callGemini(query: String, apiKey: String, model: String): List<String> {
         val preferredModel = resolveModel(model)
-        val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-1.5-flash").distinct()
+        val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
 
         val prompt = """
             You are a manga discovery expert. Based on the following user description, provide a list of up to 10 real manga titles that match the "vibe".
@@ -442,14 +465,16 @@ class GeminiVibeSearch(
 
     private fun resolveModel(model: String): String {
         return when (model) {
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
-            "gemini-2.0-flash",
-            "gemini-2.0-pro",
-            "gemini-2.0-flash-exp",
+            "gemini-3.5-flash",
+            "gemini-3.5-pro",
+            "gemini-3.1-flash-lite",
+            "gemini-3.1-pro-preview",
+            "gemini-3-pro-preview",
+            "gemini-3-flash-preview",
             "gemini-3.0-flash",
             "gemini-3.0-pro",
-            "gemini-3.1-pro" -> "gemini-3.5-flash"
+            "gemini-3.1-pro",
+            "" -> "gemini-2.5-flash"
             else -> model
         }
     }

@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
@@ -113,7 +113,7 @@ private fun LibraryRegularToolbar(
                     modifier = Modifier
                         .padding(horizontal = 6.dp)
                         .size(6.dp)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)),
                 )
                 if (title.numberOfManga != null) {
                     Pill(

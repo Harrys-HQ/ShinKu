@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyRow
@@ -44,9 +43,233 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import com.shinku.reader.presentation.core.util.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import com.shinku.reader.domain.chapter.model.Chapter
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.presentation.manga.components.MangaCover
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
+
+@Composable
+fun HeroJumpBackCarousel(
+    items: List<com.shinku.reader.ui.library.LibraryScreenModel.LastReadItem>,
+    onClickContinue: (Long, Long) -> Unit,
+    onClickDetails: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (items.isEmpty()) return
+
+    val pagerState = rememberPagerState(0) { items.size }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            pageSpacing = 10.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) { page ->
+            val item = items.getOrNull(page) ?: return@HorizontalPager
+            HeroJumpBackCardCompact(
+                manga = item.manga,
+                chapter = item.chapter,
+                currentPage = page,
+                totalPages = items.size,
+                onClickContinue = { onClickContinue(item.manga.id, item.chapter.id) },
+                onClickDetails = { onClickDetails(item.manga.id) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun HeroJumpBackCardCompact(
+    manga: Manga,
+    chapter: Chapter,
+    currentPage: Int,
+    totalPages: Int,
+    onClickContinue: () -> Unit,
+    onClickDetails: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ElevatedCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 4.dp,
+                shape = RoundedCornerShape(18.dp),
+                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+            ),
+        shape = RoundedCornerShape(18.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.22f),
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        ),
+                    ),
+                )
+                .clickable(onClick = onClickDetails)
+                .padding(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Manga Cover Thumbnail (compact: 56dp x 80dp)
+                Box(
+                    modifier = Modifier
+                        .width(56.dp)
+                        .height(80.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .shadow(2.dp, RoundedCornerShape(10.dp)),
+                ) {
+                    MangaCover.Book(
+                        data = manga,
+                        contentDescription = manga.title,
+                        shape = RoundedCornerShape(10.dp),
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Manga & Chapter Details
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    // Header row: Jump Back In badge + Page indicator dots
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(MaterialTheme.colorScheme.primary),
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "JUMP BACK IN",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    letterSpacing = 1.sp,
+                                ),
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+
+                        if (totalPages > 1) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                repeat(totalPages) { index ->
+                                    val isSelected = currentPage == index
+                                    Box(
+                                        modifier = Modifier
+                                            .size(if (isSelected) 6.dp else 4.dp)
+                                            .clip(RoundedCornerShape(2.dp))
+                                            .background(
+                                                if (isSelected) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+                                            ),
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // Manga Title
+                    Text(
+                        text = manga.title,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+
+                    // Chapter Progress
+                    Text(
+                        text = formatChapterText(chapter),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 11.sp,
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Action Row
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FilledTonalButton(
+                            onClick = onClickContinue,
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                            modifier = Modifier.height(28.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.size(15.dp),
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Resume",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            )
+                        }
+
+                        OutlinedButton(
+                            onClick = onClickDetails,
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            modifier = Modifier.height(28.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.AutoStories,
+                                contentDescription = "Details",
+                                modifier = Modifier.size(13.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun HeroJumpBackCard(
@@ -115,7 +338,7 @@ fun HeroJumpBackCard(
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(2.dp))
                                 .background(MaterialTheme.colorScheme.primary),
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -316,7 +539,7 @@ private fun JumpBackDeckCard(
                         .align(Alignment.BottomEnd)
                         .padding(6.dp)
                         .size(28.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.primary)
                         .clickable(onClick = onClickContinue),
                     contentAlignment = Alignment.Center,
@@ -335,7 +558,7 @@ private fun JumpBackDeckCard(
                         .align(Alignment.TopEnd)
                         .padding(6.dp)
                         .size(24.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(Color.Black.copy(alpha = 0.55f))
                         .clickable(onClick = onClickDetails),
                     contentAlignment = Alignment.Center,
@@ -377,6 +600,12 @@ fun SanctuaryWelcomeCard(
     onRestoreClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val shinkuPreferences = remember { Injekt.get<com.shinku.reader.exh.source.ShinKuPreferences>() }
+    val nickname by shinkuPreferences.readerNickname().collectAsState()
+    val welcomeTitle = remember(nickname) {
+        if (nickname.isNotBlank()) "${nickname}'s Sanctuary" else "Your Reading Sanctuary"
+    }
+
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
@@ -407,7 +636,7 @@ fun SanctuaryWelcomeCard(
                     Box(
                         modifier = Modifier
                             .size(10.dp)
-                            .clip(CircleShape)
+                            .clip(RoundedCornerShape(2.5.dp))
                             .background(MaterialTheme.colorScheme.primary),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -424,7 +653,7 @@ fun SanctuaryWelcomeCard(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "Your Reading Sanctuary",
+                    text = welcomeTitle,
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.ExtraBold,
                     ),

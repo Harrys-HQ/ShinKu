@@ -7,7 +7,7 @@ class ShinKuPreferences(
 ) {
     fun geminiApiKey() = preferenceStore.getString("pref_gemini_api_key", "")
 
-    fun geminiModel() = preferenceStore.getString("pref_gemini_model", "gemini-3.5-flash")
+    fun geminiModel() = preferenceStore.getString("pref_gemini_model", "gemini-2.5-flash")
 
     fun translationTargetLanguage() = preferenceStore.getString("pref_translation_target_language", "English")
 
@@ -34,4 +34,12 @@ class ShinKuPreferences(
     fun aiEngineProvider() = preferenceStore.getString("pref_ai_engine_provider", "auto")
 
     fun translationEngine() = preferenceStore.getString("pref_translation_engine", "auto")
+
+    fun readerNickname() = preferenceStore.getString("pref_reader_nickname", "")
+
+    fun feedSourceFilter() = preferenceStore.getString("pref_feed_source_filter", "all")
+
+    fun feedLanguageFilter() = preferenceStore.getString("pref_feed_language_filter", "en")
+
+    fun feedShowSourceFeeds() = preferenceStore.getBoolean("pref_feed_show_source_feeds", true)
 }

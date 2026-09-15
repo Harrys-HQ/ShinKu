@@ -2,6 +2,7 @@ package com.shinku.reader.ui.browse.feed
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -15,6 +16,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.shinku.reader.presentation.browse.FeedAddDialog
 import com.shinku.reader.presentation.browse.FeedAddSearchDialog
 import com.shinku.reader.presentation.browse.FeedDeleteConfirmDialog
+import com.shinku.reader.presentation.browse.FeedFilterDialog
 import com.shinku.reader.presentation.browse.FeedScreen
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.TabContent
@@ -59,6 +61,13 @@ fun Screen.feedTab(): TabContent {
                     screenModel.openAddDialog()
                 },
             ),
+            AppBar.Action(
+                title = stringResource(MR.strings.action_filter),
+                icon = Icons.Outlined.FilterList,
+                onClick = {
+                    screenModel.openFilterDialog()
+                },
+            ),
         ),
         content = { contentPadding, snackbarHostState ->
             FeedScreen(
@@ -87,15 +96,44 @@ fun Screen.feedTab(): TabContent {
                 onClickManga = { manga ->
                     navigator.push(MangaScreen(manga.id, true))
                 },
-                onClickGenre = { genre ->
+                onClickGenre = screenModel::selectGenre,
+                onSeeAllGenre = { genre ->
                     navigator.push(GlobalSearchScreen(genre))
                 },
+                onSeeAllTitles = { title, mangas, mode, query ->
+                    navigator.push(SuggestedTitlesScreen(title, mangas, mode, query))
+                },
+                onAddFeed = screenModel::openAddDialog,
                 onRefresh = screenModel::init,
                 getMangaState = { manga -> screenModel.getManga(initialManga = manga) },
             )
 
             state.dialog?.let { dialog ->
                 when (dialog) {
+                    is FeedScreenModel.Dialog.FeedFilter -> {
+                        FeedFilterDialog(
+                            currentSourceFilter = screenModel.shinkuPreferences.feedSourceFilter().get(),
+                            currentLanguageFilter = screenModel.shinkuPreferences.feedLanguageFilter().get(),
+                            currentShowSourceFeeds = screenModel.shinkuPreferences.feedShowSourceFeeds().get(),
+                            customFeeds = state.items,
+                            enabledLanguages = screenModel.sourcePreferences.enabledLanguages().get(),
+                            onDismiss = screenModel::dismissDialog,
+                            onApply = { sourceFilter, languageFilter, showSourceFeeds ->
+                                screenModel.shinkuPreferences.feedSourceFilter().set(sourceFilter)
+                                screenModel.shinkuPreferences.feedLanguageFilter().set(languageFilter)
+                                screenModel.shinkuPreferences.feedShowSourceFeeds().set(showSourceFeeds)
+                                screenModel.dismissDialog()
+                                screenModel.init()
+                            },
+                            onAddFeed = {
+                                screenModel.dismissDialog()
+                                screenModel.openAddDialog()
+                            },
+                            onDeleteFeed = { feed ->
+                                screenModel.openDeleteDialog(feed)
+                            },
+                        )
+                    }
                     is FeedScreenModel.Dialog.AddFeed -> {
                         FeedAddDialog(
                             sources = dialog.options,

@@ -30,7 +30,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
@@ -142,7 +142,7 @@ private fun SourceHeader(
             modifier = Modifier
                 .padding(end = 8.dp)
                 .size(width = 3.dp, height = 14.dp)
-                .background(MaterialTheme.colorScheme.primary, CircleShape),
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(1.5.dp)),
         )
         Text(
             text = title.uppercase(),
@@ -203,7 +203,7 @@ private fun SourceItem(
                                 .size(8.dp)
                                 .background(
                                     color = color,
-                                    shape = CircleShape,
+                                    shape = RoundedCornerShape(2.5.dp),
                                 ),
                         )
                     }
@@ -222,11 +222,11 @@ private fun SourceItem(
         action = {
             if (source.supportsLatest /* SY --> */ && showLatest /* SY <-- */) {
                 androidx.compose.material3.Surface(
-                    shape = CircleShape,
+                    shape = RoundedCornerShape(10.dp),
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     modifier = Modifier
                         .padding(end = 4.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(10.dp))
                         .clickable { onClickItem(source, Listing.Latest) },
                 ) {
                     Text(

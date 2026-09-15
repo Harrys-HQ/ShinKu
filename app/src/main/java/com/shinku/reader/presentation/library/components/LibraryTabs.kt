@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,10 +45,10 @@ internal fun LibraryTabs(
         categories.forEachIndexed { index, category ->
             val isSelected = currentPageIndex == index
             val count = getItemCountForCategory(category)
-            val pillShape = CircleShape
+            val tabShape = RoundedCornerShape(12.dp)
 
             Surface(
-                shape = pillShape,
+                shape = tabShape,
                 color = if (isSelected) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -65,7 +65,7 @@ internal fun LibraryTabs(
                     null
                 },
                 modifier = Modifier
-                    .clip(pillShape)
+                    .clip(tabShape)
                     .clickable { onTabItemClick(index) },
             ) {
                 Row(
@@ -81,7 +81,7 @@ internal fun LibraryTabs(
                     )
                     if (count != null && count > 0) {
                         Surface(
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(8.dp),
                             color = if (isSelected) {
                                 MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)
                             } else {

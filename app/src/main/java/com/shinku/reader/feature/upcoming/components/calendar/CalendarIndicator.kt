@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,7 +25,7 @@ fun CalendarIndicator(
     Box(
         modifier = modifier
             .padding(horizontal = 1.dp)
-            .clip(shape = CircleShape)
+            .clip(shape = RoundedCornerShape(2.dp))
             .background(color = color.copy(alpha = (index + 1) * INDICATOR_ALPHA_MULTIPLIER))
             .size(size = size.div(INDICATOR_SCALE)),
     )

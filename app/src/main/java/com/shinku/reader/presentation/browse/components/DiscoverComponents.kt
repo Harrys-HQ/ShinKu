@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
@@ -89,7 +88,7 @@ fun DiscoverFeaturedCarousel(
                                 width = if (isSelected) 20.dp else 6.dp,
                                 height = 6.dp,
                             )
-                            .clip(CircleShape)
+                            .clip(RoundedCornerShape(3.dp))
                             .background(
                                 if (isSelected) {
                                     MaterialTheme.colorScheme.primary
@@ -217,6 +216,7 @@ private fun FeaturedCard(
 
 @Composable
 fun DiscoverGenreCloud(
+    selectedGenre: String? = null,
     onSelectGenre: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -242,16 +242,19 @@ fun DiscoverGenreCloud(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Leading "Genre" filter pill
+        // Leading "All / Genres" filter pill
         item {
+            val isAllSelected = selectedGenre.isNullOrEmpty()
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = if (isAllSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
                 border = BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    if (isAllSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 ),
-                modifier = Modifier.clip(RoundedCornerShape(20.dp)),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { onSelectGenre("") },
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -260,28 +263,29 @@ fun DiscoverGenreCloud(
                     Icon(
                         imageVector = Icons.Outlined.FilterList,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        tint = if (isAllSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Genres",
+                        text = "All",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold,
                         ),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = if (isAllSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
         }
 
         items(genres) { genre ->
+            val isSelected = selectedGenre.equals(genre, ignoreCase = true)
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
                 border = BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
                 ),
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
@@ -290,9 +294,9 @@ fun DiscoverGenreCloud(
                 Text(
                     text = genre,
                     style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
                     ),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
                 )
             }
