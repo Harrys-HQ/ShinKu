@@ -108,7 +108,7 @@ class SuggestedTitlesScreenModel(
                                         source.getSearchManga(nextPage, "", filterList).mangas.map {
                                             it.toDomainManga(source.id)
                                         }
-                                    } catch (e: Exception) {
+                                    } catch (e: Throwable) {
                                         emptyList()
                                     }
                                 }
@@ -123,7 +123,7 @@ class SuggestedTitlesScreenModel(
                                     source.getLatestUpdates(nextPage).mangas.map {
                                         it.toDomainManga(source.id)
                                     }
-                                } catch (e: Exception) {
+                                } catch (e: Throwable) {
                                     emptyList()
                                 }
                             }
@@ -163,7 +163,7 @@ class SuggestedTitlesScreenModel(
                         )
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
                 mutableState.update { it.copy(isLoadingMore = false) }
             }

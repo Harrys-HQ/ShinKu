@@ -230,7 +230,7 @@ abstract class SearchScreenModel(
                         if (isActive) {
                             updateItem(source, SearchItemResult.Success(allResults.distinctBy { it.url }))
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         if (isActive) {
                             updateItem(source, SearchItemResult.Error(e))
                         }

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.1" changeDate="September 16,2026">
+        <changelogtext>[b]Fixed[/b]: Resolved fatal crash when opening Modern Feed caused by extension time conversion linkage errors</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Hardened extension exception boundaries against LinkageError across all feed, search, and paging sources</changelogtext>
+        <changelogtext>[b]Changed[/b]: Protected kotlin.time R8 optimization rules for third-party extension compatibility</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.0" changeDate="September 16,2026">
         <changelogtext>[b]Added[/b]: Modern Discover Feed with dynamic Hero Carousel, interactive Genre Cloud, and Titles For You</changelogtext>
         <changelogtext>[b]Added[/b]: Instant 0ms library preload and interactive Discover Feed Skeleton, removing startup lag</changelogtext>

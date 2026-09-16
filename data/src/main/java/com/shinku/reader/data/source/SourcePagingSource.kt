@@ -60,7 +60,7 @@ abstract class BaseSourcePagingSource(
             // SY -->
             getPageLoadResult(params, mangasPage)
             // SY <--
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             LoadResult.Error(e)
         }
     }
