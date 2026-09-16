@@ -39,7 +39,7 @@ object GenreFilterHelper {
     fun buildGenreFilterList(source: CatalogueSource, targetGenre: String): FilterList? {
         val filters = try {
             source.getFilterList()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             return null
         }
 

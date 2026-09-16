@@ -1,5 +1,11 @@
 # ShinKu Changelog
 
+## 2.7.1 "Feed Stability & Linkage Hardening" (2026-09-16)
+### Fixed
+- **Discover Feed Crash (`NoSuchMethodError: toJavaInstant`)**: Fixed a fatal crash when accessing Modern Feed caused by extensions calling desugared `kotlin.time.jdk8.InstantConversionsJDK8Kt` methods on Android 12+.
+- **Linkage Error Resilience**: Hardened exception boundaries across all feed carousels, genre sections, global search, and source paging (`BaseSourcePagingSource`) to safely intercept `Throwable` / `LinkageError` thrown by outdated or incompatible third-party extensions without aborting the app.
+- **R8 ProGuard Compatibility**: Updated ProGuard keep rules to protect `kotlin.time` and `kotlin.time.jdk8` against member inlining and signature rewriting, ensuring ABI stability with dynamically loaded extension classloaders.
+
 ## 2.7.0 "Discover Feed & Squircle Unification" (2026-09-16)
 ### Added
 - **Modern Discover Feed**: Redesigned the Feed tab with a modern Discover interface featuring a dynamic Featured Hero Carousel, interactive Genre Navigation Cloud, personalized "Titles For You", and curated Genre Highlights.

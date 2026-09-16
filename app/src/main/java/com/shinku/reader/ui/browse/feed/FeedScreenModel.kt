@@ -161,7 +161,7 @@ open class FeedScreenModel(
                                 source.getSearchManga(1, title, FilterList())
                             }.mangas.firstOrNull()
                             searchResult?.toDomainManga(sourceId)
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             null
                         }
                     }
@@ -169,7 +169,7 @@ open class FeedScreenModel(
                     val localManga = networkToLocalManga(recommendedManga)
                     mutableState.update { it.copy(recommendations = localManga.toImmutableList()) }
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
             }
         }
@@ -247,7 +247,7 @@ open class FeedScreenModel(
                         async(Dispatchers.IO) {
                             try {
                                 source.getPopularManga(popularPage).mangas.take(8).map { it.toDomainManga(source.id) }
-                            } catch (e: Exception) {
+                            } catch (e: Throwable) {
                                 emptyList()
                             }
                         }
@@ -259,7 +259,7 @@ open class FeedScreenModel(
                         async(Dispatchers.IO) {
                             try {
                                 source.getLatestUpdates(latestPage).mangas.take(8).map { it.toDomainManga(source.id) }
-                            } catch (e: Exception) {
+                            } catch (e: Throwable) {
                                 emptyList()
                             }
                         }
@@ -276,7 +276,7 @@ open class FeedScreenModel(
                                     } else {
                                         emptyList()
                                     }
-                                } catch (e: Exception) {
+                                } catch (e: Throwable) {
                                     emptyList()
                                 }
                             }
@@ -345,7 +345,7 @@ open class FeedScreenModel(
                 } else {
                     fallbackToLibraryFeatured()
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
                 fallbackToLibraryFeatured()
             } finally {
@@ -380,7 +380,7 @@ open class FeedScreenModel(
                     )
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e)
         }
     }
@@ -417,7 +417,7 @@ open class FeedScreenModel(
                     screenModelScope.async(Dispatchers.IO) {
                         try {
                             source.getSearchManga(genrePage, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             emptyList()
                         }
                     }
@@ -443,7 +443,7 @@ open class FeedScreenModel(
                         it.copy(genreSections = currentMap)
                     }
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
             }
         }
@@ -469,7 +469,7 @@ open class FeedScreenModel(
                         async(Dispatchers.IO) {
                             try {
                                 source.getSearchManga(1, "", filterList).mangas.take(10).map { it.toDomainManga(source.id) }
-                            } catch (e: Exception) {
+                            } catch (e: Throwable) {
                                 emptyList()
                             }
                         }
@@ -489,7 +489,7 @@ open class FeedScreenModel(
                             library.map { it.manga }.filter { manga ->
                                 manga.genre.orEmpty().any { it.contains(genre, ignoreCase = true) }
                             }
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             emptyList()
                         }
                     }
@@ -500,19 +500,19 @@ open class FeedScreenModel(
                         library.map { it.manga }.filter { manga ->
                             manga.genre.orEmpty().any { it.contains(genre, ignoreCase = true) }
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         emptyList()
                     }
                     mutableState.update { it.copy(selectedGenreManga = offlineManga.toImmutableList(), isLoadingGenre = false) }
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
                 val offlineManga = try {
                     val library = getLibraryManga.await()
                     library.map { it.manga }.filter { manga ->
                         manga.genre.orEmpty().any { it.contains(genre, ignoreCase = true) }
                     }
-                } catch (ex: Exception) {
+                } catch (ex: Throwable) {
                     emptyList()
                 }
                 mutableState.update { it.copy(selectedGenreManga = offlineManga.toImmutableList(), isLoadingGenre = false) }
@@ -684,7 +684,7 @@ open class FeedScreenModel(
                         } else {
                             emptyList()
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
                         emptyList()
                     }
 
