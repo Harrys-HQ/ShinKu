@@ -29,5 +29,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v6
         with:
-          name: TachiyomiSY-${{ github.sha }}.apk
-          path: app/build/outputs/apk/dev/debug/app-dev-debug.apk
+          name: ShinKu-${{ github.sha }}.apk
+          path: app/build/outputs/apk/dev/debug/ShinKu-dev-universal-debug.apk

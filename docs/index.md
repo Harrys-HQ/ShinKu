@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Harrys-HQ/ShinKu/master/.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
+  <img src="https://raw.githubusercontent.com/Harrys-HQ/ShinKu/main/.github/readme-images/app-icon.png" width="160" alt="ShinKu Logo">
 </p>
 
 <h1 align="center">ShinKu</h1>
@@ -10,7 +10,7 @@
 
 ---
 
-## 🚀 Latest Release: 2.6.8
+## 🚀 Latest Release: 2.7.2
 
 The latest version of ShinKu is now available! 
 
@@ -21,10 +21,13 @@ The latest version of ShinKu is now available!
 
 ## ✨ Key Features
 
+*   **Modern Discover Feed:** Redesigned browsing hub featuring a dynamic Featured Hero Carousel, interactive Genre Cloud, personalized "Titles For You", and instant 0ms preloading.
+*   **Floating Glass Navigation Dock:** Dynamic island squircle dock with true edge-to-edge transparent backing and optional auto-hide on scroll for complete reading immersion.
+*   **Sanctuary Jump-Back Deck:** Continue reading carousel at the top of your library that automatically collapses on scroll while keeping category tabs pinned and intact.
 *   **Vibe Search & "For You" (AI Discovery):** Natural language manga search and personalized recommendations powered by Google Gemini AI.
-*   **Anti-Bot Spoofing:** Dynamic `Sec-CH-UA` client hint metadata and Chrome 149 emulation for seamless Cloudflare Turnstile verification.
+*   **AI Live Translation Engine:** On-the-fly multi-language page translation supporting on-device AICore / Gemini Nano, MLKit, and Google Gemini API.
+*   **Anti-Bot Spoofing:** Dynamic `Sec-CH-UA` client hint metadata and modern browser emulation for seamless Cloudflare Turnstile verification.
 *   **Resumable Downloads:** Byte-range partial content downloads for instant chapter download recovery.
-*   **Live Translation Overhaul:** AI-powered on-the-fly multi-language page translation with MLKit vision caching.
 *   **Atmospheric Audio & Mood Lighting:** Ambient genre sounds and adaptive color temperature for total immersion.
 *   **Reading Journey:** Track your progress with a beautiful statistics card in the "More" tab.
 *   **Protobuf Extension Repositories:** Support for modern `.pb` and legacy JSON extension catalogs with automatic fallback.
@@ -48,10 +51,10 @@ ShinKu preserves the best features from its predecessors, TachiyomiSY and Mihon:
 
 ## 🛠 Setup & Installation
 
-1.  **Download:** Download the latest APK from the [Releases](https://github.com/Harrys-HQ/ShinKu/releases/latest) page.
-2.  **Dropbox Sync:** Configure your Dropbox account in **Settings > Data > Sync** for cross-device reading.
-3.  **Vibe Search:** Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and add it in **Settings > Advanced > Vibe Search**.
-4.  **Migration:** Coming from SY? Backups are fully compatible!
+1.  **Download:** Download the latest APK from the [Releases](https://github.com/Harrys-HQ/ShinKu/releases/latest) page, or install via [Obtainium](https://github.com/ImranR98/Obtainium).
+2.  **Dropbox Sync:** Configure your Dropbox account in **Settings > Data and storage > Sync** for cross-device reading.
+3.  **Vibe Search & AI:** Get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and add it in **Settings > ShinKu Features > ShinKu AI & Engines**.
+4.  **Migration:** Coming from Mihon or SY? Backups are fully compatible!
 
 ---
 
@@ -60,7 +63,7 @@ ShinKu preserves the best features from its predecessors, TachiyomiSY and Mihon:
 - **[Architecture Mapping](./architecture.md)**
 - **[Extension Safeguards (The Freeze Zone)](./extension-safeguards.md)**
 - **[Full Changelog](./CHANGELOG.md)**
-- **[GitHub Repository](https://github.com/shinkureader/shinku)**
+- **[GitHub Repository](https://github.com/Harrys-HQ/ShinKu)**
 
 ---
 

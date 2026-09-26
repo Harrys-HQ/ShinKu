@@ -24,7 +24,11 @@
 
 In addition to all features from TachiyomiSY and Mihon, ShinKu introduces:
 
+*   **Modern Discover Feed:** Reimagined browsing hub with a dynamic Featured Hero Carousel, interactive Genre Cloud, personalized "Titles For You", and instant 0ms preloading.
+*   **Floating Glass Navigation Dock:** Dynamic island squircle dock with true edge-to-edge transparent backing and optional auto-hide on scroll for complete reading immersion.
+*   **Sanctuary Jump-Back Deck:** Continue reading carousel at the top of your library that automatically collapses on scroll while keeping category tabs pinned and intact.
 *   **Vibe Search & "For You" (AI Discovery):** Search for manga using natural language or receive personalized recommendations based on your library activity, powered by Google Gemini AI.
+*   **AI Live Translation Engine:** On-the-fly multi-language page translation supporting on-device AICore / Gemini Nano, MLKit, and Google Gemini API.
 *   **Reading Journey Card:** A beautiful, interactive statistics card at the top of your "More" tab tracking your total chapters read, time patterns, and genre heatmaps.
 *   **Immersive Atmosphere:** Experience manga with **Atmospheric Audio** (genre-matching ambient sounds) and **Mood Lighting** (color temperature adjustments matching the manga's vibe).
 *   **Dynamic UI & Depth:** An immersive UI where colors shift dynamically to match the manga cover, now enhanced with **Backdrop Blurs** in the Library and Info screens.
@@ -63,7 +67,7 @@ ShinKu is built upon the incredible work of the following projects and developer
 ## 🛠 Setup & Installation
 
 1.  **Download:** Grab the latest `ShinKu-*.apk` from [Releases](https://github.com/Harrys-HQ/ShinKu/releases/latest). You can also track and update ShinKu automatically via [Obtainium](https://github.com/ImranR98/Obtainium) using this repository URL.
-2.  **API Setup:** To enable **Vibe Search**, get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and enter it in **Settings > ShinKu Features > Gemini AI**.
+2.  **API Setup:** To enable **Vibe Search**, get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey) and enter it in **Settings > ShinKu Features > ShinKu AI & Engines**.
 3.  **Performance:** Enable **120Hz support** or the **E-Ink profile** in **Settings > ShinKu Features > Performance**.
 4.  **Migration:** Coming from Mihon or SY? Backups are fully compatible! Just restore your `.tachibk` file in **Settings > Data and storage**.
 
