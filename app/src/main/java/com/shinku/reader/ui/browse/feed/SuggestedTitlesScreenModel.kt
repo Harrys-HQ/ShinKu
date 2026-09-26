@@ -3,6 +3,7 @@ package com.shinku.reader.ui.browse.feed
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.domain.manga.model.toDomainManga
@@ -33,21 +34,47 @@ data class SuggestedTitlesScreenState(
 class SuggestedTitlesScreenModel(
     val title: String,
     initialMangas: List<Manga>,
+    private val initialMangaIds: List<Long> = emptyList(),
     val mode: String,
     val query: String,
     private val sourceManager: SourceManager = Injekt.get(),
     private val sourcePreferences: SourcePreferences = Injekt.get(),
     private val shinkuPreferences: ShinKuPreferences = Injekt.get(),
     private val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
+    private val getManga: GetManga = Injekt.get(),
 ) : StateScreenModel<SuggestedTitlesScreenState>(
     SuggestedTitlesScreenState(
         mangas = initialMangas.distinctBy { it.id }.toImmutableList(),
         hasMore = mode == "genre" || mode == "for_you",
     ),
 ) {
-    private var currentPage = 1
+    private var currentPage = if (initialMangas.isEmpty() && initialMangaIds.isEmpty()) 0 else 1
     private val loadedIds = mutableSetOf<Long>().apply {
         addAll(initialMangas.map { it.id })
+    }
+
+    init {
+        if (initialMangas.isEmpty()) {
+            if (initialMangaIds.isNotEmpty()) {
+                screenModelScope.launchIO {
+                    val restoredMangas = initialMangaIds.mapNotNull { id ->
+                        getManga.await(id)
+                    }
+                    if (restoredMangas.isNotEmpty()) {
+                        currentPage = 1
+                        loadedIds.addAll(restoredMangas.map { it.id })
+                        mutableState.update { state ->
+                            state.copy(mangas = restoredMangas.distinctBy { it.id }.toImmutableList())
+                        }
+                    } else if (mode == "genre" || mode == "for_you") {
+                        currentPage = 0
+                        loadNextPage()
+                    }
+                }
+            } else if (mode == "genre" || mode == "for_you") {
+                loadNextPage()
+            }
+        }
     }
 
     private fun getEligibleSources(): List<CatalogueSource> {

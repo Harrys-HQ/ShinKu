@@ -56,9 +56,10 @@ import kotlinx.collections.immutable.persistentListOf
 
 class SuggestedTitlesScreen(
     private val title: String,
-    private val mangas: List<Manga>,
+    @Transient private val mangas: List<Manga>? = null,
     private val mode: String = "",
     private val query: String = "",
+    private val mangaIds: ArrayList<Long> = ArrayList(mangas?.map { it.id }.orEmpty()),
 ) : Screen() {
 
     @Composable
@@ -68,7 +69,8 @@ class SuggestedTitlesScreen(
         val screenModel = rememberScreenModel {
             SuggestedTitlesScreenModel(
                 title = title,
-                initialMangas = mangas,
+                initialMangas = mangas.orEmpty(),
+                initialMangaIds = mangaIds,
                 mode = mode,
                 query = query,
             )

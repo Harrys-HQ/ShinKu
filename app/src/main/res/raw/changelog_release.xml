@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.2" changeDate="September 26,2026">
+        <changelogtext>[b]Added[/b]: Edge-to-edge floating glass navigation dock with transparent backdrop margins outside the squircle</changelogtext>
+        <changelogtext>[b]Added[/b]: Auto-hide navigation dock on scroll down for enhanced reading and browsing immersion</changelogtext>
+        <changelogtext>[b]Added[/b]: Scroll-collapsible Jump-Back Deck in Library that collapses out of the way while keeping category tabs pinned and intact</changelogtext>
+        <changelogtext>[b]Added[/b]: Settings toggle under ShinKu Library settings to show or hide the 'Continue Reading' Jump-Back Deck</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Process restoration and suggestion persistence on Suggested Titles feed drilldown</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.1" changeDate="September 16,2026">
         <changelogtext>[b]Fixed[/b]: Resolved fatal crash when opening Modern Feed caused by extension time conversion linkage errors</changelogtext>
         <changelogtext>[b]Fixed[/b]: Hardened extension exception boundaries against LinkageError across all feed, search, and paging sources</changelogtext>

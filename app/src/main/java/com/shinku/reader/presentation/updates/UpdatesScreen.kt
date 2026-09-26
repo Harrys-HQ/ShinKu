@@ -3,6 +3,9 @@ package com.shinku.reader.presentation.updates
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.FlipToBack
@@ -112,8 +115,15 @@ fun UpdateScreen(
                     enabled = !state.selectionMode,
                     indicatorPadding = contentPadding,
                 ) {
+                    val dockBottomPadding = if (!com.shinku.reader.presentation.util.isTabletUi()) 84.dp else 0.dp
+                    val listContentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        start = contentPadding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                        top = contentPadding.calculateTopPadding(),
+                        end = contentPadding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+                        bottom = contentPadding.calculateBottomPadding() + dockBottomPadding,
+                    )
                     FastScrollLazyColumn(
-                        contentPadding = contentPadding,
+                        contentPadding = listContentPadding,
                     ) {
                         updatesLastUpdatedItem(lastUpdated)
 

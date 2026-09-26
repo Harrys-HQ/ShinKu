@@ -1,7 +1,10 @@
 package com.shinku.reader.presentation.history
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteSweep
@@ -102,8 +105,15 @@ private fun HistoryScreenContent(
     onClickDelete: (HistoryWithRelations) -> Unit,
     onClickFavorite: (HistoryWithRelations) -> Unit,
 ) {
+    val dockBottomPadding = if (!com.shinku.reader.presentation.util.isTabletUi()) 84.dp else 0.dp
+    val listContentPadding = androidx.compose.foundation.layout.PaddingValues(
+        start = contentPadding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+        top = contentPadding.calculateTopPadding(),
+        end = contentPadding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
+        bottom = contentPadding.calculateBottomPadding() + dockBottomPadding,
+    )
     FastScrollLazyColumn(
-        contentPadding = contentPadding,
+        contentPadding = listContentPadding,
     ) {
         items(
             items = history,

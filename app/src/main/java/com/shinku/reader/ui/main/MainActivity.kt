@@ -250,8 +250,8 @@ class MainActivity : BaseActivity() {
                                 .consumeWindowInsets(contentPadding),
                         )
 
-                        // Draw navigation bar scrim when needed
-                        if (remember { isNavigationBarNeedsScrim() }) {
+                        // Draw navigation bar scrim when needed on non-home screens
+                        if (remember { isNavigationBarNeedsScrim() } && navigator.lastItem !is HomeScreen) {
                             Spacer(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)

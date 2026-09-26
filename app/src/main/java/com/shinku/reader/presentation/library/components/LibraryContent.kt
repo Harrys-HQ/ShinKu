@@ -25,6 +25,21 @@ import com.shinku.reader.domain.library.model.LibraryDisplayMode
 import com.shinku.reader.domain.library.model.LibraryManga
 import com.shinku.reader.presentation.core.components.material.PullRefresh
 import kotlin.time.Duration.Companion.seconds
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import com.shinku.reader.presentation.core.util.collectAsState
+import com.shinku.reader.exh.source.ShinKuPreferences
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 
 @Composable
 fun LibraryContent(
@@ -50,12 +65,31 @@ fun LibraryContent(
     activeReadingList: List<com.shinku.reader.ui.library.LibraryScreenModel.LastReadItem> = emptyList(),
     onClickContinueHero: ((Long, Long) -> Unit)? = null,
 ) {
+    val shinkuPreferences = remember { Injekt.get<ShinKuPreferences>() }
+    val showHeroJumpBack by shinkuPreferences.showHeroJumpBack().collectAsState()
+
+    var isHeroVisible by remember { mutableStateOf(true) }
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (available.y < -12f && isHeroVisible) {
+                    isHeroVisible = false
+                } else if (available.y > 12f && !isHeroVisible) {
+                    isHeroVisible = true
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
     Column(
-        modifier = Modifier.padding(
-            top = contentPadding.calculateTopPadding(),
-            start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
-            end = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
-        ),
+        modifier = Modifier
+            .nestedScroll(nestedScrollConnection)
+            .padding(
+                top = contentPadding.calculateTopPadding(),
+                start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
+                end = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
+            ),
     ) {
         val coercedCurrentPage = remember(categories, currentPage) { currentPage.coerceIn(0, categories.lastIndex) }
         // SY <--
@@ -67,7 +101,12 @@ fun LibraryContent(
         val readingItems = remember(lastReadItem, activeReadingList) {
             if (activeReadingList.isNotEmpty()) activeReadingList else listOfNotNull(lastReadItem)
         }
-        if (readingItems.isNotEmpty() && searchQuery.isNullOrEmpty() && selection.isEmpty()) {
+        val isHeroCardEligible = showHeroJumpBack && readingItems.isNotEmpty() && searchQuery.isNullOrEmpty() && selection.isEmpty()
+        AnimatedVisibility(
+            visible = isHeroCardEligible && isHeroVisible,
+            enter = expandVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
+            exit = shrinkVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut(),
+        ) {
             HeroJumpBackCarousel(
                 items = readingItems,
                 onClickContinue = { mangaId, chapterId -> onClickContinueHero?.invoke(mangaId, chapterId) },

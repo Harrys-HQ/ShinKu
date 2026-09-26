@@ -42,4 +42,9 @@ class ShinKuPreferences(
     fun feedLanguageFilter() = preferenceStore.getString("pref_feed_language_filter", "en")
 
     fun feedShowSourceFeeds() = preferenceStore.getBoolean("pref_feed_show_source_feeds", true)
+
+    fun showHeroJumpBack() = preferenceStore.getBoolean("pref_show_hero_jump_back", true)
+
+    fun autoHideBottomBar() = preferenceStore.getBoolean("pref_auto_hide_bottom_bar", true)
 }
+

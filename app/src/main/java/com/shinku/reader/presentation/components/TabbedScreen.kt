@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.unit.dp
 import dev.icerock.moko.resources.StringResource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -87,8 +88,9 @@ fun TabbedScreen(
                 state = state,
                 verticalAlignment = Alignment.Top,
             ) { page ->
+                val dockBottomPadding = if (!com.shinku.reader.presentation.util.isTabletUi()) 84.dp else 0.dp
                 tabs[page].content(
-                    PaddingValues(bottom = contentPadding.calculateBottomPadding()),
+                    PaddingValues(bottom = contentPadding.calculateBottomPadding() + dockBottomPadding),
                     snackbarHostState,
                 )
             }

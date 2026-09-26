@@ -5,9 +5,14 @@ import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import com.shinku.reader.presentation.components.DynamicBackdrop
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
@@ -261,11 +266,20 @@ data object LibraryTab : Tab {
                             DynamicBackdrop(manga = firstManga)
                         }
 
+                        val layoutDirection = LocalLayoutDirection.current
+                        val dockBottomPadding = if (!com.shinku.reader.presentation.util.isTabletUi()) 84.dp else 0.dp
+                        val libraryContentPadding = PaddingValues(
+                            start = contentPadding.calculateStartPadding(layoutDirection),
+                            top = contentPadding.calculateTopPadding(),
+                            end = contentPadding.calculateEndPadding(layoutDirection),
+                            bottom = contentPadding.calculateBottomPadding() + dockBottomPadding,
+                        )
+
                         LibraryContent(
                             categories = state.displayedCategories,
                             searchQuery = state.searchQuery,
                             selection = state.selection,
-                            contentPadding = contentPadding,
+                            contentPadding = libraryContentPadding,
                             currentPage = state.coercedActiveCategoryIndex,
                             hasActiveFilters = state.hasActiveFilters,
                             showPageTabs = state.showCategoryTabs || !state.searchQuery.isNullOrEmpty(),

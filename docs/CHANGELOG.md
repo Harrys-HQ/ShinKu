@@ -1,5 +1,16 @@
 # ShinKu Changelog
 
+## 2.7.2 "Immersive Floating Dock & Density Polish" (2026-09-26)
+### Added
+- **Edge-to-Edge Floating Glass Navigation Dock**: Transformed the bottom navigation bar into a true floating dynamic island dock. Background content flows edge-to-edge behind the dock with transparent margins outside the squircle, and list paddings ensure the last items are never clipped.
+- **Auto-Hide Navigation Dock on Scroll**: Bottom dock now smoothly collapses out of the way on scroll down with a refined slide-and-fade animation, instantly reclaiming vertical space for title browsing and reading discovery.
+- **Scroll-Collapsible Jump-Back Deck**: The "Continue Reading" Jump-Back deck in the Library tab now automatically collapses vertically when scrolling down through manga cards, while category tabs stay intact, pinned, and fully accessible at the top.
+- **ShinKu Preference Toggle for Jump-Back Deck**: Added a dedicated setting under **Settings > ShinKu > Library** (`Show 'Continue Reading' Jump-Back Deck`) to toggle the deck for users who want maximum screen density.
+- **Auto-Hide Dock Toggle**: Added a setting under **Settings > ShinKu > Navigation** to configure whether the bottom navigation dock auto-hides on scroll.
+
+### Fixed
+- **Suggested Titles Process Restoration**: Hardened `SuggestedTitlesScreen` against Android process death and state restoration by caching and restoring title IDs directly.
+
 ## 2.7.1 "Feed Stability & Linkage Hardening" (2026-09-16)
 ### Fixed
 - **Discover Feed Crash (`NoSuchMethodError: toJavaInstant`)**: Fixed a fatal crash when accessing Modern Feed caused by extensions calling desugared `kotlin.time.jdk8.InstantConversionsJDK8Kt` methods on Android 12+.

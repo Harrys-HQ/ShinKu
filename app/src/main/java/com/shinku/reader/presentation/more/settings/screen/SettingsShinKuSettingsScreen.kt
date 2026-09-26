@@ -86,10 +86,10 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
             getPerformanceGroup(shinkuPreferences, basePreferences),
             getImmersionGroup(shinkuPreferences, readerPreferences),
             getReaderEnhancementsGroup(readerPreferences),
-            getNavigationGroup(uiPreferences),
+            getNavigationGroup(uiPreferences, shinkuPreferences),
             getInterfaceGroup(uiPreferences, shinkuPreferences),
             getBrowsingGroup(sourcePreferences, uiPreferences),
-            getLibraryGroup(libraryPreferences),
+            getLibraryGroup(libraryPreferences, shinkuPreferences),
             getSecurityDebugGroup(securityPreferences, sourcePreferences, delegateSourcePreferences),
             getAdvancedFeaturesGroup(readerPreferences, sourcePreferences),
         )
@@ -464,10 +464,18 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
     }
 
     @Composable
-    private fun getLibraryGroup(libraryPreferences: LibraryPreferences): Preference.PreferenceGroup {
+    private fun getLibraryGroup(
+        libraryPreferences: LibraryPreferences,
+        shinkuPreferences: ShinKuPreferences,
+    ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.label_library),
             preferenceItems = persistentListOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.showHeroJumpBack(),
+                    title = "Show 'Continue Reading' Jump-Back Deck",
+                    subtitle = "Display recent in-progress titles at the top of the Library tab.",
+                ),
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.libraryUpdateSpeed(),
                     title = stringResource(MR.strings.pref_library_update_speed),
@@ -482,7 +490,10 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
     }
 
     @Composable
-    private fun getNavigationGroup(uiPreferences: UiPreferences): Preference.PreferenceGroup {
+    private fun getNavigationGroup(
+        uiPreferences: UiPreferences,
+        shinkuPreferences: ShinKuPreferences,
+    ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
             stringResource(SYMR.strings.pref_category_navbar),
             preferenceItems = persistentListOf(
@@ -497,6 +508,11 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     preference = uiPreferences.bottomBarLabels(),
                     title = stringResource(SYMR.strings.pref_show_bottom_bar_labels),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.autoHideBottomBar(),
+                    title = "Auto-Hide Navigation Dock on Scroll",
+                    subtitle = "Automatically collapse the bottom dock when scrolling down for greater reading and discovery immersion.",
                 ),
             ),
         )

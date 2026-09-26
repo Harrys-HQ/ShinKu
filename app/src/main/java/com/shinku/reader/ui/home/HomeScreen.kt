@@ -5,10 +5,16 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Badge
@@ -22,10 +28,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
+import com.shinku.reader.exh.source.ShinKuPreferences
+import com.shinku.reader.presentation.core.util.collectAsState
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -92,6 +108,34 @@ object HomeScreen : Screen() {
         val alwaysShowLabel by remember {
             Injekt.get<UiPreferences>().bottomBarLabels().asState(scope)
         }
+        val shinkuPreferences = remember { Injekt.get<ShinKuPreferences>() }
+        val autoHideBottomBar by shinkuPreferences.autoHideBottomBar().collectAsState()
+
+        var isBottomNavScrolledVisible by remember { mutableStateOf(true) }
+        var isSelectionModeActive by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            showBottomNavEvent.receiveAsFlow().collectLatest { canShow ->
+                isSelectionModeActive = !canShow
+                isBottomNavScrolledVisible = canShow
+            }
+        }
+
+        val isBottomNavVisible = !isSelectionModeActive && (if (autoHideBottomBar) isBottomNavScrolledVisible else true)
+
+        val bottomBarNestedScrollConnection = remember(autoHideBottomBar) {
+            object : NestedScrollConnection {
+                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                    if (!autoHideBottomBar || isSelectionModeActive) return Offset.Zero
+                    if (available.y < -15f && isBottomNavScrolledVisible) {
+                        isBottomNavScrolledVisible = false
+                    } else if (available.y > 15f && !isBottomNavScrolledVisible) {
+                        isBottomNavScrolledVisible = true
+                    }
+                    return Offset.Zero
+                }
+            }
+        }
         // SY <--
 
         TabNavigator(
@@ -116,13 +160,10 @@ object HomeScreen : Screen() {
                     },
                     bottomBar = {
                         if (!isTabletUi()) {
-                            val bottomNavVisible by produceState(initialValue = true) {
-                                showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
-                            }
                             AnimatedVisibility(
-                                visible = bottomNavVisible,
-                                enter = expandVertically(),
-                                exit = shrinkVertically(),
+                                visible = isBottomNavVisible,
+                                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                             ) {
                                 NavigationBar {
                                     TABS
@@ -138,10 +179,16 @@ object HomeScreen : Screen() {
                     },
                     contentWindowInsets = WindowInsets(0),
                 ) { contentPadding ->
+                    val layoutDirection = LocalLayoutDirection.current
                     Box(
                         modifier = Modifier
-                            .padding(contentPadding)
-                            .consumeWindowInsets(contentPadding),
+                            .nestedScroll(bottomBarNestedScrollConnection)
+                            .padding(
+                                start = contentPadding.calculateStartPadding(layoutDirection),
+                                top = contentPadding.calculateTopPadding(),
+                                end = contentPadding.calculateEndPadding(layoutDirection),
+                                bottom = 0.dp,
+                            ),
                     ) {
                         AnimatedContent(
                             targetState = tabNavigator.current,
