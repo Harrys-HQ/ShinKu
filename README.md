@@ -20,6 +20,32 @@
 
 ---
 
+## 📱 App Highlights
+
+<p align="center">
+  <img src="./.github/readme-images/screenshot-library.jpg" width="48%" alt="Sanctuary Library" />
+  &nbsp;
+  <img src="./.github/readme-images/screenshot-discover.jpg" width="48%" alt="Modern Discover Feed" />
+</p>
+<p align="center">
+  <em>Sanctuary Library with Jump-Back Deck & Floating Glass Dock (Left) • Modern Discover Feed with Hero Carousel & Genre Cloud (Right)</em>
+</p>
+
+<br>
+
+<p align="center">
+  <img src="./.github/readme-images/screenshot-journey-overview.jpg" width="31%" alt="Reading Journey Overview" />
+  &nbsp;
+  <img src="./.github/readme-images/screenshot-journey-velocity.jpg" width="31%" alt="Reading Velocity & Genres" />
+  &nbsp;
+  <img src="./.github/readme-images/screenshot-journey-milestones.jpg" width="31%" alt="Reader Milestones" />
+</p>
+<p align="center">
+  <em>Reading Journey: Overview & Streaks (Left) • Velocity & Top Genres (Center) • Milestones & Badges (Right)</em>
+</p>
+
+---
+
 ## ✨ Unique ShinKu Features
 
 In addition to all features from TachiyomiSY and Mihon, ShinKu introduces:
