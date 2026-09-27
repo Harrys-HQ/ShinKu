@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.3" changeDate="September 27,2026">
+        <changelogtext>[b]Added[/b]: Expanded Gamified Milestones Hub with 53 comprehensive achievements across 7 categories and 5 tiers</changelogtext>
+        <changelogtext>[b]Added[/b]: Dynamic Reader Level progression and completionist overview with live progress bars</changelogtext>
+        <changelogtext>[b]Added[/b]: Status (All, Unlocked, In Progress) and Category filter chips to easily discover remaining milestones</changelogtext>
+        <changelogtext>[b]Added[/b]: Locked milestone progress metrics and visual lock indicators sorted by closest to unlock</changelogtext>
+        <changelogtext>[b]Added[/b]: Milestone Detail Inspector dialog with tier, criteria, progress, and Completionist Tips</changelogtext>
+        <changelogtext>[b]Added[/b]: Interactive Milestones Roadmap &amp; Guide explaining achievement tiers and Reader Levels</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.2" changeDate="September 26,2026">
         <changelogtext>[b]Added[/b]: Edge-to-edge floating glass navigation dock with transparent backdrop margins outside the squircle</changelogtext>
         <changelogtext>[b]Added[/b]: Auto-hide navigation dock on scroll down for enhanced reading and browsing immersion</changelogtext>

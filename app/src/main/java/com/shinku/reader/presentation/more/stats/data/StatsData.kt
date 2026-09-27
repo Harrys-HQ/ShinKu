@@ -49,7 +49,8 @@ sealed interface StatsData {
     ) : StatsData
 
     data class Milestones(
-        val earnedBadges: List<com.shinku.reader.domain.history.model.Badge>,
+        val badges: List<com.shinku.reader.domain.history.model.Badge>,
+        val earnedBadges: List<com.shinku.reader.domain.history.model.Badge> = badges.filter { it.isEarned },
     ) : StatsData
     // SY <--
 }

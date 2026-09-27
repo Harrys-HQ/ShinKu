@@ -95,7 +95,12 @@ class StatsScreenModel(
             )
 
             // SY -->
-            val readingStats = getReadingStats.await()
+            val readingStats = getReadingStats.await(
+                libraryMangaCount = overviewStatData.libraryMangaCount,
+                completedMangaCount = overviewStatData.completedMangaCount,
+                trackedTitleCount = trackersStatData.trackedTitleCount,
+                trackerCount = trackersStatData.trackerCount,
+            )
             val streaksStatData = StatsData.Streaks(
                 currentStreak = readingStats.currentStreak,
             )
@@ -113,7 +118,7 @@ class StatsScreenModel(
                 dailyVelocity = readingStats.dailyVelocity,
             )
             val milestonesStatData = StatsData.Milestones(
-                earnedBadges = readingStats.badges,
+                badges = readingStats.badges,
             )
             // SY <--
 

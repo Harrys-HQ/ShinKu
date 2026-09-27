@@ -1,5 +1,14 @@
 # ShinKu Changelog
 
+## 2.7.3 "Gamified Milestones & Completionist Hub" (2026-09-27)
+### Added
+- **Expanded Gamified Milestones (53 Badges across 7 Categories)**: Completely expanded the Reading Journey milestone system from 12 to 53 comprehensive achievements spanning Bronze 🥉, Silver 🥈, Gold 🥇, Platinum 💎, and Mythic 👑 tiers across Reading Time, Chapter Conquest, Daily Streaks, Library Collection & Completion, Genre Mastery, Reading Habits, and Tracker Records.
+- **Completionist Milestones Hub**: Added dynamic Reader Level progression (`🎖️ Level X Reader`) based on unlocked achievements, with live percentage progress tracking.
+- **Status & Category Filter Chips**: Added quick filters for `All (53)`, `Unlocked (X)`, and `In Progress (Y)`—automatically sorted by closest-to-unlock—plus horizontal chips to filter by achievement category.
+- **Locked Milestone Progress Tracking**: Locked milestones now display dimmed outlines with subtle lock indicators 🔒 and real-time numeric progress bars (e.g. `584h / 1,000h`, `3 / 7 days`).
+- **Milestone Detail Inspector**: Tapping any milestone badge opens a dialog displaying its tier, unlock criteria, exact progress, and a dedicated **"💡 Completionist Tip"**.
+- **Milestones Roadmap & Guide**: Added an interactive guide dialog (via header `?` icon) explaining reader levels, tier hierarchy, and progression tips.
+
 ## 2.7.2 "Immersive Floating Dock & Density Polish" (2026-09-26)
 ### Added
 - **Edge-to-Edge Floating Glass Navigation Dock**: Transformed the bottom navigation bar into a true floating dynamic island dock. Background content flows edge-to-edge behind the dock with transparent margins outside the squircle, and list paddings ensure the last items are never clipped.
