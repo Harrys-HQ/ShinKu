@@ -18,8 +18,16 @@ import kotlinx.coroutines.flow.update
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
+import com.shinku.reader.domain.source.interactor.UpdateSourceHealth
+import eu.kanade.tachiyomi.network.GET
+import eu.kanade.tachiyomi.network.awaitSuccess
+import eu.kanade.tachiyomi.source.online.HttpSource
+import java.util.concurrent.TimeUnit
+import kotlin.system.measureTimeMillis
+
 class SourceHealthScreenModel(
     private val getSourceHealth: GetSourceHealth = Injekt.get(),
+    private val updateSourceHealth: UpdateSourceHealth = Injekt.get(),
     private val sourceManager: SourceManager = Injekt.get(),
     private val extensionManager: ExtensionManager = Injekt.get(),
 ) : StateScreenModel<SourceHealthScreenState>(SourceHealthScreenState.Loading) {
@@ -98,5 +106,26 @@ class SourceHealthScreenModel(
 
     fun setSortMode(mode: SourceHealthSort) {
         _sortMode.value = mode
+    }
+
+    fun testSingleSource(sourceId: Long) {
+        screenModelScope.launchIO {
+            val source = sourceManager.get(sourceId) as? HttpSource ?: return@launchIO
+            var success = false
+            var error: String? = null
+            val latency = measureTimeMillis {
+                try {
+                    val client = source.client.newBuilder()
+                        .connectTimeout(15, TimeUnit.SECONDS)
+                        .readTimeout(15, TimeUnit.SECONDS)
+                        .build()
+                    client.newCall(GET(source.baseUrl, source.headers)).awaitSuccess()
+                    success = true
+                } catch (e: Exception) {
+                    error = e.message
+                }
+            }
+            updateSourceHealth.await(sourceId, success, if (success) latency else 0L, error)
+        }
     }
 }

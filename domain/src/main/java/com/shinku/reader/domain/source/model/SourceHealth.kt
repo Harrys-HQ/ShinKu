@@ -12,15 +12,37 @@ data class SourceHealth(
     val lastError: String?,
 ) : Serializable {
 
+    val isFailingNow: Boolean
+        get() = lastFailure > 0 && lastFailure >= lastSuccess
+
+    val isDnsDead: Boolean
+        get() = isFailingNow && lastError?.contains("unable to resolve host", ignoreCase = true) == true
+
+    val isServerDown: Boolean
+        get() = isFailingNow && (lastError?.contains("522") == true || lastError?.contains("524") == true || lastError?.contains("502") == true || lastError?.contains("504") == true)
+
+    val isCloudflareBlocked: Boolean
+        get() = isFailingNow && (lastError?.contains("403") == true || lastError?.contains("cloudflare", ignoreCase = true) == true)
+
+    val isTimeout: Boolean
+        get() = isFailingNow && lastError?.contains("timeout", ignoreCase = true) == true
+
     val healthScore: Int
         get() {
             val total = successCount + failureCount
-            if (total == 0) return 100
-            return (successCount.toDouble() / total * 100).toInt()
+            if (total == 0) return 0
+            if (isDnsDead) return 0
+            if (isServerDown) return 10
+            if (isCloudflareBlocked) return 20
+            if (isTimeout) return 25
+            val base = (successCount.toDouble() / total * 100).toInt()
+            // If the last test failed, heavily penalize so dead/broken sources are never labeled STABLE
+            return if (isFailingNow) (base / 2).coerceAtMost(35) else base
         }
 
     val speedScore: Int
         get() = when {
+            successCount == 0 || isFailingNow -> 0
             avgLatency == 0L -> 100
             avgLatency < 500 -> 100
             avgLatency < 1500 -> 80
@@ -29,10 +51,15 @@ data class SourceHealth(
         }
 
     val performanceScore: Int
-        get() = ((healthScore * 0.7) + (speedScore * 0.3)).toInt()
+        get() {
+            if (isDnsDead) return 0
+            if (isServerDown) return 10
+            if (isFailingNow && successCount == 0) return 0
+            return ((healthScore * 0.7) + (speedScore * 0.3)).toInt()
+        }
 
     val isSensitive: Boolean
-        get() = performanceScore < 80 || failureCount > 5
+        get() = !isDnsDead && !isServerDown && (performanceScore < 80 || failureCount > 3)
 
     val recommendedConcurrency: Int
         get() = when {

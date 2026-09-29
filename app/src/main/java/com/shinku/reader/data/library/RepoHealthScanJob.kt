@@ -85,19 +85,41 @@ class RepoHealthScanJob(private val context: Context, workerParams: WorkerParame
     }
 
     private suspend fun scanAllSources(availableExtensions: List<com.shinku.reader.extension.model.Extension.Available>, onlyInstalled: Boolean) = coroutineScope {
-        val installedSourceIds = Injekt.get<SourceManager>().getOnlineSources().map { it.id }.toSet()
+        val sourceManager = Injekt.get<SourceManager>()
+        val onlineInstalledSources = sourceManager.getOnlineSources()
+        val installedSourceIds = onlineInstalledSources.map { it.id }.toSet()
 
-        logcat(LogPriority.INFO) { "Total available extensions in repo: ${availableExtensions.size}" }
+        logcat(LogPriority.INFO) { "Total available extensions in repo: ${availableExtensions.size}, installed online sources: ${onlineInstalledSources.size}" }
 
-        // Filter for English sources OR sources that are already installed
-        val filteredSources = availableExtensions.flatMap { ext -> 
-            ext.sources.filter { 
-                if (onlyInstalled) {
-                    it.id in installedSourceIds
-                } else {
-                    it.lang == "en" || it.id in installedSourceIds
-                }
+        // Gather sources to scan with preference for installed instances
+        val filteredSources: List<com.shinku.reader.extension.model.Extension.Available.Source> = if (onlyInstalled) {
+            onlineInstalledSources.mapNotNull { s ->
+                if (s.baseUrl.isNotBlank()) {
+                    com.shinku.reader.extension.model.Extension.Available.Source(
+                        id = s.id,
+                        lang = s.lang,
+                        name = s.name,
+                        baseUrl = s.baseUrl,
+                    )
+                } else null
             }
+        } else {
+            val repoSources = availableExtensions.flatMap { ext -> 
+                ext.sources.filter { it.lang == "en" || it.id in installedSourceIds }
+            }
+            val installedAdditional = onlineInstalledSources.mapNotNull { s ->
+                if (repoSources.none { it.id == s.id }) {
+                    if (s.baseUrl.isNotBlank()) {
+                        com.shinku.reader.extension.model.Extension.Available.Source(
+                            id = s.id,
+                            lang = s.lang,
+                            name = s.name,
+                            baseUrl = s.baseUrl,
+                        )
+                    } else null
+                } else null
+            }
+            repoSources + installedAdditional
         }
 
         // Group by baseUrl so we only ping each site once
@@ -118,14 +140,20 @@ class RepoHealthScanJob(private val context: Context, workerParams: WorkerParame
                     ensureActive()
                     var success = false
                     var error: String? = null
+
+                    val installedHttpSource = sources.firstNotNullOfOrNull { sourceManager.get(it.id) as? eu.kanade.tachiyomi.source.online.HttpSource }
+                    val targetUrl = installedHttpSource?.baseUrl ?: baseUrl
+                    val headers = installedHttpSource?.headers ?: okhttp3.Headers.Builder()
+                        .add("User-Agent", networkHelper.defaultUserAgentProvider())
+                        .build()
+                    val client = (installedHttpSource?.client ?: networkHelper.client).newBuilder()
+                        .connectTimeout(15, TimeUnit.SECONDS)
+                        .readTimeout(15, TimeUnit.SECONDS)
+                        .build()
+
                     val latency = measureTimeMillis {
                         try {
-                            val client = networkHelper.client.newBuilder()
-                                .connectTimeout(15, TimeUnit.SECONDS)
-                                .readTimeout(15, TimeUnit.SECONDS)
-                                .build()
-                            
-                            client.newCall(GET(baseUrl)).awaitSuccess()
+                            client.newCall(GET(targetUrl, headers)).awaitSuccess()
                             success = true
                         } catch (e: Exception) {
                             error = e.message
@@ -135,7 +163,7 @@ class RepoHealthScanJob(private val context: Context, workerParams: WorkerParame
                     ensureActive()
                     // Apply health result to ALL source IDs associated with this URL
                     sources.forEach { source ->
-                        updateSourceHealth.await(source.id, success, latency, error)
+                        updateSourceHealth.await(source.id, success, if (success) latency else 0L, error)
                     }
                     
                     val current = processed.incrementAndGet()

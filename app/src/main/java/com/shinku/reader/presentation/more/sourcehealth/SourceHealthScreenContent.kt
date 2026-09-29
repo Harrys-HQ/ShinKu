@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.StarHalf
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,6 +35,7 @@ import com.shinku.reader.presentation.core.components.material.padding
 fun SourceHealthScreenContent(
     healthList: List<SourceHealthItem>,
     paddingValues: PaddingValues,
+    onTestSingleSource: ((Long) -> Unit)? = null,
 ) {
     if (healthList.isEmpty()) {
         androidx.compose.foundation.layout.Box(
@@ -56,7 +59,7 @@ fun SourceHealthScreenContent(
         modifier = Modifier.fillMaxWidth(),
     ) {
         items(healthList, key = { it.source.id }) { item ->
-            SourceHealthItemRow(item)
+            SourceHealthItemRow(item, onTestSingleSource)
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
                 thickness = 0.5.dp,
@@ -67,16 +70,24 @@ fun SourceHealthScreenContent(
 }
 
 @Composable
-private fun SourceHealthItemRow(item: SourceHealthItem) {
+private fun SourceHealthItemRow(
+    item: SourceHealthItem,
+    onTestSingleSource: ((Long) -> Unit)? = null,
+) {
     val health = item.health
     val performanceScore = health?.performanceScore ?: -1
-    
+
     val (statusLabel, statusColor) = when {
-        health == null -> "NEVER SCANNED" to Color.Gray
+        health == null -> "UNTESTED" to Color.Gray
+        health.isDnsDead -> "DEAD DOMAIN" to Color(0xFFF44336)
+        health.isServerDown -> "SERVER DOWN" to Color(0xFFF44336)
+        health.isCloudflareBlocked -> "BLOCKED (403)" to Color(0xFFFF9800)
+        health.isTimeout -> "TIMEOUT" to Color(0xFFFF9800)
+        health.isFailingNow -> "OFFLINE" to Color(0xFFF44336)
         performanceScore >= 95 -> "EXCELLENT" to Color(0xFF4CAF50)
         performanceScore >= 80 -> "STABLE" to Color(0xFF8BC34A)
         performanceScore >= 60 -> "UNSTABLE" to Color(0xFFFFC107)
-        else -> "CRITICAL" to Color(0xFFF44336)
+        else -> "DEGRADED" to Color(0xFFFF5722)
     }
 
     Column(
@@ -93,8 +104,22 @@ private fun SourceHealthItemRow(item: SourceHealthItem) {
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f)
             )
-            
+
             HealthRatingStars(performanceScore)
+
+            if (onTestSingleSource != null) {
+                IconButton(
+                    onClick = { onTestSingleSource(item.source.id) },
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Refresh,
+                        contentDescription = "Test Source",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
         }
 
         Row(
@@ -109,11 +134,25 @@ private fun SourceHealthItemRow(item: SourceHealthItem) {
                 fontWeight = FontWeight.Bold
             )
 
-            if (health?.isSensitive == true) {
+            if (health?.isFailingNow == true) {
+                val failureBadge = when {
+                    health.isDnsDead -> "DNS FAILED"
+                    health.isServerDown -> "HTTP 522"
+                    health.isCloudflareBlocked -> "CLOUDFLARE 403"
+                    health.isTimeout -> "TIMED OUT"
+                    else -> "OFFLINE"
+                }
                 Pill(
-                    text = "THROTTLED",
+                    text = failureBadge,
                     color = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            } else if (health?.isSensitive == true) {
+                Pill(
+                    text = "SAFE CONCURRENCY (3x)",
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -131,7 +170,7 @@ private fun SourceHealthItemRow(item: SourceHealthItem) {
                 )
                 HealthStat(
                     icon = Icons.Default.Speed,
-                    label = "${health.avgLatency}ms",
+                    label = if (health.avgLatency > 0L) "${health.avgLatency}ms" else if (health.isFailingNow) "Failed" else "--",
                 )
                 Text(
                     text = "S: ${health.successCount} / F: ${health.failureCount}",
@@ -139,7 +178,9 @@ private fun SourceHealthItemRow(item: SourceHealthItem) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            if (health.lastError != null) {
+            val lastError = health.lastError
+            if (lastError != null) {
+                val friendlyError = formatFriendlyError(lastError)
                 Row(
                     modifier = Modifier.padding(top = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -152,14 +193,31 @@ private fun SourceHealthItemRow(item: SourceHealthItem) {
                         modifier = Modifier.size(14.dp)
                     )
                     Text(
-                        text = health.lastError!!,
+                        text = friendlyError,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
-                        maxLines = 1
+                        maxLines = 2
                     )
                 }
             }
         }
+    }
+}
+
+private fun formatFriendlyError(error: String): String {
+    return when {
+        error.contains("unable to resolve host", ignoreCase = true) -> {
+            val host = error.substringAfter("unable to resolve host ").substringBefore(":")
+                .replace("\"", "").trim()
+            "Host unreachable ($host) — Domain is offline, changed, or blocked by DNS"
+        }
+        error.contains("522") -> "Cloudflare Origin Timeout (522) — Manga site host server is offline"
+        error.contains("524") -> "Cloudflare Gateway Timeout (524) — Site server took too long to reply"
+        error.contains("502") || error.contains("504") -> "Bad Gateway / Host Unreachable — Server down"
+        error.contains("403") -> "Cloudflare Bot Protection (403) — Anti-bot challenge or IP blocked"
+        error.contains("429") -> "Rate Limited (429) — Too many requests sent"
+        error.contains("timeout", ignoreCase = true) -> "Connection Timed Out — No response within 15 seconds"
+        else -> error
     }
 }
 
@@ -172,7 +230,7 @@ private fun HealthRatingStars(score: Int) {
         repeat(5) { index ->
             val starIcon = when {
                 rating >= index + 1 -> Icons.Default.Star
-                rating >= index + 0.5f -> Icons.Default.StarHalf
+                rating >= index + 0.5f -> Icons.AutoMirrored.Filled.StarHalf
                 else -> Icons.Default.StarBorder
             }
             Icon(

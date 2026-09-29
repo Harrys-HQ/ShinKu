@@ -113,10 +113,12 @@ class SourceHealthScreen : Screen() {
                         0 -> SourceHealthScreenContent(
                             healthList = successState.installedList,
                             paddingValues = androidx.compose.foundation.layout.PaddingValues(),
+                            onTestSingleSource = screenModel::testSingleSource,
                         )
                         1 -> SourceHealthScreenContent(
                             healthList = successState.repoList,
                             paddingValues = androidx.compose.foundation.layout.PaddingValues(),
+                            onTestSingleSource = screenModel::testSingleSource,
                         )
                     }
                 }
