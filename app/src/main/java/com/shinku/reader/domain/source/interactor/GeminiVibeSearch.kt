@@ -298,7 +298,7 @@ class GeminiVibeSearch(
 
     suspend fun searchByImage(base64Image: String, apiKey: String, model: String): List<String> {
         val resolvedModel = resolveModel(model)
-        val modelsToTry = listOf(resolvedModel, "gemini-2.5-flash", "gemini-1.5-flash").distinct()
+        val modelsToTry = listOf(resolvedModel, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-1.5-flash").distinct()
         
         val bodyJson = """
             {
@@ -355,7 +355,7 @@ class GeminiVibeSearch(
             if (apiKey.isBlank()) return@withIOContext "API Key not set"
 
             val preferredModel = resolveModel(model)
-            val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
+            val modelsToTry = listOf(preferredModel, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
 
             var lastError = "Unknown error"
             for (m in modelsToTry) {
@@ -410,7 +410,7 @@ class GeminiVibeSearch(
 
     private fun callGemini(query: String, apiKey: String, model: String): List<String> {
         val preferredModel = resolveModel(model)
-        val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
+        val modelsToTry = listOf(preferredModel, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
 
         val prompt = """
             You are a manga discovery expert. Based on the following user description, provide a list of up to 10 real manga titles that match the "vibe".
@@ -464,17 +464,8 @@ class GeminiVibeSearch(
     }
 
     private fun resolveModel(model: String): String {
-        return when (model) {
-            "gemini-3.5-flash",
-            "gemini-3.5-pro",
-            "gemini-3.1-flash-lite",
-            "gemini-3.1-pro-preview",
-            "gemini-3-pro-preview",
-            "gemini-3-flash-preview",
-            "gemini-3.0-flash",
-            "gemini-3.0-pro",
-            "gemini-3.1-pro",
-            "" -> "gemini-2.5-flash"
+        return when {
+            model.isBlank() -> "gemini-3.8-flash"
             else -> model
         }
     }

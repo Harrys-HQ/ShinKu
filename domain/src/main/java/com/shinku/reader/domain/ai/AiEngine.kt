@@ -70,7 +70,7 @@ class CloudGeminiEngine(
         if (apiKey.isBlank()) return@withContext Result.failure(IllegalStateException("API Key not set"))
 
         val preferredModel = resolveModel(shinkuPreferences.geminiModel().get())
-        val modelsToTry = listOf(preferredModel, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
+        val modelsToTry = listOf(preferredModel, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
 
         var lastError: Exception? = null
         for (model in modelsToTry) {
@@ -133,17 +133,8 @@ class CloudGeminiEngine(
     }
 
     private fun resolveModel(model: String): String {
-        return when (model) {
-            "gemini-3.5-flash",
-            "gemini-3.5-pro",
-            "gemini-3.1-flash-lite",
-            "gemini-3.1-pro-preview",
-            "gemini-3-pro-preview",
-            "gemini-3-flash-preview",
-            "gemini-3.0-flash",
-            "gemini-3.0-pro",
-            "gemini-3.1-pro",
-            "" -> "gemini-2.5-flash"
+        return when {
+            model.isBlank() -> "gemini-3.8-flash"
             else -> model
         }
     }

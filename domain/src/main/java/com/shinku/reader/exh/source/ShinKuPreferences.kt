@@ -7,7 +7,7 @@ class ShinKuPreferences(
 ) {
     fun geminiApiKey() = preferenceStore.getString("pref_gemini_api_key", "")
 
-    fun geminiModel() = preferenceStore.getString("pref_gemini_model", "gemini-2.5-flash")
+    fun geminiModel() = preferenceStore.getString("pref_gemini_model", "gemini-3.8-flash")
 
     fun translationTargetLanguage() = preferenceStore.getString("pref_translation_target_language", "English")
 

@@ -16,7 +16,9 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import com.shinku.reader.core.common.i18n.stringResource
 import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.domain.base.BasePreferences
@@ -214,18 +216,23 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     subtitle = stringResource(MR.strings.pref_gemini_model_summary),
                     enabled = aiEngineProvider != "aicore",
                     entries = persistentMapOf(
-                        "gemini-2.5-flash" to "Gemini 2.5 Flash (Recommended - Fast)",
-                        "gemini-2.5-pro" to "Gemini 2.5 Pro (High Quality)",
-                        "gemini-2.0-flash" to "Gemini 2.0 Flash (Low Latency)",
+                        "gemini-3.8-flash" to "Gemini 3.8 Flash (Recommended - Fastest)",
+                        "gemini-3.5-flash-lite" to "Gemini 3.5 Flash-Lite (High Speed)",
+                        "gemini-3.1-pro" to "Gemini 3.1 Pro (Deep Nuance & Quality)",
+                        "gemini-2.5-flash" to "Gemini 2.5 Flash",
+                        "gemini-2.5-pro" to "Gemini 2.5 Pro",
+                        "gemini-2.0-flash" to "Gemini 2.0 Flash",
                         "gemini-2.0-flash-lite" to "Gemini 2.0 Flash-Lite",
-                        "gemini-1.5-flash" to "Gemini 1.5 Flash",
-                        "gemini-1.5-pro" to "Gemini 1.5 Pro",
+                        "gemini-1.5-flash" to "Gemini 1.5 Flash (Legacy)",
+                        "gemini-1.5-pro" to "Gemini 1.5 Pro (Legacy)",
                     ),
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.action_test_api_key),
+                    title = "Test API Connection & Model",
+                    subtitle = "Sends a prompt to verify API key validity and '${shinkuPreferences.geminiModel().get()}' responsiveness",
                     onClick = {
                         val apiKey = shinkuPreferences.geminiApiKey().get()
+                        val selectedModel = shinkuPreferences.geminiModel().get()
                         if (apiKey.isBlank()) {
                             context.toast("API Key cannot be empty")
                             return@TextPreference
@@ -233,18 +240,36 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
 
                         scope.launch {
                             try {
-                                val url = "https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey"
-                                val request = Request.Builder().url(url).build()
-                                val success = withIOContext {
+                                val url = "https://generativelanguage.googleapis.com/v1beta/models/$selectedModel:generateContent?key=$apiKey"
+                                val bodyJson = """
+                                    {
+                                      "contents": [{
+                                        "parts":[{"text": "Respond with 'OK'"}]
+                                      }]
+                                    }
+                                """.trimIndent()
+                                val request = Request.Builder()
+                                    .url(url)
+                                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
+                                    .build()
+
+                                val startTime = System.currentTimeMillis()
+                                val (isSuccess, detail) = withIOContext {
                                     networkHelper.client.newCall(request).execute().use { response ->
-                                        response.isSuccessful
+                                        val latency = System.currentTimeMillis() - startTime
+                                        if (response.isSuccessful) {
+                                            true to "$selectedModel is active and working! (${latency}ms)"
+                                        } else {
+                                            val err = response.body.string()
+                                            false to "HTTP ${response.code} on $selectedModel: $err"
+                                        }
                                     }
                                 }
                                 withContext(Dispatchers.Main) {
-                                    if (success) {
-                                        context.toast(context.stringResource(MR.strings.api_key_test_success))
+                                    if (isSuccess) {
+                                        context.toast(detail)
                                     } else {
-                                        context.toast(context.stringResource(MR.strings.api_key_test_failed, "Invalid Key"))
+                                        context.toast(context.stringResource(MR.strings.api_key_test_failed, detail))
                                     }
                                 }
                             } catch (e: Exception) {
