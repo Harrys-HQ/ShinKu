@@ -14,9 +14,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.CollectionsBookmark
@@ -146,7 +147,6 @@ private fun LazyItemScope.MilestoneSection(
 
     SectionCard(SYMR.strings.label_milestones) {
         Column(
-            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Level & Completion Header
@@ -187,9 +187,11 @@ private fun LazyItemScope.MilestoneSection(
                 trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
             )
 
-            // Status Filter Chips
+            // Status Filter Chips (Scrollable with natural-width chips to prevent cramping and text wrap)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 MilestoneStatusFilter.entries.forEach { filter ->
@@ -202,23 +204,36 @@ private fun LazyItemScope.MilestoneSection(
                     FilterChip(
                         selected = isSelected,
                         onClick = { statusFilter = filter },
-                        label = { Text("${filter.label} ($count)") },
-                        modifier = Modifier.weight(1f),
+                        label = {
+                            Text(
+                                text = "${filter.label} ($count)",
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        },
                     )
                 }
             }
 
             // Category Filter Chips (Scrollable)
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                contentPadding = PaddingValues(horizontal = 2.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                items(BadgeCategory.entries.toTypedArray()) { cat ->
+                BadgeCategory.entries.forEach { cat ->
                     val isSelected = categoryFilter == cat
                     FilterChip(
                         selected = isSelected,
                         onClick = { categoryFilter = cat },
-                        label = { Text(cat.label) },
+                        label = {
+                            Text(
+                                text = cat.label,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        },
                     )
                 }
             }
@@ -487,7 +502,7 @@ private fun MilestoneCard(
                 color = if (badge.isEarned) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.height(36.dp)
+                modifier = Modifier.heightIn(min = 36.dp)
             )
 
             if (badge.isEarned) {
