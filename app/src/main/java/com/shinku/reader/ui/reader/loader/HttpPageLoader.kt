@@ -12,6 +12,7 @@ import com.shinku.reader.ui.reader.setting.ReaderPreferences
 import com.shinku.reader.exh.source.isEhBasedSource
 import com.shinku.reader.exh.util.DataSaver
 import com.shinku.reader.exh.util.DataSaver.Companion.getImage
+import eu.kanade.tachiyomi.network.HttpException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -166,7 +167,7 @@ internal class HttpPageLoader(
 
         val queuedPages = mutableListOf<PriorityPage>()
         if (page.status == Page.State.Queue) {
-            queuedPages += PriorityPage(page, 1).also { queue.offer(it) }
+            queuedPages += PriorityPage(page, 2).also { queue.offer(it) }
         }
         queuedPages += preloadNextPages(page, getDynamicPreloadSize())
 
@@ -287,7 +288,13 @@ internal class HttpPageLoader(
                 }
 
                 if (attempts < maxAttempts) {
-                    kotlinx.coroutines.delay(500L * attempts)
+                    val delayMs = if (e is HttpException && (e.code == 429 || e.code == 503)) {
+                        // Rate-limited or Cloudflare challenge: back off exponentially with jitter to avoid IP bans
+                        2_000L * attempts + (100L..500L).random()
+                    } else {
+                        500L * attempts
+                    }
+                    kotlinx.coroutines.delay(delayMs)
                 }
             }
         }
@@ -298,9 +305,7 @@ internal class HttpPageLoader(
     // EXH -->
     fun boostPage(page: ReaderPage) {
         if (page.status == Page.State.Queue) {
-            scope.launchIO {
-                loadPage(page)
-            }
+            queue.offer(PriorityPage(page, 2))
         }
     }
     // EXH <--
