@@ -47,6 +47,7 @@ import com.shinku.reader.ui.reader.model.InsertPage
 import com.shinku.reader.ui.reader.model.ReaderChapter
 import com.shinku.reader.ui.reader.model.ReaderPage
 import com.shinku.reader.ui.reader.model.TranslatedBlock
+import com.shinku.reader.ui.reader.model.TranslationCache
 import com.shinku.reader.ui.reader.model.ViewerChapters
 import com.shinku.reader.ui.reader.setting.ReaderOrientation
 import com.shinku.reader.ui.reader.setting.ReaderPreferences
@@ -456,7 +457,8 @@ class ReaderViewModel(
                         sourceManager = sourceManager,
                         readerPrefs = readerPreferences,
                         mergedReferences = mergedReferences,
-                        mergedManga = mergedManga, /* SY <-- */
+                        mergedManga = mergedManga,
+                        avgPageTimeProvider = { state.value.avgPageTime }, /* SY <-- */
                     )
 
                     loadChapter(
@@ -1379,8 +1381,20 @@ class ReaderViewModel(
             return
         }
 
-        // If already translated, just show it!
+        // If already translated in memory on page, just show it!
         if (page.translationBlocks != null) {
+            page.showTranslation = true
+            eventChannel.trySend(Event.TranslationOverlayReady(page))
+            return
+        }
+
+        val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
+        val chapterId = page.chapter.chapter.id ?: 0L
+
+        // Fast check in LRU TranslationCache
+        val cached = TranslationCache.get(chapterId, page.index, targetLanguage)
+        if (cached != null) {
+            page.translationBlocks = cached
             page.showTranslation = true
             eventChannel.trySend(Event.TranslationOverlayReady(page))
             return
@@ -1400,7 +1414,6 @@ class ReaderViewModel(
                 val apiKey = shinkuPreferences.geminiApiKey().get()
                 val model = shinkuPreferences.geminiModel().get()
                 val sourceLanguage = shinkuPreferences.translationSourceLanguage().get()
-                val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
 
                 if (apiKey.isBlank()) {
                     mutableState.update { it.copy(dialog = Dialog.AiInsight("Translation", "Please set your Gemini API Key in Settings > ShinKu Features.")) }
@@ -1436,6 +1449,7 @@ class ReaderViewModel(
 
                 page.translationBlocks = translatedBlocks
                 page.showTranslation = true
+                TranslationCache.put(chapterId, page.index, targetLanguage, translatedBlocks)
 
                 mutableState.update { it.copy(dialog = null) } // Close loading dialog
                 eventChannel.send(Event.TranslationOverlayReady(page))

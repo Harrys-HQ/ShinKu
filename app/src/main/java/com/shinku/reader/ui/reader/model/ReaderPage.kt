@@ -38,3 +38,19 @@ data class TranslatedBlock(
     val bgColor: Int,
     val textColor: Int,
 )
+
+object TranslationCache {
+    private val cache = android.util.LruCache<String, List<TranslatedBlock>>(64)
+
+    fun get(chapterId: Long, pageIndex: Int, targetLanguage: String): List<TranslatedBlock>? {
+        return cache.get("${chapterId}_${pageIndex}_$targetLanguage")
+    }
+
+    fun put(chapterId: Long, pageIndex: Int, targetLanguage: String, blocks: List<TranslatedBlock>) {
+        cache.put("${chapterId}_${pageIndex}_$targetLanguage", blocks)
+    }
+
+    fun clear() {
+        cache.evictAll()
+    }
+}

@@ -43,6 +43,7 @@ internal class HttpPageLoader(
     // SY -->
     private val readerPreferences: ReaderPreferences = Injekt.get(),
     sourcePreferences: SourcePreferences = Injekt.get(),
+    private val avgPageTimeProvider: (() -> Long)? = null,
     // SY <--
 ) : PageLoader() {
 
@@ -62,14 +63,14 @@ internal class HttpPageLoader(
         if (!Injekt.get<com.shinku.reader.exh.source.ShinKuPreferences>().predictiveLoading().get()) {
             return preloadSize
         }
-        
-        // If average page time is less than 5 seconds, double the preload
-        val avgTime = chapter.manga?.let {
-            // TODO: get avgPageTime from Stats or Preference if we track it
-            0L 
-        } ?: 0L
-        
-        return preloadSize // TODO: properly pass avgPageTime to loaders
+
+        val avgTime = avgPageTimeProvider?.invoke() ?: 0L
+        return when {
+            avgTime in 500..5_000 -> (preloadSize * 2).coerceAtMost(30)
+            avgTime in 5_001..12_000 -> (preloadSize + 2).coerceAtMost(25)
+            avgTime > 45_000 -> (preloadSize / 2).coerceAtLeast(2)
+            else -> preloadSize
+        }
     }
 
     // SY -->
@@ -167,7 +168,7 @@ internal class HttpPageLoader(
         if (page.status == Page.State.Queue) {
             queuedPages += PriorityPage(page, 1).also { queue.offer(it) }
         }
-        queuedPages += preloadNextPages(page, preloadSize)
+        queuedPages += preloadNextPages(page, getDynamicPreloadSize())
 
         suspendCancellableCoroutine<Nothing> { continuation ->
             continuation.invokeOnCancellation {
