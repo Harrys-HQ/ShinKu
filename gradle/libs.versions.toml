@@ -7,7 +7,7 @@ compose-bom = "2026.02.00"
 kotlin_version = "2.3.10"
 serialization_version = "1.9.0"
 xml_serialization_version = "0.91.3"
-koin = "4.1.1"
+koin = "4.2.2"
 aboutlib_version = "13.2.1"
 leakcanary = "2.14"
 moko = "0.26.1"
@@ -41,7 +41,7 @@ profileinstaller = "androidx.profileinstaller:profileinstaller:1.4.1"
 lifecycle-common = { module = "androidx.lifecycle:lifecycle-common", version.ref = "lifecycle_version" }
 lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle_version" }
 lifecycle-runtimektx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle_version" }
-workmanager = "androidx.work:work-runtime:2.11.0"
+workmanager = "androidx.work:work-runtime:2.12.0"
 paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging_version" }
 paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging_version" }
 interpolator = { group = "androidx.interpolator", name = "interpolator", version.ref = "interpolator_version" }
