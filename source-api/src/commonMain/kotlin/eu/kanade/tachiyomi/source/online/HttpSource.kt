@@ -441,7 +441,12 @@ abstract class HttpSource : CatalogueSource {
      * @param page the chapter whose page list has to be fetched
      */
     protected open fun imageUrlRequest(page: Page): Request {
-        return GET(page.url, headers)
+        val url = when {
+            page.url.startsWith("//") -> "https:${page.url}"
+            page.url.startsWith("/") -> baseUrl.trimEnd('/') + page.url
+            else -> page.url
+        }
+        return GET(url, headers)
     }
 
     /**
@@ -470,7 +475,13 @@ abstract class HttpSource : CatalogueSource {
      * @param page the chapter whose page list has to be fetched
      */
     protected open fun imageRequest(page: Page): Request {
-        return GET(page.imageUrl!!, headers)
+        val imageUrl = page.imageUrl!!
+        val url = when {
+            imageUrl.startsWith("//") -> "https:$imageUrl"
+            imageUrl.startsWith("/") -> baseUrl.trimEnd('/') + imageUrl
+            else -> imageUrl
+        }
+        return GET(url, headers)
     }
 
     /**

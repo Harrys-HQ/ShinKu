@@ -104,7 +104,11 @@ internal class HttpPageLoader(
      */
     override suspend fun getPages(): List<ReaderPage> {
         val pages = try {
-            chapterCache.getPageListFromCache(chapter.chapter.toDomainChapter()!!)
+            val cachedPages = chapterCache.getPageListFromCache(chapter.chapter.toDomainChapter()!!)
+            if (cachedPages.isEmpty() || cachedPages.any { it.imageUrl.isNullOrBlank() && it.url.isBlank() }) {
+                error("Invalid or corrupted cached page list")
+            }
+            cachedPages
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
@@ -136,7 +140,21 @@ internal class HttpPageLoader(
         // SY -->
         val rp = pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
-            ReaderPage(index, page.url, page.imageUrl)
+            var imgUrl = page.imageUrl?.trim()
+            if (imgUrl != null) {
+                if (imgUrl.startsWith("//")) {
+                    imgUrl = "https:$imgUrl"
+                } else if (imgUrl.startsWith("/")) {
+                    imgUrl = source.baseUrl.trimEnd('/') + imgUrl
+                }
+            }
+            var pageUrl = page.url.trim()
+            if (pageUrl.startsWith("//")) {
+                pageUrl = "https:$pageUrl"
+            } else if (pageUrl.startsWith("/")) {
+                pageUrl = source.baseUrl.trimEnd('/') + pageUrl
+            }
+            ReaderPage(index, pageUrl, imgUrl)
         }
         if (readerPreferences.aggressivePageLoading().get()) {
             rp.forEach {
@@ -189,8 +207,10 @@ internal class HttpPageLoader(
         if (page.status is Page.State.Error) {
             page.status = Page.State.Queue
         }
-        // Force re-fetch of CDN image URL on retry
-        page.imageUrl = null
+        // Force re-fetch of CDN image URL on retry only if the source supports resolving image URLs from page.url
+        if (source.isEhBasedSource() || page.url.isNotBlank()) {
+            page.imageUrl = null
+        }
 
         if (readerPreferences.readerInstantRetry().get()) {
             boostPage(page)
@@ -206,6 +226,9 @@ internal class HttpPageLoader(
 
         // Cache current page list progress for online chapters to allow a faster reopen
         chapter.pages?.let { pages ->
+            if (pages.isEmpty() || pages.any { it.imageUrl.isNullOrBlank() && it.url.isBlank() }) {
+                return@let
+            }
             launchIO {
                 try {
                     // Convert to pages without reader information
@@ -257,9 +280,33 @@ internal class HttpPageLoader(
                 attempts++
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
-                    page.imageUrl = source.getImageUrl(page)
+                    if (page.url.isNotBlank()) {
+                        page.imageUrl = source.getImageUrl(page)
+                    } else {
+                        // Refresh the entire page list from source to retrieve fresh URLs
+                        val freshPages = source.getPageList(chapter.chapter)
+                        val freshPage = freshPages.getOrNull(page.index)
+                        if (freshPage != null && !freshPage.imageUrl.isNullOrEmpty()) {
+                            page.imageUrl = freshPage.imageUrl
+                            // Also update other pages in chapter if their imageUrl was null
+                            chapter.pages?.forEachIndexed { idx, p ->
+                                if (p.imageUrl.isNullOrEmpty()) {
+                                    freshPages.getOrNull(idx)?.imageUrl?.let { p.imageUrl = it }
+                                }
+                            }
+                        } else {
+                            throw IllegalArgumentException("Source failed to provide a valid image URL for page ${page.index + 1}")
+                        }
+                    }
                 }
-                val imageUrl = page.imageUrl!!
+                var imageUrl = page.imageUrl!!
+                if (imageUrl.startsWith("//")) {
+                    imageUrl = "https:$imageUrl"
+                    page.imageUrl = imageUrl
+                } else if (imageUrl.startsWith("/")) {
+                    imageUrl = source.baseUrl.trimEnd('/') + imageUrl
+                    page.imageUrl = imageUrl
+                }
 
                 if (!chapterCache.isImageInCache(imageUrl)) {
                     page.status = Page.State.DownloadImage

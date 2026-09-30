@@ -422,9 +422,22 @@ class Downloader(
                     if (page.imageUrl.isNullOrEmpty()) {
                         page.status = Page.State.LoadPage
                         try {
-                            page.imageUrl = download.source.getImageUrl(page)
+                            if (page.url.isNotBlank()) {
+                                page.imageUrl = download.source.getImageUrl(page)
+                            } else {
+                                val freshPages = download.source.getPageList(download.chapter.toSChapter())
+                                page.imageUrl = freshPages.getOrNull(page.index)?.imageUrl
+                            }
                         } catch (e: Throwable) {
                             page.status = Page.State.Error(e)
+                        }
+                    }
+
+                    page.imageUrl?.let { imgUrl ->
+                        if (imgUrl.startsWith("//")) {
+                            page.imageUrl = "https:$imgUrl"
+                        } else if (imgUrl.startsWith("/")) {
+                            page.imageUrl = download.source.baseUrl.trimEnd('/') + imgUrl
                         }
                     }
 
@@ -639,7 +652,12 @@ class Downloader(
         filename: String,
         threads: Int,
     ): UniFile {
-        val url = page.imageUrl ?: download.source.getImageUrl(page)
+        val url = page.imageUrl
+            ?: if (page.url.isNotBlank()) {
+                download.source.getImageUrl(page)
+            } else {
+                throw IllegalArgumentException("Missing image URL for page ${page.index + 1}")
+            }
         val source = download.source
         val client = source.client
         val downloadId = download.chapter.id!!

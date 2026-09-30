@@ -20,7 +20,8 @@ fun GET(
     headers: Headers = DEFAULT_HEADERS,
     cache: CacheControl = DEFAULT_CACHE_CONTROL,
 ): Request {
-    return GET(url.toHttpUrl(), headers, cache)
+    val normalized = if (url.startsWith("//")) "https:$url" else url
+    return GET(normalized.toHttpUrl(), headers, cache)
 }
 
 /**

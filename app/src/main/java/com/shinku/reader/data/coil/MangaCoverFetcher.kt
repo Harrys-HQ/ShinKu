@@ -181,7 +181,8 @@ class MangaCoverFetcher(
 
     private fun newRequest(): Request {
         val request = Request.Builder().apply {
-            url(url!!)
+            val normalizedUrl = if (url!!.startsWith("//")) "https:$url" else url!!
+            url(normalizedUrl)
 
             val sourceHeaders = sourceLazy.value?.headers
             if (sourceHeaders != null) {

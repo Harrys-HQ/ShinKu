@@ -150,7 +150,8 @@ class PagePreviewFetcher(
 
     private fun newRequest(): Request {
         val request = Request.Builder().apply {
-            url(page.imageUrl)
+            val normalizedUrl = if (page.imageUrl.startsWith("//")) "https:${page.imageUrl}" else page.imageUrl
+            url(normalizedUrl)
 
             val sourceHeaders = (sourceLazy.value as? HttpSource)?.headers
             if (sourceHeaders != null) {

@@ -46,7 +46,13 @@ fun DataSaver(source: Source, preferences: SourcePreferences): DataSaver {
 }
 
 private class BandwidthHeroDataSaver(preferences: SourcePreferences) : DataSaver {
-    private val dataSavedServer = preferences.dataSaverServer().get().trimEnd('/')
+    private val dataSavedServer = preferences.dataSaverServer().get().trim().trimEnd('/').let {
+        if (it.isNotBlank() && !it.startsWith("http://") && !it.startsWith("https://")) {
+            "https://$it"
+        } else {
+            it
+        }
+    }
 
     private val ignoreJpg = preferences.dataSaverIgnoreJpeg().get()
     private val ignoreGif = preferences.dataSaverIgnoreGif().get()
