@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.4" changeDate="September 30,2026">
+        <changelogtext>[b]Fixed[/b]: Resolved reader retry crash and URL loss on modern extensions (e.g. MangaFreak) with auto-healing page list reload</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Universal URL scheme normalization for protocol-relative and domain-relative image and cover links</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Prevented chapter cache corruption and auto-discard invalid cached page lists on chapter open</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Source Health false 'Stable' ratings by probing with extension User-Agent and headers</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Resolved horizontal clipping on Milestones filter chips and refined card text boundaries</changelogtext>
+        <changelogtext>[b]Added[/b]: Upgraded to Gemini 3.x AI model series with in-app real-time 'Test Model' diagnostic action</changelogtext>
+        <changelogtext>[b]Added[/b]: Dynamic reader preload buffer depth adaptation matching user reading velocity</changelogtext>
+        <changelogtext>[b]Added[/b]: Dedicated in-memory and disk caching for AI translated reader pages</changelogtext>
+        <changelogtext>[b]Added[/b]: On-demand 'Re-test' button in Source Health screen to verify individual sources in real time</changelogtext>
+        <changelogtext>[b]Changed[/b]: Elevated active viewport page priority over background preload queue</changelogtext>
+        <changelogtext>[b]Changed[/b]: Adaptive exponential backoff with randomized jitter on HTTP 429/503 Cloudflare rate limits</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.3" changeDate="September 27,2026">
         <changelogtext>[b]Added[/b]: Expanded Gamified Milestones Hub with 53 comprehensive achievements across 7 categories and 5 tiers</changelogtext>
         <changelogtext>[b]Added[/b]: Dynamic Reader Level progression and completionist overview with live progress bars</changelogtext>

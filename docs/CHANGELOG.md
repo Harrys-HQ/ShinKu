@@ -1,5 +1,24 @@
 # ShinKu Changelog
 
+## 2.7.4 "Reader Resilience & AI Modernization" (2026-09-30)
+### Added
+- **Gemini 3.x AI Modernization & Testing**: Upgraded Gemini AI model offerings with direct support for the latest model families (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, `gemini-1.5-flash`). Added a real-time **"Test Model"** diagnostic action directly inside AI Settings to verify API key validity, connectivity, and response latency.
+- **Dynamic Preload Buffer Adaptation**: The reader preload queue now automatically tunes its buffer depth according to user reading velocity—fast readers get larger buffers (up to 30 pages) to eliminate loading pauses, while slower readers conserve memory and network bandwidth.
+- **AI Translation Page Caching**: Added dedicated in-memory and disk caching for translated pages, allowing instantaneous re-renders without re-querying AI translation engines.
+- **Source Health Re-Test Action**: Added an on-demand "Re-test" button to the Source Health screen to easily probe and verify individual source connectivity in real time.
+
+### Fixed
+- **Reader Page Retry Crash (`IllegalArgumentException: Expected URL scheme`)**: Fixed an issue where tapping "Retry" on failed pages in modern extensions (like MangaFreak) wiped `page.imageUrl` to null. Because these sources omit `page.url`, subsequent retries failed with empty OkHttp URL scheme exceptions. `retryPage()` now preserves image URLs for standard sources, and missing URLs trigger an automatic self-healing page list refresh from the source.
+- **Universal URL Scheme Normalization**: Hardened `HttpSource`, `Requests.kt`, `DataSaver`, `Downloader`, and Coil image fetchers to automatically normalize protocol-relative (`//...`) and domain-relative (`/...`) image and cover URLs to absolute `https:` URLs using the source's base URL.
+- **Chapter Cache Poisoning Prevention**: Prevented storing corrupted page lists (`imageUrl = null`, `url = ""`) into `ChapterCache`, and added automatic detection to discard invalid cached lists and refresh from the network upon chapter opening.
+- **Source Health False "Stable" Ratings**: Fixed Source Health diagnostics falsely flagging sources as "Stable" by ensuring health probes execute with the extension's authentic User-Agent and headers.
+- **Milestones Filter Scrolling & Layout Polish**: Resolved horizontal scroll clipping on Milestones filter chips and fixed text boundary constraints on badge cards.
+
+### Changed
+- **Adaptive 429/503 Backoff & Jitter**: Implemented exponential backoff with randomized jitter on HTTP 429 (Rate Limit) and 503 (Cloudflare) responses to prevent IP bans during aggressive loading.
+- **Viewport Page Priority Elevation**: Active reading pages in the viewport are now assigned top priority in the loading queue over background preload tasks.
+- **Dependency Alignments**: Updated AndroidX WorkManager to 2.12.0 and Koin to 4.2.2 for enhanced background execution stability.
+
 ## 2.7.3 "Gamified Milestones & Completionist Hub" (2026-09-27)
 ### Added
 - **Expanded Gamified Milestones (53 Badges across 7 Categories)**: Completely expanded the Reading Journey milestone system from 12 to 53 comprehensive achievements spanning Bronze 🥉, Silver 🥈, Gold 🥇, Platinum 💎, and Mythic 👑 tiers across Reading Time, Chapter Conquest, Daily Streaks, Library Collection & Completion, Genre Mastery, Reading Habits, and Tracker Records.

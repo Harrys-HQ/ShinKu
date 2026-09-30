@@ -36,7 +36,7 @@
 
 ---
 
-## 🚀 Latest Release: 2.7.3
+## 🚀 Latest Release: 2.7.4
 
 The latest version of ShinKu is now available! 
 
