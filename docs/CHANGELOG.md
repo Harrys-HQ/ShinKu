@@ -1,5 +1,10 @@
 # ShinKu Changelog
 
+## 2.7.6 "MangaDex Image Resolution Hotfix" (2026-10-04)
+### Fixed
+- **MangaDex Chapter Loading & Downloads**: Resolved `Unable to resolve host: cmdxd98sb0x3yprd.mangadex.networkhttps` error when opening or downloading MangaDex chapters by removing improper `baseUrl` prepending on relative page paths. Standard sources continue to resolve relative URLs through `HttpSource.imageRequest` while sources with dynamic CDN nodes retain clean relative paths.
+- **Corrupted Disk Cache Auto-Recovery**: Added automatic detection and invalidation of corrupted legacy disk cache entries for MangaDex pages, allowing previously failed chapters to load immediately without requiring a manual cache clear.
+
 ## 2.7.5 "Search Concurrency & Thread Optimization" (2026-10-04)
 ### Fixed
 - **Browse & Search OS Thread Leaks**: Replaced raw `Executors.newFixedThreadPool` with coroutines `Dispatchers.IO.limitedParallelism` across `SearchScreenModel`, `FeedScreenModel`, and `SourceFeedScreenModel`. Eliminates silent thread leaks where multiple unclosed OS threads accumulated on every search and feed screen navigation.

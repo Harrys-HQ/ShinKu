@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.6" changeDate="October 04,2026">
+        <changelogtext>[b]Fixed[/b]: Resolved MangaDex chapter loading and download failure (cmdxd98sb0x3yprd.mangadex.networkhttps unknown host error) by eliminating improper baseUrl prepending on relative page paths</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Automatically detect and recover from corrupted legacy chapter cache entries for MangaDex</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.5" changeDate="October 04,2026">
         <changelogtext>[b]Fixed[/b]: Eliminated OS thread leaks across Search and Feed screens by transitioning to Dispatchers.IO.limitedParallelism</changelogtext>
         <changelogtext>[b]Fixed[/b]: Resolved search result state race condition preventing manga sources from remaining stuck in Loading state</changelogtext>
