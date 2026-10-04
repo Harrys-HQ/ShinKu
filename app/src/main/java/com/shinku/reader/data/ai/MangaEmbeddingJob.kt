@@ -122,27 +122,30 @@ class MangaEmbeddingJob(
         private const val TAG = "MangaEmbeddingJob"
 
         fun setupTask(context: Context) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.UNMETERED)
-                .setRequiresCharging(true)
-                .setRequiresDeviceIdle(true)
-                .build()
+            try {
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.UNMETERED)
+                    .setRequiresCharging(true)
+                    .setRequiresDeviceIdle(true)
+                    .build()
 
-            val request = PeriodicWorkRequestBuilder<MangaEmbeddingJob>(
-                7, TimeUnit.DAYS,
-                1, TimeUnit.HOURS,
-            )
-                .addTag(TAG)
-                .setConstraints(constraints)
-                .setInitialDelay(7, TimeUnit.DAYS)
-                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.HOURS)
-                .build()
+                val request = PeriodicWorkRequestBuilder<MangaEmbeddingJob>(
+                    7, TimeUnit.DAYS,
+                    1, TimeUnit.HOURS,
+                )
+                    .addTag(TAG)
+                    .setConstraints(constraints)
+                    .setInitialDelay(7, TimeUnit.DAYS)
+                    .build()
 
-            context.workManager.enqueueUniquePeriodicWork(
-                TAG,
-                ExistingPeriodicWorkPolicy.UPDATE,
-                request,
-            )
+                context.workManager.enqueueUniquePeriodicWork(
+                    TAG,
+                    ExistingPeriodicWorkPolicy.UPDATE,
+                    request,
+                )
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN) { "Failed to setup MangaEmbeddingJob: ${e.message}" }
+            }
         }
 
         fun startNow(context: Context) {

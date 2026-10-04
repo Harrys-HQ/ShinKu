@@ -38,25 +38,29 @@ class DatabaseMaintenanceWorker(context: Context, workerParams: WorkerParameters
         private const val TAG = "DatabaseMaintenance"
 
         fun setupPeriodicWork(context: Context) {
-            val constraints = Constraints.Builder()
-                .setRequiresDeviceIdle(true)
-                .setRequiresBatteryNotLow(true)
-                .build()
+            try {
+                val constraints = Constraints.Builder()
+                    .setRequiresDeviceIdle(true)
+                    .setRequiresBatteryNotLow(true)
+                    .build()
 
-            val request = PeriodicWorkRequestBuilder<DatabaseMaintenanceWorker>(
-                7, TimeUnit.DAYS, // Run weekly
-                1, TimeUnit.HOURS, // Flex period
-            )
-                .addTag(TAG)
-                .setConstraints(constraints)
-                .setInitialDelay(7, TimeUnit.DAYS)
-                .build()
+                val request = PeriodicWorkRequestBuilder<DatabaseMaintenanceWorker>(
+                    7, TimeUnit.DAYS, // Run weekly
+                    1, TimeUnit.HOURS, // Flex period
+                )
+                    .addTag(TAG)
+                    .setConstraints(constraints)
+                    .setInitialDelay(7, TimeUnit.DAYS)
+                    .build()
 
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                TAG,
-                ExistingPeriodicWorkPolicy.UPDATE,
-                request,
-            )
+                WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                    TAG,
+                    ExistingPeriodicWorkPolicy.UPDATE,
+                    request,
+                )
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN) { "Failed to setup DatabaseMaintenanceWorker: ${e.message}" }
+            }
         }
     }
 }

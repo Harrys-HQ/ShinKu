@@ -184,31 +184,35 @@ class RepoHealthScanJob(private val context: Context, workerParams: WorkerParame
         private const val KEY_ONLY_INSTALLED = "only_installed"
 
         fun setupTask(context: Context) {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.UNMETERED)
-                .setRequiresBatteryNotLow(true)
-                .build()
+            try {
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.UNMETERED)
+                    .setRequiresBatteryNotLow(true)
+                    .build()
 
-            val inputData = workDataOf(
-                KEY_ONLY_INSTALLED to true,
-            )
+                val inputData = workDataOf(
+                    KEY_ONLY_INSTALLED to true,
+                )
 
-            val request = PeriodicWorkRequestBuilder<RepoHealthScanJob>(
-                3, TimeUnit.DAYS,
-                12, TimeUnit.HOURS
-            )
-                .addTag(TAG)
-                .setInputData(inputData)
-                .setConstraints(constraints)
-                .setInitialDelay(3, TimeUnit.DAYS)
-                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.HOURS)
-                .build()
+                val request = PeriodicWorkRequestBuilder<RepoHealthScanJob>(
+                    3, TimeUnit.DAYS,
+                    12, TimeUnit.HOURS
+                )
+                    .addTag(TAG)
+                    .setInputData(inputData)
+                    .setConstraints(constraints)
+                    .setInitialDelay(3, TimeUnit.DAYS)
+                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.HOURS)
+                    .build()
 
-            context.workManager.enqueueUniquePeriodicWork(
-                TAG,
-                ExistingPeriodicWorkPolicy.UPDATE,
-                request
-            )
+                context.workManager.enqueueUniquePeriodicWork(
+                    TAG,
+                    ExistingPeriodicWorkPolicy.UPDATE,
+                    request
+                )
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN) { "Failed to setup RepoHealthScanJob: ${e.message}" }
+            }
         }
 
         fun startNow(context: Context, onlyInstalled: Boolean = false) {
