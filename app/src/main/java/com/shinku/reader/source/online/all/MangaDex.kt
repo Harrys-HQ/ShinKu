@@ -213,6 +213,9 @@ class MangaDex(delegate: HttpSource, val context: Context) :
     }
 
     override suspend fun getImage(page: Page, existingSize: Long): Response {
+        if (page.imageUrl?.startsWith("https://mangadex.org/data") == true) {
+            page.imageUrl = page.imageUrl?.removePrefix("https://mangadex.org")
+        }
         val call = pageHandler.getImageCall(page)
         return call?.awaitSuccess() ?: super.getImage(page, existingSize)
     }

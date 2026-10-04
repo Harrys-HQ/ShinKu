@@ -105,7 +105,7 @@ internal class HttpPageLoader(
     override suspend fun getPages(): List<ReaderPage> {
         val pages = try {
             val cachedPages = chapterCache.getPageListFromCache(chapter.chapter.toDomainChapter()!!)
-            if (cachedPages.isEmpty() || cachedPages.any { it.imageUrl.isNullOrBlank() && it.url.isBlank() }) {
+            if (cachedPages.isEmpty() || cachedPages.any { it.imageUrl.isNullOrBlank() && it.url.isBlank() || it.imageUrl?.contains("mangadex.org/data") == true }) {
                 error("Invalid or corrupted cached page list")
             }
             cachedPages
@@ -140,21 +140,7 @@ internal class HttpPageLoader(
         // SY -->
         val rp = pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
-            var imgUrl = page.imageUrl?.trim()
-            if (imgUrl != null) {
-                if (imgUrl.startsWith("//")) {
-                    imgUrl = "https:$imgUrl"
-                } else if (imgUrl.startsWith("/")) {
-                    imgUrl = source.baseUrl.trimEnd('/') + imgUrl
-                }
-            }
-            var pageUrl = page.url.trim()
-            if (pageUrl.startsWith("//")) {
-                pageUrl = "https:$pageUrl"
-            } else if (pageUrl.startsWith("/")) {
-                pageUrl = source.baseUrl.trimEnd('/') + pageUrl
-            }
-            ReaderPage(index, pageUrl, imgUrl)
+            ReaderPage(index, page.url, page.imageUrl)
         }
         if (readerPreferences.aggressivePageLoading().get()) {
             rp.forEach {
@@ -309,14 +295,7 @@ internal class HttpPageLoader(
                         }
                     }
                 }
-                var imageUrl = page.imageUrl!!
-                if (imageUrl.startsWith("//")) {
-                    imageUrl = "https:$imageUrl"
-                    page.imageUrl = imageUrl
-                } else if (imageUrl.startsWith("/")) {
-                    imageUrl = source.baseUrl.trimEnd('/') + imageUrl
-                    page.imageUrl = imageUrl
-                }
+                val imageUrl = page.imageUrl!!
 
                 if (!chapterCache.isImageInCache(imageUrl)) {
                     page.status = Page.State.DownloadImage

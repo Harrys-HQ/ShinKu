@@ -422,8 +422,18 @@ class Downloader(
                     if (page.imageUrl.isNullOrEmpty()) {
                         page.status = Page.State.LoadPage
                         try {
-                            if (page.url.isNotBlank()) {
-                                page.imageUrl = download.source.getImageUrl(page)
+                            val resolvedUrl = if (page.url.isNotBlank()) {
+                                try {
+                                    download.source.getImageUrl(page)
+                                } catch (e: UnsupportedOperationException) {
+                                    null
+                                }
+                            } else {
+                                null
+                            }
+
+                            if (!resolvedUrl.isNullOrEmpty()) {
+                                page.imageUrl = resolvedUrl
                             } else {
                                 val freshPages = download.source.getPageList(download.chapter.toSChapter())
                                 page.imageUrl = freshPages.getOrNull(page.index)?.imageUrl
@@ -433,12 +443,8 @@ class Downloader(
                         }
                     }
 
-                    page.imageUrl?.let { imgUrl ->
-                        if (imgUrl.startsWith("//")) {
-                            page.imageUrl = "https:$imgUrl"
-                        } else if (imgUrl.startsWith("/")) {
-                            page.imageUrl = download.source.baseUrl.trimEnd('/') + imgUrl
-                        }
+                    if (page.imageUrl?.startsWith("https://mangadex.org/data") == true) {
+                        page.imageUrl = page.imageUrl?.removePrefix("https://mangadex.org")
                     }
 
                     withIOContext { getOrDownloadImage(page, download, tmpDir, dataSaver) }
