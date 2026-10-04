@@ -613,12 +613,30 @@ abstract class HttpSource : CatalogueSource {
 
 object ChapterMemoCache {
     private val cache = java.util.concurrent.ConcurrentHashMap<String, JsonObject>()
+    private val initialized = java.util.concurrent.atomic.AtomicBoolean(false)
 
     private val prefs by lazy {
         try {
             Injekt.get<Application>().getSharedPreferences("source_chapter_memo_cache", Context.MODE_PRIVATE)
         } catch (_: Throwable) {
             null
+        }
+    }
+
+    private fun ensureInitialized() {
+        if (initialized.compareAndSet(false, true)) {
+            try {
+                prefs?.all?.forEach { (key, value) ->
+                    if (value is String) {
+                        try {
+                            val obj = Json.parseToJsonElement(value) as? JsonObject
+                            if (obj != null) {
+                                cache[key] = obj
+                            }
+                        } catch (_: Throwable) {}
+                    }
+                }
+            } catch (_: Throwable) {}
         }
     }
 
@@ -631,8 +649,10 @@ object ChapterMemoCache {
     }
 
     fun put(sourceId: Long, chapterUrl: String, memo: JsonObject) {
+        ensureInitialized()
         val norm = normalizeUrl(chapterUrl)
         val key = "${sourceId}_$norm"
+        if (cache[key] == memo) return
         cache[key] = memo
         try {
             prefs?.edit()?.putString(key, memo.toString())?.apply()
@@ -640,20 +660,11 @@ object ChapterMemoCache {
     }
 
     fun get(sourceId: Long, chapterUrl: String): JsonObject? {
+        ensureInitialized()
         val normTarget = normalizeUrl(chapterUrl)
         val keyPrefix = "${sourceId}_"
         val exactKey = "$keyPrefix$normTarget"
         cache[exactKey]?.let { return it }
-
-        prefs?.getString(exactKey, null)?.let { jsonStr ->
-            try {
-                val obj = Json.parseToJsonElement(jsonStr) as? JsonObject
-                if (obj != null) {
-                    cache[exactKey] = obj
-                    return obj
-                }
-            } catch (_: Throwable) {}
-        }
 
         for ((key, value) in cache) {
             if (key.startsWith(keyPrefix)) {
@@ -663,26 +674,11 @@ object ChapterMemoCache {
                 }
             }
         }
-
-        try {
-            prefs?.all?.forEach { (key, value) ->
-                if (key.startsWith(keyPrefix) && value is String) {
-                    val cachedNorm = key.substring(keyPrefix.length)
-                    if (cachedNorm == normTarget || cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
-                        val obj = Json.parseToJsonElement(value) as? JsonObject
-                        if (obj != null) {
-                            cache[key] = obj
-                            return obj
-                        }
-                    }
-                }
-            }
-        } catch (_: Throwable) {}
-
         return null
     }
 
     fun get(chapterUrl: String): JsonObject? {
+        ensureInitialized()
         val normTarget = normalizeUrl(chapterUrl)
         for ((key, value) in cache) {
             val keyUrl = key.substringAfter('_')
@@ -690,20 +686,6 @@ object ChapterMemoCache {
                 return value
             }
         }
-        try {
-            prefs?.all?.forEach { (key, value) ->
-                if (value is String) {
-                    val keyUrl = key.substringAfter('_')
-                    if (keyUrl == normTarget || keyUrl.endsWith(normTarget) || normTarget.endsWith(keyUrl)) {
-                        val obj = Json.parseToJsonElement(value) as? JsonObject
-                        if (obj != null) {
-                            cache[key] = obj
-                            return obj
-                        }
-                    }
-                }
-            }
-        } catch (_: Throwable) {}
         return null
     }
 
@@ -785,12 +767,30 @@ object ChapterMemoCache {
 
 object MangaMemoCache {
     private val cache = java.util.concurrent.ConcurrentHashMap<String, JsonObject>()
+    private val initialized = java.util.concurrent.atomic.AtomicBoolean(false)
 
     private val prefs by lazy {
         try {
             Injekt.get<Application>().getSharedPreferences("source_manga_memo_cache", Context.MODE_PRIVATE)
         } catch (_: Throwable) {
             null
+        }
+    }
+
+    private fun ensureInitialized() {
+        if (initialized.compareAndSet(false, true)) {
+            try {
+                prefs?.all?.forEach { (key, value) ->
+                    if (value is String) {
+                        try {
+                            val obj = Json.parseToJsonElement(value) as? JsonObject
+                            if (obj != null) {
+                                cache[key] = obj
+                            }
+                        } catch (_: Throwable) {}
+                    }
+                }
+            } catch (_: Throwable) {}
         }
     }
 
@@ -803,8 +803,10 @@ object MangaMemoCache {
     }
 
     fun put(sourceId: Long, mangaUrl: String, memo: JsonObject) {
+        ensureInitialized()
         val norm = normalizeUrl(mangaUrl)
         val key = "${sourceId}_$norm"
+        if (cache[key] == memo) return
         cache[key] = memo
         try {
             prefs?.edit()?.putString(key, memo.toString())?.apply()
@@ -812,20 +814,11 @@ object MangaMemoCache {
     }
 
     fun get(sourceId: Long, mangaUrl: String): JsonObject? {
+        ensureInitialized()
         val normTarget = normalizeUrl(mangaUrl)
         val keyPrefix = "${sourceId}_"
         val exactKey = "$keyPrefix$normTarget"
         cache[exactKey]?.let { return it }
-
-        prefs?.getString(exactKey, null)?.let { jsonStr ->
-            try {
-                val obj = Json.parseToJsonElement(jsonStr) as? JsonObject
-                if (obj != null) {
-                    cache[exactKey] = obj
-                    return obj
-                }
-            } catch (_: Throwable) {}
-        }
 
         for ((key, value) in cache) {
             if (key.startsWith(keyPrefix)) {
@@ -835,26 +828,11 @@ object MangaMemoCache {
                 }
             }
         }
-
-        try {
-            prefs?.all?.forEach { (key, value) ->
-                if (key.startsWith(keyPrefix) && value is String) {
-                    val cachedNorm = key.substring(keyPrefix.length)
-                    if (cachedNorm == normTarget || cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
-                        val obj = Json.parseToJsonElement(value) as? JsonObject
-                        if (obj != null) {
-                            cache[key] = obj
-                            return obj
-                        }
-                    }
-                }
-            }
-        } catch (_: Throwable) {}
-
         return null
     }
 
     fun get(mangaUrl: String): JsonObject? {
+        ensureInitialized()
         val normTarget = normalizeUrl(mangaUrl)
         for ((key, value) in cache) {
             val keyUrl = key.substringAfter('_')
@@ -862,20 +840,6 @@ object MangaMemoCache {
                 return value
             }
         }
-        try {
-            prefs?.all?.forEach { (key, value) ->
-                if (value is String) {
-                    val keyUrl = key.substringAfter('_')
-                    if (keyUrl == normTarget || keyUrl.endsWith(normTarget) || normTarget.endsWith(keyUrl)) {
-                        val obj = Json.parseToJsonElement(value) as? JsonObject
-                        if (obj != null) {
-                            cache[key] = obj
-                            return obj
-                        }
-                    }
-                }
-            }
-        } catch (_: Throwable) {}
         return null
     }
 
@@ -914,7 +878,9 @@ object MangaMemoCache {
             put("id", JsonPrimitive(currentId))
             put("slug", JsonPrimitive(resolvedSlug))
         }
-        put(sourceId, mangaUrl, result)
+        if (cached == null || cached != result) {
+            put(sourceId, mangaUrl, result)
+        }
         return result
     }
 

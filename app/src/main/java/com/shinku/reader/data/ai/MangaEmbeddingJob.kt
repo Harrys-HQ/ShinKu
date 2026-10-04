@@ -125,6 +125,7 @@ class MangaEmbeddingJob(
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.UNMETERED)
                 .setRequiresCharging(true)
+                .setRequiresDeviceIdle(true)
                 .build()
 
             val request = PeriodicWorkRequestBuilder<MangaEmbeddingJob>(
@@ -133,12 +134,13 @@ class MangaEmbeddingJob(
             )
                 .addTag(TAG)
                 .setConstraints(constraints)
+                .setInitialDelay(7, TimeUnit.DAYS)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.HOURS)
                 .build()
 
             context.workManager.enqueueUniquePeriodicWork(
                 TAG,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 request,
             )
         }

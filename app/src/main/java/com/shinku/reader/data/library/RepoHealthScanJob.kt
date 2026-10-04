@@ -163,7 +163,11 @@ class RepoHealthScanJob(private val context: Context, workerParams: WorkerParame
                     ensureActive()
                     // Apply health result to ALL source IDs associated with this URL
                     sources.forEach { source ->
-                        updateSourceHealth.await(source.id, success, if (success) latency else 0L, error)
+                        try {
+                            updateSourceHealth.await(source.id, success, if (success) latency else 0L, error)
+                        } catch (e: Exception) {
+                            logcat(LogPriority.WARN, e) { "Failed to update source health stats for ${source.id}" }
+                        }
                     }
                     
                     val current = processed.incrementAndGet()
@@ -185,18 +189,24 @@ class RepoHealthScanJob(private val context: Context, workerParams: WorkerParame
                 .setRequiresBatteryNotLow(true)
                 .build()
 
+            val inputData = workDataOf(
+                KEY_ONLY_INSTALLED to true,
+            )
+
             val request = PeriodicWorkRequestBuilder<RepoHealthScanJob>(
                 3, TimeUnit.DAYS,
                 12, TimeUnit.HOURS
             )
                 .addTag(TAG)
+                .setInputData(inputData)
                 .setConstraints(constraints)
+                .setInitialDelay(3, TimeUnit.DAYS)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.HOURS)
                 .build()
 
             context.workManager.enqueueUniquePeriodicWork(
                 TAG,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 request
             )
         }

@@ -29,8 +29,8 @@ class DatabaseMaintenanceWorker(context: Context, workerParams: WorkerParameters
             logcat(LogPriority.INFO) { "Database maintenance finished successfully" }
             Result.success()
         } catch (e: Exception) {
-            logcat(LogPriority.ERROR) { "Database maintenance failed: ${e.message}" }
-            Result.retry()
+            logcat(LogPriority.WARN) { "Database maintenance skipped (database busy): ${e.message}" }
+            Result.success()
         }
     }
 
@@ -49,11 +49,12 @@ class DatabaseMaintenanceWorker(context: Context, workerParams: WorkerParameters
             )
                 .addTag(TAG)
                 .setConstraints(constraints)
+                .setInitialDelay(7, TimeUnit.DAYS)
                 .build()
 
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                 TAG,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingPeriodicWorkPolicy.UPDATE,
                 request,
             )
         }

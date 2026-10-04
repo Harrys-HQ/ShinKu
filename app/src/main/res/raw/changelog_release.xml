@@ -4,6 +4,8 @@
         <changelogtext>[b]Fixed[/b]: Resolved error toast (NullPointerException on getClass) when opening or reading chapters from Drake Scans and other modern Keiyoushi multisrc extensions</changelogtext>
         <changelogtext>[b]Fixed[/b]: Introduced persistent MangaMemoCache and ChapterMemoCache with auto-synthesized fallback routing to ensure memo parameters survive restarts and background updates</changelogtext>
         <changelogtext>[b]Fixed[/b]: Pre-hydrate chapter routing parameters in reader WebView, Share actions, deep link ingestion, and ComicInfo download generation</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Optimized MangaMemoCache and ChapterMemoCache with one-time lazy init and deduplicated disk writes, eliminating OutOfMemoryError on large libraries</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Prevented startup database locks and battery drain by adding delays to periodic background workers and scoping health scans to installed sources</changelogtext>
     </changelogversion>
     <changelogversion versionName="2.7.6" changeDate="October 04,2026">
         <changelogtext>[b]Fixed[/b]: Resolved MangaDex chapter loading and download failure (cmdxd98sb0x3yprd.mangadex.networkhttps unknown host error) by eliminating improper baseUrl prepending on relative page paths</changelogtext>
