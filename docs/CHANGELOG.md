@@ -1,5 +1,11 @@
 # ShinKu Changelog
 
+## 2.7.7 "Keiyoushi KeiSource & VineTheme Compatibility Hotfix" (2026-10-05)
+### Fixed
+- **Keiyoushi KeiSource & VineTheme Chapter Loading**: Resolved `Attempt to invoke virtual method 'java.lang.Class java.lang.Object.getClass()' on a null object reference` error toast when opening or downloading chapters from Drake Scans and other modern Keiyoushi multisrc extensions (`VineTheme`) by ensuring chapter and manga routing metadata are consistently maintained and hydrated.
+- **Persistent Memo Routing Cache**: Introduced persistent `MangaMemoCache` and persistent `ChapterMemoCache` with auto-synthesized fallback routing to guarantee that required routing parameters (`slug`, `number`, `isLocked`, and `id`) survive app restarts, deep links, and process termination without requiring breaking SQLite schema migrations.
+- **Reader & Downloader Metadata Pre-Hydration**: Pre-hydrated chapter routing metadata across Reader WebView and Share actions, background library update workers, deep link ingestion, and ComicInfo XML generation during chapter downloads.
+
 ## 2.7.6 "MangaDex Image Resolution Hotfix" (2026-10-04)
 ### Fixed
 - **MangaDex Chapter Loading & Downloads**: Resolved `Unable to resolve host: cmdxd98sb0x3yprd.mangadex.networkhttps` error when opening or downloading MangaDex chapters by removing improper `baseUrl` prepending on relative page paths. Standard sources continue to resolve relative URLs through `HttpSource.imageRequest` while sources with dynamic CDN nodes retain clean relative paths.

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.7" changeDate="October 05,2026">
+        <changelogtext>[b]Fixed[/b]: Resolved error toast (NullPointerException on getClass) when opening or reading chapters from Drake Scans and other modern Keiyoushi multisrc extensions</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Introduced persistent MangaMemoCache and ChapterMemoCache with auto-synthesized fallback routing to ensure memo parameters survive restarts and background updates</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Pre-hydrate chapter routing parameters in reader WebView, Share actions, deep link ingestion, and ComicInfo download generation</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.6" changeDate="October 04,2026">
         <changelogtext>[b]Fixed[/b]: Resolved MangaDex chapter loading and download failure (cmdxd98sb0x3yprd.mangadex.networkhttps unknown host error) by eliminating improper baseUrl prepending on relative page paths</changelogtext>
         <changelogtext>[b]Fixed[/b]: Automatically detect and recover from corrupted legacy chapter cache entries for MangaDex</changelogtext>
