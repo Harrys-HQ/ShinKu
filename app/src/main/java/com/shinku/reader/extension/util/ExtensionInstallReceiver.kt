@@ -81,7 +81,7 @@ internal class ExtensionInstallReceiver(private val listener: Listener) : Broadc
 
                     var result = ExtensionLoader.loadExtensionFromPkgName(context, pkgName)
                     if (expectedVersionCode != null) {
-                        val expected = expectedVersionCode.toLong()
+                        val expected = expectedVersionCode
                         var attempts = 0
                         while (attempts < 5) {
                             val currentVersionCode = when (result) {

@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.5" changeDate="October 04,2026">
+        <changelogtext>[b]Fixed[/b]: Eliminated OS thread leaks across Search and Feed screens by transitioning to Dispatchers.IO.limitedParallelism</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Resolved search result state race condition preventing manga sources from remaining stuck in Loading state</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Added source ID tie-breakers to search sorting to eliminate TreeMap key collisions on duplicate sources</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Polish reader error views by disabling retry on permanent HTTP 404/410 errors and compacting webtoon layout</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Safely handle unresolvable page image URLs with automated full page list refresh fallback</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.4" changeDate="September 30,2026">
         <changelogtext>[b]Fixed[/b]: Resolved reader retry crash and URL loss on modern extensions (e.g. MangaFreak) with auto-healing page list reload</changelogtext>
         <changelogtext>[b]Fixed[/b]: Universal URL scheme normalization for protocol-relative and domain-relative image and cover links</changelogtext>

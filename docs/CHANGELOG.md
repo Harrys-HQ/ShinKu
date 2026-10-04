@@ -1,5 +1,14 @@
 # ShinKu Changelog
 
+## 2.7.5 "Search Concurrency & Thread Optimization" (2026-10-04)
+### Fixed
+- **Browse & Search OS Thread Leaks**: Replaced raw `Executors.newFixedThreadPool` with coroutines `Dispatchers.IO.limitedParallelism` across `SearchScreenModel`, `FeedScreenModel`, and `SourceFeedScreenModel`. Eliminates silent thread leaks where multiple unclosed OS threads accumulated on every search and feed screen navigation.
+- **Search Item Loading State Race Condition**: Fixed a state-update race condition in `SearchScreenModel` where concurrent source completions evaluated items outside of atomic updates, causing parallel search results to overwrite each other and leave sources stuck in the "Loading" state indefinitely.
+- **TreeMap Key Collision on Duplicate Sources**: Added unique source ID tie-breakers to `sortComparator` in `SearchScreenModel` and `MigrateSearchScreenModel` to prevent `TreeMap` from colliding and overwriting sources that share the same name and language.
+- **Reader Error Layout Polish**: Disabled futile retry triggers on permanent HTTP errors (404 Not Found and 410 Gone) in both Pager and Webtoon reader viewers, and reduced error container height in Webtoon viewer to prevent layout disruption.
+- **Graceful Unresolvable Image URL Handling**: Hardened `HttpPageLoader` to safely catch `UnsupportedOperationException` when extensions fail to resolve individual page URLs and automatically fall back to refreshing the complete page list.
+- **Redundant Nullability & Type Conversions**: Cleaned up unnecessary non-null assertions and redundant type conversions in `MangaCoverFetcher`, `Downloader`, and `ExtensionInstallReceiver`.
+
 ## 2.7.4 "Reader Resilience & AI Modernization" (2026-09-30)
 ### Added
 - **Gemini 3.x AI Modernization & Testing**: Upgraded Gemini AI model offerings with direct support for the latest model families (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`, `gemini-1.5-flash`). Added a real-time **"Test Model"** diagnostic action directly inside AI Settings to verify API key validity, connectivity, and response latency.

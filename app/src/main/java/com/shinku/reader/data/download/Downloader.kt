@@ -660,7 +660,7 @@ class Downloader(
             }
         val source = download.source
         val client = source.client
-        val downloadId = download.chapter.id!!
+        val downloadId = download.chapter.id
 
         // 1. Check for range support
         val headRequest = Request.Builder().url(url).head().build()

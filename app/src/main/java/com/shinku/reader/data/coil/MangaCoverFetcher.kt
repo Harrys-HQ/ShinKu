@@ -180,8 +180,9 @@ class MangaCoverFetcher(
     }
 
     private fun newRequest(): Request {
+        val currentUrl = url ?: error("Cover URL is null")
         val request = Request.Builder().apply {
-            val normalizedUrl = if (url!!.startsWith("//")) "https:$url" else url!!
+            val normalizedUrl = if (currentUrl.startsWith("//")) "https:$currentUrl" else currentUrl
             url(normalizedUrl)
 
             val sourceHeaders = sourceLazy.value?.headers
