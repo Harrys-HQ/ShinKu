@@ -207,8 +207,8 @@ internal class HttpPageLoader(
         if (page.status is Page.State.Error) {
             page.status = Page.State.Queue
         }
-        // Force re-fetch of CDN image URL on retry only if the source supports resolving image URLs from page.url
-        if (source.isEhBasedSource() || page.url.isNotBlank()) {
+        // Force re-fetch of CDN image URL on retry only for EHentai-based sources that dynamically renew leases
+        if (source.isEhBasedSource()) {
             page.imageUrl = null
         }
 
@@ -280,8 +280,18 @@ internal class HttpPageLoader(
                 attempts++
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
-                    if (page.url.isNotBlank()) {
-                        page.imageUrl = source.getImageUrl(page)
+                    val resolvedUrl = if (page.url.isNotBlank()) {
+                        try {
+                            source.getImageUrl(page)
+                        } catch (e: UnsupportedOperationException) {
+                            null
+                        }
+                    } else {
+                        null
+                    }
+
+                    if (!resolvedUrl.isNullOrEmpty()) {
+                        page.imageUrl = resolvedUrl
                     } else {
                         // Refresh the entire page list from source to retrieve fresh URLs
                         val freshPages = source.getPageList(chapter.chapter)

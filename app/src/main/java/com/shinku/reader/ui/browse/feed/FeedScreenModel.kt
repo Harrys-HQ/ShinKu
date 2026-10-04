@@ -18,7 +18,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -57,7 +56,6 @@ import com.shinku.reader.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
-import java.util.concurrent.Executors
 import com.shinku.reader.domain.manga.model.Manga as DomainManga
 
 /**
@@ -86,7 +84,7 @@ open class FeedScreenModel(
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
 
-    private val coroutineDispatcher = Executors.newFixedThreadPool(1).asCoroutineDispatcher()
+    private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
     var pushed: Boolean = false
 
     init {
@@ -727,10 +725,6 @@ open class FeedScreenModel(
                     value = manga
                 }
         }
-    }
-    override fun onDispose() {
-        super.onDispose()
-        coroutineDispatcher.close()
     }
 
     fun dismissDialog() {

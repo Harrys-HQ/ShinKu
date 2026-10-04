@@ -20,7 +20,6 @@ import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.ensureActive
@@ -42,7 +41,6 @@ import com.shinku.reader.core.common.util.system.logcat
 import logcat.LogPriority
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import java.util.concurrent.Executors
 
 import android.net.Uri
 import android.util.Base64
@@ -62,7 +60,7 @@ abstract class SearchScreenModel(
     private val context: Context = Injekt.get(),
 ) : StateScreenModel<SearchScreenModel.State>(initialState) {
 
-    private val coroutineDispatcher = Executors.newFixedThreadPool(5).asCoroutineDispatcher()
+    private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(5)
     private var searchJob: Job? = null
 
     private val enabledLanguages = sourcePreferences.enabledLanguages().get()
@@ -81,6 +79,7 @@ abstract class SearchScreenModel(
             { (map[it] as? SearchItemResult.Success)?.isEmpty ?: true },
             { "${it.id}" !in pinnedSources },
             { "${it.name.lowercase()} (${it.lang})" },
+            { it.id },
         )
     }
 
@@ -303,10 +302,16 @@ abstract class SearchScreenModel(
     }
 
     private fun updateItem(source: CatalogueSource, result: SearchItemResult) {
-        val newItems = state.value.items.mutate {
-            it[source] = result
+        mutableState.update { currentState ->
+            val newItems = currentState.items.mutate {
+                it[source] = result
+            }
+            currentState.copy(
+                items = newItems
+                    .toSortedMap(sortComparator(newItems))
+                    .toPersistentMap(),
+            )
         }
-        updateItems(newItems)
     }
 
     fun setMigrateDialog(currentId: Long, target: Manga) {

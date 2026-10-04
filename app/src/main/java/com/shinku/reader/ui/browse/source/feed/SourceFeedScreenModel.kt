@@ -22,7 +22,7 @@ import com.shinku.reader.exh.util.nullIfBlank
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.collectLatest
@@ -52,7 +52,6 @@ import com.shinku.reader.i18n.sy.SYMR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
-import java.util.concurrent.Executors
 import com.shinku.reader.domain.manga.model.Manga as DomainManga
 
 open class SourceFeedScreenModel(
@@ -74,7 +73,7 @@ open class SourceFeedScreenModel(
 
     val sourceIsMangaDex = sourceId in mangaDexSourceIds
 
-    private val coroutineDispatcher = Executors.newFixedThreadPool(5).asCoroutineDispatcher()
+    private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(5)
 
     val startExpanded by uiPreferences.expandFilters().asState(screenModelScope)
 
@@ -310,10 +309,6 @@ open class SourceFeedScreenModel(
         data class AddFeed(val feedId: Long, val name: String) : Dialog()
     }
 
-    override fun onDispose() {
-        super.onDispose()
-        coroutineDispatcher.close()
-    }
 }
 
 @Immutable

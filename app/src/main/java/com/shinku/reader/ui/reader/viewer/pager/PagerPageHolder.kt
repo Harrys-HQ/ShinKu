@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import androidx.core.view.isVisible
 import com.shinku.reader.presentation.util.formattedMessage
 import com.shinku.reader.databinding.ReaderErrorBinding
+import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.model.Page
 import com.shinku.reader.ui.reader.model.InsertPage
 import com.shinku.reader.ui.reader.model.ReaderPage
@@ -447,6 +448,10 @@ class PagerPageHolder(
                 page.chapter.pageLoader?.retryPage(page)
             }
         }
+
+        val httpError = error as? HttpException ?: (error?.cause as? HttpException)
+        val isPermanentHttpError = httpError != null && (httpError.code == 404 || httpError.code == 410)
+        errorLayout?.actionRetry?.isVisible = !isPermanentHttpError
 
         val imageUrl = page.imageUrl
         errorLayout?.actionOpenInWebView?.isVisible = imageUrl != null

@@ -30,6 +30,7 @@ class MigrateSearchScreenModel(
                 val index = migrationSources.indexOf(it.id)
                 if (index != -1) index else Int.MAX_VALUE
             },
+            { it.id },
         )
     }
 

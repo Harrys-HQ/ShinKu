@@ -12,6 +12,7 @@ import androidx.core.view.updateMargins
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.shinku.reader.presentation.util.formattedMessage
 import com.shinku.reader.databinding.ReaderErrorBinding
+import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.model.Page
 import com.shinku.reader.ui.reader.model.ReaderPage
 import com.shinku.reader.ui.reader.viewer.ReaderPageImageView
@@ -289,10 +290,20 @@ class WebtoonPageHolder(
     private fun initErrorLayout(error: Throwable?): ReaderErrorBinding {
         if (errorLayout == null) {
             errorLayout = ReaderErrorBinding.inflate(LayoutInflater.from(context), frame, true)
-            errorLayout?.root?.layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, (parentHeight * 0.8).toInt())
             errorLayout?.actionRetry?.setOnClickListener {
                 page?.let { it.chapter.pageLoader?.retryPage(it) }
             }
+        }
+
+        val httpError = error as? HttpException ?: (error?.cause as? HttpException)
+        val isPermanentHttpError = httpError != null && (httpError.code == 404 || httpError.code == 410)
+        errorLayout?.actionRetry?.isVisible = !isPermanentHttpError
+
+        if (isPermanentHttpError) {
+            val compactHeight = (140 * context.resources.displayMetrics.density).toInt()
+            errorLayout?.root?.layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, compactHeight)
+        } else {
+            errorLayout?.root?.layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, (parentHeight * 0.8).toInt())
         }
 
         val imageUrl = page?.imageUrl
