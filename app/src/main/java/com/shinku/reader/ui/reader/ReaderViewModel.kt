@@ -14,6 +14,7 @@ import com.shinku.reader.domain.chapter.model.toDbChapter
 import com.shinku.reader.domain.manga.interactor.SetMangaViewerFlags
 import com.shinku.reader.domain.manga.model.readerOrientation
 import com.shinku.reader.domain.manga.model.readingMode
+import com.shinku.reader.domain.manga.model.toSManga
 import com.shinku.reader.domain.source.interactor.GetIncognitoState
 import com.shinku.reader.domain.sync.SyncPreferences
 import com.shinku.reader.domain.track.interactor.SyncTrack
@@ -927,8 +928,18 @@ class ReaderViewModel(
     fun getSource() = manga?.source?.let { sourceManager.getOrStub(it) } as? HttpSource
 
     fun getChapterUrl(): String? {
-        val sChapter = getCurrentChapter()?.chapter ?: return null
+        val current = getCurrentChapter() ?: return null
+        val sChapter = current.chapter
         val source = getSource() ?: return null
+        val currentManga = current.manga ?: manga
+
+        eu.kanade.tachiyomi.source.online.ChapterMemoCache.ensureChapterMemo(
+            sourceId = source.id,
+            chapter = sChapter,
+            mangaUrl = currentManga?.url,
+            mangaTitle = currentManga?.ogTitle,
+            mangaMemo = currentManga?.toSManga()?.memo,
+        )
 
         return try {
             source.getChapterUrl(sChapter)

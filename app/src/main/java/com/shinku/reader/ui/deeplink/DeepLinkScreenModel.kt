@@ -35,11 +35,15 @@ class DeepLinkScreenModel(
                 .firstOrNull { it.getUriType(query) != UriType.Unknown }
 
             val manga = source?.getManga(query)?.let {
+                it.memo?.let { memo -> eu.kanade.tachiyomi.source.online.MangaMemoCache.put(source.id, it.url, memo) }
                 networkToLocalManga(it.toDomainManga(source.id))
             }
 
             val chapter = if (source?.getUriType(query) == UriType.Chapter && manga != null) {
-                source.getChapter(query)?.let { getChapterFromSChapter(it, manga, source) }
+                source.getChapter(query)?.let {
+                    it.memo?.let { memo -> eu.kanade.tachiyomi.source.online.ChapterMemoCache.put(source.id, it.url, memo) }
+                    getChapterFromSChapter(it, manga, source)
+                }
             } else {
                 null
             }

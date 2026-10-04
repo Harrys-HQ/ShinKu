@@ -13,6 +13,7 @@ fun Chapter.toSChapter(): SChapter {
         it.date_upload = dateUpload
         it.chapter_number = chapterNumber.toFloat()
         it.scanlator = scanlator
+        it.memo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(url)
     }
 }
 
@@ -40,4 +41,5 @@ fun Chapter.toDbChapter(): DbChapter = ChapterImpl().also {
     it.chapter_number = chapterNumber.toFloat()
     it.source_order = sourceOrder.toInt()
     it.last_modified = lastModifiedAt
+    it.memo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(url)
 }

@@ -1,6 +1,11 @@
 package eu.kanade.tachiyomi.source.online
 
 import android.app.Application
+import android.content.Context
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import eu.kanade.tachiyomi.network.AndroidCookieJar
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -153,7 +158,11 @@ abstract class HttpSource : CatalogueSource {
      * @param page the page number to retrieve.
      */
     override suspend fun getPopularManga(page: Int): MangasPage {
-        return fetchPopularManga(page).awaitSingle()
+        val result = fetchPopularManga(page).awaitSingle()
+        result.mangas.forEach { manga ->
+            manga.memo?.let { MangaMemoCache.put(id, manga.url, it) }
+        }
+        return result
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getPopularManga"))
@@ -192,7 +201,11 @@ abstract class HttpSource : CatalogueSource {
         query: String,
         filters: FilterList,
     ): MangasPage {
-        return fetchSearchManga(page, query, filters).awaitSingle()
+        val result = fetchSearchManga(page, query, filters).awaitSingle()
+        result.mangas.forEach { manga ->
+            manga.memo?.let { MangaMemoCache.put(id, manga.url, it) }
+        }
+        return result
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getSearchManga"))
@@ -242,7 +255,11 @@ abstract class HttpSource : CatalogueSource {
      * @param page the page number to retrieve.
      */
     override suspend fun getLatestUpdates(page: Int): MangasPage {
-        return fetchLatestUpdates(page).awaitSingle()
+        val result = fetchLatestUpdates(page).awaitSingle()
+        result.mangas.forEach { manga ->
+            manga.memo?.let { MangaMemoCache.put(id, manga.url, it) }
+        }
+        return result
     }
 
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getLatestUpdates"))
@@ -279,12 +296,23 @@ abstract class HttpSource : CatalogueSource {
      */
     @Suppress("DEPRECATION")
     override suspend fun getMangaDetails(manga: SManga): SManga {
+        manga.memo?.let { MangaMemoCache.put(id, manga.url, it) }
         return if (hasGetMangaUpdate) {
             MangaUpdateLock.get(id, manga.url).withLock {
-                getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga
+                val result = getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga
+                result.memo?.let { memo ->
+                    MangaMemoCache.put(id, manga.url, memo)
+                    MangaMemoCache.put(id, result.url, memo)
+                }
+                result
             }
         } else {
-            fetchMangaDetails(manga).awaitSingle()
+            val result = fetchMangaDetails(manga).awaitSingle()
+            result.memo?.let { memo ->
+                MangaMemoCache.put(id, manga.url, memo)
+                MangaMemoCache.put(id, result.url, memo)
+            }
+            result
         }
     }
 
@@ -323,9 +351,17 @@ abstract class HttpSource : CatalogueSource {
      */
     @Suppress("DEPRECATION")
     override suspend fun getChapterList(manga: SManga): List<SChapter> {
+        manga.memo?.let { memo ->
+            MangaMemoCache.put(id, manga.url, memo)
+        }
         return if (hasGetMangaUpdate) {
             MangaUpdateLock.get(id, manga.url).withLock {
-                val result = getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true).chapters
+                val update = getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true)
+                update.manga.memo?.let { memo ->
+                    MangaMemoCache.put(id, manga.url, memo)
+                    MangaMemoCache.put(id, update.manga.url, memo)
+                }
+                val result = update.chapters
                 result.forEach { chapter ->
                     chapter.memo?.let { memo ->
                         ChapterMemoCache.put(id, chapter.url, memo)
@@ -576,31 +612,317 @@ abstract class HttpSource : CatalogueSource {
 }
 
 object ChapterMemoCache {
-    private val cache = java.util.concurrent.ConcurrentHashMap<String, kotlinx.serialization.json.JsonObject>()
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, JsonObject>()
+
+    private val prefs by lazy {
+        try {
+            Injekt.get<Application>().getSharedPreferences("source_chapter_memo_cache", Context.MODE_PRIVATE)
+        } catch (_: Throwable) {
+            null
+        }
+    }
 
     private fun normalizeUrl(url: String): String {
-        return url.removePrefix("http://").removePrefix("https://").removePrefix("www.").trim().trimEnd('/')
+        return url.removePrefix("http://")
+            .removePrefix("https://")
+            .removePrefix("www.")
+            .trim()
+            .trim('/')
     }
 
-    fun put(sourceId: Long, chapterUrl: String, memo: kotlinx.serialization.json.JsonObject) {
-        val key = "${sourceId}_${normalizeUrl(chapterUrl)}"
+    fun put(sourceId: Long, chapterUrl: String, memo: JsonObject) {
+        val norm = normalizeUrl(chapterUrl)
+        val key = "${sourceId}_$norm"
         cache[key] = memo
+        try {
+            prefs?.edit()?.putString(key, memo.toString())?.apply()
+        } catch (_: Throwable) {}
     }
 
-    fun get(sourceId: Long, chapterUrl: String): kotlinx.serialization.json.JsonObject? {
+    fun get(sourceId: Long, chapterUrl: String): JsonObject? {
         val normTarget = normalizeUrl(chapterUrl)
         val keyPrefix = "${sourceId}_"
-        cache["$keyPrefix$normTarget"]?.let { return it }
+        val exactKey = "$keyPrefix$normTarget"
+        cache[exactKey]?.let { return it }
+
+        prefs?.getString(exactKey, null)?.let { jsonStr ->
+            try {
+                val obj = Json.parseToJsonElement(jsonStr) as? JsonObject
+                if (obj != null) {
+                    cache[exactKey] = obj
+                    return obj
+                }
+            } catch (_: Throwable) {}
+        }
 
         for ((key, value) in cache) {
             if (key.startsWith(keyPrefix)) {
                 val cachedNorm = key.substring(keyPrefix.length)
-                if (cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
+                if (cachedNorm == normTarget || cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
                     return value
                 }
             }
         }
+
+        try {
+            prefs?.all?.forEach { (key, value) ->
+                if (key.startsWith(keyPrefix) && value is String) {
+                    val cachedNorm = key.substring(keyPrefix.length)
+                    if (cachedNorm == normTarget || cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
+                        val obj = Json.parseToJsonElement(value) as? JsonObject
+                        if (obj != null) {
+                            cache[key] = obj
+                            return obj
+                        }
+                    }
+                }
+            }
+        } catch (_: Throwable) {}
+
         return null
+    }
+
+    fun get(chapterUrl: String): JsonObject? {
+        val normTarget = normalizeUrl(chapterUrl)
+        for ((key, value) in cache) {
+            val keyUrl = key.substringAfter('_')
+            if (keyUrl == normTarget || keyUrl.endsWith(normTarget) || normTarget.endsWith(keyUrl)) {
+                return value
+            }
+        }
+        try {
+            prefs?.all?.forEach { (key, value) ->
+                if (value is String) {
+                    val keyUrl = key.substringAfter('_')
+                    if (keyUrl == normTarget || keyUrl.endsWith(normTarget) || normTarget.endsWith(keyUrl)) {
+                        val obj = Json.parseToJsonElement(value) as? JsonObject
+                        if (obj != null) {
+                            cache[key] = obj
+                            return obj
+                        }
+                    }
+                }
+            }
+        } catch (_: Throwable) {}
+        return null
+    }
+
+    fun ensureChapterMemo(
+        sourceId: Long,
+        chapter: SChapter,
+        mangaUrl: String? = null,
+        mangaTitle: String? = null,
+        mangaMemo: JsonObject? = null,
+    ): JsonObject {
+        val existing = chapter.memo?.takeIf { !it.isEmpty() }
+            ?: (if (sourceId != 0L) get(sourceId, chapter.url) else null)
+            ?: get(chapter.url)
+
+        val existingSlug = (existing?.get("slug") as? JsonPrimitive)?.content
+        val existingNumber = (existing?.get("number") as? JsonPrimitive)?.content
+        val existingLocked = (existing?.get("isLocked") as? JsonPrimitive)?.content?.toBooleanStrictOrNull()
+
+        val resolvedSlug = if (!existingSlug.isNullOrBlank()) {
+            existingSlug
+        } else {
+            val mSlug = (mangaMemo?.get("slug") as? JsonPrimitive)?.content
+            if (!mSlug.isNullOrBlank()) {
+                mSlug
+            } else if (mangaUrl != null) {
+                val cachedManga = if (sourceId != 0L) MangaMemoCache.get(sourceId, mangaUrl) else MangaMemoCache.get(mangaUrl)
+                val cSlug = (cachedManga?.get("slug") as? JsonPrimitive)?.content
+                if (!cSlug.isNullOrBlank()) {
+                    cSlug
+                } else {
+                    MangaMemoCache.resolveSlug(mangaUrl, mangaTitle)
+                }
+            } else if (!mangaTitle.isNullOrBlank()) {
+                MangaMemoCache.resolveSlug("", mangaTitle)
+            } else {
+                ""
+            }
+        }
+
+        val resolvedNumber = if (!existingNumber.isNullOrBlank()) {
+            existingNumber
+        } else {
+            if (chapter.chapter_number >= 0f) {
+                if (chapter.chapter_number % 1.0f == 0.0f) {
+                    chapter.chapter_number.toInt().toString()
+                } else {
+                    chapter.chapter_number.toString()
+                }
+            } else {
+                val match = Regex("""(?:chapter\s*|ch\.\s*|#\s*)?(\d+(?:\.\d+)?)""", RegexOption.IGNORE_CASE).find(chapter.name)
+                match?.groupValues?.get(1) ?: "1"
+            }
+        }
+
+        val resolvedLocked = existingLocked ?: false
+        val resolvedId = (existing?.get("id") as? JsonPrimitive)?.content ?: chapter.url
+
+        val result = buildJsonObject {
+            existing?.forEach { (k, v) -> put(k, v) }
+            put("id", JsonPrimitive(resolvedId))
+            put("slug", JsonPrimitive(resolvedSlug))
+            put("number", JsonPrimitive(resolvedNumber))
+            put("isLocked", JsonPrimitive(resolvedLocked))
+        }
+        chapter.memo = result
+        if (sourceId != 0L) {
+            put(sourceId, chapter.url, result)
+        }
+        return result
+    }
+
+    fun clear() {
+        cache.clear()
+        try {
+            prefs?.edit()?.clear()?.apply()
+        } catch (_: Throwable) {}
+    }
+}
+
+object MangaMemoCache {
+    private val cache = java.util.concurrent.ConcurrentHashMap<String, JsonObject>()
+
+    private val prefs by lazy {
+        try {
+            Injekt.get<Application>().getSharedPreferences("source_manga_memo_cache", Context.MODE_PRIVATE)
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun normalizeUrl(url: String): String {
+        return url.removePrefix("http://")
+            .removePrefix("https://")
+            .removePrefix("www.")
+            .trim()
+            .trim('/')
+    }
+
+    fun put(sourceId: Long, mangaUrl: String, memo: JsonObject) {
+        val norm = normalizeUrl(mangaUrl)
+        val key = "${sourceId}_$norm"
+        cache[key] = memo
+        try {
+            prefs?.edit()?.putString(key, memo.toString())?.apply()
+        } catch (_: Throwable) {}
+    }
+
+    fun get(sourceId: Long, mangaUrl: String): JsonObject? {
+        val normTarget = normalizeUrl(mangaUrl)
+        val keyPrefix = "${sourceId}_"
+        val exactKey = "$keyPrefix$normTarget"
+        cache[exactKey]?.let { return it }
+
+        prefs?.getString(exactKey, null)?.let { jsonStr ->
+            try {
+                val obj = Json.parseToJsonElement(jsonStr) as? JsonObject
+                if (obj != null) {
+                    cache[exactKey] = obj
+                    return obj
+                }
+            } catch (_: Throwable) {}
+        }
+
+        for ((key, value) in cache) {
+            if (key.startsWith(keyPrefix)) {
+                val cachedNorm = key.substring(keyPrefix.length)
+                if (cachedNorm == normTarget || cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
+                    return value
+                }
+            }
+        }
+
+        try {
+            prefs?.all?.forEach { (key, value) ->
+                if (key.startsWith(keyPrefix) && value is String) {
+                    val cachedNorm = key.substring(keyPrefix.length)
+                    if (cachedNorm == normTarget || cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
+                        val obj = Json.parseToJsonElement(value) as? JsonObject
+                        if (obj != null) {
+                            cache[key] = obj
+                            return obj
+                        }
+                    }
+                }
+            }
+        } catch (_: Throwable) {}
+
+        return null
+    }
+
+    fun get(mangaUrl: String): JsonObject? {
+        val normTarget = normalizeUrl(mangaUrl)
+        for ((key, value) in cache) {
+            val keyUrl = key.substringAfter('_')
+            if (keyUrl == normTarget || keyUrl.endsWith(normTarget) || normTarget.endsWith(keyUrl)) {
+                return value
+            }
+        }
+        try {
+            prefs?.all?.forEach { (key, value) ->
+                if (value is String) {
+                    val keyUrl = key.substringAfter('_')
+                    if (keyUrl == normTarget || keyUrl.endsWith(normTarget) || normTarget.endsWith(keyUrl)) {
+                        val obj = Json.parseToJsonElement(value) as? JsonObject
+                        if (obj != null) {
+                            cache[key] = obj
+                            return obj
+                        }
+                    }
+                }
+            }
+        } catch (_: Throwable) {}
+        return null
+    }
+
+    fun resolveSlug(url: String, title: String?): String {
+        val cleanUrl = url.trim().trim('/')
+        if (cleanUrl.contains("/")) {
+            val segment = cleanUrl.substringAfterLast('/').substringBefore('?')
+            if (segment.isNotBlank()) return segment
+        }
+        if (!title.isNullOrBlank()) {
+            val fromTitle = title.lowercase()
+                .replace(Regex("[^a-z0-9]+"), "-")
+                .trim('-')
+            if (fromTitle.isNotBlank()) return fromTitle
+        }
+        return cleanUrl
+    }
+
+    fun ensureMangaMemo(
+        sourceId: Long,
+        mangaUrl: String,
+        title: String? = null,
+        existingMemo: JsonObject? = null,
+    ): JsonObject {
+        val cached = existingMemo ?: get(sourceId, mangaUrl) ?: get(mangaUrl)
+        val currentSlug = (cached?.get("slug") as? JsonPrimitive)?.content
+        val resolvedSlug = if (!currentSlug.isNullOrBlank()) {
+            currentSlug
+        } else {
+            resolveSlug(mangaUrl, title)
+        }
+        val currentId = (cached?.get("id") as? JsonPrimitive)?.content ?: mangaUrl
+
+        val result = buildJsonObject {
+            cached?.forEach { (k, v) -> put(k, v) }
+            put("id", JsonPrimitive(currentId))
+            put("slug", JsonPrimitive(resolvedSlug))
+        }
+        put(sourceId, mangaUrl, result)
+        return result
+    }
+
+    fun clear() {
+        cache.clear()
+        try {
+            prefs?.edit()?.clear()?.apply()
+        } catch (_: Throwable) {}
     }
 }
 

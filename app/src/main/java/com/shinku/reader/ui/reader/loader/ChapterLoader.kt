@@ -43,6 +43,9 @@ class ChapterLoader(
      * is already loaded.
      */
     suspend fun loadChapter(chapter: ReaderChapter /* SY --> */, page: Int? = null/* SY <-- */) {
+        if (chapter.manga == null) {
+            chapter.manga = manga
+        }
         if (chapterIsReady(chapter)) {
             return
         }
@@ -109,6 +112,7 @@ class ChapterLoader(
                 val source = sourceManager.get(mangaReference.mangaSourceId)
                     ?: error("Source ${mangaReference.mangaSourceId} was null")
                 val manga = mergedManga[chapter.chapter.manga_id] ?: error("Manga for merged chapter was null")
+                chapter.manga = manga
                 val isMergedMangaDownloaded = downloadManager.isChapterDownloaded(
                     chapterName = chapter.chapter.name,
                     chapterScanlator = chapter.chapter.scanlator,

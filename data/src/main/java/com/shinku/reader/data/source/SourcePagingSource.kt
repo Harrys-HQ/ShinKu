@@ -79,6 +79,11 @@ abstract class BaseSourcePagingSource(
             emptyList()
         }
 
+        val sourceId = source?.id ?: 0L
+        mangasPage.mangas.forEach { sManga ->
+            sManga.memo?.let { eu.kanade.tachiyomi.source.online.MangaMemoCache.put(sourceId, sManga.url, it) }
+        }
+
         val manga = mangasPage.mangas.mapIndexed { index, sManga -> sManga.toDomainManga(source!!.id) to metadata.getOrNull(index) }
             .filter { seenManga.add(it.first.url) }
             .let { manga -> manga.zip(networkToLocalManga(manga.map { it.first })).map { it.second to it.first.second } }

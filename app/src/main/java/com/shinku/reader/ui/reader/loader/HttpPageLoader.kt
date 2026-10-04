@@ -113,28 +113,38 @@ internal class HttpPageLoader(
             if (e is CancellationException) {
                 throw e
             }
-            if (chapter.chapter.memo == null || chapter.chapter.memo!!.isEmpty()) {
-                var cachedMemo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(source.id, chapter.chapter.url)
-                if (cachedMemo == null) {
-                    val manga = chapter.manga
-                    if (manga != null) {
-                        try {
-                            val networkChapters = source.getChapterList(manga.toSManga())
-                            networkChapters.forEach { netChapter ->
-                                netChapter.memo?.let { m ->
-                                    eu.kanade.tachiyomi.source.online.ChapterMemoCache.put(source.id, netChapter.url, m)
-                                }
+            var memo = chapter.chapter.memo?.takeIf { !it.isEmpty() }
+                ?: eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(source.id, chapter.chapter.url)
+
+            val needsNetworkFetch = memo == null ||
+                (memo["slug"] as? kotlinx.serialization.json.JsonPrimitive)?.content.isNullOrBlank() ||
+                (memo["number"] as? kotlinx.serialization.json.JsonPrimitive)?.content.isNullOrBlank()
+
+            if (needsNetworkFetch) {
+                val manga = chapter.manga
+                if (manga != null) {
+                    try {
+                        val networkChapters = source.getChapterList(manga.toSManga())
+                        networkChapters.forEach { netChapter ->
+                            netChapter.memo?.let { m ->
+                                eu.kanade.tachiyomi.source.online.ChapterMemoCache.put(source.id, netChapter.url, m)
                             }
-                            cachedMemo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(source.id, chapter.chapter.url)
-                        } catch (t: Throwable) {
-                            // ignore
                         }
+                    } catch (t: Throwable) {
+                        // ignore
                     }
                 }
-                cachedMemo?.let {
-                    chapter.chapter.memo = it
-                }
             }
+
+            val manga = chapter.manga
+            chapter.chapter.memo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.ensureChapterMemo(
+                sourceId = source.id,
+                chapter = chapter.chapter,
+                mangaUrl = manga?.url,
+                mangaTitle = manga?.ogTitle,
+                mangaMemo = manga?.toSManga()?.memo,
+            )
+
             source.getPageList(chapter.chapter)
         }
         // SY -->

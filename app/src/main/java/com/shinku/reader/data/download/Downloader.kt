@@ -377,25 +377,34 @@ class Downloader(
             // If the page list already exists, start from the file
             val pageList = download.pages ?: run {
                 val sChapter = download.chapter.toSChapter()
-                if (sChapter.memo == null || sChapter.memo!!.isEmpty()) {
-                    var cachedMemo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(download.source.id, sChapter.url)
-                    if (cachedMemo == null) {
-                        try {
-                            val networkChapters = download.source.getChapterList(download.manga.toSManga())
-                            networkChapters.forEach { netChapter ->
-                                netChapter.memo?.let { m ->
-                                    eu.kanade.tachiyomi.source.online.ChapterMemoCache.put(download.source.id, netChapter.url, m)
-                                }
+                var memo = sChapter.memo?.takeIf { !it.isEmpty() }
+                    ?: eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(download.source.id, sChapter.url)
+
+                val needsNetworkFetch = memo == null ||
+                    (memo["slug"] as? kotlinx.serialization.json.JsonPrimitive)?.content.isNullOrBlank() ||
+                    (memo["number"] as? kotlinx.serialization.json.JsonPrimitive)?.content.isNullOrBlank()
+
+                if (needsNetworkFetch) {
+                    try {
+                        val networkChapters = download.source.getChapterList(download.manga.toSManga())
+                        networkChapters.forEach { netChapter ->
+                            netChapter.memo?.let { m ->
+                                eu.kanade.tachiyomi.source.online.ChapterMemoCache.put(download.source.id, netChapter.url, m)
                             }
-                            cachedMemo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(download.source.id, sChapter.url)
-                        } catch (t: Throwable) {
-                            // ignore
                         }
-                    }
-                    cachedMemo?.let {
-                        sChapter.memo = it
+                    } catch (t: Throwable) {
+                        // ignore
                     }
                 }
+
+                sChapter.memo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.ensureChapterMemo(
+                    sourceId = download.source.id,
+                    chapter = sChapter,
+                    mangaUrl = download.manga.url,
+                    mangaTitle = download.manga.ogTitle,
+                    mangaMemo = download.manga.toSManga().memo,
+                )
+
                 val pages = download.source.getPageList(sChapter)
 
                 if (pages.isEmpty()) {
@@ -435,7 +444,16 @@ class Downloader(
                             if (!resolvedUrl.isNullOrEmpty()) {
                                 page.imageUrl = resolvedUrl
                             } else {
-                                val freshPages = download.source.getPageList(download.chapter.toSChapter())
+                                val freshChapter = download.chapter.toSChapter().also {
+                                    eu.kanade.tachiyomi.source.online.ChapterMemoCache.ensureChapterMemo(
+                                        sourceId = download.source.id,
+                                        chapter = it,
+                                        mangaUrl = download.manga.url,
+                                        mangaTitle = download.manga.ogTitle,
+                                        mangaMemo = download.manga.toSManga().memo,
+                                    )
+                                }
+                                val freshPages = download.source.getPageList(freshChapter)
                                 page.imageUrl = freshPages.getOrNull(page.index)?.imageUrl
                             }
                         } catch (e: Throwable) {
@@ -888,11 +906,20 @@ class Downloader(
         source: HttpSource,
     ) {
         val categories = getCategories.await(manga.id).map { it.name.trim() }.takeUnless { it.isEmpty() }
+        val sChapter = chapter.toSChapter().also {
+            eu.kanade.tachiyomi.source.online.ChapterMemoCache.ensureChapterMemo(
+                sourceId = source.id,
+                chapter = it,
+                mangaUrl = manga.url,
+                mangaTitle = manga.ogTitle,
+                mangaMemo = manga.toSManga().memo,
+            )
+        }
         val urls = getTracks.await(manga.id)
             .mapNotNull { track ->
                 track.remoteUrl.takeUnless { url -> url.isBlank() }?.trim()
             }
-            .plus(source.getChapterUrl(chapter.toSChapter()).trim())
+            .plus(source.getChapterUrl(sChapter).trim())
             .distinct()
 
         val comicInfo = getComicInfo(
