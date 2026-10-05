@@ -153,7 +153,6 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                     SyncDataJob.startNow(this@App)
                 }
 
-                RepoHealthScanJob.stop(this@App)
                 RepoHealthScanJob.setupTask(this@App)
                 MangaEmbeddingJob.setupTask(this@App)
                 DatabaseMaintenanceWorker.setupPeriodicWork(this@App)

@@ -62,6 +62,7 @@ class SyncChaptersWithSource(
         val nowMillis = now.toInstant().toEpochMilli()
 
         val sourceChapters = rawSourceChapters
+            .filter { try { it.url.isNotBlank() } catch (_: Throwable) { false } }
             .distinctBy { it.url }
             .mapIndexed { i, sChapter ->
                 Chapter.create()

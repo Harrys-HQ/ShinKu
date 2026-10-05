@@ -30,7 +30,7 @@ data class SourceHealth(
     val healthScore: Int
         get() {
             val total = successCount + failureCount
-            if (total == 0) return 0
+            if (total == 0) return 100
             if (isDnsDead) return 0
             if (isServerDown) return 10
             if (isCloudflareBlocked) return 20
@@ -42,6 +42,7 @@ data class SourceHealth(
 
     val speedScore: Int
         get() = when {
+            successCount == 0 && failureCount == 0 -> 100
             successCount == 0 || isFailingNow -> 0
             avgLatency == 0L -> 100
             avgLatency < 500 -> 100
@@ -63,15 +64,15 @@ data class SourceHealth(
 
     val recommendedConcurrency: Int
         get() = when {
-            performanceScore > 90 -> 10 // High speed
-            performanceScore > 70 -> 3  // Throttled
-            else -> 1             // Safe mode
+            isCloudflareBlocked || isServerDown || isDnsDead -> 1
+            isFailingNow -> 2
+            else -> 10
         }
 
     val recommendedDelay: Long
         get() = when {
-            performanceScore > 90 -> 50
-            performanceScore > 70 -> 500
-            else -> 1500
+            isCloudflareBlocked -> 300L
+            isFailingNow -> 150L
+            else -> 0L
         }
 }

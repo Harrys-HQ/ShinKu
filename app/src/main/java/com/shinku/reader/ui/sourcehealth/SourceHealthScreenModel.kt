@@ -115,12 +115,9 @@ class SourceHealthScreenModel(
             var error: String? = null
             val latency = measureTimeMillis {
                 try {
-                    val client = source.client.newBuilder()
-                        .connectTimeout(15, TimeUnit.SECONDS)
-                        .readTimeout(15, TimeUnit.SECONDS)
-                        .build()
-                    client.newCall(GET(source.baseUrl, source.headers)).awaitSuccess()
-                    success = true
+                    source.client.newCall(GET(source.baseUrl, source.headers)).awaitSuccess().use {
+                        success = true
+                    }
                 } catch (e: Exception) {
                     error = e.message
                 }

@@ -48,11 +48,9 @@ fun Manga.toSManga(): SManga = SManga.create().also {
     // SY <--
     it.thumbnail_url = thumbnailUrl
     it.initialized = initialized
-    it.memo = eu.kanade.tachiyomi.source.online.MangaMemoCache.ensureMangaMemo(
-        sourceId = source,
-        mangaUrl = url,
-        title = ogTitle,
-    )
+    it.memo = eu.kanade.tachiyomi.source.online.MangaMemoCache.get(source, url)
+        ?: eu.kanade.tachiyomi.source.online.MangaMemoCache.get(url)
+        ?: eu.kanade.tachiyomi.source.online.MangaMemoCache.ensureMangaMemo(source, url, ogTitle)
 }
 
 fun Manga.copyFrom(other: SManga): Manga {

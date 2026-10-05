@@ -352,19 +352,27 @@ abstract class HttpSource : CatalogueSource {
     @Suppress("DEPRECATION")
     override suspend fun getChapterList(manga: SManga): List<SChapter> {
         manga.memo?.let { memo ->
-            MangaMemoCache.put(id, manga.url, memo)
+            val mUrl = try { manga.url } catch (_: Throwable) { "" }
+            if (mUrl.isNotBlank()) {
+                MangaMemoCache.put(id, mUrl, memo)
+            }
         }
+        val safeMangaUrl = try { manga.url } catch (_: Throwable) { "" }
         return if (hasGetMangaUpdate) {
-            MangaUpdateLock.get(id, manga.url).withLock {
+            MangaUpdateLock.get(id, safeMangaUrl).withLock {
                 val update = getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true)
                 update.manga.memo?.let { memo ->
-                    MangaMemoCache.put(id, manga.url, memo)
-                    MangaMemoCache.put(id, update.manga.url, memo)
+                    val uUrl = try { update.manga.url } catch (_: Throwable) { "" }
+                    if (safeMangaUrl.isNotBlank()) MangaMemoCache.put(id, safeMangaUrl, memo)
+                    if (uUrl.isNotBlank()) MangaMemoCache.put(id, uUrl, memo)
                 }
                 val result = update.chapters
                 result.forEach { chapter ->
                     chapter.memo?.let { memo ->
-                        ChapterMemoCache.put(id, chapter.url, memo)
+                        val cUrl = try { chapter.url } catch (_: Throwable) { "" }
+                        if (cUrl.isNotBlank()) {
+                            ChapterMemoCache.put(id, cUrl, memo)
+                        }
                     }
                 }
                 result
@@ -373,7 +381,10 @@ abstract class HttpSource : CatalogueSource {
             val result = fetchChapterList(manga).awaitSingle()
             result.forEach { chapter ->
                 chapter.memo?.let { memo ->
-                    ChapterMemoCache.put(id, chapter.url, memo)
+                    val cUrl = try { chapter.url } catch (_: Throwable) { "" }
+                    if (cUrl.isNotBlank()) {
+                        ChapterMemoCache.put(id, cUrl, memo)
+                    }
                 }
             }
             result
@@ -612,30 +623,25 @@ abstract class HttpSource : CatalogueSource {
 }
 
 object ChapterMemoCache {
-    private val cache = java.util.concurrent.ConcurrentHashMap<String, JsonObject>()
-    private val initialized = java.util.concurrent.atomic.AtomicBoolean(false)
+    private const val MAX_ENTRIES = 1000
 
-    private val prefs by lazy {
-        try {
-            Injekt.get<Application>().getSharedPreferences("source_chapter_memo_cache", Context.MODE_PRIVATE)
-        } catch (_: Throwable) {
-            null
+    private val exactCache = object : LinkedHashMap<String, JsonObject>(MAX_ENTRIES, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, JsonObject>?): Boolean {
+            return size > MAX_ENTRIES
         }
     }
+    private val urlCache = object : LinkedHashMap<String, JsonObject>(MAX_ENTRIES, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, JsonObject>?): Boolean {
+            return size > MAX_ENTRIES
+        }
+    }
+    private val purged = java.util.concurrent.atomic.AtomicBoolean(false)
 
-    private fun ensureInitialized() {
-        if (initialized.compareAndSet(false, true)) {
+    private fun purgeLegacyPrefs() {
+        if (purged.compareAndSet(false, true)) {
             try {
-                prefs?.all?.forEach { (key, value) ->
-                    if (value is String) {
-                        try {
-                            val obj = Json.parseToJsonElement(value) as? JsonObject
-                            if (obj != null) {
-                                cache[key] = obj
-                            }
-                        } catch (_: Throwable) {}
-                    }
-                }
+                Injekt.get<Application>().getSharedPreferences("source_chapter_memo_cache", Context.MODE_PRIVATE)
+                    .edit().clear().commit()
             } catch (_: Throwable) {}
         }
     }
@@ -649,44 +655,29 @@ object ChapterMemoCache {
     }
 
     fun put(sourceId: Long, chapterUrl: String, memo: JsonObject) {
-        ensureInitialized()
+        purgeLegacyPrefs()
         val norm = normalizeUrl(chapterUrl)
         val key = "${sourceId}_$norm"
-        if (cache[key] == memo) return
-        cache[key] = memo
-        try {
-            prefs?.edit()?.putString(key, memo.toString())?.apply()
-        } catch (_: Throwable) {}
+        synchronized(this) {
+            exactCache[key] = memo
+            urlCache[norm] = memo
+        }
     }
 
     fun get(sourceId: Long, chapterUrl: String): JsonObject? {
-        ensureInitialized()
+        purgeLegacyPrefs()
         val normTarget = normalizeUrl(chapterUrl)
-        val keyPrefix = "${sourceId}_"
-        val exactKey = "$keyPrefix$normTarget"
-        cache[exactKey]?.let { return it }
-
-        for ((key, value) in cache) {
-            if (key.startsWith(keyPrefix)) {
-                val cachedNorm = key.substring(keyPrefix.length)
-                if (cachedNorm == normTarget || cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
-                    return value
-                }
-            }
+        synchronized(this) {
+            return exactCache["${sourceId}_$normTarget"] ?: urlCache[normTarget]
         }
-        return null
     }
 
     fun get(chapterUrl: String): JsonObject? {
-        ensureInitialized()
+        purgeLegacyPrefs()
         val normTarget = normalizeUrl(chapterUrl)
-        for ((key, value) in cache) {
-            val keyUrl = key.substringAfter('_')
-            if (keyUrl == normTarget || keyUrl.endsWith(normTarget) || normTarget.endsWith(keyUrl)) {
-                return value
-            }
+        synchronized(this) {
+            return urlCache[normTarget]
         }
-        return null
     }
 
     fun ensureChapterMemo(
@@ -758,15 +749,17 @@ object ChapterMemoCache {
     }
 
     fun clear() {
-        cache.clear()
-        try {
-            prefs?.edit()?.clear()?.apply()
-        } catch (_: Throwable) {}
+        purgeLegacyPrefs()
+        synchronized(this) {
+            exactCache.clear()
+            urlCache.clear()
+        }
     }
 }
 
 object MangaMemoCache {
-    private val cache = java.util.concurrent.ConcurrentHashMap<String, JsonObject>()
+    private val exactCache = java.util.concurrent.ConcurrentHashMap<String, JsonObject>()
+    private val urlCache = java.util.concurrent.ConcurrentHashMap<String, JsonObject>()
     private val initialized = java.util.concurrent.atomic.AtomicBoolean(false)
 
     private val prefs by lazy {
@@ -785,7 +778,11 @@ object MangaMemoCache {
                         try {
                             val obj = Json.parseToJsonElement(value) as? JsonObject
                             if (obj != null) {
-                                cache[key] = obj
+                                exactCache[key] = obj
+                                val normUrl = key.substringAfter('_')
+                                if (normUrl.isNotBlank()) {
+                                    urlCache[normUrl] = obj
+                                }
                             }
                         } catch (_: Throwable) {}
                     }
@@ -806,8 +803,9 @@ object MangaMemoCache {
         ensureInitialized()
         val norm = normalizeUrl(mangaUrl)
         val key = "${sourceId}_$norm"
-        if (cache[key] == memo) return
-        cache[key] = memo
+        if (exactCache[key] == memo) return
+        exactCache[key] = memo
+        urlCache[norm] = memo
         try {
             prefs?.edit()?.putString(key, memo.toString())?.apply()
         } catch (_: Throwable) {}
@@ -816,31 +814,13 @@ object MangaMemoCache {
     fun get(sourceId: Long, mangaUrl: String): JsonObject? {
         ensureInitialized()
         val normTarget = normalizeUrl(mangaUrl)
-        val keyPrefix = "${sourceId}_"
-        val exactKey = "$keyPrefix$normTarget"
-        cache[exactKey]?.let { return it }
-
-        for ((key, value) in cache) {
-            if (key.startsWith(keyPrefix)) {
-                val cachedNorm = key.substring(keyPrefix.length)
-                if (cachedNorm == normTarget || cachedNorm.endsWith(normTarget) || normTarget.endsWith(cachedNorm)) {
-                    return value
-                }
-            }
-        }
-        return null
+        return exactCache["${sourceId}_$normTarget"] ?: urlCache[normTarget]
     }
 
     fun get(mangaUrl: String): JsonObject? {
         ensureInitialized()
         val normTarget = normalizeUrl(mangaUrl)
-        for ((key, value) in cache) {
-            val keyUrl = key.substringAfter('_')
-            if (keyUrl == normTarget || keyUrl.endsWith(normTarget) || normTarget.endsWith(keyUrl)) {
-                return value
-            }
-        }
-        return null
+        return urlCache[normTarget]
     }
 
     fun resolveSlug(url: String, title: String?): String {
@@ -885,7 +865,8 @@ object MangaMemoCache {
     }
 
     fun clear() {
-        cache.clear()
+        exactCache.clear()
+        urlCache.clear()
         try {
             prefs?.edit()?.clear()?.apply()
         } catch (_: Throwable) {}

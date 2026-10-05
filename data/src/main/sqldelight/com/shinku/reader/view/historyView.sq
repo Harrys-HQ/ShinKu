@@ -62,3 +62,23 @@ FROM historyView
 WHERE historyView.readAt > 0
 ORDER BY readAt DESC
 LIMIT 1;
+
+getRecentHistory:
+SELECT
+id,
+mangaId,
+chapterId,
+title,
+thumbnailUrl,
+source,
+favorite,
+cover_last_modified,
+chapterNumber,
+readAt,
+readDuration
+FROM historyView
+WHERE historyView.readAt > 0
+AND maxReadAtChapterId = historyView.chapterId
+ORDER BY readAt DESC
+LIMIT :limit;
+

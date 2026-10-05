@@ -160,6 +160,11 @@ class LibraryUpdateNotifier(
             setSmallIcon(R.drawable.ic_tachi)
 
             setContentIntent(NotificationReceiver.openErrorLogPendingActivity(context, uri))
+            addAction(
+                R.drawable.ic_share_24dp,
+                context.stringResource(MR.strings.action_share),
+                NotificationReceiver.shareErrorLogPendingActivity(context, uri),
+            )
         }
     }
 

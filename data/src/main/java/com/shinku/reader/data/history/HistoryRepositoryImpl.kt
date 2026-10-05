@@ -19,6 +19,12 @@ class HistoryRepositoryImpl(
         }
     }
 
+    override fun getRecentHistory(limit: Long): Flow<List<HistoryWithRelations>> {
+        return handler.subscribeToList {
+            historyViewQueries.getRecentHistory(limit, HistoryMapper::mapHistoryWithRelations)
+        }
+    }
+
     override suspend fun getLastHistory(): HistoryWithRelations? {
         return handler.awaitOneOrNull {
             historyViewQueries.getLatestHistory(HistoryMapper::mapHistoryWithRelations)

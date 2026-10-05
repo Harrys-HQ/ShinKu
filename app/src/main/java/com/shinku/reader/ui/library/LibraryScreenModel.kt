@@ -163,31 +163,31 @@ class LibraryScreenModel(
             state.copy(activeCategoryIndex = libraryPreferences.lastUsedCategory().get())
         }
         screenModelScope.launchIO {
-            combine(
-                getHistory.subscribe(""),
-                libraryPreferences.showSanctuaryHeroCard().changes(),
-            ) { historyList, showHeroCard ->
-                if (!showHeroCard || historyList.isEmpty()) {
-                    emptyList()
-                } else {
-                    val distinctHistory = historyList.distinctBy { it.mangaId }.take(5)
-                    distinctHistory.mapNotNull { hist ->
-                        val manga = getManga.await(hist.mangaId) ?: return@mapNotNull null
-                        val chapters = getChaptersByMangaId.await(hist.mangaId)
-                        val chapter = chapters.find { it.id == hist.chapterId }
-                            ?: chapters.firstOrNull()
-                            ?: return@mapNotNull null
-                        LastReadItem(manga, chapter)
+            libraryPreferences.showSanctuaryHeroCard().changes()
+                .flatMapLatest { showHeroCard ->
+                    if (!showHeroCard) {
+                        flowOf(emptyList())
+                    } else {
+                        getHistory.subscribeRecent(10).map { historyList ->
+                            val distinctHistory = historyList.distinctBy { it.mangaId }.take(5)
+                            distinctHistory.mapNotNull { hist ->
+                                val manga = getManga.await(hist.mangaId) ?: return@mapNotNull null
+                                val chapters = getChaptersByMangaId.await(hist.mangaId)
+                                val chapter = chapters.find { it.id == hist.chapterId }
+                                    ?: chapters.firstOrNull()
+                                    ?: return@mapNotNull null
+                                LastReadItem(manga, chapter)
+                            }
+                        }
+                    }
+                }.collectLatest { items ->
+                    mutableState.update {
+                        it.copy(
+                            lastReadItem = items.firstOrNull(),
+                            activeReadingList = items,
+                        )
                     }
                 }
-            }.collectLatest { items ->
-                mutableState.update {
-                    it.copy(
-                        lastReadItem = items.firstOrNull(),
-                        activeReadingList = items,
-                    )
-                }
-            }
         }
         screenModelScope.launchIO {
             combine(

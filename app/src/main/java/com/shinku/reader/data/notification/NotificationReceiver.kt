@@ -657,6 +657,19 @@ class NotificationReceiver : BroadcastReceiver() {
             return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
         }
 
+        internal fun shareErrorLogPendingActivity(context: Context, uri: Uri): PendingIntent {
+            val intent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_STREAM, uri)
+                type = "text/plain"
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+            val chooser = Intent.createChooser(intent, null).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            return PendingIntent.getActivity(context, 0, chooser, PendingIntent.FLAG_IMMUTABLE)
+        }
+
         /**
          * Returns [PendingIntent] that cancels a backup restore job.
          *

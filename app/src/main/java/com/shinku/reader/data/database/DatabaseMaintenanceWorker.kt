@@ -55,7 +55,7 @@ class DatabaseMaintenanceWorker(context: Context, workerParams: WorkerParameters
 
                 WorkManager.getInstance(context).enqueueUniquePeriodicWork(
                     TAG,
-                    ExistingPeriodicWorkPolicy.UPDATE,
+                    ExistingPeriodicWorkPolicy.KEEP,
                     request,
                 )
             } catch (e: Exception) {

@@ -4,9 +4,9 @@ package eu.kanade.tachiyomi.source.model
 
 class SChapterImpl : SChapter {
 
-    override lateinit var url: String
+    override var url: String = ""
 
-    override lateinit var name: String
+    override var name: String = ""
 
     override var date_upload: Long = 0
 
@@ -15,4 +15,5 @@ class SChapterImpl : SChapter {
     override var scanlator: String? = null
 
     override var memo: kotlinx.serialization.json.JsonObject? = kotlinx.serialization.json.JsonObject(emptyMap())
+        get() = field ?: kotlinx.serialization.json.JsonObject(emptyMap())
 }

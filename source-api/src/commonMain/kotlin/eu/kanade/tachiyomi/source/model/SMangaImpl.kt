@@ -4,7 +4,7 @@ package eu.kanade.tachiyomi.source.model
 
 class SMangaImpl : SManga {
 
-    override lateinit var url: String
+    override var url: String = ""
 
     // SY -->
     override var title: String = ""
@@ -27,6 +27,7 @@ class SMangaImpl : SManga {
     override var initialized: Boolean = false
 
     override var memo: kotlinx.serialization.json.JsonObject? = kotlinx.serialization.json.JsonObject(emptyMap())
+        get() = field ?: kotlinx.serialization.json.JsonObject(emptyMap())
 
     // SY -->
     override val originalTitle: String

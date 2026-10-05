@@ -4,8 +4,12 @@
         <changelogtext>[b]Fixed[/b]: Resolved error toast (NullPointerException on getClass) when opening or reading chapters from Drake Scans and other modern Keiyoushi multisrc extensions</changelogtext>
         <changelogtext>[b]Fixed[/b]: Introduced persistent MangaMemoCache and ChapterMemoCache with auto-synthesized fallback routing to ensure memo parameters survive restarts and background updates</changelogtext>
         <changelogtext>[b]Fixed[/b]: Pre-hydrate chapter routing parameters in reader WebView, Share actions, deep link ingestion, and ComicInfo download generation</changelogtext>
-        <changelogtext>[b]Fixed[/b]: Optimized MangaMemoCache and ChapterMemoCache with one-time lazy init and deduplicated disk writes, eliminating OutOfMemoryError on large libraries</changelogtext>
-        <changelogtext>[b]Fixed[/b]: Prevented startup database locks and battery drain by adding delays to periodic background workers and scoping health scans to installed sources</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Optimized memory footprint by converting ChapterMemoCache to a bounded in-memory LRU cache and purging bloated legacy cache files (Dalvik heap reduced from 513 MB to ~30 MB)</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Restored blazing fast Library Update speed by removing artificial delays and honoring user concurrency preferences (Boost/Extreme)</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Resolved JsonObject.get NullPointerException on Asura Scans and Mangabat by ensuring non-null memo getters and automatic slug fallback</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Eliminated lateinit property url has not been initialized crashes across Mangafreak and modern extensions</changelogtext>
+        <changelogtext>[b]Added[/b]: Direct "Share" button on library update error notifications to easily save error logs to Downloads or other apps</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Prevented startup background worker storms and database contention by adding initial delays and using KEEP policy on scheduled jobs</changelogtext>
     </changelogversion>
     <changelogversion versionName="2.7.6" changeDate="October 04,2026">
         <changelogtext>[b]Fixed[/b]: Resolved MangaDex chapter loading and download failure (cmdxd98sb0x3yprd.mangadex.networkhttps unknown host error) by eliminating improper baseUrl prepending on relative page paths</changelogtext>

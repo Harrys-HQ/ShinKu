@@ -16,4 +16,8 @@ class GetHistory(
     fun subscribe(query: String): Flow<List<HistoryWithRelations>> {
         return repository.getHistory(query)
     }
+
+    fun subscribeRecent(limit: Long): Flow<List<HistoryWithRelations>> {
+        return repository.getRecentHistory(limit)
+    }
 }

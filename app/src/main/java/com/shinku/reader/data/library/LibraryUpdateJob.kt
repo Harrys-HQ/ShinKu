@@ -394,13 +394,24 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                             val sourceHealth = getSourceHealth.await(sourceId)
 
                             // SY -->
-                            // Smart Throttling: Override limits based on source health
+                            // Smart Throttling: Only throttle if the source is actively degraded or failing
+                            val isDegraded = sourceHealth != null && (sourceHealth.isFailingNow || sourceHealth.isCloudflareBlocked || sourceHealth.isServerDown || sourceHealth.isDnsDead)
                             val dynamicMaxManga = if (speed > 0) {
-                                minOf(maxMangaPerSource, sourceHealth?.recommendedConcurrency ?: maxMangaPerSource)
+                                if (isDegraded) {
+                                    minOf(maxMangaPerSource, sourceHealth.recommendedConcurrency)
+                                } else {
+                                    maxMangaPerSource
+                                }
                             } else {
                                 1
                             }
-                            val dynamicDelay = sourceHealth?.recommendedDelay ?: (if (speed > 0) 50L else 0L)
+                            val dynamicDelay = if (isDegraded) {
+                                sourceHealth.recommendedDelay
+                            } else if (speed > 0) {
+                                50L
+                            } else {
+                                0L
+                            }
                             // SY <--
 
                             if (
@@ -487,6 +498,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                         updateManga.await(MangaUpdate(manga.id, lastUpdateError = false))
                                                         success = true
                                                     } catch (e: Throwable) {
+                                                        logcat(LogPriority.ERROR, e) { "Failed to update manga ${manga.title}" }
                                                         updateManga.await(MangaUpdate(manga.id, lastUpdateError = true))
                                                         val errorMessage = when (e) {
                                                             is NoChaptersException -> context.stringResource(
@@ -504,7 +516,11 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                     }
                                                 }
                                                 // SY -->
-                                                updateSourceHealth.await(sourceId, success, latency, error)
+                                                launch {
+                                                    try {
+                                                        updateSourceHealth.await(sourceId, success, latency, error)
+                                                    } catch (_: Throwable) {}
+                                                }
                                                 // SY <--
                                             }
                                         }

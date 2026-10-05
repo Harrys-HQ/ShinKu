@@ -134,6 +134,11 @@ class RepoHealthScanJob(private val context: Context, workerParams: WorkerParame
         
         val semaphore = Semaphore(5)
 
+        val healthClient = networkHelper.client.newBuilder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .build()
+
         sourcesByUrl.entries.map { (baseUrl, sources) ->
             async {
                 semaphore.withPermit {
@@ -146,15 +151,13 @@ class RepoHealthScanJob(private val context: Context, workerParams: WorkerParame
                     val headers = installedHttpSource?.headers ?: okhttp3.Headers.Builder()
                         .add("User-Agent", networkHelper.defaultUserAgentProvider())
                         .build()
-                    val client = (installedHttpSource?.client ?: networkHelper.client).newBuilder()
-                        .connectTimeout(15, TimeUnit.SECONDS)
-                        .readTimeout(15, TimeUnit.SECONDS)
-                        .build()
+                    val client = installedHttpSource?.client ?: healthClient
 
                     val latency = measureTimeMillis {
                         try {
-                            client.newCall(GET(targetUrl, headers)).awaitSuccess()
-                            success = true
+                            client.newCall(GET(targetUrl, headers)).awaitSuccess().use {
+                                success = true
+                            }
                         } catch (e: Exception) {
                             error = e.message
                         }
@@ -207,7 +210,7 @@ class RepoHealthScanJob(private val context: Context, workerParams: WorkerParame
 
                 context.workManager.enqueueUniquePeriodicWork(
                     TAG,
-                    ExistingPeriodicWorkPolicy.UPDATE,
+                    ExistingPeriodicWorkPolicy.KEEP,
                     request
                 )
             } catch (e: Exception) {

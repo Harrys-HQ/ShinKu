@@ -139,8 +139,8 @@ open class FeedScreenModel(
                 val stats = getReadingStats.await()
                 if (stats.bestGenres.isEmpty()) return@launchIO
 
-                val recentHistory = getHistory.subscribe("").first()
-                val recentTitles = recentHistory.take(10).map<HistoryWithRelations, String> { it.title }.distinct()
+                val recentHistory = getHistory.subscribeRecent(10).first()
+                val recentTitles = recentHistory.map<HistoryWithRelations, String> { it.title }.distinct()
 
                 val titles = geminiVibeSearch.getForYouRecommendations(
                     historyTitles = recentTitles,

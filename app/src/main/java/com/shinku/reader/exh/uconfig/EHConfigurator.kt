@@ -130,20 +130,27 @@ class EHConfigurator(val context: Context) {
                 .url(source.uconfigUrl)
                 .post(form)
                 .build(),
-        ).awaitSuccess()
+        ).awaitSuccess().close()
 
         // Persist slot + sk
         source.spPref().set(slot)
 
-        val keyCookie = response.headers.toMultimap()["Set-Cookie"]?.find {
-            it.startsWith("sk=")
-        }?.removePrefix("sk=")?.substringBefore(';')
-        val sessionCookie = response.headers.toMultimap()["Set-Cookie"]?.find {
-            it.startsWith("s=")
-        }?.removePrefix("s=")?.substringBefore(';')
-        val hathPerksCookie = response.headers.toMultimap()["Set-Cookie"]?.find {
-            it.startsWith("hath_perks=")
-        }?.removePrefix("hath_perks=")?.substringBefore(';')
+        val keyCookie: String?
+        val sessionCookie: String?
+        val hathPerksCookie: String?
+        try {
+            keyCookie = response.headers.toMultimap()["Set-Cookie"]?.find {
+                it.startsWith("sk=")
+            }?.removePrefix("sk=")?.substringBefore(';')
+            sessionCookie = response.headers.toMultimap()["Set-Cookie"]?.find {
+                it.startsWith("s=")
+            }?.removePrefix("s=")?.substringBefore(';')
+            hathPerksCookie = response.headers.toMultimap()["Set-Cookie"]?.find {
+                it.startsWith("hath_perks=")
+            }?.removePrefix("hath_perks=")?.substringBefore(';')
+        } finally {
+            response.close()
+        }
 
         if (keyCookie != null) {
             exhPreferences.exhSettingsKey().set(keyCookie)

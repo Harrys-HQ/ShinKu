@@ -140,7 +140,7 @@ class MangaEmbeddingJob(
 
                 context.workManager.enqueueUniquePeriodicWork(
                     TAG,
-                    ExistingPeriodicWorkPolicy.UPDATE,
+                    ExistingPeriodicWorkPolicy.KEEP,
                     request,
                 )
             } catch (e: Exception) {
