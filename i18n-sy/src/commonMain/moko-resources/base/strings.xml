@@ -775,6 +775,15 @@
     <string name="action_image_search">Search by Image</string>
     <string name="pref_atmospheric_audio">Atmospheric Audio</string>
     <string name="pref_atmospheric_audio_summary">Play ambient background sounds matching the manga genre for better immersion.</string>
+    <string name="pref_atmospheric_audio_volume">Atmospheric Audio Volume</string>
+    <string name="pref_atmospheric_audio_download_all">Download All Soundscapes</string>
+    <string name="pref_atmospheric_audio_download_all_summary">Pre-cache all 8 personalized genre tracks for offline reading.</string>
+    <string name="pref_atmospheric_audio_downloading">Downloading soundscapes from GitHub...</string>
+    <string name="pref_atmospheric_audio_downloaded">Soundscapes cached successfully.</string>
+    <string name="pref_atmospheric_audio_download_failed">Unable to download soundscapes (fallback audio active).</string>
+    <string name="pref_atmospheric_audio_clear_cache">Clear Soundscape Cache</string>
+    <string name="pref_atmospheric_audio_vibe">Soundscape Vibe</string>
+    <string name="pref_atmospheric_audio_vibe_auto">Auto (Match Manga Genre)</string>
     <string name="pref_ai_upscaling">AI Image Upscaling</string>
     <string name="pref_ai_upscaling_summary">Use on-device AI to improve the clarity of low-resolution manga pages.</string>
     <string name="pref_predictive_loading">Predictive Page Loading</string>

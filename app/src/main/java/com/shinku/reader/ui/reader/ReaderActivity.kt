@@ -792,6 +792,9 @@ class ReaderActivity : BaseActivity() {
      */
     override fun onDestroy() {
         super.onDestroy()
+        if (isFinishing) {
+            viewModel.stopAtmosphericAudio()
+        }
         viewModel.state.value.viewer?.destroy()
         config = null
         menuToggleToast?.cancel()
@@ -800,6 +803,7 @@ class ReaderActivity : BaseActivity() {
 
     override fun onPause() {
         disableLightSensor()
+        viewModel.pauseAtmosphericAudio()
         lifecycleScope.launchNonCancellable {
             viewModel.updateHistory()
         }
@@ -852,6 +856,7 @@ class ReaderActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.restartReadTimer()
+        viewModel.resumeAtmosphericAudio()
         setMenuVisibility(viewModel.state.value.menuVisible)
         setupLightSensor()
     }

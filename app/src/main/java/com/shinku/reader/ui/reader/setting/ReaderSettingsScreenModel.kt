@@ -16,6 +16,7 @@ class ReaderSettingsScreenModel(
     val onChangeReadingMode: (ReadingMode) -> Unit,
     val onChangeOrientation: (ReaderOrientation) -> Unit,
     val preferences: ReaderPreferences = Injekt.get(),
+    val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
 ) : ScreenModel {
 
     val viewerFlow = readerState

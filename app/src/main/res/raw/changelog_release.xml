@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.8" changeDate="October 09,2026">
+        <changelogtext>[b]Atmospheric Audio Engine[/b]: Replaced audio synthesis with authentic full-length (3–5 min) CC0 ambient soundscapes hosted on GitHub (Harrys-HQ/ShinKu-Assets) with genre-aware priority matching and seamless equal-power crossfading</changelogtext>
+        <changelogtext>[b]Atmospheric Audio Controls[/b]: Added volume % slider (0–100%), soundscape vibe override, download all soundscapes, cache clear, and direct repository attribution links</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Library range selection crash (IndexOutOfBoundsException) across categories</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Reader tap navigation becoming unresponsive after cancelled button touches</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Webtoon reader viewport gap and misalignment after window resize or device unfolding</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Prevent background thread hang from unhandled WebView JavaScript dialogs on exit</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Reader retry now forces fresh image re-download to bypass corrupted cache</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Prevent Shizuku unbind crash when the background binder is terminated</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.7" changeDate="October 05,2026">
         <changelogtext>[b]Fixed[/b]: Resolved error toast (NullPointerException on getClass) when opening or reading chapters from Drake Scans and other modern Keiyoushi multisrc extensions</changelogtext>
         <changelogtext>[b]Fixed[/b]: Introduced persistent MangaMemoCache and ChapterMemoCache with auto-synthesized fallback routing to ensure memo parameters survive restarts and background updates</changelogtext>

@@ -186,6 +186,7 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { EHentaiUpdateHelper(app) }
 
         addSingletonFactory { PagePreviewCache(app) }
+        addSingletonFactory { com.shinku.reader.ui.reader.audio.AtmosphericAudioManager(app, get()) }
         // SY <--
     }
 }

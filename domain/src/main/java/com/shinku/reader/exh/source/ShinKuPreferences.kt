@@ -19,6 +19,15 @@ class ShinKuPreferences(
 
     fun atmosphericAudio() = preferenceStore.getBoolean("pref_atmospheric_audio", false)
 
+    fun atmosphericAudioVolume() = preferenceStore.getInt("pref_atmospheric_audio_volume", 30)
+
+    fun atmosphericAudioHostUrl() = preferenceStore.getString(
+        "pref_atmospheric_audio_host_url",
+        "https://raw.githubusercontent.com/Harrys-HQ/ShinKu-Assets/main/audio/atmosphere/",
+    )
+
+    fun atmosphericAudioOverride() = preferenceStore.getString("pref_atmospheric_audio_override", "auto")
+
     fun moodLighting() = preferenceStore.getBoolean("pref_mood_lighting", false)
 
     fun backdropBlur() = preferenceStore.getBoolean("pref_backdrop_blur", false)

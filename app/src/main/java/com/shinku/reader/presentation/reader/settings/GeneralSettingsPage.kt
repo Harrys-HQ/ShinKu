@@ -160,5 +160,50 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
         label = stringResource(SYMR.strings.pref_zen_mode),
         pref = screenModel.preferences.zenMode(),
     )
+
+    val atmosphericAudioPref = screenModel.shinkuPreferences.atmosphericAudio()
+    val atmosphericAudioEnabled by atmosphericAudioPref.collectAsState()
+    val atmosphericAudioVolumePref = screenModel.shinkuPreferences.atmosphericAudioVolume()
+    val atmosphericAudioVolume by atmosphericAudioVolumePref.collectAsState()
+
+    val atmosphericAudioOverridePref = screenModel.shinkuPreferences.atmosphericAudioOverride()
+    val atmosphericAudioOverride by atmosphericAudioOverridePref.collectAsState()
+
+    CheckboxItem(
+        label = stringResource(SYMR.strings.pref_atmospheric_audio),
+        pref = atmosphericAudioPref,
+    )
+    if (atmosphericAudioEnabled) {
+        SliderItem(
+            value = atmosphericAudioVolume,
+            valueRange = 0..100,
+            label = stringResource(SYMR.strings.pref_atmospheric_audio_volume),
+            valueString = "$atmosphericAudioVolume%",
+            onChange = { atmosphericAudioVolumePref.set(it) },
+            steps = 19,
+            pillColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        )
+
+        SettingsChipRow(SYMR.strings.pref_atmospheric_audio_vibe) {
+            val vibes = listOf(
+                "auto" to stringResource(SYMR.strings.pref_atmospheric_audio_vibe_auto),
+                "action" to "Action",
+                "historical" to "Martial Arts",
+                "horror" to "Horror",
+                "mystery" to "Mystery",
+                "cyberpunk" to "Cyberpunk",
+                "cafe" to "Cafe",
+                "rain" to "Rain",
+                "forest" to "Forest",
+            )
+            vibes.map { (key, label) ->
+                FilterChip(
+                    selected = atmosphericAudioOverride == key,
+                    onClick = { atmosphericAudioOverridePref.set(key) },
+                    label = { Text(label) },
+                )
+            }
+        }
+    }
     // SY <--
 }

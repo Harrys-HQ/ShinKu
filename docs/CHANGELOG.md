@@ -1,5 +1,19 @@
 # ShinKu Changelog
 
+## 2.7.8 "Authentic Atmospheric Audio & Upstream Stability Fixes" (2026-10-09)
+### Added
+- **Authentic Full-Length Atmospheric Audio Engine**: Completely replaced synthetic equations with high-quality, authentic CC0 public domain recordings hosted remotely on [Harrys-HQ/ShinKu-Assets](https://github.com/Harrys-HQ/ShinKu-Assets). Features 8 tailored genre soundscapes (Action, Horror, Mystery, Cyberpunk, Historical/Wuxia, Rain, Forest, and Cafe) with 3–5 minute durations and 5-second seamless equal-power crossfading.
+- **Atmospheric Audio Volume & Soundscape Controls**: Added volume % slider (0–100%) in both ShinKu Settings and Reader Settings, a manual "Soundscape Vibe" selector to override genre matching, "Download All Soundscapes" for complete offline readiness, "Clear Soundscape Cache", and a direct in-app link to the CC0 source attribution and license page.
+- **Smart Genre Priority Matching**: Rebalanced audio genre detection to prioritize high-octane themes (Action, Martial Arts, Shounen) over background ambient tags, ensuring action series play fitting battle tension rather than calm forest ambience.
+
+### Fixed
+- **Library Range Selection Crash**: Fixed `IndexOutOfBoundsException` when multi-selecting manga across category boundaries by tracking the category and ID of the last selected item.
+- **Reader Tap Navigation Touch Recovery**: Fixed reader becoming unresponsive to page taps after a button press turned into a scroll/drag gesture by re-enabling gesture detection on `MotionEvent.ACTION_CANCEL`.
+- **Webtoon Window Resizing & Foldable Support**: Fixed blank gaps and viewport offsets after window resize or device unfolding by dynamically measuring the container when `layoutParams.height == MATCH_PARENT`.
+- **WebView Background Thread Freeze**: Auto-dismisses JavaScript alerts, confirms, and prompts if the user navigates away from the WebView, preventing hangs during Cloudflare and Captcha verification.
+- **Corrupted Cache Bypass on Reader Retry**: Reader page retries now force a clean network re-download (`PriorityPage.RETRY`) to immediately bypass damaged or incomplete cached files.
+- **Shizuku Dead Service Unbind Crash**: Guarded Shizuku unbind calls with `Shizuku.pingBinder()` to prevent app crashes when Shizuku is force-closed or terminated by the OS.
+
 ## 2.7.7 "Keiyoushi Compatibility & Library Speed Optimization" (2026-10-05)
 ### Fixed
 - **Keiyoushi KeiSource & VineTheme Chapter Loading**: Resolved `Attempt to invoke virtual method 'java.lang.Class java.lang.Object.getClass()' on a null object reference` error toast when opening or downloading chapters from Drake Scans and other modern Keiyoushi multisrc extensions (`VineTheme`) by ensuring chapter and manga routing metadata are consistently maintained and hydrated.

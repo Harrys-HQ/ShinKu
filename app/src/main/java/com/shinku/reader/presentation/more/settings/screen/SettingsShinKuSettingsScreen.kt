@@ -352,6 +352,13 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         shinkuPreferences: ShinKuPreferences,
         readerPreferences: ReaderPreferences,
     ): Preference.PreferenceGroup {
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+        val atmosphericAudioManager = remember { Injekt.get<com.shinku.reader.ui.reader.audio.AtmosphericAudioManager>() }
+        val atmosphericAudioEnabled by shinkuPreferences.atmosphericAudio().collectAsState()
+        val atmosphericAudioVolume by shinkuPreferences.atmosphericAudioVolume().collectAsState()
+        var cacheSizeText by remember { mutableStateOf(atmosphericAudioManager.getFormattedCacheSize()) }
+
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.pref_category_immersion_reader),
             preferenceItems = persistentListOf(
@@ -359,6 +366,75 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     preference = shinkuPreferences.atmosphericAudio(),
                     title = stringResource(SYMR.strings.pref_atmospheric_audio),
                     subtitle = stringResource(SYMR.strings.pref_atmospheric_audio_summary),
+                ),
+                Preference.PreferenceItem.SliderPreference(
+                    value = atmosphericAudioVolume,
+                    valueRange = 0..100,
+                    steps = 19,
+                    title = stringResource(SYMR.strings.pref_atmospheric_audio_volume),
+                    valueString = "$atmosphericAudioVolume%",
+                    enabled = atmosphericAudioEnabled,
+                    onValueChanged = {
+                        shinkuPreferences.atmosphericAudioVolume().set(it)
+                    },
+                ),
+                Preference.PreferenceItem.ListPreference(
+                    preference = shinkuPreferences.atmosphericAudioOverride(),
+                    entries = persistentMapOf(
+                        "auto" to stringResource(SYMR.strings.pref_atmospheric_audio_vibe_auto),
+                        "action" to "Action (Battle Campfire & Winds)",
+                        "historical" to "Martial Arts (Bamboo Temple & Chimes)",
+                        "horror" to "Horror (Dark & Creepy Drone)",
+                        "mystery" to "Mystery (Noir & Rainy Window)",
+                        "cyberpunk" to "Cyberpunk (Synth & Ambience)",
+                        "cafe" to "Slice of Life (Cozy Cafe & Lofi)",
+                        "rain" to "Romance (Gentle Rainfall)",
+                        "forest" to "Fantasy (Ancient Forest Wilderness)",
+                    ),
+                    title = stringResource(SYMR.strings.pref_atmospheric_audio_vibe),
+                    enabled = atmosphericAudioEnabled,
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(SYMR.strings.pref_atmospheric_audio_download_all),
+                    subtitle = stringResource(SYMR.strings.pref_atmospheric_audio_download_all_summary),
+                    enabled = atmosphericAudioEnabled,
+                    onClick = {
+                        context.toast(SYMR.strings.pref_atmospheric_audio_downloading)
+                        scope.launch {
+                            val success = atmosphericAudioManager.downloadAllSoundscapes()
+                            cacheSizeText = atmosphericAudioManager.getFormattedCacheSize()
+                            if (success) {
+                                context.toast(SYMR.strings.pref_atmospheric_audio_downloaded)
+                            } else {
+                                context.toast(SYMR.strings.pref_atmospheric_audio_download_failed)
+                            }
+                        }
+                    },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(SYMR.strings.pref_atmospheric_audio_clear_cache),
+                    subtitle = "Cached soundscapes: $cacheSizeText",
+                    enabled = atmosphericAudioEnabled && cacheSizeText != "0.0 KB",
+                    onClick = {
+                        atmosphericAudioManager.clearCache()
+                        cacheSizeText = atmosphericAudioManager.getFormattedCacheSize()
+                        context.toast("Soundscape cache cleared")
+                    },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = "Audio Sources & Attribution",
+                    subtitle = "View original CC0 public domain recordings, artists, and repository credits",
+                    onClick = {
+                        try {
+                            val intent = android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse("https://github.com/Harrys-HQ/ShinKu-Assets#audio-sources--attribution"),
+                            )
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            context.toast("Could not open browser")
+                        }
+                    },
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = shinkuPreferences.moodLighting(),

@@ -75,6 +75,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filterNotNull
@@ -155,7 +156,7 @@ class ReaderViewModel(
     private val textRecognitionInteractor: com.shinku.reader.domain.source.interactor.TextRecognitionInteractor,
     private val panelDetectionInteractor: com.shinku.reader.domain.source.interactor.PanelDetectionInteractor,
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences,
-    private val atmosphericAudioManager: com.shinku.reader.ui.reader.audio.AtmosphericAudioManager = com.shinku.reader.ui.reader.audio.AtmosphericAudioManager(app, shinkuPreferences),
+    private val atmosphericAudioManager: com.shinku.reader.ui.reader.audio.AtmosphericAudioManager = Injekt.get(),
     // SY <--
 ) : ViewModel() {
 
@@ -365,10 +366,44 @@ class ReaderViewModel(
                 }
             }
             .launchIn(viewModelScope)
+
+        combine(
+            state.map { it.manga }.distinctUntilChanged(),
+            shinkuPreferences.atmosphericAudio().changes(),
+            shinkuPreferences.atmosphericAudioVolume().changes(),
+            shinkuPreferences.atmosphericAudioOverride().changes(),
+        ) { manga, enabled, volume, override ->
+            listOf(manga, enabled, volume, override)
+        }
+            .distinctUntilChanged()
+            .onEach {
+                val manga = state.value.manga
+                val enabled = shinkuPreferences.atmosphericAudio().get()
+                val volume = shinkuPreferences.atmosphericAudioVolume().get()
+                if (enabled && manga != null) {
+                    atmosphericAudioManager.play(manga.genre ?: emptyList(), volume)
+                } else {
+                    atmosphericAudioManager.stop()
+                }
+            }
+            .launchIn(viewModelScope)
         // SY <--
     }
 
+    fun pauseAtmosphericAudio() {
+        atmosphericAudioManager.pause()
+    }
+
+    fun resumeAtmosphericAudio() {
+        atmosphericAudioManager.resume()
+    }
+
+    fun stopAtmosphericAudio() {
+        atmosphericAudioManager.stop()
+    }
+
     override fun onCleared() {
+        atmosphericAudioManager.stop()
         val currentChapters = state.value.viewerChapters
         if (currentChapters != null) {
             currentChapters.unref()
