@@ -368,15 +368,21 @@ actual class LocalSource(
                         .parseChapterNumber(manga.title, this.name, this.chapter_number.toDouble())
                         .toFloat()
 
-                    val format = Format.valueOf(chapterFile)
-                    if (format is Format.Epub) {
-                        EpubFile(format.file.archiveReader(context)).use { epub ->
-                            epub.fillMetadata(manga, this)
+                    try {
+                        val format = Format.valueOf(chapterFile)
+                        if (format is Format.Epub) {
+                            EpubFile(format.file.archiveReader(context)).use { epub ->
+                                epub.fillMetadata(manga, this)
+                            }
+                        } else {
+                            getComicInfoForChapter(chapterFile) { stream, encrypted ->
+                                setChapterDetailsFromComicInfoFile(stream, this)
+                            }
                         }
-                    } else {
-                        getComicInfoForChapter(chapterFile) { stream, encrypted ->
-                            setChapterDetailsFromComicInfoFile(stream, this)
-                        }
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        logcat(LogPriority.ERROR, e) { "Failed to read metadata for ${chapterFile.name}" }
                     }
                 }
             }

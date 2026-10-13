@@ -1,8 +1,15 @@
 package com.shinku.reader.ui.setting.track
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
+import com.shinku.reader.core.common.util.system.logcat
+import com.shinku.reader.data.track.comick.ComickMissingScopesException
+import com.shinku.reader.util.system.toast
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import logcat.LogPriority
 
 class TrackLoginActivity : BaseOAuthLoginActivity() {
 
@@ -23,11 +30,35 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
         lifecycleScope.launch {
             when (uri.host) {
                 "anilist-auth" -> handleAniList(data["access_token"])
+                "comick-auth" -> handleComick(data["code"], data["state"])
                 "bangumi-auth" -> handleBangumi(data["code"])
                 "myanimelist-auth" -> handleMyAnimeList(data["code"])
                 "shikimori-auth" -> handleShikimori(data["code"])
             }
             returnToSettings()
+        }
+    }
+
+    private suspend fun handleComick(code: String?, state: String?) {
+        if (state == null) {
+            logcat(LogPriority.WARN) { "Did not receive state parameter from Comick OAuth" }
+            return
+        }
+        if (code != null) {
+            if (!trackerManager.comick.verifyOAuthState(state)) {
+                logcat(LogPriority.WARN) { "Received wrong OAuth state back from Comick" }
+                return
+            }
+            try {
+                trackerManager.comick.login(code)
+            } catch (e: ComickMissingScopesException) {
+                withContext(Dispatchers.Main) {
+                    this@TrackLoginActivity.toast(e.message, Toast.LENGTH_LONG)
+                }
+                return
+            }
+        } else {
+            trackerManager.comick.logout()
         }
     }
 

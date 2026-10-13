@@ -51,6 +51,7 @@ import com.shinku.reader.data.track.Tracker
 import com.shinku.reader.data.track.TrackerManager
 import com.shinku.reader.data.track.anilist.AnilistApi
 import com.shinku.reader.data.track.bangumi.BangumiApi
+import com.shinku.reader.data.track.comick.ComickApi
 import com.shinku.reader.data.track.myanimelist.MyAnimeListApi
 import com.shinku.reader.data.track.shikimori.ShikimoriApi
 import com.shinku.reader.util.system.openInBrowser
@@ -178,6 +179,11 @@ object SettingsTrackingScreen : SearchableSettings {
                         tracker = trackerManager.bangumi,
                         login = { context.openInBrowser(BangumiApi.authUrl(), forceDefaultBrowser = true) },
                         logout = { dialog = LogoutDialog(trackerManager.bangumi) },
+                    ),
+                    Preference.PreferenceItem.TrackerPreference(
+                        tracker = trackerManager.comick,
+                        login = { context.openInBrowser(ComickApi.authUrl(), forceDefaultBrowser = true) },
+                        logout = { dialog = LogoutDialog(trackerManager.comick) },
                     ),
                     Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.tracking_info)),
                 ),

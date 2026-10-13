@@ -42,3 +42,12 @@ val Options.customDecoder: Boolean
     get() = getExtra(customDecoderKey)
 
 private val customDecoderKey = Extras.Key(default = false)
+
+fun ImageRequest.Builder.webtoonStrips(enable: Boolean) = apply {
+    extras[webtoonStripsKey] = enable
+}
+
+val Options.webtoonStrips: Boolean
+    get() = getExtra(webtoonStripsKey)
+
+private val webtoonStripsKey = Extras.Key(default = false)

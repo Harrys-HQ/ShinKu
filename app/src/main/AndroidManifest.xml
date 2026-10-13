@@ -209,6 +209,18 @@
                 <data android:host="myanimelist-auth" />
                 <data android:host="shikimori-auth" />
             </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Comick requires native reverse-domain schemes  -->
+                <data android:scheme="app.mihon" />
+                <data android:scheme="app.shinku" />
+                <data android:host="comick-auth" />
+            </intent-filter>
         </activity>
         <activity
             android:name="com.dropbox.core.android.AuthActivity"

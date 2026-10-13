@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.9" changeDate="October 13,2026">
+        <changelogtext>[b]Webtoon Strip Rendering[/b]: Smoother webtoon scrolling and ~30% reduced memory on tall strips by rendering pages as stacked horizontal strips and freeing offscreen strips exceeding 64 MB</changelogtext>
+        <changelogtext>[b]Comick Tracker[/b]: Integrated Comick tracking service with PKCE OAuth authentication, reading progress synchronisation, score tracking, and title search (including 'id:' prefix)</changelogtext>
+        <changelogtext>[b]Statistics Speedup[/b]: Statistics screen loads up to 10× faster by batching tracking queries into a single database operation</changelogtext>
+        <changelogtext>[b]Load Ahead on Wi-Fi[/b]: Added reader option to conserve mobile data by preloading only near pages on cellular, alongside background next-chapter preloading</changelogtext>
+        <changelogtext>[b]Faster Chapter Lists[/b]: Accelerated entry screens (~900+ chapters) up to 3× through bulk download and queue lookups</changelogtext>
+        <changelogtext>[b]Download Reliability[/b]: Auto-cancel deleted source downloads, resume existing disk downloads without re-downloading, and eliminate download cache overwrite race conditions</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Prevented entire chapter listing failure on Local Source when an archive is corrupted</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Duplicate library search matching entire library when manga titles are blank</changelogtext>
+        <changelogtext>[b]Fixed[/b]: Local source now included in global search results</changelogtext>
+        <changelogtext>[b]Added[/b]: Confirmation dialog when unfavoriting manga from Manga Screen to prevent accidental removal</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.8" changeDate="October 09,2026">
         <changelogtext>[b]Atmospheric Audio Engine[/b]: Replaced audio synthesis with authentic full-length (3–5 min) CC0 ambient soundscapes hosted on GitHub (Harrys-HQ/ShinKu-Assets) with genre-aware priority matching and seamless equal-power crossfading</changelogtext>
         <changelogtext>[b]Atmospheric Audio Controls[/b]: Added volume % slider (0–100%), soundscape vibe override, download all soundscapes, cache clear, and direct repository attribution links</changelogtext>

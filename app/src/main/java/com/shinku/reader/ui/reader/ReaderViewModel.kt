@@ -44,6 +44,7 @@ import dev.icerock.moko.resources.StringResource
 import com.shinku.reader.ui.reader.chapter.ReaderChapterItem
 import com.shinku.reader.ui.reader.loader.ChapterLoader
 import com.shinku.reader.ui.reader.loader.DownloadPageLoader
+import com.shinku.reader.ui.reader.loader.HttpPageLoader
 import com.shinku.reader.ui.reader.model.InsertPage
 import com.shinku.reader.ui.reader.model.ReaderChapter
 import com.shinku.reader.ui.reader.model.ReaderPage
@@ -64,6 +65,7 @@ import com.shinku.reader.util.lang.takeBytes
 import com.shinku.reader.util.storage.DiskUtil
 import com.shinku.reader.util.storage.DiskUtil.MAX_FILE_NAME_BYTES
 import com.shinku.reader.util.storage.cacheImageDir
+import com.shinku.reader.util.system.activeNetworkState
 import com.shinku.reader.exh.metadata.metadata.RaisedSearchMetadata
 import com.shinku.reader.exh.source.MERGED_SOURCE_ID
 import com.shinku.reader.exh.source.getMainSource
@@ -72,8 +74,10 @@ import com.shinku.reader.exh.util.defaultReaderType
 import com.shinku.reader.exh.util.mangaType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -494,7 +498,8 @@ class ReaderViewModel(
                         readerPrefs = readerPreferences,
                         mergedReferences = mergedReferences,
                         mergedManga = mergedManga,
-                        avgPageTimeProvider = { state.value.avgPageTime }, /* SY <-- */
+                        avgPageTimeProvider = { state.value.avgPageTime },
+                        canLoadAhead = ::canLoadAhead, /* SY <-- */
                     )
 
                     loadChapter(
@@ -550,6 +555,7 @@ class ReaderViewModel(
             chapterList.getOrNull(chapterPos - 1),
             chapterList.getOrNull(chapterPos + 1),
         )
+        preloadNextChapterAfter(newChapters)
 
         withUIContext {
             mutableState.update {
@@ -566,6 +572,34 @@ class ReaderViewModel(
         }
         return newChapters
     }
+
+    private var nextChapterPreloadJob: Job? = null
+
+    /**
+     * Preloads the next chapter of [chapters] once the current one has loaded, so it doesn't take bandwidth from the
+     * pages being read. Skipped when loading ahead isn't allowed on this network.
+     */
+    private fun preloadNextChapterAfter(chapters: ViewerChapters) {
+        val nextChapter = chapters.nextChapter ?: return
+        nextChapterPreloadJob?.cancel()
+        nextChapterPreloadJob = viewModelScope.launch(Dispatchers.IO) {
+            if (!canLoadAhead()) return@launch
+            val current = chapters.currChapter
+            // Only online pages load in the background; other loaders load a page once it's shown
+            if (current.pageLoader is HttpPageLoader) {
+                current.pages.orEmpty().forEach { page ->
+                    page.statusFlow.first { it == Page.State.Ready || it is Page.State.Error }
+                }
+            }
+            preload(nextChapter)
+        }
+    }
+
+    /**
+     * Whether online chapters may load past the pages near the one being read.
+     */
+    private fun canLoadAhead(): Boolean =
+        !readerPreferences.loadAheadOnlyOverWifi().get() || app.activeNetworkState().isWifi
 
     /**
      * Called when the user changed to the given [chapter] when changing pages from the viewer.
@@ -813,9 +847,22 @@ class ReaderViewModel(
         // If chapter is completely read, no need to download it
         chapterToDownload = null
 
-        if (chapterToDelete != null) {
-            enqueueDeleteReadChapters(chapterToDelete)
+        if (chapterToDelete == null || !chapterToDelete.chapter.read) return
+
+        val markDuplicateAsRead = libraryPreferences.markDuplicateReadChapterAsRead().get()
+            .contains(LibraryPreferences.MARK_DUPLICATE_CHAPTER_READ_EXISTING)
+        val duplicateChapters = if (markDuplicateAsRead) {
+            unfilteredChapterList
+                .filter {
+                    it.id != chapterToDelete.chapter.id &&
+                        it.isRecognizedNumber &&
+                        it.chapterNumber.toFloat() == chapterToDelete.chapter.chapter_number
+                }
+                .map { it.copy(read = true) }
+        } else {
+            emptyList()
         }
+        enqueueDeleteReadChapters(listOf(chapterToDelete.chapter.toDomainChapter()!!) + duplicateChapters, chapterToDelete)
     }
 
     /**
@@ -1663,10 +1710,10 @@ class ReaderViewModel(
     }
 
     /**
-     * Enqueues this [chapter] to be deleted when [deletePendingChapters] is called. The download
-     * manager handles persisting it across process deaths.
+     * Enqueues these [chapters] to be deleted when [deletePendingChapters] is called. The download
+     * manager handles persisting them across process deaths.
      */
-    private fun enqueueDeleteReadChapters(chapter: ReaderChapter) {
+    private fun enqueueDeleteReadChapters(chapters: List<Chapter>, chapter: ReaderChapter) {
         if (!chapter.chapter.read) return
         val mergedManga = state.value.mergedManga
         // SY -->
@@ -1678,7 +1725,7 @@ class ReaderViewModel(
         // SY <--
 
         viewModelScope.launchNonCancellable {
-            downloadManager.enqueueChaptersToDelete(listOf(chapter.chapter.toDomainChapter()!!), manga)
+            downloadManager.enqueueChaptersToDelete(chapters, manga)
         }
     }
 

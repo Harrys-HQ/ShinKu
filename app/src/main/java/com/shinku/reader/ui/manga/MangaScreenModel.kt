@@ -917,6 +917,12 @@ class MangaScreenModel(
         }
     }
 
+    fun showRemoveFromLibraryDialog() {
+        if (successState?.manga?.favorite == true) {
+            updateSuccessState { it.copy(dialog = Dialog.RemoveFromLibrary) }
+        }
+    }
+
     fun showSetFetchIntervalDialog() {
         val manga = successState?.manga ?: return
         updateSuccessState {
@@ -1087,13 +1093,11 @@ class MangaScreenModel(
         val isExhManga = manga.isEhBasedManga()
         val enabledLanguages = Injekt.get<SourcePreferences>().enabledLanguages().get()
             .filterNot { it in listOf("all", "other") }
+        val queuedDownloads = if (isLocal) emptyMap() else downloadManager.getQueuedDownloadsByChapterId()
+        val downloadedChapterIds = if (isLocal || mergedData != null) emptySet() else downloadManager.getDownloadedChapterIds(this, manga)
         // SY <--
         return map { chapter ->
-            val activeDownload = if (isLocal) {
-                null
-            } else {
-                downloadManager.getQueuedDownloadOrNull(chapter.id)
-            }
+            val activeDownload = queuedDownloads[chapter.id]
 
             // SY -->
             @Suppress("NAME_SHADOWING")
@@ -1102,6 +1106,8 @@ class MangaScreenModel(
             // SY <--
             val downloaded = if (manga.isLocal()) {
                 true
+            } else if (mergedData == null) {
+                chapter.id in downloadedChapterIds
             } else {
                 downloadManager.isChapterDownloaded(
                     chapter.name,
@@ -1748,6 +1754,7 @@ class MangaScreenModel(
         data object SettingsSheet : Dialog
         data object TrackSheet : Dialog
         data object FullCover : Dialog
+        data object RemoveFromLibrary : Dialog
         data object SyncDiscrepancy : Dialog
     }
 

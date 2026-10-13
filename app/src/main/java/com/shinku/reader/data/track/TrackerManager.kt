@@ -2,6 +2,7 @@ package com.shinku.reader.data.track
 
 import com.shinku.reader.data.track.anilist.Anilist
 import com.shinku.reader.data.track.bangumi.Bangumi
+import com.shinku.reader.data.track.comick.Comick
 import com.shinku.reader.data.track.kavita.Kavita
 import com.shinku.reader.data.track.kitsu.Kitsu
 import com.shinku.reader.data.track.komga.Komga
@@ -22,6 +23,8 @@ class TrackerManager {
         // SY --> Mangadex from Neko
         const val MDLIST = 60L
         // SY <--
+
+        const val COMICK = 12L
     }
 
     val mdList = MdList(MDLIST)
@@ -35,9 +38,10 @@ class TrackerManager {
     val mangaUpdates = MangaUpdates(7L)
     val kavita = Kavita(KAVITA)
     val suwayomi = Suwayomi(9L)
+    val comick = Comick(COMICK)
 
     val trackers =
-        listOf(mdList, myAnimeList, aniList, kitsu, shikimori, bangumi, komga, mangaUpdates, kavita, suwayomi)
+        listOf(mdList, myAnimeList, aniList, kitsu, shikimori, bangumi, komga, mangaUpdates, kavita, suwayomi, comick)
 
     fun loggedInTrackers() = trackers.filter { it.isLoggedIn }
 

@@ -126,6 +126,7 @@ duplicates AS (
     FROM mangas
     WHERE favorite = 1
     AND _id != :id
+    AND trim(:title) != ''
     AND lower(title) LIKE '%' || lower(:title) || '%'
 ),
 chapter_counts AS (

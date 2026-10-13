@@ -45,6 +45,7 @@ internal class HttpPageLoader(
     private val readerPreferences: ReaderPreferences = Injekt.get(),
     sourcePreferences: SourcePreferences = Injekt.get(),
     private val avgPageTimeProvider: (() -> Long)? = null,
+    private val canLoadAhead: () -> Boolean = { true },
     // SY <--
 ) : PageLoader() {
 
@@ -61,6 +62,10 @@ internal class HttpPageLoader(
     }
 
     private fun getDynamicPreloadSize(): Int {
+        if (!canLoadAhead()) {
+            return LIMITED_PAGES_AHEAD
+        }
+
         if (!Injekt.get<com.shinku.reader.exh.source.ShinKuPreferences>().predictiveLoading().get()) {
             return preloadSize
         }
@@ -157,7 +162,7 @@ internal class HttpPageLoader(
             // Don't trust sources and use our own indexing
             ReaderPage(index, page.url, page.imageUrl)
         }
-        if (readerPreferences.aggressivePageLoading().get()) {
+        if (canLoadAhead() && readerPreferences.aggressivePageLoading().get()) {
             rp.forEach {
                 if (it.status == Page.State.Queue) {
                     queue.offer(PriorityPage(it, 0))
@@ -385,3 +390,5 @@ private class PriorityPage(
         return if (p != 0) p else identifier.compareTo(other.identifier)
     }
 }
+
+private const val LIMITED_PAGES_AHEAD = 4

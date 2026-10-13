@@ -21,6 +21,11 @@ class ReaderPreferences(
     fun pageTransitionsWebtoon() = preferenceStore.getBoolean("pref_enable_transitions_webtoon_key", true)
     // SY <--
 
+    fun loadAheadOnlyOverWifi() = preferenceStore.getBoolean(
+        "pref_reader_load_ahead_only_over_wifi",
+        false,
+    )
+
     fun flashOnPageChange() = preferenceStore.getBoolean("pref_reader_flash", false)
 
     fun flashDurationMillis() = preferenceStore.getInt("pref_reader_flash_duration", MILLI_CONVERSION)

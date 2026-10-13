@@ -144,6 +144,11 @@ class SyncChaptersWithSource(
             }
         }
 
+        // The source no longer lists these, so their queued downloads could only fail
+        removedChapters.mapNotNull { downloadManager.getQueuedDownloadOrNull(it.id) }
+            .takeIf { it.isNotEmpty() }
+            ?.let(downloadManager::cancelQueuedDownloads)
+
         // Return if there's nothing to add, delete, or update to avoid unnecessary db transactions.
         if (newChapters.isEmpty() && removedChapters.isEmpty() && updatedChapters.isEmpty()) {
             if (manualFetch || manga.fetchInterval == 0 || manga.nextUpdate < fetchWindow.first) {

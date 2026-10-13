@@ -34,6 +34,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.shinku.reader.domain.manga.model.hasCustomCover
 import com.shinku.reader.domain.manga.model.toSManga
+import com.shinku.reader.presentation.browse.components.RemoveMangaDialog
 import com.shinku.reader.presentation.category.components.ChangeCategoryDialog
 import com.shinku.reader.presentation.components.NavigatorAdaptiveSheet
 import com.shinku.reader.presentation.manga.ChapterSettingsDialog
@@ -182,7 +183,11 @@ class MangaScreen(
             onChapterClicked = { openChapter(context, it) },
             onDownloadChapter = screenModel::runChapterDownloadActions.takeIf { !successState.source.isLocalOrStub() },
             onAddToLibraryClicked = {
-                screenModel.toggleFavorite()
+                if (successState.manga.favorite) {
+                    screenModel.showRemoveFromLibraryDialog()
+                } else {
+                    screenModel.toggleFavorite()
+                }
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             },
             // SY -->
@@ -268,6 +273,17 @@ class MangaScreen(
         val onDismissRequest = { screenModel.dismissDialog() }
         when (val dialog = successState.dialog) {
             null -> {}
+            MangaScreenModel.Dialog.RemoveFromLibrary -> {
+                RemoveMangaDialog(
+                    onDismissRequest = onDismissRequest,
+                    onConfirm = {
+                        if (successState.manga.favorite) {
+                            screenModel.toggleFavorite()
+                        }
+                    },
+                    mangaToRemove = successState.manga,
+                )
+            }
             is MangaScreenModel.Dialog.ChangeCategory -> {
                 ChangeCategoryDialog(
                     initialSelection = dialog.initialSelection,

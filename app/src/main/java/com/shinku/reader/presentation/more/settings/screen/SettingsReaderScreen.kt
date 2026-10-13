@@ -83,6 +83,11 @@ object SettingsReaderScreen : SearchableSettings {
                 enabled = !forceHorizontalSeekbar,
             ),
             // SY <--
+            Preference.PreferenceItem.SwitchPreference(
+                preference = readerPref.loadAheadOnlyOverWifi(),
+                title = stringResource(MR.strings.pref_load_ahead_only_over_wifi),
+                subtitle = stringResource(MR.strings.pref_load_ahead_only_over_wifi_summary),
+            ),
             /* SY -->
             Preference.PreferenceItem.SwitchPreference(
                 preference = readerPref.pageTransitions(),

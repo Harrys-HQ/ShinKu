@@ -1,5 +1,27 @@
 # ShinKu Changelog
 
+## 2.7.9 "Webtoon Strip Rendering, Comick Tracker & High-Performance Upstream Sync" (2026-10-13)
+### Added
+- **Webtoon Strip Rendering Engine**: Draws tall webtoon pages as stacked horizontal strips via `WebtoonStripImageView` and Coil `webtoonStrips`. Uses about 30% less memory on tall pages, completely prevents frame drop and stutter between pages, avoids giant OpenGL texture allocations, and automatically frees memory for offscreen pages exceeding 64 MB.
+- **Comick Tracker Integration**: Added native support for the Comick tracking service (`TrackerManager.COMICK`) with PKCE SHA-256 OAuth authentication, reading status synchronization, score updates, and direct series lookup via `id:` search prefixes.
+- **Load Ahead Only on Wi-Fi**: Added a new reader toggle in Reader Settings allowing users to conserve mobile data by restricting page preloads to adjacent pages when on cellular networks.
+- **Next Chapter Preloading**: The reader now automatically preloads the upcoming chapter in the background once the active chapter finishes loading.
+- **Unfavorite Manga Confirmation Dialog**: Prevents accidental unfavoriting on the Manga Screen by showing a confirmation prompt before removal from the library.
+
+### Performance & Optimization
+- **10× Statistics Speedup**: Accelerated opening the Statistics screen by up to 10× (e.g. from 4.1s to 0.4s) on large libraries by batching tracking queries into a single database operation (`GetTracksPerManga.await()`).
+- **3× Chapter List Loading**: Reduced processing power and accelerated chapter list displays by up to 3× for high-volume series (~900+ chapters) on Manga and Updates screens using optimized bulk lookups for queued and downloaded chapters.
+
+### Fixed
+- **Download Cache Overwrite & Mutex Protection**: Eliminated startup download cache overwrite race conditions and protected cache serialization with atomic file writes and root directory mutex locks.
+- **Deleted Chapter Download Cleanup**: Automatically cancels queued downloads if the source deletes or removes the corresponding chapters during library sync.
+- **Disk Download Resume Indexing**: When resuming downloads, finished chapters discovered on disk are immediately indexed rather than re-downloaded.
+- **Duplicate Download Queue Cleanup**: Finished chapter downloads now enqueue and delete duplicate chapter downloads in the reader.
+- **Excluded Category Download Protection**: Preserved excluded category downloads from accidental deletion when marking chapters as read.
+- **Corrupted Local Archive Isolation**: Local source now wraps individual chapter archive inspection in try-catches, gracefully skipping corrupted zip/cbz files instead of failing the entire chapter list.
+- **Duplicate Library Search Query**: Added non-empty title constraints to prevent blank titles matching 100% of the library.
+- **Local Source Global Search**: Local source is now properly included when performing global searches.
+
 ## 2.7.8 "Authentic Atmospheric Audio & Upstream Stability Fixes" (2026-10-09)
 ### Added
 - **Authentic Full-Length Atmospheric Audio Engine**: Completely replaced synthetic equations with high-quality, authentic CC0 public domain recordings hosted remotely on [Harrys-HQ/ShinKu-Assets](https://github.com/Harrys-HQ/ShinKu-Assets). Features 8 tailored genre soundscapes (Action, Horror, Mystery, Cyberpunk, Historical/Wuxia, Rain, Forest, and Cafe) with 3–5 minute durations and 5-second seamless equal-power crossfading.

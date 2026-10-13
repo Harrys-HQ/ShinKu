@@ -23,7 +23,7 @@ import com.shinku.reader.domain.library.service.LibraryPreferences.Companion.MAN
 import com.shinku.reader.domain.library.service.LibraryPreferences.Companion.MANGA_NON_READ
 import com.shinku.reader.domain.manga.interactor.GetLibraryManga
 import com.shinku.reader.domain.manga.interactor.GetReadMangaNotInLibraryView
-import com.shinku.reader.domain.track.interactor.GetTracks
+import com.shinku.reader.domain.track.interactor.GetTracksPerManga
 import com.shinku.reader.domain.track.model.Track
 import eu.kanade.tachiyomi.source.local.isLocal
 
@@ -34,7 +34,7 @@ class StatsScreenModel(
     private val downloadManager: DownloadManager,
     private val getLibraryManga: GetLibraryManga,
     private val getTotalReadDuration: GetTotalReadDuration,
-    private val getTracks: GetTracks,
+    private val getTracksPerManga: GetTracksPerManga,
     private val preferences: LibraryPreferences,
     private val trackerManager: TrackerManager,
     // SY -->
@@ -162,8 +162,11 @@ class StatsScreenModel(
 
     private suspend fun getMangaTrackMap(libraryManga: List<LibraryManga>): Map<Long, List<Track>> {
         val loggedInTrackerIds = loggedInTrackers.map { it.id }.toHashSet()
+        if (loggedInTrackerIds.isEmpty()) return emptyMap()
+
+        val tracksPerManga = getTracksPerManga.await()
         return libraryManga.associate { manga ->
-            val tracks = getTracks.await(manga.id)
+            val tracks = tracksPerManga[manga.id].orEmpty()
                 .fastFilter { it.trackerId in loggedInTrackerIds }
 
             manga.id to tracks

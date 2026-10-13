@@ -11,6 +11,7 @@ import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.presentation.util.ioCoroutineScope
 import com.shinku.reader.extension.ExtensionManager
 import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.local.isLocal
 import com.shinku.reader.util.system.toast
 import com.shinku.reader.exh.source.ShinKuPreferences
 import kotlinx.collections.immutable.PersistentMap
@@ -104,7 +105,7 @@ abstract class SearchScreenModel(
 
     open fun getEnabledSources(): List<CatalogueSource> {
         return sourceManager.getVisibleCatalogueSources()
-            .filter { it.lang in enabledLanguages && "${it.id}" !in disabledSources }
+            .filter { (it.lang in enabledLanguages || it.isLocal()) && "${it.id}" !in disabledSources }
             .sortedWith(
                 compareBy(
                     { "${it.id}" !in pinnedSources },
