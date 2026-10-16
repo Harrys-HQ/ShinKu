@@ -664,20 +664,42 @@ object ChapterMemoCache {
         }
     }
 
+    private fun sanitizeChapterMemo(sourceId: Long, chapterUrl: String, memo: JsonObject): JsonObject {
+        val currentSlug = (memo["slug"] as? JsonPrimitive)?.content ?: return memo
+        if (currentSlug.contains(Regex("""\d+-\d{3}"""))) {
+            val fixedSlug = currentSlug.replace(Regex("""(\d+)-(\d{3})(?!\d)"""), "$1$2")
+            val healed = buildJsonObject {
+                memo.forEach { (k, v) -> put(k, v) }
+                put("slug", JsonPrimitive(fixedSlug))
+            }
+            if (sourceId != 0L) {
+                put(sourceId, chapterUrl, healed)
+            } else {
+                synchronized(this) {
+                    urlCache[normalizeUrl(chapterUrl)] = healed
+                }
+            }
+            return healed
+        }
+        return memo
+    }
+
     fun get(sourceId: Long, chapterUrl: String): JsonObject? {
         purgeLegacyPrefs()
         val normTarget = normalizeUrl(chapterUrl)
-        synchronized(this) {
-            return exactCache["${sourceId}_$normTarget"] ?: urlCache[normTarget]
+        val memo = synchronized(this) {
+            exactCache["${sourceId}_$normTarget"] ?: urlCache[normTarget]
         }
+        return memo?.let { sanitizeChapterMemo(sourceId, chapterUrl, it) }
     }
 
     fun get(chapterUrl: String): JsonObject? {
         purgeLegacyPrefs()
         val normTarget = normalizeUrl(chapterUrl)
-        synchronized(this) {
-            return urlCache[normTarget]
+        val memo = synchronized(this) {
+            urlCache[normTarget]
         }
+        return memo?.let { sanitizeChapterMemo(0L, chapterUrl, it) }
     }
 
     fun ensureChapterMemo(
@@ -695,7 +717,7 @@ object ChapterMemoCache {
         val existingNumber = (existing?.get("number") as? JsonPrimitive)?.content
         val existingLocked = (existing?.get("isLocked") as? JsonPrimitive)?.content?.toBooleanStrictOrNull()
 
-        val resolvedSlug = if (!existingSlug.isNullOrBlank()) {
+        var resolvedSlug = if (!existingSlug.isNullOrBlank()) {
             existingSlug
         } else {
             val mSlug = (mangaMemo?.get("slug") as? JsonPrimitive)?.content
@@ -714,6 +736,13 @@ object ChapterMemoCache {
             } else {
                 ""
             }
+        }
+        if (resolvedSlug.contains(Regex("""\d+-\d{3}"""))) {
+            resolvedSlug = resolvedSlug.replace(Regex("""(\d+)-(\d{3})(?!\d)"""), "$1$2")
+        }
+        if (mangaUrl?.contains("-s-") == true) {
+            val urlSlug = mangaUrl.substringAfter("-s-").substringBefore('?').trim()
+            if (urlSlug.isNotBlank()) resolvedSlug = urlSlug
         }
 
         val resolvedNumber = if (!existingNumber.isNullOrBlank()) {
@@ -811,26 +840,66 @@ object MangaMemoCache {
         } catch (_: Throwable) {}
     }
 
+    private fun sanitizeMangaMemo(sourceId: Long, mangaUrl: String, memo: JsonObject): JsonObject {
+        val currentSlug = (memo["slug"] as? JsonPrimitive)?.content ?: return memo
+        var fixedSlug = currentSlug
+        if (fixedSlug.contains(Regex("""\d+-\d{3}"""))) {
+            fixedSlug = fixedSlug.replace(Regex("""(\d+)-(\d{3})(?!\d)"""), "$1$2")
+        }
+        if (mangaUrl.contains("-s-")) {
+            val urlSlug = mangaUrl.substringAfter("-s-").substringBefore('?').trim()
+            if (urlSlug.isNotBlank() && fixedSlug != urlSlug && !fixedSlug.contains(urlSlug)) {
+                fixedSlug = urlSlug
+            }
+        }
+        if (fixedSlug != currentSlug) {
+            val healed = buildJsonObject {
+                memo.forEach { (k, v) -> put(k, v) }
+                put("slug", JsonPrimitive(fixedSlug))
+            }
+            if (sourceId != 0L) {
+                put(sourceId, mangaUrl, healed)
+            } else {
+                urlCache[normalizeUrl(mangaUrl)] = healed
+            }
+            return healed
+        }
+        return memo
+    }
+
     fun get(sourceId: Long, mangaUrl: String): JsonObject? {
         ensureInitialized()
         val normTarget = normalizeUrl(mangaUrl)
-        return exactCache["${sourceId}_$normTarget"] ?: urlCache[normTarget]
+        val memo = exactCache["${sourceId}_$normTarget"] ?: urlCache[normTarget]
+        return memo?.let { sanitizeMangaMemo(sourceId, mangaUrl, it) }
     }
 
     fun get(mangaUrl: String): JsonObject? {
         ensureInitialized()
         val normTarget = normalizeUrl(mangaUrl)
-        return urlCache[normTarget]
+        val memo = urlCache[normTarget]
+        return memo?.let { sanitizeMangaMemo(0L, mangaUrl, it) }
     }
 
     fun resolveSlug(url: String, title: String?): String {
         val cleanUrl = url.trim().trim('/')
         if (cleanUrl.contains("/")) {
-            val segment = cleanUrl.substringAfterLast('/').substringBefore('?')
-            if (segment.isNotBlank()) return segment
+            val segment = cleanUrl.substringAfterLast('/').substringBefore('?').trim()
+            if (segment.isNotBlank() && !segment.all { it.isDigit() }) return segment
+        }
+        if (cleanUrl.contains("-s-")) {
+            val afterPrefix = cleanUrl.substringAfter("-s-").substringBefore('?').trim()
+            if (afterPrefix.isNotBlank()) return afterPrefix
+        }
+        if (cleanUrl.isNotBlank() && !cleanUrl.all { it.isDigit() } && cleanUrl.matches(Regex("^[a-zA-Z0-9_-]+$"))) {
+            return cleanUrl
         }
         if (!title.isNullOrBlank()) {
-            val fromTitle = title.lowercase()
+            val fromTitle = title
+                .replace(Regex("""(?<=\d),(?=\d)"""), "")
+                .replace(Regex("""['’]"""), "")
+                .replace(Regex("""(?<=[a-zA-Z])\.(?=[a-zA-Z]|\s|$)"""), "")
+                .lowercase()
                 .replace(Regex("[^a-z0-9]+"), "-")
                 .trim('-')
             if (fromTitle.isNotBlank()) return fromTitle
@@ -845,7 +914,16 @@ object MangaMemoCache {
         existingMemo: JsonObject? = null,
     ): JsonObject {
         val cached = existingMemo ?: get(sourceId, mangaUrl) ?: get(mangaUrl)
-        val currentSlug = (cached?.get("slug") as? JsonPrimitive)?.content
+        var currentSlug = (cached?.get("slug") as? JsonPrimitive)?.content
+        if (currentSlug != null) {
+            if (currentSlug.contains(Regex("""\d+-\d{3}"""))) {
+                currentSlug = currentSlug.replace(Regex("""(\d+)-(\d{3})(?!\d)"""), "$1$2")
+            }
+            if (mangaUrl.contains("-s-")) {
+                val urlSlug = mangaUrl.substringAfter("-s-").substringBefore('?').trim()
+                if (urlSlug.isNotBlank()) currentSlug = urlSlug
+            }
+        }
         val resolvedSlug = if (!currentSlug.isNullOrBlank()) {
             currentSlug
         } else {

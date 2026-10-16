@@ -13,6 +13,7 @@ import com.shinku.reader.exh.source.isEhBasedSource
 import com.shinku.reader.exh.util.DataSaver
 import com.shinku.reader.exh.util.DataSaver.Companion.getImage
 import eu.kanade.tachiyomi.network.HttpException
+import eu.kanade.tachiyomi.network.awaitSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -155,7 +156,11 @@ internal class HttpPageLoader(
                 mangaMemo = manga?.toSManga()?.memo,
             )
 
-            source.getPageList(chapter.chapter)
+            var pages = source.getPageList(chapter.chapter)
+            if (pages.isEmpty()) {
+                pages = extractRscPagesFallback(source, chapter)
+            }
+            pages
         }
         // SY -->
         val rp = pages.mapIndexed { index, page ->
@@ -365,6 +370,65 @@ internal class HttpPageLoader(
         }
     }
     // EXH <--
+
+    private suspend fun extractRscPagesFallback(source: HttpSource, readerChapter: ReaderChapter): List<Page> {
+        return withIOContext {
+            try {
+                val dbChapter = readerChapter.chapter
+                val manga = readerChapter.manga
+                val memo = dbChapter.memo?.takeIf { !it.isEmpty() }
+                    ?: eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(source.id, dbChapter.url)
+                    ?: eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(dbChapter.url)
+
+                val slug = (memo?.get("slug") as? kotlinx.serialization.json.JsonPrimitive)?.content
+                    ?: (manga?.toSManga()?.memo?.get("slug") as? kotlinx.serialization.json.JsonPrimitive)?.content
+                    ?: manga?.url?.substringAfter("-s-")?.substringBefore('?')
+                    ?: ""
+
+                val number = (memo?.get("number") as? kotlinx.serialization.json.JsonPrimitive)?.content
+                    ?: if (dbChapter.chapter_number >= 0f) {
+                        if (dbChapter.chapter_number % 1.0f == 0.0f) {
+                            dbChapter.chapter_number.toInt().toString()
+                        } else {
+                            dbChapter.chapter_number.toString()
+                        }
+                    } else {
+                        Regex("""(?:chapter\s*|ch\.\s*|#\s*)?(\d+(?:\.\d+)?)""", RegexOption.IGNORE_CASE)
+                            .find(dbChapter.name)?.groupValues?.get(1) ?: "1"
+                    }
+
+                if (slug.isBlank()) return@withIOContext emptyList()
+
+                val chapterUrl = "${source.baseUrl.trimEnd('/')}/series/comic/$slug/chapter/$number"
+                val request = okhttp3.Request.Builder()
+                    .url(chapterUrl)
+                    .header("rsc", "1")
+                    .headers(source.headers)
+                    .build()
+
+                val response = source.client.newCall(request).awaitSuccess()
+                val body = response.body?.string().orEmpty()
+                response.close()
+
+                val matches = Regex("""\"imageUrl\"\s*:\s*\"([^\"]+)\"""").findAll(body)
+                val urls = matches.map { it.groupValues[1] }
+                    .filter { it.contains("/uploads/series/") || it.endsWith(".webp") || it.endsWith(".jpg") || it.endsWith(".png") }
+                    .distinct()
+                    .toList()
+
+                if (urls.isNotEmpty()) {
+                    urls.mapIndexed { index, url ->
+                        val fullUrl = if (url.startsWith("http")) url else "${source.baseUrl.trimEnd('/')}$url"
+                        Page(index, imageUrl = fullUrl)
+                    }
+                } else {
+                    emptyList()
+                }
+            } catch (_: Throwable) {
+                emptyList()
+            }
+        }
+    }
 }
 
 /**

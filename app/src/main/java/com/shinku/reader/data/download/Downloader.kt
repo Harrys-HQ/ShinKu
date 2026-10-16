@@ -12,6 +12,7 @@ import com.shinku.reader.data.library.LibraryUpdateNotifier
 import com.shinku.reader.data.notification.NotificationHandler
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
+import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.online.HttpSource
 import com.shinku.reader.util.storage.CbzCrypto
 import com.shinku.reader.util.storage.DiskUtil
@@ -415,7 +416,11 @@ class Downloader(
                     mangaMemo = download.manga.toSManga().memo,
                 )
 
-                val pages = download.source.getPageList(sChapter)
+                var pages = download.source.getPageList(sChapter)
+
+                if (pages.isEmpty()) {
+                    pages = extractRscPagesFallback(download.source, download.manga, sChapter)
+                }
 
                 if (pages.isEmpty()) {
                     throw Exception(context.stringResource(MR.strings.page_list_empty_error))
@@ -1024,6 +1029,63 @@ class Downloader(
 
         if (wasRunning) {
             start()
+        }
+    }
+
+    private suspend fun extractRscPagesFallback(source: eu.kanade.tachiyomi.source.Source, manga: Manga, sChapter: SChapter): List<Page> {
+        val httpSource = source as? HttpSource ?: return emptyList()
+        return withIOContext {
+            try {
+                val memo = sChapter.memo?.takeIf { !it.isEmpty() }
+                    ?: eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(httpSource.id, sChapter.url)
+                    ?: eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(sChapter.url)
+
+                val slug = (memo?.get("slug") as? kotlinx.serialization.json.JsonPrimitive)?.content
+                    ?: (manga.toSManga().memo?.get("slug") as? kotlinx.serialization.json.JsonPrimitive)?.content
+                    ?: manga.url.substringAfter("-s-").substringBefore('?')
+
+                val number = (memo?.get("number") as? kotlinx.serialization.json.JsonPrimitive)?.content
+                    ?: if (sChapter.chapter_number >= 0f) {
+                        if (sChapter.chapter_number % 1.0f == 0.0f) {
+                            sChapter.chapter_number.toInt().toString()
+                        } else {
+                            sChapter.chapter_number.toString()
+                        }
+                    } else {
+                        Regex("""(?:chapter\s*|ch\.\s*|#\s*)?(\d+(?:\.\d+)?)""", RegexOption.IGNORE_CASE)
+                            .find(sChapter.name)?.groupValues?.get(1) ?: "1"
+                    }
+
+                if (slug.isBlank()) return@withIOContext emptyList()
+
+                val chapterUrl = "${httpSource.baseUrl.trimEnd('/')}/series/comic/$slug/chapter/$number"
+                val request = Request.Builder()
+                    .url(chapterUrl)
+                    .header("rsc", "1")
+                    .headers(httpSource.headers)
+                    .build()
+
+                val response = httpSource.client.newCall(request).awaitSuccess()
+                val body = response.body?.string().orEmpty()
+                response.close()
+
+                val matches = Regex("""\"imageUrl\"\s*:\s*\"([^\"]+)\"""").findAll(body)
+                val urls = matches.map { it.groupValues[1] }
+                    .filter { it.contains("/uploads/series/") || it.endsWith(".webp") || it.endsWith(".jpg") || it.endsWith(".png") }
+                    .distinct()
+                    .toList()
+
+                if (urls.isNotEmpty()) {
+                    urls.mapIndexed { index, url ->
+                        val fullUrl = if (url.startsWith("http")) url else "${httpSource.baseUrl.trimEnd('/')}$url"
+                        Page(index, imageUrl = fullUrl)
+                    }
+                } else {
+                    emptyList()
+                }
+            } catch (_: Throwable) {
+                emptyList()
+            }
         }
     }
 

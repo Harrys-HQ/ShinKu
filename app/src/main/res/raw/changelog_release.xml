@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.10" changeDate="October 16,2026">
+        <changelogtext>[b]Next.js RSC Stream Healing[/b]: Resolved "No pages found" on Drake Scans and Next.js multisrc sources via RSC stream healing and fallback page extraction</changelogtext>
+        <changelogtext>[b]Slug Self-Correction &amp; Poisoned Cache Healing (Fixes #18)[/b]: Fixed "No pages found" on titles with numeric formatting/punctuation (e.g., Logging 10,000 Years) and auto-healed corrupted slug caches</changelogtext>
+        <changelogtext>[b]Memo Route Persistence[/b]: Preserved memo routing metadata across all database update and domain conversion boundaries</changelogtext>
+        <changelogtext>[b]Extension Filter Crash Guard[/b]: Protected browse source filter dialogs against malformed extension filter bounds and invalid tri-states</changelogtext>
+        <changelogtext>[b]Comick Tracker Sync[/b]: Formatted decimal chapter numbers correctly to ensure seamless progress tracking on Comick</changelogtext>
+        <changelogtext>[b]Tracker First-Read Date[/b]: Removed erroneous timezone conversion when saving tracking start dates</changelogtext>
+        <changelogtext>[b]Paged Reader Stability[/b]: Scoped split-page spreads to individual chapter IDs to prevent crashes during chapter transitions</changelogtext>
+        <changelogtext>[b]Webtoon Reader Stability[/b]: Added window attachment checks on delayed tap handlers to prevent crashes when exiting the reader</changelogtext>
+        <changelogtext>[b]Cloudflare Verification[/b]: Redirected non-GET Cloudflare challenges to prevent navigation errors during verification</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.9" changeDate="October 13,2026">
         <changelogtext>[b]Webtoon Strip Rendering[/b]: Smoother webtoon scrolling and ~30% reduced memory on tall strips by rendering pages as stacked horizontal strips and freeing offscreen strips exceeding 64 MB</changelogtext>
         <changelogtext>[b]Comick Tracker[/b]: Integrated Comick tracking service with PKCE OAuth authentication, reading progress synchronisation, score tracking, and title search (including 'id:' prefix)</changelogtext>

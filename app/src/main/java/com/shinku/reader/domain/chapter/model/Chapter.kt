@@ -18,6 +18,9 @@ fun Chapter.toSChapter(): SChapter {
 }
 
 fun Chapter.copyFromSChapter(sChapter: SChapter): Chapter {
+    sChapter.memo?.takeIf { !it.isEmpty() }?.let {
+        eu.kanade.tachiyomi.source.online.ChapterMemoCache.put(0L, sChapter.url, it)
+    }
     return this.copy(
         name = sChapter.name,
         url = sChapter.url,
@@ -41,4 +44,5 @@ fun Chapter.toDbChapter(): DbChapter = ChapterImpl().also {
     it.chapter_number = chapterNumber.toFloat()
     it.source_order = sourceOrder.toInt()
     it.last_modified = lastModifiedAt
+    it.memo = eu.kanade.tachiyomi.source.online.ChapterMemoCache.get(url)
 }

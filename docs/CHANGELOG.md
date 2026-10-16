@@ -1,4 +1,16 @@
 # ShinKu Changelog
+ 
+## 2.7.10 "Next.js RSC Stream Healing, Slug Self-Correction & Upstream Stability" (2026-10-16)
+### Fixed
+- **Next.js RSC Stream Page Healing (Drake Scans & Modern Multisrc)**: Resolved "No pages found" errors when opening chapters on Drake Scans and other Next.js-based extensions. Added an automatic `NextJsRscInterceptor` and fallback reader stream decoder to extract page URLs even if extension themes encounter early Next.js RSC reader header structures.
+- **Title Slug Self-Correction & Poisoned Cache Healing (Fixes #18)**: Fixed "No pages found" on titles containing numeric formatting or punctuation (e.g. *Logging 10,000 Years into the Future*). Slugs now automatically strip commas, apostrophes, and punctuation before hyphenating, and poisoned cache entries automatically self-heal.
+- **Memo Route Persistence Across Domain Boundaries**: Retained manga and chapter memo parameters through domain mapper conversions and DB updates, ensuring consistent routing across all app lifecycle events.
+- **Extension Filter Crash Prevention**: Protected the browse source filter UI against crashes caused by malformed extension filter indices or unexpected tri-state values.
+- **Comick Tracker Decimal Formatting**: Formatted read chapter progress with standard decimal notation to prevent sync failures on decimal chapter numbers.
+- **Tracker First-Read Date Fix**: Eliminated erroneous timezone conversion when recording the first-read date on tracked series.
+- **Paged Reader Split-Page Crash Prevention**: Fixed reader crashes when viewing split double-page spreads across chapter transitions by scoping split-page caches to specific chapter IDs.
+- **Webtoon Reader Exit Crash Guard**: Added window attachment verification on delayed single-tap navigation events to prevent crashes when rapidly exiting the reader.
+- **Cloudflare Challenge Navigation Fix**: Redirected non-GET Cloudflare challenges to root paths to prevent 404/405 errors during verification.
 
 ## 2.7.9 "Webtoon Strip Rendering, Comick Tracker & High-Performance Upstream Sync" (2026-10-13)
 ### Added

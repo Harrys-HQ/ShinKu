@@ -54,6 +54,9 @@ fun Manga.toSManga(): SManga = SManga.create().also {
 }
 
 fun Manga.copyFrom(other: SManga): Manga {
+    other.memo?.takeIf { !it.isEmpty() }?.let {
+        eu.kanade.tachiyomi.source.online.MangaMemoCache.put(source, url, it)
+    }
     // SY -->
     val author = other.author ?: ogAuthor
     val artist = other.artist ?: ogArtist

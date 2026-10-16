@@ -7,7 +7,6 @@ import com.shinku.reader.data.track.EnhancedTracker
 import com.shinku.reader.data.track.Tracker
 import com.shinku.reader.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.Source
-import com.shinku.reader.util.lang.convertEpochMillisZone
 import logcat.LogPriority
 import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.core.common.util.lang.withNonCancellableContext
@@ -18,7 +17,6 @@ import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.domain.track.interactor.InsertTrack
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import java.time.ZoneOffset
 
 class AddTracks(
     private val insertTrack: InsertTrack,
@@ -78,10 +76,7 @@ class AddTracks(
                         ?.readAt
 
                     firstReadChapterDate?.let {
-                        val startDate = firstReadChapterDate.time.convertEpochMillisZone(
-                            ZoneOffset.systemDefault(),
-                            ZoneOffset.UTC,
-                        )
+                        val startDate = firstReadChapterDate.time
                         track = track.copy(
                             startDate = startDate,
                         )

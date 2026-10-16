@@ -36,6 +36,9 @@ class UpdateManga(
         libraryPreferences: LibraryPreferences = Injekt.get(),
         downloadManager: DownloadManager = Injekt.get(),
     ): Boolean {
+        remoteManga.memo?.takeIf { !it.isEmpty() }?.let {
+            eu.kanade.tachiyomi.source.online.MangaMemoCache.put(localManga.source, localManga.url, it)
+        }
         val remoteTitle = try {
             remoteManga.title
         } catch (_: UninitializedPropertyAccessException) {

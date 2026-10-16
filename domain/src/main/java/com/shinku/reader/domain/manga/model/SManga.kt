@@ -4,6 +4,9 @@ import eu.kanade.tachiyomi.source.model.SManga
 import com.shinku.reader.domain.manga.model.Manga
 
 fun SManga.toDomainManga(sourceId: Long): Manga {
+    memo?.takeIf { !it.isEmpty() }?.let {
+        eu.kanade.tachiyomi.source.online.MangaMemoCache.put(sourceId, url, it)
+    }
     return Manga.create().copy(
         url = url,
         // SY -->
