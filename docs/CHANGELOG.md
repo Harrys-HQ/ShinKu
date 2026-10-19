@@ -1,5 +1,17 @@
 # ShinKu Changelog
  
+## 2.7.11 "AI Upscaling Isolation, Sensor Optimization & Upstream Stability" (2026-10-19)
+### Performance & Optimization
+- **AI Upscaling Jitter & Thumbnail Isolation (Fixes #19)**: Resolved UI stutter and scrolling jitter across the Library and Browse screens when AI Image Upscaling is active. `UpscalingInterceptor` now strictly isolates execution to reader pages (< 1500px), prevents cover thumbnail interception, enforces dimension bounds, recycles intermediate bitmaps, and offloads heavy convolution to background worker threads.
+- **Adaptive Night Read Sensor Throttling**: Throttled raw ambient light sensor events in `ReaderActivity` to only update when crossing discrete brightness thresholds, preventing continuous window attribute modification and ViewModel state churn.
+- **Background Extension Initialization**: Offloaded extension discovery, manifest scanning, and classloader initialization off the main UI thread to `Dispatchers.IO`, coordinating safely with `AndroidSourceManager` to guarantee completely stutter-free cold starts.
+
+### Fixed
+- **Live Translation Engine Decoupling**: Fixed on-device translation engines (e.g., MLKit, AICore) requiring a Gemini cloud API key.
+- **WebView Renderer Termination Guard**: Stripped dangerous and initiator-sensitive headers (specifically `Origin`) from WebView requests, preventing Chromium from killing the renderer process.
+- **WebView Source Header Isolation**: Confined source headers exclusively to the origin host in WebView navigation, preventing leakage to external domains or redirects.
+- **Download Cache Tracking for Stored Stubs**: Grouped multiple source IDs sharing directory names on disk and deduplicated chapter count queries, fixing missing download tracking when installed sources share folder names with stored stubs.
+
 ## 2.7.10 "Next.js RSC Stream Healing, Slug Self-Correction & Upstream Stability" (2026-10-16)
 ### Fixed
 - **Next.js RSC Stream Page Healing (Drake Scans & Modern Multisrc)**: Resolved "No pages found" errors when opening chapters on Drake Scans and other Next.js-based extensions. Added an automatic `NextJsRscInterceptor` and fallback reader stream decoder to extract page URLs even if extension themes encounter early Next.js RSC reader header structures.

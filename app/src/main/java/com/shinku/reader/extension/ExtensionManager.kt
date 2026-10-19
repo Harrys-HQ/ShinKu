@@ -19,6 +19,7 @@ import com.shinku.reader.exh.log.xLogD
 import com.shinku.reader.exh.source.BlacklistedSources
 import com.shinku.reader.exh.source.MERGED_SOURCE_ID
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -94,8 +95,10 @@ class ExtensionManager(
     private var findAvailableExtensionsJob: kotlinx.coroutines.Job? = null
 
     init {
-        initExtensions()
-        ExtensionInstallReceiver(InstallationListener()).register(context)
+        scope.launch(Dispatchers.IO) {
+            initExtensions()
+            ExtensionInstallReceiver(InstallationListener()).register(context)
+        }
     }
 
     private var subLanguagesEnabledOnFirstRun = preferences.enabledLanguages().isSet()

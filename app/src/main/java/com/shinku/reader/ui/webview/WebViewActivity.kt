@@ -23,6 +23,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.util.system.toWebViewHeaders
 import uy.kohesive.injekt.injectLazy
 
 class WebViewActivity : BaseActivity() {
@@ -61,7 +62,7 @@ class WebViewActivity : BaseActivity() {
         var headers = emptyMap<String, String>()
         (sourceManager.get(intent.extras!!.getLong(SOURCE_KEY)) as? HttpSource)?.let { source ->
             try {
-                headers = source.headers.toMultimap().mapValues { it.value.getOrNull(0) ?: "" }
+                headers = source.headers.toWebViewHeaders()
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to build headers" }
             }

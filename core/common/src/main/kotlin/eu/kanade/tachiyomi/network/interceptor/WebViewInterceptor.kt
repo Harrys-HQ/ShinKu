@@ -9,6 +9,7 @@ import com.shinku.reader.util.system.DeviceUtil
 import com.shinku.reader.util.system.WebViewUtil
 import com.shinku.reader.util.system.setDefaultSettings
 import com.shinku.reader.util.system.setUserAgent
+import com.shinku.reader.util.system.toWebViewHeaders
 import com.shinku.reader.util.system.toast
 import kotlinx.coroutines.DelicateCoroutinesApi
 import okhttp3.Headers
@@ -70,13 +71,7 @@ abstract class WebViewInterceptor(
     }
 
     fun parseHeaders(headers: Headers): Map<String, String> {
-        return headers
-            // Keeping unsafe header makes webview throw [net::ERR_INVALID_ARGUMENT]
-            .filter { (name, value) ->
-                isRequestHeaderSafe(name, value)
-            }
-            .groupBy(keySelector = { (name, _) -> name }) { (_, value) -> value }
-            .mapValues { it.value.getOrNull(0).orEmpty() }
+        return headers.toWebViewHeaders()
     }
 
     fun CountDownLatch.awaitFor30Seconds() {
@@ -92,15 +87,3 @@ abstract class WebViewInterceptor(
     }
 }
 
-// Based on [IsRequestHeaderSafe] in
-// https://source.chromium.org/chromium/chromium/src/+/main:services/network/public/cpp/header_util.cc
-private fun isRequestHeaderSafe(_name: String, _value: String): Boolean {
-    val name = _name.lowercase(Locale.ENGLISH)
-    val value = _value.lowercase(Locale.ENGLISH)
-    if (name in unsafeHeaderNames || name.startsWith("proxy-")) return false
-    if (name == "connection" && value == "upgrade") return false
-    return true
-}
-private val unsafeHeaderNames = listOf(
-    "content-length", "host", "trailer", "te", "upgrade", "cookie2", "keep-alive", "transfer-encoding", "set-cookie",
-)

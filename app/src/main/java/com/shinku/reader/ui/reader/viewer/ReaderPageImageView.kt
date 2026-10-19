@@ -46,9 +46,12 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.SCALE_TYPE_
 import com.github.chrisbanes.photoview.PhotoView
 import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.data.coil.TachiyomiImageDecoder
+import com.shinku.reader.data.coil.allowUpscaling
 import com.shinku.reader.data.coil.cropBorders
 import com.shinku.reader.data.coil.customDecoder
 import com.shinku.reader.data.coil.webtoonStrips
+import com.shinku.reader.exh.source.ShinKuPreferences
+import android.graphics.BitmapFactory
 import com.shinku.reader.ui.reader.viewer.webtoon.WebtoonStripImageView
 import com.shinku.reader.ui.reader.viewer.webtoon.WebtoonSubsamplingImageView
 import com.shinku.reader.util.system.animatorDurationScale
@@ -400,7 +403,20 @@ open class ReaderPageImageView @JvmOverloads constructor(
                 isVisible = true
             }
             is BufferedSource -> {
-                if (!isWebtoon || alwaysDecodeLongStripWithSSIV) {
+                val aiUpscaling = Injekt.get<ShinKuPreferences>().aiUpscaling().get()
+                val isLowRes = if (aiUpscaling) {
+                    try {
+                        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        BitmapFactory.decodeStream(data.peek().inputStream(), null, options)
+                        options.outWidth in 1..<1500 && options.outHeight in 1..<1500
+                    } catch (_: Exception) {
+                        false
+                    }
+                } else {
+                    false
+                }
+
+                if (!isLowRes && (!isWebtoon || alwaysDecodeLongStripWithSSIV)) {
                     setHardwareConfig(ImageUtil.canUseHardwareBitmap(data))
                     setImage(ImageSource.inputStream(data.inputStream()))
                     isVisible = true
@@ -427,6 +443,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
                     .precision(Precision.INEXACT)
                     .cropBorders(config.cropBorders)
                     .customDecoder(true)
+                    .allowUpscaling(aiUpscaling)
                     .crossfade(false)
                     .build()
                     .let(context.imageLoader::enqueue)

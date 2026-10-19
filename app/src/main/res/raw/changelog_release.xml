@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.11" changeDate="October 19,2026">
+        <changelogtext>[b]AI Upscaling Jitter Fix (Fixes #19)[/b]: Isolated AI image upscaling strictly to reader pages, eliminating cover thumbnail interception, UI stutter, and scrolling jitters across the Library and Browse screens</changelogtext>
+        <changelogtext>[b]Adaptive Night Read Optimization[/b]: Throttled light sensor events in the reader to prevent window brightness churn and UI thread thrashing</changelogtext>
+        <changelogtext>[b]Live Translation Engine Decoupling[/b]: Decoupled cloud API key requirement when on-device translation engines are selected</changelogtext>
+        <changelogtext>[b]WebView Renderer Crash Guard[/b]: Stripped dangerous headers including Origin from WebView requests to prevent Chromium renderer termination</changelogtext>
+        <changelogtext>[b]WebView Source Header Isolation[/b]: Dispatched source headers strictly to the target source host rather than external redirects</changelogtext>
+        <changelogtext>[b]Download Cache Multi-Source Grouping[/b]: Resolved missing downloads for sources sharing directory names with stored stubs and deduplicated count calculations</changelogtext>
+        <changelogtext>[b]Background Extension Initialization[/b]: Offloaded extension discovery and classloading to background IO threads to ensure silky smooth app startup</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.10" changeDate="October 16,2026">
         <changelogtext>[b]Next.js RSC Stream Healing[/b]: Resolved "No pages found" on Drake Scans and Next.js multisrc sources via RSC stream healing and fallback page extraction</changelogtext>
         <changelogtext>[b]Slug Self-Correction &amp; Poisoned Cache Healing (Fixes #18)[/b]: Fixed "No pages found" on titles with numeric formatting/punctuation (e.g., Logging 10,000 Years) and auto-healed corrupted slug caches</changelogtext>

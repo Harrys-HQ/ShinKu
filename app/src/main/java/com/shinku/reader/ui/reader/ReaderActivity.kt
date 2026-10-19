@@ -196,6 +196,7 @@ class ReaderActivity : BaseActivity() {
     private var sensorManager: android.hardware.SensorManager? = null
     private var lightSensor: android.hardware.Sensor? = null
     private var lightSensorListener: android.hardware.SensorEventListener? = null
+    private var lastNightReadBrightnessValue: Int? = null
     // SY <--
 
     /**
@@ -393,11 +394,13 @@ class ReaderActivity : BaseActivity() {
             ContentOverlay(state = state)
 
             // Floating Translate Button
-            val isLiveTranslationEnabled = remember { shinkuPreferences.liveTranslation().get() }
+            val isLiveTranslationEnabled by shinkuPreferences.liveTranslation().collectAsState()
             val isTranslationActive = state.activePage?.showTranslation ?: false
-            val apiKey = remember { shinkuPreferences.geminiApiKey().get() }
+            val apiKey by shinkuPreferences.geminiApiKey().collectAsState()
+            val translationEngine by shinkuPreferences.translationEngine().collectAsState()
+            val hasValidCredentials = apiKey.isNotBlank() || translationEngine != "gemini_cloud"
             
-            if (isLiveTranslationEnabled && apiKey.isNotBlank() && !state.menuVisible && !zenMode) {
+            if (isLiveTranslationEnabled && hasValidCredentials && !state.menuVisible && !zenMode) {
                 @OptIn(ExperimentalFoundationApi::class)
                 androidx.compose.material3.Surface(
                     modifier = Modifier
@@ -824,11 +827,15 @@ class ReaderActivity : BaseActivity() {
                 override fun onSensorChanged(event: android.hardware.SensorEvent?) {
                     if (event == null) return
                     val lux = event.values[0]
-                    if (lux < 15.0f) {
-                        setCustomBrightnessValue(-45)
+                    val targetValue = if (lux < 15.0f) {
+                        -45
                     } else {
                         val prefVal = readerPreferences.customBrightnessValue().get()
-                        setCustomBrightnessValue(if (readerPreferences.customBrightness().get()) prefVal else 0)
+                        if (readerPreferences.customBrightness().get()) prefVal else 0
+                    }
+                    if (targetValue != lastNightReadBrightnessValue) {
+                        lastNightReadBrightnessValue = targetValue
+                        setCustomBrightnessValue(targetValue)
                     }
                 }
 
@@ -837,7 +844,7 @@ class ReaderActivity : BaseActivity() {
             sensorManager?.registerListener(
                 lightSensorListener,
                 lightSensor,
-                android.hardware.SensorManager.SENSOR_DELAY_NORMAL
+                android.hardware.SensorManager.SENSOR_DELAY_NORMAL,
             )
         }
     }
@@ -847,6 +854,7 @@ class ReaderActivity : BaseActivity() {
             sensorManager?.unregisterListener(it)
         }
         lightSensorListener = null
+        lastNightReadBrightnessValue = null
     }
 
     /**

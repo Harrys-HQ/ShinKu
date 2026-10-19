@@ -51,3 +51,15 @@ val Options.webtoonStrips: Boolean
     get() = getExtra(webtoonStripsKey)
 
 private val webtoonStripsKey = Extras.Key(default = false)
+
+fun ImageRequest.Builder.allowUpscaling(enable: Boolean) = apply {
+    extras[allowUpscalingKey] = enable
+}
+
+val Options.allowUpscaling: Boolean
+    get() = getExtra(allowUpscalingKey)
+
+val ImageRequest.allowUpscaling: Boolean
+    get() = getExtra(allowUpscalingKey)
+
+private val allowUpscalingKey = Extras.Key(default = false)

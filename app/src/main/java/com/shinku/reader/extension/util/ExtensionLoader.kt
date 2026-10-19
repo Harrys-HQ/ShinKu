@@ -16,6 +16,7 @@ import eu.kanade.tachiyomi.source.SourceFactory
 import com.shinku.reader.util.lang.Hash
 import com.shinku.reader.util.storage.copyAndSetReadOnlyTo
 import com.shinku.reader.util.system.ChildFirstPathClassLoader
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
@@ -166,7 +167,7 @@ internal object ExtensionLoader {
         if (extPkgs.isEmpty()) return emptyList()
 
         // Load each extension concurrently and wait for completion
-        val results = runBlocking {
+        val results = runBlocking(Dispatchers.IO) {
             val deferred = extPkgs.map {
                 async { 
                     runCatching { loadExtension(context, it) }
