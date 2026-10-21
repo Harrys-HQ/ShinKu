@@ -5,12 +5,6 @@
 <h1 align="center">ShinKu</h1>
 
 <p align="center">
-  <a href="https://ko-fi.com/B0B21RXKG4">
-    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="ko-fi">
-  </a>
-</p>
-
-<p align="center">
   <strong>ShinKu</strong> (Crimson) is a modern, rebranded, and enhanced fork of the SY base, which itself is a feature-rich fork of <a href="https://github.com/mihonapp/mihon">Mihon</a> (formerly Tachiyomi).
 </p>
 
