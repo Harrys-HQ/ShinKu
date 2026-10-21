@@ -17,6 +17,7 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Guides', link: '/guides/getting-started' },
+      { text: 'Changelog', link: '/CHANGELOG' },
       { text: 'FAQ & Help', link: '/faq/troubleshooting' },
       { text: 'Philosophy', link: '/about/philosophy' },
       { text: 'Support Us', link: '/about/donate' },
@@ -51,6 +52,7 @@ export default defineConfig({
       {
         text: '❤️ Project & Community',
         items: [
+          { text: 'Changelog & Updates', link: '/CHANGELOG' },
           { text: 'Development Philosophy & AI', link: '/about/philosophy' },
           { text: 'Support & Donate', link: '/about/donate' },
           { text: 'DMCA & Safe Harbor', link: '/legal/dmca' },

@@ -13,8 +13,11 @@ hero:
       text: 📥 Download Latest APK
       link: https://github.com/Harrys-HQ/ShinKu/releases/latest
     - theme: alt
-      text: 📖 Read User Guides
+      text: 📖 User Guides
       link: /guides/getting-started
+    - theme: alt
+      text: 📜 Changelog
+      link: /CHANGELOG
     - theme: alt
       text: ☕ Support on Ko-fi
       link: https://ko-fi.com/B0B21RXKG4
