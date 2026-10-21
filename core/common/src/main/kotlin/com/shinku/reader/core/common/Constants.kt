@@ -1,8 +1,8 @@
 package com.shinku.reader.core.common
 
 object Constants {
-    const val URL_HELP = "https://mihon.app/docs/guides/troubleshooting/"
-    const val URL_HELP_UPCOMING = "https://mihon.app/docs/faq/updates/upcoming"
+    const val URL_HELP = "https://harrys-hq.github.io/ShinKu/guides/getting-started"
+    const val URL_HELP_UPCOMING = "https://harrys-hq.github.io/ShinKu/faq/troubleshooting"
 
     const val MANGA_EXTRA = "manga"
 

@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: ❌ Help with Extensions
-    url: https://mihon.app/docs/faq/browse/extensions
-    about: For extension-related questions/issues
-  - name: 🖥️ Mihon website
-    url: https://mihon.app/
-    about: Guides, troubleshooting, and answers to common questions
+  - name: ❌ Help with Extensions & Repositories
+    url: https://harrys-hq.github.io/ShinKu/guides/extension-repositories
+    about: For extension repository questions and configuration
+  - name: 🖥️ ShinKu Website & Guides
+    url: https://harrys-hq.github.io/ShinKu/
+    about: User guides, troubleshooting, and answers to common questions
+  - name: ☕ Support Development (Ko-fi)
+    url: https://ko-fi.com/B0B21RXKG4
+    about: Support ongoing ShinKu development

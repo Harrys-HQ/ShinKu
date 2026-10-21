@@ -37,6 +37,7 @@ export default defineConfig({
           { text: 'AI & Immersion Features', link: '/guides/ai-features' },
           { text: 'Reading Journey & Stats', link: '/guides/reading-journey' },
           { text: 'Tracking & Sync', link: '/guides/tracking' },
+          { text: 'Local Source (CBZ/ZIP)', link: '/guides/local-source' },
           { text: 'Source Migration', link: '/guides/source-migration' },
           { text: 'Backups & Restoration', link: '/guides/backups' }
         ]

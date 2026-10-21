@@ -94,7 +94,7 @@ body:
           required: true
         - label: I have written a short but informative title.
           required: true
-        - label: I have gone through the [FAQ](https://mihon.app/docs/faq/general) and [troubleshooting guide](https://mihon.app/docs/guides/troubleshooting/).
+        - label: I have gone through the [FAQ](https://harrys-hq.github.io/ShinKu/faq/troubleshooting) and [troubleshooting guide](https://harrys-hq.github.io/ShinKu/faq/troubleshooting).
           required: true
         - label: I have updated the app to version **[2.0.0](https://github.com/Harrys-HQ/ShinKu/releases/latest)**.
           required: true

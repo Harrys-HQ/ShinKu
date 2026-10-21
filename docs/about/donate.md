@@ -20,7 +20,7 @@ If ShinKu enhances your daily reading routine and you would like to help cover d
 ### Why Ko-fi?
 * **Zero Platform Cut:** Ko-fi takes 0% platform fee on one-off donations.
 * **Global Compatibility:** Supports credit cards, debit cards, and PayPal from anywhere in the world.
-* **Direct Local Cash-Out:** Seamlessly connects to Philippine payment channels (PayPal $\rightarrow$ GCash/Maya/PH banks), ensuring your contributions directly support the developer without excessive intermediary fees.
+* **Direct Support:** Ensures your contributions go directly to independent development, device testing, and project maintenance without excessive intermediary cuts.
 
 ---
 

@@ -150,12 +150,21 @@ object AboutScreen : Screen() {
                     )
                 }
 
-                // item {
-                //     TextPreferenceWidget(
-                //         title = stringResource(MR.strings.help_translate),
-                //         onPreferenceClick = { uriHandler.openUri("https://mihon.app/docs/contribute#translation") },
-                //     )
-                // }
+                item {
+                    TextPreferenceWidget(
+                        title = stringResource(MR.strings.label_help),
+                        subtitle = "Guides, FAQ, and troubleshooting",
+                        onPreferenceClick = { uriHandler.openUri("https://harrys-hq.github.io/ShinKu/guides/getting-started") },
+                    )
+                }
+
+                item {
+                    TextPreferenceWidget(
+                        title = "Support development",
+                        subtitle = "Support ShinKu on Ko-fi",
+                        onPreferenceClick = { uriHandler.openUri("https://ko-fi.com/B0B21RXKG4") },
+                    )
+                }
 
                 item {
                     TextPreferenceWidget(
