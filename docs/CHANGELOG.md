@@ -1,5 +1,13 @@
 # ShinKu Changelog
  
+## 2.7.13 "Official Portal, Documentation & Full Brand Independence" (2026-10-21)
+### Features & Documentation
+- **Official Documentation Website**: Launched the official ShinKu portal and documentation website at [https://harrys-hq.github.io/ShinKu/](https://harrys-hq.github.io/ShinKu/) with VitePress, dark mode, responsive layout, and full-text local search.
+- **In-App Help & Guide Migration**: Directed all in-app help, onboarding walkthroughs, Cloudflare troubleshooting banners, and error logs directly to ShinKu's official website.
+- **Local Source Comprehensive Guide**: Added dedicated guide covering folder structure, CBZ/CBR/ZIP archive handling, custom covers, and ComicInfo.xml metadata.
+- **Support & Sponsorship Integration**: Added direct Ko-fi support preference in the About screen and enabled native GitHub repository sidebar sponsorship.
+- **Safe-Harbor Compliance**: Formalized DMCA and local-first privacy policy ensuring safe-harbor standing.
+
 ## 2.7.12 "Discover Feed Overhaul, Responsive UI & Upstream Performance Sync" (2026-10-21)
 ### Performance & Optimization
 - **Browse > Feed Concurrency Overhaul**: Parallelized feed searches and source queries across `Dispatchers.IO.limitedParallelism(4)` to prevent single-source head-of-line blocking.
