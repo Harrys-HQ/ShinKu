@@ -84,8 +84,10 @@ open class FeedScreenModel(
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
 
-    private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(4)
     var pushed: Boolean = false
+    var isInitialized: Boolean = false
+        private set
 
     init {
         mutableState.update {
@@ -125,8 +127,7 @@ open class FeedScreenModel(
             }
             .launchIn(screenModelScope)
 
-        fetchAiRecommendations()
-        loadFeaturedAndForYou()
+        init(force = true)
     }
 
     private fun fetchAiRecommendations() {
@@ -384,9 +385,6 @@ open class FeedScreenModel(
     }
 
     private suspend fun loadGenreSections(sources: List<CatalogueSource>, userBestGenres: List<String> = emptyList()) {
-        // Clear previous genre sections when refreshing to provide fresh randomized recommendations
-        mutableState.update { it.copy(genreSections = persistentMapOf()) }
-
         // Pick 5 genres dynamically: blend user's favorite genres with randomized pool
         val personalizedGenres = userBestGenres.filter { genre ->
             GENRE_POOL.any { it.equals(genre, ignoreCase = true) }
@@ -397,52 +395,59 @@ open class FeedScreenModel(
         }.shuffled()
 
         val selectedGenres = (personalizedGenres + remainingPool).take(5)
-        val sectionsMap = mutableMapOf<String, ImmutableList<DomainManga>>()
 
         // Query library manga once to blend local favorites matching each genre
         val allLibraryManga = runCatching { getLibraryManga.await().map { it.manga } }.getOrDefault(emptyList())
 
-        for (genre in selectedGenres) {
-            try {
-                // Find sources that natively support filtering by this genre
-                val supportingSources = sources.shuffled().mapNotNull { source ->
-                    val filterList = GenreFilterHelper.buildGenreFilterList(source, genre)
-                    if (filterList != null) source to filterList else null
-                }.take(2)
+        // Concurrently query genre highlights across bounded dispatcher
+        val deferredSections = selectedGenres.map { genre ->
+            screenModelScope.async(coroutineDispatcher) {
+                try {
+                    val supportingSources = sources.shuffled().mapNotNull { source ->
+                        val filterList = GenreFilterHelper.buildGenreFilterList(source, genre)
+                        if (filterList != null) source to filterList else null
+                    }.take(2)
 
-                val genrePage = (1..2).random()
-                val genreResults = supportingSources.map { (source, filterList) ->
-                    screenModelScope.async(Dispatchers.IO) {
-                        try {
-                            source.getSearchManga(genrePage, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
-                        } catch (e: Throwable) {
-                            emptyList()
+                    val genrePage = (1..2).random()
+                    val genreResults = supportingSources.map { (source, filterList) ->
+                        async(Dispatchers.IO) {
+                            try {
+                                source.getSearchManga(genrePage, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
+                            } catch (e: Throwable) {
+                                emptyList()
+                            }
                         }
+                    }.awaitAll().flatten()
+
+                    val localGenreManga = if (genreResults.isNotEmpty()) {
+                        networkToLocalManga(genreResults)
+                    } else {
+                        emptyList()
                     }
-                }.awaitAll().flatten()
 
-                val localGenreManga = if (genreResults.isNotEmpty()) {
-                    networkToLocalManga(genreResults)
-                } else {
-                    emptyList()
-                }
+                    // Blend library titles with network titles, strictly filtering out any mismatched tags
+                    val libraryMatches = allLibraryManga.filter { GenreFilterHelper.matchesGenre(it, genre) }
+                    val validNetworkManga = localGenreManga.filter { GenreFilterHelper.matchesGenre(it, genre) }
 
-                // Blend library titles with network titles, strictly filtering out any mismatched tags
-                val libraryMatches = allLibraryManga.filter { GenreFilterHelper.matchesGenre(it, genre) }
-                val validNetworkManga = localGenreManga.filter { GenreFilterHelper.matchesGenre(it, genre) }
+                    val combined = (libraryMatches.shuffled().take(2) + validNetworkManga)
+                        .distinctBy { it.id }
 
-                val combined = (libraryMatches.shuffled().take(2) + validNetworkManga)
-                    .distinctBy { it.id }
-
-                if (combined.isNotEmpty()) {
-                    sectionsMap[genre] = combined.take(10).toImmutableList()
-                    val currentMap = sectionsMap.toImmutableMap()
-                    mutableState.update {
-                        it.copy(genreSections = currentMap)
+                    if (combined.isNotEmpty()) {
+                        genre to combined.take(10).toImmutableList()
+                    } else {
+                        null
                     }
+                } catch (e: Throwable) {
+                    logcat(LogPriority.ERROR, e)
+                    null
                 }
-            } catch (e: Throwable) {
-                logcat(LogPriority.ERROR, e)
+            }
+        }
+
+        val results = deferredSections.awaitAll().filterNotNull()
+        if (results.isNotEmpty()) {
+            mutableState.update {
+                it.copy(genreSections = results.toMap().toImmutableMap())
             }
         }
     }
@@ -518,7 +523,9 @@ open class FeedScreenModel(
         }
     }
 
-    fun init() {
+    fun init(force: Boolean = false) {
+        if (!force && isInitialized) return
+        isInitialized = true
         pushed = false
         mutableState.update {
             it.copy(

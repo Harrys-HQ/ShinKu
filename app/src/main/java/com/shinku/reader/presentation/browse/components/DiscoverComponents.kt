@@ -1,8 +1,10 @@
 package com.shinku.reader.presentation.browse.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,36 +25,56 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.presentation.library.components.CommonMangaItemDefaults
 import com.shinku.reader.presentation.manga.components.MangaCover
+import kotlinx.coroutines.delay
 
 @Composable
 fun DiscoverFeaturedCarousel(
     featuredManga: List<Manga>,
     onClickManga: (Manga) -> Unit,
+    getMangaState: (@Composable (Manga) -> State<Manga>)? = null,
     modifier: Modifier = Modifier,
 ) {
     if (featuredManga.isEmpty()) return
 
     val pagerState = rememberPagerState { featuredManga.size }
+
+    // Auto-advance hero carousel with gentle 6-second cadence when not actively interacted with
+    LaunchedEffect(pagerState.pageCount, pagerState.isScrollInProgress) {
+        if (featuredManga.size > 1 && !pagerState.isScrollInProgress) {
+            delay(6000)
+            val nextPage = (pagerState.currentPage + 1) % featuredManga.size
+            pagerState.animateScrollToPage(nextPage)
+        }
+    }
 
     Column(
         modifier = modifier
@@ -69,6 +91,7 @@ fun DiscoverFeaturedCarousel(
             FeaturedCard(
                 manga = manga,
                 onClick = { onClickManga(manga) },
+                getMangaState = getMangaState,
             )
         }
 
@@ -107,12 +130,18 @@ fun DiscoverFeaturedCarousel(
 private fun FeaturedCard(
     manga: Manga,
     onClick: () -> Unit,
+    getMangaState: (@Composable (Manga) -> State<Manga>)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val haptic = LocalHapticFeedback.current
+    val currentManga = getMangaState?.invoke(manga)?.value ?: manga
+    val isTablet = LocalConfiguration.current.screenWidthDp >= 600
+    val cardHeight = if (isTablet) 240.dp else 200.dp
+
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .height(200.dp)
+            .height(cardHeight)
             .shadow(
                 elevation = 8.dp,
                 shape = RoundedCornerShape(22.dp),
@@ -124,14 +153,19 @@ private fun FeaturedCard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable(onClick = onClick),
+                .clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onClick()
+                },
         ) {
             // Full-bleed Cover Background
             MangaCover.Book(
-                data = manga,
-                contentDescription = manga.title,
+                data = currentManga,
+                contentDescription = currentManga.title,
                 shape = RoundedCornerShape(22.dp),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(if (currentManga.favorite) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f),
             )
 
             // Cinematic Multi-Stop Gradient Scrim
@@ -149,11 +183,22 @@ private fun FeaturedCard(
                     ),
             )
 
+            // In-Library indicator badge in top-end
+            if (currentManga.favorite) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp),
+                ) {
+                    InLibraryBadge(enabled = true)
+                }
+            }
+
             // Content Overlay
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(18.dp),
+                    .padding(if (isTablet) 22.dp else 18.dp),
             ) {
                 // "FEATURED" pill badge
                 Row(
@@ -190,19 +235,18 @@ private fun FeaturedCard(
 
                 // Manga Title
                 Text(
-                    text = manga.title,
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                    ),
+                    text = currentManga.title,
+                    style = if (isTablet) MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
+                    else MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
                     color = Color.White,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
 
-                if (!manga.author.isNullOrBlank()) {
+                if (!currentManga.author.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = manga.author!!,
+                        text = currentManga.author!!,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.75f),
                         maxLines = 1,
@@ -308,6 +352,7 @@ fun DiscoverGenreCloud(
 fun DiscoverSectionHeader(
     title: String,
     onSeeAllClick: (() -> Unit)? = null,
+    onClearClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -323,30 +368,50 @@ fun DiscoverSectionHeader(
                 fontWeight = FontWeight.ExtraBold,
             ),
             color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f, fill = false),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
 
-        if (onSeeAllClick != null) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(onClick = onSeeAllClick)
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
-            ) {
-                Text(
-                    text = "See",
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Spacer(modifier = Modifier.width(3.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.ArrowForwardIos,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(12.dp),
-                )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (onClearClick != null) {
+                IconButton(
+                    onClick = onClearClick,
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = "Clear",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+
+            if (onSeeAllClick != null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onSeeAllClick)
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        text = "See",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
             }
         }
     }
@@ -356,6 +421,8 @@ fun DiscoverSectionHeader(
 fun DiscoverMangaRow(
     mangas: List<Manga>,
     onClickManga: (Manga) -> Unit,
+    onLongClickManga: ((Manga) -> Unit)? = null,
+    getMangaState: (@Composable (Manga) -> State<Manga>)? = null,
     modifier: Modifier = Modifier,
 ) {
     if (mangas.isEmpty()) return
@@ -371,46 +438,82 @@ fun DiscoverMangaRow(
             DiscoverMangaCard(
                 manga = manga,
                 onClick = { onClickManga(manga) },
+                onLongClick = onLongClickManga?.let { { it(manga) } },
+                getMangaState = getMangaState,
             )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DiscoverMangaCard(
     manga: Manga,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    getMangaState: (@Composable (Manga) -> State<Manga>)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val haptic = LocalHapticFeedback.current
+    val currentManga = getMangaState?.invoke(manga)?.value ?: manga
+    val isTablet = LocalConfiguration.current.screenWidthDp >= 600
+    val cardWidth = if (isTablet) 128.dp else 116.dp
+    val cardHeight = if (isTablet) 180.dp else 162.dp
+
     Column(
         modifier = modifier
-            .width(116.dp)
+            .width(cardWidth)
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
-    ) {
-        Surface(
-            shape = RoundedCornerShape(14.dp),
-            shadowElevation = 4.dp,
-            border = BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+            .combinedClickable(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onClick()
+                },
+                onLongClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick?.invoke() ?: onClick()
+                },
             ),
+    ) {
+        Box(
             modifier = Modifier
-                .width(116.dp)
-                .height(162.dp),
+                .width(cardWidth)
+                .height(cardHeight),
         ) {
-            MangaCover.Book(
-                data = manga,
-                contentDescription = manga.title,
+            Surface(
                 shape = RoundedCornerShape(14.dp),
+                shadowElevation = 4.dp,
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                ),
                 modifier = Modifier.fillMaxSize(),
-            )
+            ) {
+                MangaCover.Book(
+                    data = currentManga,
+                    contentDescription = currentManga.title,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .alpha(if (currentManga.favorite) CommonMangaItemDefaults.BrowseFavoriteCoverAlpha else 1f),
+                )
+            }
+
+            if (currentManga.favorite) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp),
+                ) {
+                    InLibraryBadge(enabled = true)
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = manga.title,
+            text = currentManga.title,
             style = MaterialTheme.typography.labelMedium.copy(
                 fontWeight = FontWeight.Bold,
             ),

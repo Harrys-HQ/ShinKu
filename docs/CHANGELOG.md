@@ -1,5 +1,25 @@
 # ShinKu Changelog
  
+## 2.7.12 "Discover Feed Overhaul, Responsive UI & Upstream Performance Sync" (2026-10-21)
+### Performance & Optimization
+- **Browse > Feed Concurrency Overhaul**: Parallelized feed searches and source queries across `Dispatchers.IO.limitedParallelism(4)` to prevent single-source head-of-line blocking.
+- **Concurrent Genre Highlights Fetching**: Refactored dynamic genre highlight queries from sequential execution to parallel async workers, reducing section loading times from ~15s down to ~2s.
+- **Layout Stability & Zero-Jank Rendering**: Retained offline library fallback sections while network queries resolve, preventing layout collapse and abrupt content jumping.
+- **Eliminated Redundant Startup Reloads**: Guarded initial state lifecycle so returning from manga details or switching tabs preserves scroll position and loaded cards instantly with 0ms lag.
+- **Library Update Prioritization (Upstream Mihon)**: Prioritized sources with the largest entry count (`.sortedByDescending { it.size }`) to minimize background update time.
+
+### UI & UX Polish
+- **Hero Carousel Auto-Advance**: Added a subtle 6-second auto-advance loop to the featured hero banner that pauses automatically during user touch/drag interactions.
+- **Responsive Multi-Device Layouts**: Scaled hero banners (`200dp` mobile / `240dp` tablet) and manga cards (`116dp` mobile / `128dp` tablet) dynamically based on screen width (`>= 600dp`), and adapted skeleton shimmer cards to fully populate wide tablet viewports.
+- **"In Library" Visual Badges**: Integrated live database observation and in-library badges on Discover cards and hero banners with tactile haptic feedback.
+- **Genre Filter UX & Expanded Aliases**: Added an inline dismiss/clear button on genre highlights, friendly empty states when no results are found, and expanded genre aliases (Isekai/Reincarnation, Sci-Fi/Science Fiction, Martial Arts/Wuxia, Comedy, Romance, etc.).
+
+### Fixed
+- **Cover Cache Reloading on Unfavorite (Upstream Mihon)**: Removed `coverLastModified` timestamp bump when unfavoriting entries, stopping Coil disk cache eviction and eliminating cover flickering/redownloading.
+- **Extension Cold-Start Race Condition (Upstream SY)**: Prevented `installedExtensionsFlow` from returning empty lists on cold launch, ensuring Global Search and crash loggers never miss installed extensions.
+- **Cloudflare Interactive Early Abort (Upstream SY)**: Added JavaScript interface listener for Cloudflare `interactiveBegin` events, unblocking background workers immediately rather than waiting for 30s timeouts.
+- **Tracker ID Whitespace Trimming (Upstream SY)**: Added whitespace trimming before integer conversion on `id:` prefix searches in MyAnimeList.
+
 ## 2.7.11 "AI Upscaling Isolation, Sensor Optimization & Upstream Stability" (2026-10-19)
 ### Performance & Optimization
 - **AI Upscaling Jitter & Thumbnail Isolation (Fixes #19)**: Resolved UI stutter and scrolling jitter across the Library and Browse screens when AI Image Upscaling is active. `UpscalingInterceptor` now strictly isolates execution to reader pages (< 1500px), prevents cover thumbnail interception, enforces dimension bounds, recycles intermediate bitmaps, and offloads heavy convolution to background worker threads.

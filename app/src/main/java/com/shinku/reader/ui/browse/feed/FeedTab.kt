@@ -41,7 +41,7 @@ fun Screen.feedTab(): TabContent {
         if (navigator.lastEvent == StackEvent.Push) {
             screenModel.pushed = true
         } else if (!screenModel.pushed) {
-            screenModel.init()
+            screenModel.init(force = false)
         }
 
         onDispose {
@@ -104,7 +104,7 @@ fun Screen.feedTab(): TabContent {
                     navigator.push(SuggestedTitlesScreen(title, mangas, mode, query))
                 },
                 onAddFeed = screenModel::openAddDialog,
-                onRefresh = screenModel::init,
+                onRefresh = { screenModel.init(force = true) },
                 getMangaState = { manga -> screenModel.getManga(initialManga = manga) },
             )
 
@@ -123,7 +123,7 @@ fun Screen.feedTab(): TabContent {
                                 screenModel.shinkuPreferences.feedLanguageFilter().set(languageFilter)
                                 screenModel.shinkuPreferences.feedShowSourceFeeds().set(showSourceFeeds)
                                 screenModel.dismissDialog()
-                                screenModel.init()
+                                screenModel.init(force = true)
                             },
                             onAddFeed = {
                                 screenModel.dismissDialog()

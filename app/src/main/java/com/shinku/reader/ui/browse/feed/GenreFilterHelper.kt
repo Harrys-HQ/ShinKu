@@ -15,6 +15,18 @@ object GenreFilterHelper {
         "supernatural" to listOf("supernatural", "super power", "paranormal"),
         "cultivation" to listOf("cultivation", "xianxia", "xuanhuan"),
         "historical" to listOf("historical", "period"),
+        "action" to listOf("action", "fighting", "action & adventure"),
+        "comedy" to listOf("comedy", "humor", "gag"),
+        "romance" to listOf("romance", "romantic"),
+        "isekai" to listOf("isekai", "reincarnation", "another world", "transmigration"),
+        "psychological" to listOf("psychological", "mind games", "suspense"),
+        "horror" to listOf("horror", "gore", "scary"),
+        "adventure" to listOf("adventure", "quest"),
+        "fantasy" to listOf("fantasy", "magic", "high fantasy", "dark fantasy"),
+        "sports" to listOf("sports", "sport", "tournament"),
+        "mystery" to listOf("mystery", "detective"),
+        "thriller" to listOf("thriller", "crime"),
+        "drama" to listOf("drama", "melodrama"),
     )
 
     fun getGenreVariants(genre: String): List<String> {

@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.12" changeDate="October 21,2026">
+        <changelogtext>[b]Discover Feed Concurrency Overhaul[/b]: Parallelized feed queries across 4 background workers and concurrent async genre highlights, cutting section load times from ~15s to ~2s</changelogtext>
+        <changelogtext>[b]Feed Layout Stability &amp; Instant Retention[/b]: Retained offline library fallback sections to prevent abrupt layout shifts, and guarded state lifecycle to preserve scroll position with 0ms return lag</changelogtext>
+        <changelogtext>[b]Discover UI &amp; Tablet Polish[/b]: Added 6-second auto-advancing hero banner, in-library visual status badges, responsive multi-device sizing (&gt;= 600dp), and header clear action for genre highlights</changelogtext>
+        <changelogtext>[b]Cover Cache Reloading Fix[/b]: Removed cover timestamp modification when unfavoriting manga, preventing Coil disk cache invalidation and reloading flicker in Browse and Feed</changelogtext>
+        <changelogtext>[b]Library Update Prioritization[/b]: Prioritized sources with the largest entry count first during background updates to reduce sync duration</changelogtext>
+        <changelogtext>[b]Extension Cold-Start Race Fix[/b]: Guaranteed extensions finish initial disk scanning before emitting to prevent empty Global Search results on startup</changelogtext>
+        <changelogtext>[b]Cloudflare Interactive Early Abort[/b]: Added event listener for interactive Cloudflare challenges to unblock background workers immediately rather than waiting for 30s timeouts</changelogtext>
+        <changelogtext>[b]Tracker ID Search Trimming[/b]: Added whitespace trimming to MyAnimeList ID prefix searches</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.11" changeDate="October 19,2026">
         <changelogtext>[b]AI Upscaling Jitter Fix (Fixes #19)[/b]: Isolated AI image upscaling strictly to reader pages, eliminating cover thumbnail interception, UI stutter, and scrolling jitters across the Library and Browse screens</changelogtext>
         <changelogtext>[b]Adaptive Night Read Optimization[/b]: Throttled light sensor events in the reader to prevent window brightness churn and UI thread thrashing</changelogtext>

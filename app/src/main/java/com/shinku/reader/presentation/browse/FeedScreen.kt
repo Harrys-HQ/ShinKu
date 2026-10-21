@@ -129,6 +129,7 @@ fun FeedScreen(
                             com.shinku.reader.presentation.browse.components.DiscoverFeaturedCarousel(
                                 featuredManga = state.featuredManga,
                                 onClickManga = onClickManga,
+                                getMangaState = getMangaState,
                             )
                         }
                     }
@@ -144,16 +145,20 @@ fun FeedScreen(
                     // 3. Dynamic Selected Genre Section (When user taps any genre chip)
                     if (state.selectedGenre != null) {
                         item {
+                            val hasGenreManga = !state.selectedGenreManga.isNullOrEmpty()
                             com.shinku.reader.presentation.browse.components.DiscoverSectionHeader(
                                 title = "Top ${state.selectedGenre} Titles",
-                                onSeeAllClick = {
-                                    onSeeAllTitles(
-                                        "Top ${state.selectedGenre} Titles",
-                                        state.selectedGenreManga.orEmpty(),
-                                        "genre",
-                                        state.selectedGenre.orEmpty(),
-                                    )
-                                },
+                                onSeeAllClick = if (hasGenreManga) {
+                                    {
+                                        onSeeAllTitles(
+                                            "Top ${state.selectedGenre} Titles",
+                                            state.selectedGenreManga.orEmpty(),
+                                            "genre",
+                                            state.selectedGenre.orEmpty(),
+                                        )
+                                    }
+                                } else null,
+                                onClearClick = { onClickGenre(state.selectedGenre.orEmpty()) },
                             )
                             if (state.isLoadingGenre) {
                                 androidx.compose.foundation.layout.Box(
@@ -166,11 +171,25 @@ fun FeedScreen(
                                         modifier = Modifier.size(28.dp),
                                     )
                                 }
-                            } else if (!state.selectedGenreManga.isNullOrEmpty()) {
+                            } else if (hasGenreManga) {
                                 com.shinku.reader.presentation.browse.components.DiscoverMangaRow(
-                                    mangas = state.selectedGenreManga,
+                                    mangas = state.selectedGenreManga!!,
                                     onClickManga = onClickManga,
+                                    getMangaState = getMangaState,
                                 )
+                            } else {
+                                androidx.compose.foundation.layout.Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 20.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = "No titles found for \"${state.selectedGenre}\" in active sources",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }
@@ -187,6 +206,7 @@ fun FeedScreen(
                             com.shinku.reader.presentation.browse.components.DiscoverMangaRow(
                                 mangas = state.forYouManga,
                                 onClickManga = onClickManga,
+                                getMangaState = getMangaState,
                             )
                         }
                     }
@@ -204,6 +224,7 @@ fun FeedScreen(
                                 com.shinku.reader.presentation.browse.components.DiscoverMangaRow(
                                     mangas = mangas,
                                     onClickManga = onClickManga,
+                                    getMangaState = getMangaState,
                                 )
                             }
                         }
@@ -226,6 +247,7 @@ fun FeedScreen(
                             com.shinku.reader.presentation.browse.components.DiscoverMangaRow(
                                 mangas = state.recommendations,
                                 onClickManga = onClickManga,
+                                getMangaState = getMangaState,
                             )
                         }
                     }
@@ -839,6 +861,12 @@ fun DiscoverFeedSkeleton(
     onClickGenre: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val isTablet = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
+    val heroHeight = if (isTablet) 240.dp else 200.dp
+    val cardWidth = if (isTablet) 128.dp else 116.dp
+    val cardHeight = if (isTablet) 180.dp else 162.dp
+    val skeletonCardCount = if (isTablet) 7 else 4
+
     ScrollbarLazyColumn(
         contentPadding = contentPadding + topSmallPaddingValues,
         modifier = modifier.fillMaxSize(),
@@ -850,8 +878,8 @@ fun DiscoverFeedSkeleton(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(20.dp))
+                    .height(heroHeight)
+                    .clip(RoundedCornerShape(22.dp))
                     .shimmer(),
             )
         }
@@ -880,12 +908,12 @@ fun DiscoverFeedSkeleton(
                     .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                repeat(4) {
-                    Column(modifier = Modifier.width(116.dp)) {
+                repeat(skeletonCardCount) {
+                    Column(modifier = Modifier.width(cardWidth)) {
                         Box(
                             modifier = Modifier
-                                .width(116.dp)
-                                .height(162.dp)
+                                .width(cardWidth)
+                                .height(cardHeight)
                                 .clip(RoundedCornerShape(14.dp))
                                 .shimmer(),
                         )
@@ -919,12 +947,12 @@ fun DiscoverFeedSkeleton(
                     .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                repeat(4) {
-                    Column(modifier = Modifier.width(116.dp)) {
+                repeat(skeletonCardCount) {
+                    Column(modifier = Modifier.width(cardWidth)) {
                         Box(
                             modifier = Modifier
-                                .width(116.dp)
-                                .height(162.dp)
+                                .width(cardWidth)
+                                .height(cardHeight)
                                 .clip(RoundedCornerShape(14.dp))
                                 .shimmer(),
                         )

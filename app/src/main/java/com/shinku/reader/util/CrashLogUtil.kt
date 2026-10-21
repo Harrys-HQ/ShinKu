@@ -12,6 +12,7 @@ import com.shinku.reader.util.system.toast
 import com.shinku.reader.exh.syDebugVersion
 import com.shinku.reader.core.common.util.lang.withNonCancellableContext
 import com.shinku.reader.core.common.util.lang.withUIContext
+import kotlinx.coroutines.flow.first
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.OffsetDateTime
@@ -55,10 +56,10 @@ class CrashLogUtil(
         """.trimIndent()
     }
 
-    private fun getExtensionsInfo(): String? {
+    private suspend fun getExtensionsInfo(): String? {
         val availableExtensions = extensionManager.availableExtensionsFlow.value.associateBy { it.pkgName }
 
-        val extensionInfoList = extensionManager.installedExtensionsFlow.value
+        val extensionInfoList = extensionManager.installedExtensionsFlow.first()
             .sortedBy { it.name }
             .mapNotNull {
                 val availableExtension = availableExtensions[it.pkgName]

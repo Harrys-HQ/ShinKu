@@ -26,6 +26,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -114,7 +115,7 @@ abstract class SearchScreenModel(
             )
     }
 
-    private fun getSelectedSources(): List<CatalogueSource> {
+    private suspend fun getSelectedSources(): List<CatalogueSource> {
         val enabledSources = getEnabledSources()
 
         val filter = extensionFilter
@@ -123,7 +124,7 @@ abstract class SearchScreenModel(
         }
 
         // SY -->
-        val filteredSourceIds = extensionManager.installedExtensionsFlow.value
+        val filteredSourceIds = extensionManager.installedExtensionsFlow.first()
             .filter { it.pkgName == filter }
             .flatMap { it.sources }
             .filterIsInstance<CatalogueSource>()
@@ -148,14 +149,13 @@ abstract class SearchScreenModel(
     fun searchImage(uri: Uri, context: android.content.Context) {
         searchJob?.cancel()
         
-        val sources = getSelectedSources()
-        updateItems(
-            sources
-                .associateWith { SearchItemResult.Loading }
-                .toPersistentMap(),
-        )
-
         searchJob = ioCoroutineScope.launch {
+            val sources = getSelectedSources()
+            updateItems(
+                sources
+                    .associateWith { SearchItemResult.Loading }
+                    .toPersistentMap(),
+            )
             val apiKey = shinkuPreferences.geminiApiKey().get()
             val model = shinkuPreferences.geminiModel().get()
 
@@ -254,25 +254,24 @@ abstract class SearchScreenModel(
 
         searchJob?.cancel()
 
-        val sources = getSelectedSources()
-
-        // Reuse previous results if possible
-        if (sameQuery) {
-            val existingResults = state.value.items
-            updateItems(
-                sources
-                    .associateWith { existingResults[it] ?: SearchItemResult.Loading }
-                    .toPersistentMap(),
-            )
-        } else {
-            updateItems(
-                sources
-                    .associateWith { SearchItemResult.Loading }
-                    .toPersistentMap(),
-            )
-        }
-
         searchJob = ioCoroutineScope.launch {
+            val sources = getSelectedSources()
+
+            // Reuse previous results if possible
+            if (sameQuery) {
+                val existingResults = state.value.items
+                updateItems(
+                    sources
+                        .associateWith { existingResults[it] ?: SearchItemResult.Loading }
+                        .toPersistentMap(),
+                )
+            } else {
+                updateItems(
+                    sources
+                        .associateWith { SearchItemResult.Loading }
+                        .toPersistentMap(),
+                )
+            }
             val apiKey = shinkuPreferences.geminiApiKey().get()
             val model = shinkuPreferences.geminiModel().get()
             

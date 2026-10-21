@@ -387,6 +387,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         coroutineScope {
             mangaToUpdate.groupBy { it.manga.source }
                 .values
+                .sortedByDescending { it.size }
                 .map { mangaInSource ->
                     async {
                         semaphore.withPermit {
@@ -632,6 +633,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         coroutineScope {
             mangaToUpdate.groupBy { it.manga.source }
                 .values
+                .sortedByDescending { it.size }
                 .map { mangaInSource ->
                     async {
                         semaphore.withPermit {
