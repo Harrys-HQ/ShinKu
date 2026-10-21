@@ -385,7 +385,7 @@ class LibraryUpdateNotifier(
     }
 
     companion object {
-        const val HELP_WARNING_URL = "https://mihon.app/docs/faq/library#why-am-i-warned-about-large-bulk-updates-and-downloads"
+        const val HELP_WARNING_URL = "https://harrys-hq.github.io/ShinKu/faq/library#why-am-i-warned-about-large-bulk-updates-and-downloads"
         const val MANGA_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 60
     }
 }

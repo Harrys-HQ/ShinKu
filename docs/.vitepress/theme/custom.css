@@ -1,0 +1,31 @@
+:root {
+  --vp-c-brand-1: #c62828;
+  --vp-c-brand-2: #e53935;
+  --vp-c-brand-3: #ef5350;
+  --vp-c-brand-soft: rgba(229, 57, 53, 0.14);
+}
+
+.dark {
+  --vp-c-brand-1: #ef5350;
+  --vp-c-brand-2: #e53935;
+  --vp-c-brand-3: #c62828;
+  --vp-c-brand-soft: rgba(239, 83, 80, 0.16);
+}
+
+.kofi-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ff5e5b;
+  color: #ffffff !important;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.kofi-button:hover {
+  background-color: #ff413d;
+  transform: translateY(-1px);
+}
