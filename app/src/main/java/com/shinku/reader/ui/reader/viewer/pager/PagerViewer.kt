@@ -186,7 +186,7 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
     private fun getPageHolder(page: ReaderPage): PagerPageHolder? =
         pager.children
             .filterIsInstance<PagerPageHolder>()
-            .firstOrNull { it.item.first == page || it.item.second == page }
+            .firstOrNull { it.item.first == page || it.item.second == page || it.item.first.index == page.index || it.item.second?.index == page.index }
 
     /**
      * Called when a new page (either a [ReaderPage] or [ChapterTransition]) is marked as active
@@ -341,7 +341,7 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
     }
 
     override fun updateTranslation(page: ReaderPage) {
-        getPageHolder(page)?.updateTranslationOverlay()
+        getPageHolder(page)?.updateTranslationOverlay(page)
     }
 
     /**

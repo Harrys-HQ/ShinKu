@@ -35,6 +35,9 @@ data class TranslatedBlock(
     val originalText: String,
     val translatedText: String,
     val boundingBox: android.graphics.Rect?,
+    val bubbleRect: android.graphics.Rect? = null,
+    val sourceWidth: Int = 0,
+    val sourceHeight: Int = 0,
     val bgColor: Int,
     val textColor: Int,
 )

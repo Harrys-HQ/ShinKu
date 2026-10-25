@@ -99,6 +99,7 @@ fun SourceFeedScreen(
     onClickSavedSearch: (SavedSearch) -> Unit,
     onClickDelete: (FeedSavedSearch) -> Unit,
     onClickManga: (Manga) -> Unit,
+    onClickBack: () -> Unit,
     onClickSearch: (String) -> Unit,
     searchQuery: String?,
     onSearchQueryChange: (String?) -> Unit,
@@ -111,6 +112,7 @@ fun SourceFeedScreen(
                 searchQuery = searchQuery,
                 onSearchQueryChange = onSearchQueryChange,
                 scrollBehavior = scrollBehavior,
+                onClickBack = onClickBack,
                 onClickSearch = onClickSearch,
             )
         },
@@ -219,9 +221,11 @@ fun SourceFeedToolbar(
     searchQuery: String?,
     onSearchQueryChange: (String?) -> Unit,
     scrollBehavior: TopAppBarScrollBehavior,
+    onClickBack: () -> Unit,
     onClickSearch: (String) -> Unit,
 ) {
     SearchToolbar(
+        navigateUp = onClickBack,
         titleContent = { AppBarTitle(title) },
         searchQuery = searchQuery,
         onChangeSearchQuery = onSearchQueryChange,

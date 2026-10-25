@@ -35,12 +35,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.zIndex
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
@@ -353,6 +358,10 @@ class ReaderActivity : BaseActivity() {
                             toast(msg)
                         }
                     }
+
+                    is ReaderViewModel.Event.ShowToast -> {
+                        toast(event.message)
+                    }
                 }
             }
             .launchIn(lifecycleScope)
@@ -393,6 +402,14 @@ class ReaderActivity : BaseActivity() {
 
             ContentOverlay(state = state)
 
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(if (zenMode && !state.menuVisible) 0f else 1f)
+            ) {
+                AppBars(state = state)
+            }
+
             // Floating Translate Button
             val isLiveTranslationEnabled by shinkuPreferences.liveTranslation().collectAsState()
             val isTranslationActive = state.activePage?.showTranslation ?: false
@@ -401,39 +418,22 @@ class ReaderActivity : BaseActivity() {
             val hasValidCredentials = apiKey.isNotBlank() || translationEngine != "gemini_cloud"
             
             if (isLiveTranslationEnabled && hasValidCredentials && !state.menuVisible && !zenMode) {
-                @OptIn(ExperimentalFoundationApi::class)
-                androidx.compose.material3.Surface(
+                androidx.compose.material3.FloatingActionButton(
+                    onClick = { viewModel.onTranslation() },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(bottom = 80.dp, end = 16.dp)
-                        .alpha(0.6f)
-                        .combinedClickable(
-                            onClick = { viewModel.onTranslation() },
-                            onLongClick = { viewModel.openTranslationLanguageSelectDialog() }
-                        ),
+                        .zIndex(50f),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    color = if (isTranslationActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                    containerColor = if (isTranslationActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = if (isTranslationActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    shadowElevation = 6.dp,
+                    elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
                 ) {
-                    Box(
-                        modifier = Modifier.padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Outlined.Translate,
-                            contentDescription = "Live Translation",
-                        )
-                    }
+                    androidx.compose.material3.Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Outlined.Translate,
+                        contentDescription = "Live Translation",
+                    )
                 }
-            }
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(if (zenMode && !state.menuVisible) 0f else 1f)
-            ) {
-                AppBars(state = state)
             }
         }
 
@@ -722,8 +722,33 @@ class ReaderActivity : BaseActivity() {
                             Text(stringResource(MR.strings.action_ok))
                         }
                     },
-                    title = { Text(dialog.title) },
-                    text = { Text(dialog.content) },
+                    title = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            androidx.compose.material3.Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(22.dp),
+                            )
+                            Text(dialog.title)
+                        }
+                    },
+                    text = {
+                        androidx.compose.foundation.layout.Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
+                        ) {
+                            Text(
+                                text = dialog.content,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
                 )
             }
 

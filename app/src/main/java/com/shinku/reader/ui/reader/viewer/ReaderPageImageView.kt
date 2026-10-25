@@ -460,6 +460,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
 
         pageView = WebtoonStripImageView(context)
         addView(pageView, MATCH_PARENT, WRAP_CONTENT)
+        ensureTranslationOverlay()
     }
 
     private fun setStripImage(data: BufferedSource, config: Config) {
@@ -590,29 +591,46 @@ open class ReaderPageImageView @JvmOverloads constructor(
         RIGHT,
     }
 
-    private fun ensureTranslationOverlay() {
+    private fun ensureTranslationOverlay(targetPage: ReaderPage? = null) {
+        val pageToUse = targetPage ?: this.currentPage
         if (translationOverlay == null) {
             translationOverlay = TranslationOverlay(context).apply {
                 this.pageView = this@ReaderPageImageView.pageView
-                this.page = this@ReaderPageImageView.currentPage
+                this.page = pageToUse
+                this.elevation = 20f
+                this.isClickable = false
+                this.isFocusable = false
             }
-            addView(translationOverlay, MATCH_PARENT, MATCH_PARENT)
+            addView(translationOverlay, android.widget.FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         } else {
             translationOverlay?.pageView = this.pageView
-            translationOverlay?.page = this@ReaderPageImageView.currentPage
+            translationOverlay?.page = pageToUse
+            translationOverlay?.elevation = 20f
             translationOverlay?.bringToFront()
         }
     }
 
-    fun updateTranslationOverlay() {
-        ensureTranslationOverlay()
+    fun updateTranslationOverlay(targetPage: ReaderPage? = null) {
+        val pageToUse = targetPage ?: this.currentPage ?: return
+        ensureTranslationOverlay(pageToUse)
+        translationOverlay?.page = pageToUse
+        translationOverlay?.pageView = this.pageView
+        translationOverlay?.elevation = 20f
+        translationOverlay?.bringToFront()
+        translationOverlay?.visibility = if (pageToUse.showTranslation) VISIBLE else GONE
         translationOverlay?.invalidate()
+        postInvalidate()
     }
 }
 
 class TranslationOverlay(context: Context) : View(context) {
     var page: ReaderPage? = null
     var pageView: View? = null
+
+    init {
+        isClickable = false
+        isFocusable = false
+    }
 
     private val maskPaint = Paint().apply {
         style = Paint.Style.FILL
@@ -629,71 +647,126 @@ class TranslationOverlay(context: Context) : View(context) {
         val page = page ?: return
         if (!page.showTranslation) return
         val blocks = page.translationBlocks ?: return
-        val view = pageView as? com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView ?: return
-
-        if (!view.isReady) return
+        val view = pageView ?: return
 
         for (block in blocks) {
-            val box = block.boundingBox ?: continue
+            val box = block.bubbleRect ?: block.boundingBox ?: continue
 
-            sTopLeft.set(box.left.toFloat(), box.top.toFloat())
-            sBottomRight.set(box.right.toFloat(), box.bottom.toFloat())
+            val left: Float
+            val top: Float
+            val right: Float
+            val bottom: Float
 
-            view.sourceToViewCoord(sTopLeft, vTopLeft)
-            view.sourceToViewCoord(sBottomRight, vBottomRight)
+            when (view) {
+                is com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView -> {
+                    if (!view.isReady) continue
+                    val scaleX = if (block.sourceWidth > 0 && view.sWidth > 0) view.sWidth.toFloat() / block.sourceWidth.toFloat() else 1f
+                    val scaleY = if (block.sourceHeight > 0 && view.sHeight > 0) view.sHeight.toFloat() / block.sourceHeight.toFloat() else 1f
+                    sTopLeft.set(box.left.toFloat() * scaleX, box.top.toFloat() * scaleY)
+                    sBottomRight.set(box.right.toFloat() * scaleX, box.bottom.toFloat() * scaleY)
+                    val p1 = view.sourceToViewCoord(sTopLeft, vTopLeft)
+                    val p2 = view.sourceToViewCoord(sBottomRight, vBottomRight)
+                    if (p1 == null || p2 == null) continue
+                    left = vTopLeft.x
+                    top = vTopLeft.y
+                    right = vBottomRight.x
+                    bottom = vBottomRight.y
+                }
+                is com.shinku.reader.ui.reader.viewer.webtoon.WebtoonStripImageView -> {
+                    val imgWidth = view.sourceWidth
+                    if (imgWidth <= 0) continue
+                    val scale = view.width.toFloat() / imgWidth.toFloat()
+                    left = box.left * scale
+                    top = box.top * scale
+                    right = box.right * scale
+                    bottom = box.bottom * scale
+                }
+                is android.widget.ImageView -> {
+                    val drawable = view.drawable ?: continue
+                    val dWidth = drawable.intrinsicWidth
+                    val dHeight = drawable.intrinsicHeight
+                    if (dWidth <= 0 || dHeight <= 0) continue
+                    val scaleX = view.width.toFloat() / dWidth.toFloat()
+                    val scaleY = view.height.toFloat() / dHeight.toFloat()
+                    left = box.left * scaleX
+                    top = box.top * scaleY
+                    right = box.right * scaleX
+                    bottom = box.bottom * scaleY
+                }
+                else -> continue
+            }
 
-            val left = vTopLeft.x
-            val top = vTopLeft.y
-            val right = vBottomRight.x
-            val bottom = vBottomRight.y
+            val actualLeft = minOf(left, right)
+            val actualRight = maxOf(left, right)
+            val actualTop = minOf(top, bottom)
+            val actualBottom = maxOf(top, bottom)
 
-            // Draw background mask with smooth rounded corners matching speech balloons
-            maskPaint.color = block.bgColor
-            val rx = 8f * view.scale
-            val ry = 8f * view.scale
-            canvas.drawRoundRect(left, top, right, bottom, rx, ry, maskPaint)
-
-            // Draw translated text
-            val width = (right - left).toInt()
-            val height = (bottom - top).toInt()
+            val width = (actualRight - actualLeft).toInt()
+            val height = (actualBottom - actualTop).toInt()
             if (width <= 0 || height <= 0) continue
 
+            // 1. Draw clean background mask matching scanlation/Komakun typesetting boxes
+            maskPaint.color = block.bgColor
+            val scaleForRadius = when (view) {
+                is com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView -> view.scale
+                is com.shinku.reader.ui.reader.viewer.webtoon.WebtoonStripImageView -> if (view.sourceWidth > 0) view.width.toFloat() / view.sourceWidth.toFloat() else 1f
+                else -> 1f
+            }
+            val rx = (6f * scaleForRadius).coerceIn(4f, 14f)
+            val ry = (6f * scaleForRadius).coerceIn(4f, 14f)
+            canvas.drawRoundRect(actualLeft, actualTop, actualRight, actualBottom, rx, ry, maskPaint)
+
+            // 2. Typesetting (standard rectangular text layout like Komakun):
+            val horizontalPadding = (width * 0.06f).coerceIn(4f, 16f)
+            val verticalPadding = (height * 0.06f).coerceIn(4f, 16f)
+
+            val contentWidth = (width - 2f * horizontalPadding).toInt().coerceAtLeast(1)
+            val maxContentHeight = height - 2f * verticalPadding
+
             val text = block.translatedText
-            var fontSizePx = (height * 0.35f).coerceIn(12f, 48f)
-            var layout: StaticLayout? = null
             val textPaint = TextPaint().apply {
                 color = block.textColor
                 isAntiAlias = true
-                typeface = android.graphics.Typeface.create(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.NORMAL)
+                typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+                letterSpacing = 0.015f
             }
 
+            // Dynamic font sizing to fit the speech bubble
+            var fontSizePx = (height * 0.22f).coerceIn(11f, 44f)
+            var layout: StaticLayout? = null
             val minFontSize = 8f
+
             while (fontSizePx >= minFontSize) {
                 textPaint.textSize = fontSizePx
                 layout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    StaticLayout.Builder.obtain(text, 0, text.length, textPaint, width)
+                    StaticLayout.Builder.obtain(text, 0, text.length, textPaint, contentWidth)
                         .setAlignment(Layout.Alignment.ALIGN_CENTER)
-                        .setLineSpacing(0f, 1f)
+                        .setLineSpacing(0f, 1.05f)
                         .setIncludePad(false)
+                        .apply {
+                            setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED)
+                            setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_FULL)
+                        }
                         .build()
                 } else {
                     @Suppress("DEPRECATION")
                     StaticLayout(
-                        text, textPaint, width,
-                        Layout.Alignment.ALIGN_CENTER, 1f, 0f, false
+                        text, textPaint, contentWidth,
+                        Layout.Alignment.ALIGN_CENTER, 1.05f, 0f, false,
                     )
                 }
-                if (layout.height <= height) {
+                if (layout.height <= maxContentHeight) {
                     break
                 }
-                fontSizePx -= 1.5f
+                fontSizePx -= 1f
             }
 
             if (layout != null) {
                 canvas.save()
                 val textHeight = layout.height
-                val dy = top + (height - textHeight) / 2f
-                canvas.translate(left, dy)
+                val textLeft = actualLeft + (width - contentWidth) / 2f
+                val dy = actualTop + (height - textHeight) / 2f
+                canvas.translate(textLeft, dy)
                 layout.draw(canvas)
                 canvas.restore()
             }

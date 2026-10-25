@@ -103,8 +103,8 @@ class WebtoonPageHolder(
         refreshLayoutParams()
     }
 
-    fun updateTranslationOverlay() {
-        frame.updateTranslationOverlay()
+    fun updateTranslationOverlay(page: com.shinku.reader.ui.reader.model.ReaderPage? = null) {
+        frame.updateTranslationOverlay(page ?: this.page)
     }
 
     private fun refreshLayoutParams() {

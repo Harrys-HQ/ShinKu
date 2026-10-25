@@ -19,6 +19,7 @@ data class ComickTitleLookupResult(
 data class ComickSearchItem(
     val hid: String,
     val title: String,
+    val slug: String? = null,
     val year: Int?,
     val description: String?,
     val status: Int?,
@@ -55,3 +56,14 @@ data class ComickSearchItem(
         }
     }
 }
+
+@Serializable
+data class ComickDetailResult(
+    val artists: List<ComickPerson>?,
+    val authors: List<ComickPerson>?,
+)
+
+@Serializable
+data class ComickPerson(
+    val name: String,
+)

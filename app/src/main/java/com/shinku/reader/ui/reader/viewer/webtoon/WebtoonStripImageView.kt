@@ -21,6 +21,9 @@ class WebtoonStripImageView(context: Context) : View(context) {
     private var imageWidth = 0
     private var imageHeight = 0
 
+    val sourceWidth: Int get() = imageWidth
+    val sourceHeight: Int get() = imageHeight
+
     private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val clipRect = Rect()
     private val dstRect = Rect()

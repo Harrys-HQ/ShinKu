@@ -91,7 +91,13 @@ fun LibraryContent(
                 end = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
             ),
     ) {
-        val coercedCurrentPage = remember(categories, currentPage) { currentPage.coerceIn(0, categories.lastIndex) }
+        val coercedCurrentPage = remember(categories, currentPage) {
+            if (categories.isEmpty()) {
+                0
+            } else {
+                currentPage.coerceIn(0, categories.lastIndex)
+            }
+        }
         // SY <--
         val pagerState = rememberPagerState(coercedCurrentPage) { categories.size }
 

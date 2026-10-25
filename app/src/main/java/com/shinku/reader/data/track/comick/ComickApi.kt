@@ -4,11 +4,13 @@ import android.net.Uri
 import androidx.core.net.toUri
 import com.shinku.reader.BuildConfig
 import com.shinku.reader.data.database.models.Track
+import com.shinku.reader.data.track.comick.dto.ComickDetailResult
 import com.shinku.reader.data.track.comick.dto.ComickLibraryEntry
 import com.shinku.reader.data.track.comick.dto.ComickOAuth
 import com.shinku.reader.data.track.comick.dto.ComickSearchResult
 import com.shinku.reader.data.track.comick.dto.ComickTitleLookupResult
 import com.shinku.reader.data.track.comick.dto.ComickUser
+import com.shinku.reader.data.track.model.TrackMangaMetadata
 import com.shinku.reader.data.track.model.TrackSearch
 import com.shinku.reader.domain.track.model.Track as DomainTrack
 import com.shinku.reader.util.PkceUtil
@@ -215,6 +217,38 @@ class ComickApi(
                 }
             }
         }
+    }
+
+    suspend fun getMangaMetadata(track: DomainTrack): TrackMangaMetadata = withContext(Dispatchers.IO) {
+        val hid = track.remoteId.toHid()
+
+        val titleUrl = "$RESOURCE_URL/titles".toUri().buildUpon()
+            .appendPath(hid)
+            .build()
+        val titleItem = with(json) {
+            authClient.newCall(GET(titleUrl.toString()))
+                .awaitSuccess()
+                .parseAs<ComickTitleLookupResult>()
+                .data
+        }
+
+        val detailUrl = "$API_BASE_URL/v1.0/comic/".toUri().buildUpon()
+            .appendPath(titleItem.slug)
+            .build()
+        val detailResult = with(json) {
+            client.newCall(GET(detailUrl.toString()))
+                .awaitSuccess()
+                .parseAs<ComickDetailResult>()
+        }
+
+        TrackMangaMetadata(
+            remoteId = titleItem.hid.asHidToLong(),
+            title = titleItem.title,
+            thumbnailUrl = titleItem.coverUrl,
+            description = titleItem.description,
+            authors = detailResult.authors?.joinToString(separator = ", ") { it.name },
+            artists = detailResult.artists?.joinToString(separator = ", ") { it.name },
+        )
     }
 
     suspend fun getCurrentUser(): ComickUser {

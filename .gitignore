@@ -1,4 +1,4 @@
-﻿# Build files
+# Build files
 .gradle
 .kotlin
 build
@@ -39,3 +39,4 @@ release_notes.md
 docs/node_modules/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+REDDIT_POST.md

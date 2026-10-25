@@ -221,7 +221,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                         "gemini-3.1-pro" to "Gemini 3.1 Pro (Deep Nuance & Quality)",
                         "gemini-2.5-flash" to "Gemini 2.5 Flash",
                         "gemini-2.5-pro" to "Gemini 2.5 Pro",
-                        "gemini-2.0-flash" to "Gemini 2.0 Flash",
+                        "gemini-2.0-flash" to "Gemini 2.0 Flash (Fast & Accurate)",
                         "gemini-2.0-flash-lite" to "Gemini 2.0 Flash-Lite",
                         "gemini-1.5-flash" to "Gemini 1.5 Flash (Legacy)",
                         "gemini-1.5-pro" to "Gemini 1.5 Pro (Legacy)",
@@ -231,8 +231,9 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     title = "Test API Connection & Model",
                     subtitle = "Sends a prompt to verify API key validity and '${shinkuPreferences.geminiModel().get()}' responsiveness",
                     onClick = {
-                        val apiKey = shinkuPreferences.geminiApiKey().get()
-                        val selectedModel = shinkuPreferences.geminiModel().get()
+                        val apiKey = shinkuPreferences.geminiApiKey().get().trim()
+                        val selectedModel = shinkuPreferences.geminiModel().get().trim().ifBlank { "gemini-3.8-flash" }
+
                         if (apiKey.isBlank()) {
                             context.toast("API Key cannot be empty")
                             return@TextPreference

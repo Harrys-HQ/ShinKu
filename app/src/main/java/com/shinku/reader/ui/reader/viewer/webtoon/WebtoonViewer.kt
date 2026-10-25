@@ -275,10 +275,12 @@ class WebtoonViewer(
     }
 
     override fun updateTranslation(page: ReaderPage) {
-        val index = adapter.items.indexOf(page)
+        val index = adapter.items.indexOfFirst {
+            it == page || (it as? ReaderPage)?.index == page.index
+        }
         if (index != -1) {
             val viewHolder = recycler.findViewHolderForAdapterPosition(index) as? WebtoonPageHolder
-            viewHolder?.updateTranslationOverlay()
+            viewHolder?.updateTranslationOverlay(page)
         }
     }
 

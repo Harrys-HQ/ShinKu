@@ -39,6 +39,7 @@ val viewModelModule = module {
             textRecognitionInteractor = get(),
             panelDetectionInteractor = get(),
             shinkuPreferences = get(),
+            mlKitTranslationInteractor = get(),
         )
     }
 

@@ -2,6 +2,7 @@ package com.shinku.reader.presentation.core.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -11,6 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.shinku.reader.presentation.core.components.material.padding
 
 @Composable
@@ -23,6 +26,7 @@ fun ActionButton(
     TextButton(
         modifier = modifier,
         onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
@@ -35,6 +39,10 @@ fun ActionButton(
             Text(
                 text = title,
                 textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = true,
             )
         }
     }

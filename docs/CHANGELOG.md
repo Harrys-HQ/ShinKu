@@ -1,5 +1,24 @@
 # ShinKu Changelog
  
+## 2.7.14 "Smart Bubble Typesetting, Haptic Stability & Upstream Performance Sync" (2026-10-25)
+### Fixed
+- **Haptic Feedback Crash on Samsung & Android 14+ (Fixes #20)**: Added missing `android.permission.VIBRATE` to the manifest and wrapped vibrator service invocations in safety guards, resolving fatal `SecurityException` crashes when turning on haptic feedback in settings.
+- **Reader Dialog Text Cropping & Overflow**: Resolved text clipping and broken word wraps on action buttons in the reader long-press page action sheet.
+- **Empty Category Crash Guard (Upstream SY)**: Guarded against `IllegalArgumentException` when library category lists are empty.
+- **Database Migration 3 Column Fix**: Fixed legacy column name (`manga_source`) so upgrades from older databases passing through migration 13 succeed without missing-column exceptions.
+- **Merged Manga Deterministic Chapter Sorting**: Added `ORDER BY C.manga_id, C.source_order` to prevent random/shuffled merged chapter ordering.
+- **Merged Manga Reader Downloads & Cache**: Resolved component manga sources in reader download-ahead loops instead of attempting to query un-downloadable virtual merged IDs.
+- **Extension Installer Crash Guard (Upstream Mihon)**: Added `ActivityNotFoundException` handling when system package confirmation screens are disabled on custom ROMs.
+- **Reader Dialog Selection State Reset**: Reset `useExtraPage` state properly when dismissing cover selection dialogs.
+
+### Performance & Typesetting
+- **Komakun-Adapted Smart Typesetting**: Integrated luminance and ink-edge bubble boundary probing (`detectBubbleBounds`) to strictly contain translation boxes inside speech balloons without covering comic art.
+- **Proportional Reader Typesetting**: Formatted horizontal translated dialogue with balanced line breaking (`BREAK_STRATEGY_BALANCED`), hyphenation, and dynamic font auto-fitting matching scanlation standards.
+- **On-Device & Cloud Live Translation**: Bundled offline Google ML Kit translation engine alongside Google Gemini Cloud AI for instant, free offline translation.
+- **Merged Manga Library Query Optimization (Upstream SY)**: Replaced full-database chapter scans in `LibraryQuery` with direct merged table joins, significantly speeding up library loading times.
+- **Security & Privacy (Upstream Mihon)**: Redacted `Authorization`, `Auth`, and `Cookie` headers in logcat, linking network header logging strictly to verbose logging preferences.
+- **Tracker & Metadata Enhancements**: Added tracking status support for Kavita, Suwayomi, and Comick with automatic metadata autofill.
+
 ## 2.7.13 "Official Portal, Documentation & Full Brand Independence" (2026-10-21)
 ### Features & Documentation
 - **Official Documentation Website**: Launched the official ShinKu portal and documentation website at [https://harrys-hq.github.io/ShinKu/](https://harrys-hq.github.io/ShinKu/) with VitePress, dark mode, responsive layout, and full-text local search.

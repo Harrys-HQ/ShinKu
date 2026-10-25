@@ -6,6 +6,7 @@ import com.shinku.reader.data.database.models.Track
 import com.shinku.reader.data.track.BaseTracker
 import com.shinku.reader.data.track.DeletableTracker
 import com.shinku.reader.data.track.comick.dto.ComickOAuth
+import com.shinku.reader.data.track.model.TrackMangaMetadata
 import com.shinku.reader.data.track.model.TrackSearch
 import com.shinku.reader.domain.track.model.Track as DomainTrack
 import com.shinku.reader.i18n.MR
@@ -92,6 +93,10 @@ class Comick(id: Long) : BaseTracker(id, "Comick"), DeletableTracker {
         val remoteTrack = api.findLibManga(track) ?: throw Exception("Could not find manga")
         track.copyPersonalFrom(remoteTrack)
         return track
+    }
+
+    override suspend fun getMangaMetadata(track: DomainTrack): TrackMangaMetadata? {
+        return api.getMangaMetadata(track)
     }
 
     override suspend fun login(username: String, password: String) = login(password)

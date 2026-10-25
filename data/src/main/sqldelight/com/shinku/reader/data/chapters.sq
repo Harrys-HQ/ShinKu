@@ -107,7 +107,8 @@ WHERE M.merge_id = :mangaId
 AND (
     :applyScanlatorFilter = 0
     OR ES.scanlator IS NULL
-);
+)
+ORDER BY C.manga_id, C.source_order;
 
 getScanlatorsByMergeId:
 SELECT scanlator

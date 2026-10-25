@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.14" changeDate="October 25, 2026">
+        <changelogtext>[b]Haptic Feedback Crash Fix (Fixes #20)[/b]: Added missing VIBRATE permission and robust vibrator service exception handling, eliminating crashes on Samsung Galaxy and modern Android 14+ devices</changelogtext>
+        <changelogtext>[b]Komakun-Adapted Smart Typesetting[/b]: Integrated luminance and ink-edge bubble boundary probing to strictly contain translation boxes inside speech balloons without covering comic art</changelogtext>
+        <changelogtext>[b]Proportional Reader Typesetting[/b]: Typesets horizontal translated dialogue with balanced line breaking, hyphenation, and dynamic font sizing matching scanlation standards</changelogtext>
+        <changelogtext>[b]On-Device &amp; Cloud Live Translation[/b]: Bundled offline Google ML Kit translation engine alongside Google Gemini Cloud AI for instant, free offline translation</changelogtext>
+        <changelogtext>[b]Reader Dialog Text Overflow Fix[/b]: Resolved word wrapping and text cropping in long-press page action sheets</changelogtext>
+        <changelogtext>[b]Merged Manga Query Optimization (Upstream SY)[/b]: Switched library merged chapter counting to direct inner joins, significantly accelerating library loading times</changelogtext>
+        <changelogtext>[b]Merged Manga Deterministic Chapter Sorting[/b]: Enforced deterministic SQL ordering on merged manga chapters to prevent shuffled reading order</changelogtext>
+        <changelogtext>[b]Merged Manga Reader Downloads[/b]: Correctly resolved component manga sources in reader download-ahead loops</changelogtext>
+        <changelogtext>[b]Empty Category Crash Guard (Upstream SY)[/b]: Prevented fatal crash when viewing or navigating empty library categories</changelogtext>
+        <changelogtext>[b]Database Migration Compatibility[/b]: Fixed legacy column naming in migration 3 to guarantee seamless upgrades from older database versions</changelogtext>
+        <changelogtext>[b]Security &amp; Privacy (Upstream Mihon)[/b]: Redacted sensitive authorization and cookie headers in logcat, linking network logs strictly to verbose logging preferences</changelogtext>
+        <changelogtext>[b]Extension Installer Crash Guard (Upstream Mihon)[/b]: Handled missing system package installer confirmation dialogs gracefully without crashing</changelogtext>
+        <changelogtext>[b]Tracker &amp; Metadata Enhancements[/b]: Added tracking status support for Kavita, Suwayomi, and Comick with automatic metadata autofill</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.13" changeDate="October 21,2026">
         <changelogtext>[b]Official ShinKu Documentation &amp; Portal[/b]: Launched the official documentation website featuring complete user guides, troubleshooting, local source tutorials, and DMCA safe-harbor compliance</changelogtext>
         <changelogtext>[b]In-App Help &amp; Troubleshooting Migration[/b]: Updated all in-app help, onboarding, and error dialogs to direct to ShinKu's dedicated documentation</changelogtext>

@@ -51,6 +51,7 @@ class SourceFeedScreen(val sourceId: Long) : Screen() {
             onClickSavedSearch = { onSavedSearchClick(navigator, screenModel.source, it) },
             onClickDelete = screenModel::openDeleteFeed,
             onClickManga = { onMangaClick(navigator, it) },
+            onClickBack = { navigator.pop() },
             onClickSearch = { onSearchClick(navigator, screenModel.source, it) },
             searchQuery = state.searchQuery,
             onSearchQueryChange = screenModel::search,

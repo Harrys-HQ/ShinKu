@@ -161,6 +161,8 @@ class ReaderViewModel(
     private val panelDetectionInteractor: com.shinku.reader.domain.source.interactor.PanelDetectionInteractor,
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences,
     private val atmosphericAudioManager: com.shinku.reader.ui.reader.audio.AtmosphericAudioManager = Injekt.get(),
+    private val mlKitTranslationInteractor: com.shinku.reader.domain.source.interactor.MlKitTranslationInteractor = Injekt.get(),
+    private val chapterCache: com.shinku.reader.data.cache.ChapterCache = Injekt.get(),
     // SY <--
 ) : ViewModel() {
 
@@ -214,7 +216,13 @@ class ReaderViewModel(
 
     private val unfilteredChapterList by lazy {
         val manga = manga!!
-        runBlocking { getChaptersByMangaId.await(manga.id, applyScanlatorFilter = false) }
+        runBlocking {
+            if (manga.source == MERGED_SOURCE_ID) {
+                getMergedChaptersByMangaId.await(manga.id, applyScanlatorFilter = false)
+            } else {
+                getChaptersByMangaId.await(manga.id, applyScanlatorFilter = false)
+            }
+        }
     }
 
     /**
@@ -523,12 +531,14 @@ class ReaderViewModel(
 
     // SY -->
     fun getChapters(): List<ReaderChapterItem> {
+        val manga = manga ?: return emptyList()
+        val mangaList = state.value.mergedManga?.takeIf { it.isNotEmpty() } ?: mapOf(manga.id to manga)
         val currentChapter = getCurrentChapter()
 
         return chapterList.map {
             ReaderChapterItem(
                 chapter = it.chapter.toDomainChapter()!!,
-                manga = manga!!,
+                manga = mangaList[it.chapter.manga_id] ?: manga,
                 isCurrent = it.chapter.id == currentChapter?.chapter?.id,
                 dateFormat = UiPreferences.dateFormat(uiPreferences.dateFormat().get()),
             )
@@ -665,7 +675,7 @@ class ReaderViewModel(
         }
 
         if (chapter.pageLoader?.isLocal == false) {
-            val manga = manga ?: return
+            val manga = /* SY --> */ state.value.mergedManga?.get(chapter.chapter.manga_id) ?: /* SY <-- */ manga ?: return
             val dbChapter = chapter.chapter
             val isDownloaded = downloadManager.isChapterDownloaded(
                 dbChapter.name,
@@ -794,15 +804,20 @@ class ReaderViewModel(
         if (getCurrentChapter()?.pageLoader !is DownloadPageLoader) return
         val nextChapter = state.value.viewerChapters?.nextChapter?.chapter ?: return
 
+        // SY -->
+        val mangas = state.value.mergedManga ?: mapOf(manga.id to manga)
+        val nextChapterManga = mangas[nextChapter.manga_id] ?: return
+        // SY <--
+
         viewModelScope.launchIO {
             val isNextChapterDownloaded = downloadManager.isChapterDownloaded(
                 nextChapter.name,
                 nextChapter.scanlator,
                 nextChapter.url,
                 // SY -->
-                manga.ogTitle,
+                nextChapterManga.ogTitle,
+                nextChapterManga.source,
                 // SY <--
-                manga.source,
             )
             if (!isNextChapterDownloaded) return@launchIO
 
@@ -814,10 +829,15 @@ class ReaderViewModel(
                 }
             }.take(downloadAheadAmount)
 
-            downloadManager.downloadChapters(
-                manga,
-                chaptersToDownload,
-            )
+            // SY -->
+            chaptersToDownload.groupBy { it.mangaId }.forEach { (mangaId, chapters) ->
+                val chapterManga = mangas[mangaId] ?: return@forEach
+                downloadManager.downloadChapters(
+                    chapterManga,
+                    chapters,
+                )
+            }
+            // SY <--
         }
     }
 
@@ -1463,14 +1483,39 @@ class ReaderViewModel(
 
     // SY -->
     fun onTranslation() {
-        val page = (state.value.dialog as? Dialog.PageActions)?.page ?: state.value.activePage ?: return
-        if (page.status != Page.State.Ready) return
-        val stream = page.stream ?: return
+        val page = (state.value.dialog as? Dialog.PageActions)?.page
+            ?: state.value.activePage
+            ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.pager.PagerViewer)?.currentPage as? ReaderPage
+            ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.webtoon.WebtoonViewer)?.currentPage as? ReaderPage
+            ?: run {
+                eventChannel.trySend(Event.ShowToast("No active page selected"))
+                return
+            }
+
+        if (page.status != Page.State.Ready) {
+            eventChannel.trySend(Event.ShowToast("Page is still loading..."))
+            return
+        }
+
+        val stream = page.stream ?: run {
+            val imageUrl = page.imageUrl
+            if (imageUrl != null && chapterCache.isImageInCache(imageUrl)) {
+                val fn = { chapterCache.getImageFile(imageUrl).inputStream() }
+                page.stream = fn
+                fn
+            } else {
+                null
+            }
+        } ?: run {
+            eventChannel.trySend(Event.ShowToast("Page image not available for translation"))
+            return
+        }
 
         // Toggle off if already showing
         if (page.showTranslation) {
             page.showTranslation = false
             eventChannel.trySend(Event.TranslationOverlayReady(page))
+            eventChannel.trySend(Event.ShowToast("Translation overlay hidden"))
             return
         }
 
@@ -1478,6 +1523,7 @@ class ReaderViewModel(
         if (page.translationBlocks != null) {
             page.showTranslation = true
             eventChannel.trySend(Event.TranslationOverlayReady(page))
+            eventChannel.trySend(Event.ShowToast("Translation overlay restored"))
             return
         }
 
@@ -1490,6 +1536,7 @@ class ReaderViewModel(
             page.translationBlocks = cached
             page.showTranslation = true
             eventChannel.trySend(Event.TranslationOverlayReady(page))
+            eventChannel.trySend(Event.ShowToast("Translation overlay restored from cache"))
             return
         }
 
@@ -1504,25 +1551,54 @@ class ReaderViewModel(
                     return@launchIO
                 }
 
-                val apiKey = shinkuPreferences.geminiApiKey().get()
+                val apiKey = shinkuPreferences.geminiApiKey().get().trim()
                 val model = shinkuPreferences.geminiModel().get()
                 val sourceLanguage = shinkuPreferences.translationSourceLanguage().get()
-
-                if (apiKey.isBlank()) {
-                    mutableState.update { it.copy(dialog = Dialog.AiInsight("Translation", "Please set your Gemini API Key in Settings > ShinKu Features.")) }
-                    return@launchIO
-                }
+                val translationEngine = shinkuPreferences.translationEngine().get()
 
                 val inputs = ocrResults.mapIndexed { index, result ->
                     com.shinku.reader.domain.source.interactor.GeminiVibeSearch.TranslationBlockInput(id = index, text = result.text)
                 }
 
-                val translated = geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage)
+                val translated = when {
+                    translationEngine == "gemini_cloud" -> {
+                        if (apiKey.isBlank()) {
+                            mutableState.update {
+                                it.copy(
+                                    dialog = Dialog.AiInsight(
+                                        "Gemini API Key Required",
+                                        "Please configure your Google Gemini API Key in Settings > ShinKu AI & Engines, or select 'Standard ML Kit' for free on-device translation.",
+                                    ),
+                                )
+                            }
+                            return@launchIO
+                        }
+                        geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage)
+                    }
+                    translationEngine == "mlkit" || translationEngine == "aicore" -> {
+                        mlKitTranslationInteractor.translateBlocks(inputs, targetLanguage, sourceLanguage)
+                    }
+                    else -> {
+                        // "auto" mode: prefer Gemini Cloud if API key is configured, fallback to on-device ML Kit
+                        if (apiKey.isNotBlank()) {
+                            try {
+                                geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage)
+                            } catch (e: Exception) {
+                                logcat(LogPriority.WARN, e) { "Cloud translation failed; falling back to on-device ML Kit" }
+                                mlKitTranslationInteractor.translateBlocks(inputs, targetLanguage, sourceLanguage)
+                            }
+                        } else {
+                            mlKitTranslationInteractor.translateBlocks(inputs, targetLanguage, sourceLanguage)
+                        }
+                    }
+                }
+
                 if (translated.isEmpty()) {
-                    throw Exception("Translation returned empty results from Gemini.")
+                    throw Exception("Translation returned empty results.")
                 }
                 val translationMap = translated.associate { it.id to it.text }
 
+                val allRects = ocrResults.mapNotNull { it.boundingBox }
                 val translatedBlocks = ocrResults.mapIndexed { index, result ->
                     val translation = translationMap[index] ?: result.text
                     val rect = result.boundingBox ?: android.graphics.Rect(0, 0, 0, 0)
@@ -1531,12 +1607,19 @@ class ReaderViewModel(
                     val bgColor = detectBackgroundColor(bitmap, rect)
                     val textColor = if (isDarkColor(bgColor)) android.graphics.Color.WHITE else android.graphics.Color.BLACK
 
+                    // Komakun-style Bubble Probing: detect the natural speech bubble boundaries
+                    val otherRects = allRects.filterIndexed { i, _ -> i != index }
+                    val bubbleBounds = detectBubbleBounds(bitmap, rect, bgColor, otherRects)
+
                     TranslatedBlock(
                         originalText = result.text,
                         translatedText = translation,
                         boundingBox = rect,
+                        bubbleRect = bubbleBounds,
+                        sourceWidth = bitmap.width,
+                        sourceHeight = bitmap.height,
                         bgColor = bgColor,
-                        textColor = textColor
+                        textColor = textColor,
                     )
                 }
 
@@ -1546,6 +1629,7 @@ class ReaderViewModel(
 
                 mutableState.update { it.copy(dialog = null) } // Close loading dialog
                 eventChannel.send(Event.TranslationOverlayReady(page))
+                eventChannel.send(Event.ShowToast("Live Translation active (${translatedBlocks.size} blocks)"))
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
                 mutableState.update { it.copy(dialog = Dialog.AiInsight("Translation Error", e.message ?: "Unknown error")) }
@@ -1600,12 +1684,153 @@ class ReaderViewModel(
         return luminance < 128
     }
 
+    private fun detectBubbleBounds(
+        bitmap: Bitmap,
+        textRect: android.graphics.Rect,
+        bgColor: Int,
+        otherRects: List<android.graphics.Rect>,
+    ): android.graphics.Rect {
+        if (textRect.width() <= 0 || textRect.height() <= 0) return textRect
+
+        val bgR = android.graphics.Color.red(bgColor)
+        val bgG = android.graphics.Color.green(bgColor)
+        val bgB = android.graphics.Color.blue(bgColor)
+        val bgLum = (0.299f * bgR + 0.587f * bgG + 0.114f * bgB).toInt()
+        val isLightBg = bgLum >= 128
+
+        fun isBoundaryPixel(pixelColor: Int): Boolean {
+            val r = android.graphics.Color.red(pixelColor)
+            val g = android.graphics.Color.green(pixelColor)
+            val b = android.graphics.Color.blue(pixelColor)
+            val lum = (0.299f * r + 0.587f * g + 0.114f * b).toInt()
+
+            return if (isLightBg) {
+                lum < 95 || (bgLum - lum) > 80
+            } else {
+                lum > 160 || (lum - bgLum) > 80
+            }
+        }
+
+        val width = textRect.width()
+        val height = textRect.height()
+        val isVerticalText = height > width * 1.25
+
+        val maxHorizontalExpansion = if (isVerticalText) {
+            maxOf(width * 3.5f, height * 0.85f).toInt()
+        } else {
+            (width * 0.5f).toInt().coerceAtLeast(30)
+        }
+        val maxVerticalExpansion = (height * 0.25f).toInt().coerceAtLeast(20)
+
+        val minLeft = maxOf(0, textRect.left - maxHorizontalExpansion)
+        val maxRight = minOf(bitmap.width - 1, textRect.right + maxHorizontalExpansion)
+        val minTop = maxOf(0, textRect.top - maxVerticalExpansion)
+        val maxBottom = minOf(bitmap.height - 1, textRect.bottom + maxVerticalExpansion)
+
+        val sampleYs = intArrayOf(
+            textRect.top + (height * 0.15f).toInt().coerceIn(0, height - 1),
+            textRect.top + (height * 0.35f).toInt().coerceIn(0, height - 1),
+            textRect.top + (height * 0.50f).toInt().coerceIn(0, height - 1),
+            textRect.top + (height * 0.65f).toInt().coerceIn(0, height - 1),
+            textRect.top + (height * 0.85f).toInt().coerceIn(0, height - 1),
+        )
+
+        var bubbleLeft = textRect.left
+        val probeStep = 2
+        for (x in textRect.left downTo minLeft step probeStep) {
+            if (otherRects.any { it.contains(x, textRect.centerY()) }) {
+                bubbleLeft = x + probeStep
+                break
+            }
+            var edgeHitCount = 0
+            for (y in sampleYs) {
+                if (isBoundaryPixel(bitmap.getPixel(x, y))) {
+                    edgeHitCount++
+                }
+            }
+            if (edgeHitCount >= 2 || isBoundaryPixel(bitmap.getPixel(x, textRect.centerY()))) {
+                bubbleLeft = (x + 3).coerceAtMost(textRect.left)
+                break
+            }
+            bubbleLeft = x
+        }
+
+        var bubbleRight = textRect.right
+        for (x in textRect.right..maxRight step probeStep) {
+            if (otherRects.any { it.contains(x, textRect.centerY()) }) {
+                bubbleRight = x - probeStep
+                break
+            }
+            var edgeHitCount = 0
+            for (y in sampleYs) {
+                if (isBoundaryPixel(bitmap.getPixel(x, y))) {
+                    edgeHitCount++
+                }
+            }
+            if (edgeHitCount >= 2 || isBoundaryPixel(bitmap.getPixel(x, textRect.centerY()))) {
+                bubbleRight = (x - 3).coerceAtLeast(textRect.right)
+                break
+            }
+            bubbleRight = x
+        }
+
+        val sampleXs = intArrayOf(
+            bubbleLeft + ((bubbleRight - bubbleLeft) * 0.20f).toInt().coerceIn(0, maxOf(1, bubbleRight - bubbleLeft)),
+            bubbleLeft + ((bubbleRight - bubbleLeft) * 0.50f).toInt().coerceIn(0, maxOf(1, bubbleRight - bubbleLeft)),
+            bubbleLeft + ((bubbleRight - bubbleLeft) * 0.80f).toInt().coerceIn(0, maxOf(1, bubbleRight - bubbleLeft)),
+        )
+
+        var bubbleTop = textRect.top
+        for (y in textRect.top downTo minTop step probeStep) {
+            if (otherRects.any { it.contains(textRect.centerX(), y) }) {
+                bubbleTop = y + probeStep
+                break
+            }
+            var edgeHitCount = 0
+            for (x in sampleXs) {
+                if (isBoundaryPixel(bitmap.getPixel(x, y))) {
+                    edgeHitCount++
+                }
+            }
+            if (edgeHitCount >= 2 || isBoundaryPixel(bitmap.getPixel(textRect.centerX(), y))) {
+                bubbleTop = (y + 3).coerceAtMost(textRect.top)
+                break
+            }
+            bubbleTop = y
+        }
+
+        var bubbleBottom = textRect.bottom
+        for (y in textRect.bottom..maxBottom step probeStep) {
+            if (otherRects.any { it.contains(textRect.centerX(), y) }) {
+                bubbleBottom = y - probeStep
+                break
+            }
+            var edgeHitCount = 0
+            for (x in sampleXs) {
+                if (isBoundaryPixel(bitmap.getPixel(x, y))) {
+                    edgeHitCount++
+                }
+            }
+            if (edgeHitCount >= 2 || isBoundaryPixel(bitmap.getPixel(textRect.centerX(), y))) {
+                bubbleBottom = (y - 3).coerceAtLeast(textRect.bottom)
+                break
+            }
+            bubbleBottom = y
+        }
+
+        return android.graphics.Rect(bubbleLeft, bubbleTop, bubbleRight, bubbleBottom)
+    }
+
     fun onFootnotes() {
         val page = (state.value.dialog as? Dialog.PageActions)?.page ?: return
-        performAiAction(page, "Insights") { text ->
-            val apiKey = shinkuPreferences.geminiApiKey().get()
+        performAiAction(page, "Interactive Footnotes") { text ->
+            val apiKey = shinkuPreferences.geminiApiKey().get().trim()
             val model = shinkuPreferences.geminiModel().get()
-            geminiVibeSearch.explainFootnotes(text, apiKey, model)
+            if (apiKey.isBlank()) {
+                "Please configure your Google Gemini API Key in Settings > ShinKu AI & Engines to enable Interactive Footnotes."
+            } else {
+                geminiVibeSearch.explainFootnotes(text, apiKey, model)
+            }
         }
     }
 
@@ -1822,5 +2047,6 @@ class ReaderViewModel(
         ) : Event
         data class CopyImage(val uri: Uri) : Event
         data class ShowSnackbar(val stringRes: StringResource) : Event
+        data class ShowToast(val message: String) : Event
     }
 }

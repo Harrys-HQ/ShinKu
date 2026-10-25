@@ -14,6 +14,7 @@ import com.shinku.reader.domain.manga.interactor.SetMangaViewerFlags
 import com.shinku.reader.domain.manga.interactor.UpdateManga
 import com.shinku.reader.domain.source.interactor.GeminiVibeSearch
 import com.shinku.reader.domain.source.interactor.TextRecognitionInteractor
+import com.shinku.reader.domain.source.interactor.MlKitTranslationInteractor
 import com.shinku.reader.domain.source.interactor.PanelDetectionInteractor
 import com.shinku.reader.domain.source.interactor.GetEnabledSources
 import com.shinku.reader.domain.source.interactor.GetIncognitoState
@@ -215,6 +216,7 @@ class DomainModule : InjektModule {
         addFactory { TrustExtension(get(), get()) }
         addFactory { GeminiVibeSearch(get()) }
         addFactory { TextRecognitionInteractor() }
+        addFactory { MlKitTranslationInteractor() }
         addFactory { PanelDetectionInteractor() }
         addFactory { GetSourceHealth(get()) }
         addFactory { UpdateSourceHealth(get()) }

@@ -176,32 +176,55 @@ class GeminiVibeSearch(
             val start = cleanResult.indexOf("[")
             val end = cleanResult.lastIndexOf("]") + 1
             if (start != -1 && end > start) {
-                val jsonArray = cleanResult.substring(start, end)
+                val jsonArrayStr = cleanResult.substring(start, end)
                 try {
-                    val outputs = json.decodeFromString<List<TranslationBlockOutput>>(jsonArray)
+                    val element = json.parseToJsonElement(jsonArrayStr)
+                    val outputs = element.jsonArray.mapNotNull { item ->
+                        try {
+                            val obj = item.jsonObject
+                            val id = obj["id"]?.jsonPrimitive?.content?.toIntOrNull() ?: return@mapNotNull null
+                            val text = obj["text"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                            TranslationBlockOutput(id, text.trim())
+                        } catch (_: Exception) {
+                            null
+                        }
+                    }
                     if (outputs.isNotEmpty()) {
                         translationCache[cacheKey] = outputs
+                        return outputs
                     }
-                    outputs
                 } catch (_: Exception) {
-                    val regex = Regex("""\{\s*"id"\s*:\s*(\d+)\s*,\s*"text"\s*:\s*"((?:[^"\\]|\\.)*)"""")
-                    val parsed = regex.findAll(cleanResult).map { match ->
-                        val id = match.groupValues[1].toInt()
-                        val text = match.groupValues[2]
-                            .replace("\\\"", "\"")
-                            .replace("\\n", "\n")
-                            .replace("\\\\", "\\")
-                        TranslationBlockOutput(id, text)
-                    }.toList()
-                    if (parsed.isNotEmpty()) {
-                        translationCache[cacheKey] = parsed
-                        parsed
-                    } else {
-                        throw Exception("Failed to parse translation JSON: $cleanResult")
-                    }
                 }
+            }
+
+            // Fallback Regex: handle quotes and any property ordering
+            val regex = Regex("""\{\s*"id"\s*:\s*"?(\d+)"?\s*,\s*"text"\s*:\s*"((?:[^"\\]|\\.)*)"""")
+            val regexReversed = Regex("""\{\s*"text"\s*:\s*"((?:[^"\\]|\\.)*)"\s*,\s*"id"\s*:\s*"?(\d+)"?""")
+            var parsed = regex.findAll(cleanResult).map { match ->
+                val id = match.groupValues[1].toInt()
+                val text = match.groupValues[2]
+                    .replace("\\\"", "\"")
+                    .replace("\\n", "\n")
+                    .replace("\\\\", "\\")
+                TranslationBlockOutput(id, text.trim())
+            }.toList()
+
+            if (parsed.isEmpty()) {
+                parsed = regexReversed.findAll(cleanResult).map { match ->
+                    val text = match.groupValues[1]
+                        .replace("\\\"", "\"")
+                        .replace("\\n", "\n")
+                        .replace("\\\\", "\\")
+                    val id = match.groupValues[2].toInt()
+                    TranslationBlockOutput(id, text.trim())
+                }.toList()
+            }
+
+            if (parsed.isNotEmpty()) {
+                translationCache[cacheKey] = parsed
+                parsed
             } else {
-                throw Exception("Invalid response format from Gemini: $resultText")
+                throw Exception("Failed to parse translation JSON: $cleanResult")
             }
         } catch (e: Exception) {
             throw Exception("Failed to parse translation: ${e.message}. Raw response: $resultText")
@@ -298,7 +321,15 @@ class GeminiVibeSearch(
 
     suspend fun searchByImage(base64Image: String, apiKey: String, model: String): List<String> {
         val resolvedModel = resolveModel(model)
-        val modelsToTry = listOf(resolvedModel, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-1.5-flash").distinct()
+        val modelsToTry = listOf(
+            resolvedModel,
+            "gemini-3.8-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-pro",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+        ).distinct()
         
         val bodyJson = """
             {
@@ -352,15 +383,24 @@ class GeminiVibeSearch(
 
     private suspend fun callGeminiForText(prompt: String, apiKey: String, model: String): String {
         return withIOContext {
-            if (apiKey.isBlank()) return@withIOContext "API Key not set"
+            val key = apiKey.trim()
+            if (key.isBlank()) return@withIOContext "API Key not set"
 
             val preferredModel = resolveModel(model)
-            val modelsToTry = listOf(preferredModel, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
+            val modelsToTry = listOf(
+                preferredModel,
+                "gemini-3.8-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3.1-pro",
+                "gemini-2.5-flash",
+                "gemini-2.0-flash",
+                "gemini-1.5-flash",
+            ).distinct()
 
             var lastError = "Unknown error"
             for (m in modelsToTry) {
                 try {
-                    val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$apiKey"
+                    val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$key"
                     val bodyJson = """
                         {
                           "contents": [{
@@ -376,7 +416,7 @@ class GeminiVibeSearch(
 
                     networkHelper.client.newCall(request).execute().use { response ->
                         val responseBody = response.body.string()
-                        if (response.code in listOf(429, 404, 503)) {
+                        if (response.code in listOf(400, 404, 429, 500, 503)) {
                             lastError = "HTTP ${response.code}: $responseBody"
                             return@use
                         }
@@ -409,8 +449,19 @@ class GeminiVibeSearch(
     }
 
     private fun callGemini(query: String, apiKey: String, model: String): List<String> {
+        val key = apiKey.trim()
+        if (key.isBlank()) return emptyList()
+
         val preferredModel = resolveModel(model)
-        val modelsToTry = listOf(preferredModel, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
+        val modelsToTry = listOf(
+            preferredModel,
+            "gemini-3.8-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-pro",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+        ).distinct()
 
         val prompt = """
             You are a manga discovery expert. Based on the following user description, provide a list of up to 10 real manga titles that match the "vibe".
@@ -429,14 +480,14 @@ class GeminiVibeSearch(
 
         for (m in modelsToTry) {
             try {
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$apiKey"
+                val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$key"
                 val request = Request.Builder()
                     .url(url)
                     .post(bodyJson.toRequestBody("application/json".toMediaType()))
                     .build()
 
                 networkHelper.client.newCall(request).execute().use { response ->
-                    if (response.code in listOf(429, 404, 503)) return@use
+                    if (response.code in listOf(400, 404, 429, 500, 503)) return@use
                     if (!response.isSuccessful) throw Exception("API Error: ${response.code}")
 
                     val responseBody = response.body.string()
@@ -464,9 +515,7 @@ class GeminiVibeSearch(
     }
 
     private fun resolveModel(model: String): String {
-        return when {
-            model.isBlank() -> "gemini-3.8-flash"
-            else -> model
-        }
+        val trimmed = model.trim()
+        return if (trimmed.isBlank()) "gemini-3.8-flash" else trimmed
     }
 }

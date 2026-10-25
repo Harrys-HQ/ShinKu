@@ -3,11 +3,14 @@ package com.shinku.reader.data.track
 import dev.icerock.moko.resources.StringResource
 import com.shinku.reader.data.track.anilist.Anilist
 import com.shinku.reader.data.track.bangumi.Bangumi
+import com.shinku.reader.data.track.comick.Comick
+import com.shinku.reader.data.track.kavita.Kavita
 import com.shinku.reader.data.track.kitsu.Kitsu
 import com.shinku.reader.data.track.komga.Komga
 import com.shinku.reader.data.track.mangaupdates.MangaUpdates
 import com.shinku.reader.data.track.myanimelist.MyAnimeList
 import com.shinku.reader.data.track.shikimori.Shikimori
+import com.shinku.reader.data.track.suwayomi.Suwayomi
 import com.shinku.reader.exh.md.utils.FollowStatus
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
@@ -104,6 +107,32 @@ enum class TrackStatus(val int: Int, val res: StringResource) {
                         MangaUpdates.ON_HOLD_LIST -> PAUSED
                         MangaUpdates.WISH_LIST -> PLAN_TO_READ
                         MangaUpdates.UNFINISHED_LIST -> DROPPED
+                        else -> null
+                    }
+                }
+                trackerManager.kavita.id -> {
+                    when (status) {
+                        Kavita.READING -> READING
+                        Kavita.COMPLETED -> COMPLETED
+                        Kavita.UNREAD -> null
+                        else -> null
+                    }
+                }
+                trackerManager.suwayomi.id -> {
+                    when (status) {
+                        Suwayomi.READING -> READING
+                        Suwayomi.COMPLETED -> COMPLETED
+                        Suwayomi.UNREAD -> null
+                        else -> null
+                    }
+                }
+                trackerManager.comick.id -> {
+                    when (status) {
+                        Comick.READING -> READING
+                        Comick.COMPLETED -> COMPLETED
+                        Comick.ON_HOLD -> PAUSED
+                        Comick.DROPPED -> DROPPED
+                        Comick.PLAN_TO_READ -> PLAN_TO_READ
                         else -> null
                     }
                 }

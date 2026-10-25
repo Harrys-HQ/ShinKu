@@ -19,27 +19,54 @@ class HapticGenerator(
     }
 
     fun shortPress() {
-        vibrate(longArrayOf(0, 10))
+        if (!enabled()) return
+        try {
+            vibrator?.let { v ->
+                if (!v.hasVibrator()) return
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 15), -1))
+                } else {
+                    @Suppress("DEPRECATION")
+                    v.vibrate(15)
+                }
+            }
+        } catch (_: Throwable) {
+        }
     }
 
     fun longPress() {
-        vibrate(longArrayOf(0, 50))
+        if (!enabled()) return
+        try {
+            vibrator?.let { v ->
+                if (!v.hasVibrator()) return
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 45), -1))
+                } else {
+                    @Suppress("DEPRECATION")
+                    v.vibrate(45)
+                }
+            }
+        } catch (_: Throwable) {
+        }
     }
 
     fun milestone() {
-        vibrate(longArrayOf(0, 20, 100, 20, 100, 40))
-    }
-
-    private fun vibrate(pattern: LongArray) {
         if (!enabled()) return
-
-        vibrator?.let {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                it.vibrate(VibrationEffect.createWaveform(pattern, -1))
-            } else {
-                @Suppress("DEPRECATION")
-                it.vibrate(pattern, -1)
+        try {
+            vibrator?.let { v ->
+                if (!v.hasVibrator()) return
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 20, 80, 30), -1))
+                } else {
+                    @Suppress("DEPRECATION")
+                    v.vibrate(longArrayOf(0, 20, 80, 30), -1)
+                }
             }
+        } catch (_: Throwable) {
         }
     }
 }

@@ -47,9 +47,12 @@ open /* SY <-- */ class NetworkHelper(
             .addInterceptor(UserAgentInterceptor(::defaultUserAgentProvider))
             .addInterceptor(NextJsRscInterceptor())
 
-        if (isDebugBuild) {
+        if (isDebugBuild || preferences.verboseLogging().get()) {
             val httpLoggingInterceptor = HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.HEADERS
+                redactHeader("Authorization")
+                redactHeader("Auth")
+                redactHeader("Cookie")
             }
             builder.addNetworkInterceptor(httpLoggingInterceptor)
         }

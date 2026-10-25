@@ -66,11 +66,19 @@ class CloudGeminiEngine(
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     override suspend fun generateText(prompt: String): Result<String> = withContext(Dispatchers.IO) {
-        val apiKey = shinkuPreferences.geminiApiKey().get()
+        val apiKey = shinkuPreferences.geminiApiKey().get().trim()
         if (apiKey.isBlank()) return@withContext Result.failure(IllegalStateException("API Key not set"))
 
         val preferredModel = resolveModel(shinkuPreferences.geminiModel().get())
-        val modelsToTry = listOf(preferredModel, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash").distinct()
+        val modelsToTry = listOf(
+            preferredModel,
+            "gemini-3.8-flash",
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-pro",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
+        ).distinct()
 
         var lastError: Exception? = null
         for (model in modelsToTry) {
@@ -91,7 +99,7 @@ class CloudGeminiEngine(
 
                 networkHelper.client.newCall(request).execute().use { response ->
                     val responseBody = response.body.string()
-                    if (response.code in listOf(429, 404, 503)) {
+                    if (response.code in listOf(400, 404, 429, 500, 503)) {
                         lastError = Exception("HTTP ${response.code}: $responseBody")
                         return@use // Try next fallback model
                     }
@@ -133,10 +141,8 @@ class CloudGeminiEngine(
     }
 
     private fun resolveModel(model: String): String {
-        return when {
-            model.isBlank() -> "gemini-3.8-flash"
-            else -> model
-        }
+        val trimmed = model.trim()
+        return if (trimmed.isBlank()) "gemini-3.8-flash" else trimmed
     }
 }
 
