@@ -15,5 +15,11 @@
 
 ## 3. Database & Versioning
 - **DB Migrations**: Number `.sq` and `.sqm` migration files sequentially.
-- **Atomic Versioning**: Synchronize version bumps across `build.gradle.kts`, `version.json`, `CHANGELOG.md`, and `README.md` prior to release tags.
+- **Atomic Versioning**: Synchronize version bumps across `app/build.gradle.kts`, `docs/version.json`, in-app notice (`app/src/main/res/raw/changelog_release.xml`), and website changelog (`docs/CHANGELOG.md`).
+- **Complete Release & Push Mandate**: Never close an issue or declare a release done without executing the full bundle pipeline:
+  1. Synchronize version numbers and changelogs across app, docs, and in-app notices.
+  2. Assemble verified production APKs (`assembleDevRelease`).
+  3. Push commits to `origin main` to trigger automated GitHub Pages website deployment.
+  4. Publish GitHub release with all 5 APK architecture binaries attached (`gh release create`).
+  5. Close GitHub issues with comments linking to the published release tag.
 
