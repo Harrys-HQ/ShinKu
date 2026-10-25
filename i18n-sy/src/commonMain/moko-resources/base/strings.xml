@@ -232,6 +232,15 @@
     <string name="pref_choose_what_to_sync">Choose what to sync</string>
     <string name="scan_qr_code">Scan a QR code</string>
     <string name="last_synchronization">Last Synchronization: %1$s</string>
+    <string name="google_drive">Google Drive</string>
+    <string name="pref_google_drive_folder">Google Drive folder</string>
+    <string name="pref_google_drive_folder_summ">Choose a folder in Google Drive (or any cloud/local storage)</string>
+    <string name="pref_google_drive_purge_sync_data">Clear Sync Data from Google Drive</string>
+    <string name="google_drive_sync_data_purged">Sync data purged from Google Drive</string>
+    <string name="google_drive_sync_data_not_found">No sync data found in Google Drive folder</string>
+    <string name="google_drive_sync_data_purge_error">Error purging sync data from Google Drive</string>
+    <string name="google_drive_not_signed_in">No Google Drive folder selected</string>
+    <string name="google_drive_login_success">Google Drive folder connected</string>
     <string name="dropbox">Dropbox</string>
     <string name="pref_dropbox_sign_in">Sign in</string>
     <string name="pref_dropbox_manual_token">Manual Access Token</string>

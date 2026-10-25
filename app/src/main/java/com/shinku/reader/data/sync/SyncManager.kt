@@ -12,6 +12,7 @@ import com.shinku.reader.data.backup.restore.BackupRestoreJob
 import com.shinku.reader.data.backup.restore.RestoreOptions
 import com.shinku.reader.data.backup.restore.restorers.MangaRestorer
 import com.shinku.reader.data.sync.service.DropboxSyncService
+import com.shinku.reader.data.sync.service.GoogleDriveSyncService
 import com.shinku.reader.data.sync.service.SyncData
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
@@ -55,6 +56,7 @@ class SyncManager(
         DROPBOX(1),
         WEBDAV(2),
         NEXTCLOUD(3),
+        GOOGLE_DRIVE(4),
         ;
 
         companion object {
@@ -128,6 +130,9 @@ class SyncManager(
             }
             SyncService.NEXTCLOUD -> {
                 com.shinku.reader.data.sync.service.NextcloudSyncService(context, json, syncPreferences)
+            }
+            SyncService.GOOGLE_DRIVE -> {
+                GoogleDriveSyncService(context, json, syncPreferences)
             }
 
             else -> {

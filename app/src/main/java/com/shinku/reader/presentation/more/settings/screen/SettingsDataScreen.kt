@@ -520,6 +520,7 @@ object SettingsDataScreen : SearchableSettings {
                         title = stringResource(SYMR.strings.pref_sync_service),
                         entries = persistentMapOf(
                             SyncManager.SyncService.NONE.value to stringResource(MR.strings.off),
+                            SyncManager.SyncService.GOOGLE_DRIVE.value to stringResource(SYMR.strings.google_drive),
                             SyncManager.SyncService.DROPBOX.value to stringResource(SYMR.strings.dropbox),
                             SyncManager.SyncService.WEBDAV.value to stringResource(SYMR.strings.webdav),
                             SyncManager.SyncService.NEXTCLOUD.value to stringResource(SYMR.strings.nextcloud),
@@ -552,6 +553,7 @@ object SettingsDataScreen : SearchableSettings {
         val navigator = LocalNavigator.currentOrThrow
         val preferences = when (syncServiceType) {
             SyncManager.SyncService.NONE -> emptyList()
+            SyncManager.SyncService.GOOGLE_DRIVE -> com.shinku.reader.presentation.more.settings.screen.data.getGoogleDrivePreferences(syncPreferences)
             SyncManager.SyncService.DROPBOX -> getDropboxPreferences()
             SyncManager.SyncService.WEBDAV, SyncManager.SyncService.NEXTCLOUD -> getWebDavPreferences(syncPreferences)
         }

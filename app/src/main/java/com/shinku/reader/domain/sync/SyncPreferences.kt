@@ -16,6 +16,11 @@ class SyncPreferences(
     fun syncInterval() = preferenceStore.getInt("sync_interval", 0)
     fun syncService() = preferenceStore.getInt("sync_service", 0)
 
+    fun googleDriveSyncUri() = preferenceStore.getString(
+        Preference.appStateKey("google_drive_sync_uri"),
+        "",
+    )
+
     fun dropboxAccessToken() = preferenceStore.getString(
         Preference.appStateKey("dropbox_access_token"),
         "",
