@@ -36,7 +36,6 @@ ShinKu supports several deep link schemes and hosts to ensure compatibility with
 | **MyAnimeList Auth** | `com.shinku.reader`, `tachiyomi`, `mihon` | `myanimelist-auth` | N/A |
 | **Shikimori Auth** | `com.shinku.reader`, `tachiyomi`, `mihon` | `shikimori-auth` | N/A |
 | **MangaDex Auth** | `shinku` | `mangadex-auth` | N/A |
-| **Dropbox Auth** | `db-6h2m965uod1itio` | N/A | N/A |
 | **Global Search** | `com.shinku.reader.SEARCH` | N/A | (Implicit Search Action) |
 | **E-Hentai / ExH** | `http`, `https` | `e-hentai.org`, `exhentai.org` | `/g/..*` |
 | **MangaDex Redirect** | `https` | `mangadex.org` | `/manga/..*`, `/title/..*` |

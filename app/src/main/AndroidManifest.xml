@@ -224,21 +224,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.dropbox.core.android.AuthActivity"
-            android:configChanges="orientation|keyboard|keyboardHidden"
-            android:launchMode="singleTask"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="db-6h2m965uod1itio" />
-            </intent-filter>
-        </activity>
-
-        <activity
             android:name="com.shinku.reader.exh.ui.login.EhLoginActivity"
             android:label="EHentaiLogin"
             android:exported="false"/>

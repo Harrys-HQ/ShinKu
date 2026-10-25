@@ -326,10 +326,6 @@ dependencies {
     implementation(libs.ratingbar)
     implementation(libs.composeRatingbar)
 
-    // Dropbox
-    implementation(libs.dropbox.core)
-    implementation(libs.dropbox.android)
-
     // Koin
     implementation(libs.koin.core)
     implementation(libs.koin.android)

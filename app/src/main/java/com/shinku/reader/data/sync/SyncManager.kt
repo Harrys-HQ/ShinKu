@@ -11,7 +11,6 @@ import com.shinku.reader.data.backup.models.BackupManga
 import com.shinku.reader.data.backup.restore.BackupRestoreJob
 import com.shinku.reader.data.backup.restore.RestoreOptions
 import com.shinku.reader.data.backup.restore.restorers.MangaRestorer
-import com.shinku.reader.data.sync.service.DropboxSyncService
 import com.shinku.reader.data.sync.service.GoogleDriveSyncService
 import com.shinku.reader.data.sync.service.SyncData
 import kotlinx.serialization.json.Json
@@ -53,7 +52,6 @@ class SyncManager(
 
     enum class SyncService(val value: Int) {
         NONE(0),
-        DROPBOX(1),
         WEBDAV(2),
         NEXTCLOUD(3),
         GOOGLE_DRIVE(4),
@@ -122,9 +120,6 @@ class SyncManager(
 
         // Handle sync based on the selected service
         val syncService = when (val syncService = SyncService.fromInt(syncPreferences.syncService().get())) {
-            SyncService.DROPBOX -> {
-                DropboxSyncService(context, json, syncPreferences)
-            }
             SyncService.WEBDAV -> {
                 com.shinku.reader.data.sync.service.WebDavSyncService(context, json, syncPreferences)
             }

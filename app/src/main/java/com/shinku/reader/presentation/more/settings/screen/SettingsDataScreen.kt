@@ -67,7 +67,6 @@ import com.shinku.reader.data.export.LibraryExporter
 import com.shinku.reader.data.export.LibraryExporter.ExportOptions
 import com.shinku.reader.data.sync.SyncDataJob
 import com.shinku.reader.data.sync.SyncManager
-import com.shinku.reader.data.sync.service.DropboxSyncService
 import com.shinku.reader.util.system.DeviceUtil
 import com.shinku.reader.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
@@ -521,7 +520,6 @@ object SettingsDataScreen : SearchableSettings {
                         entries = persistentMapOf(
                             SyncManager.SyncService.NONE.value to stringResource(MR.strings.off),
                             SyncManager.SyncService.GOOGLE_DRIVE.value to stringResource(SYMR.strings.google_drive),
-                            SyncManager.SyncService.DROPBOX.value to stringResource(SYMR.strings.dropbox),
                             SyncManager.SyncService.WEBDAV.value to stringResource(SYMR.strings.webdav),
                             SyncManager.SyncService.NEXTCLOUD.value to stringResource(SYMR.strings.nextcloud),
                         ),
@@ -554,7 +552,6 @@ object SettingsDataScreen : SearchableSettings {
         val preferences = when (syncServiceType) {
             SyncManager.SyncService.NONE -> emptyList()
             SyncManager.SyncService.GOOGLE_DRIVE -> com.shinku.reader.presentation.more.settings.screen.data.getGoogleDrivePreferences(syncPreferences)
-            SyncManager.SyncService.DROPBOX -> getDropboxPreferences()
             SyncManager.SyncService.WEBDAV, SyncManager.SyncService.NEXTCLOUD -> getWebDavPreferences(syncPreferences)
         }
 
@@ -591,105 +588,6 @@ object SettingsDataScreen : SearchableSettings {
     @Composable
     private fun getAdditionalPreferences(syncPreferences: SyncPreferences): List<Preference> {
         return listOf(getSyncNowPref(), getAutomaticSyncGroup(syncPreferences))
-    }
-
-    @Composable
-    private fun getDropboxPreferences(): List<Preference> {
-        val context = LocalContext.current
-        val syncPreferences = remember { Injekt.get<SyncPreferences>() }
-        val dropboxSync = remember { DropboxSyncService(context, Injekt.get(), syncPreferences) }
-
-        LaunchedEffect(Unit) {
-            if (dropboxSync.handleLoginResponse()) {
-                context.toast(SYMR.strings.dropbox_login_success)
-            }
-        }
-
-        return listOf(
-            Preference.PreferenceItem.TextPreference(
-                title = stringResource(SYMR.strings.pref_dropbox_sign_in),
-                subtitle = if (dropboxSync.isLoggedIn) stringResource(SYMR.strings.dropbox_login_success) else null,
-                onClick = {
-                    try {
-                        dropboxSync.startLogin(context)
-                    } catch (e: Exception) {
-                        context.toast(e.message ?: "Error signing in")
-                    }
-                },
-            ),
-            Preference.PreferenceItem.EditTextPreference(
-                title = stringResource(SYMR.strings.pref_dropbox_manual_token),
-                subtitle = stringResource(SYMR.strings.pref_dropbox_manual_token_summ),
-                preference = syncPreferences.dropboxAccessToken(),
-            ),
-            getDropboxPurge(),
-        )
-    }
-
-    @Composable
-    private fun getDropboxPurge(): Preference.PreferenceItem.TextPreference {
-        val scope = rememberCoroutineScope()
-        val context = LocalContext.current
-        val syncPreferences = remember { Injekt.get<SyncPreferences>() }
-        val dropboxSync = remember { DropboxSyncService(context, Injekt.get(), syncPreferences) }
-        var showPurgeDialog by remember { mutableStateOf(false) }
-
-        if (showPurgeDialog) {
-            PurgeConfirmationDialog(
-                onConfirm = {
-                    showPurgeDialog = false
-                    scope.launch {
-                        val result = dropboxSync.deleteSyncDataFromDropbox()
-                        when (result) {
-                            DropboxSyncService.DeleteSyncDataStatus.NOT_INITIALIZED -> context.toast(
-                                SYMR.strings.dropbox_not_signed_in,
-                                duration = 5000,
-                            )
-                            DropboxSyncService.DeleteSyncDataStatus.NO_FILES -> context.toast(
-                                SYMR.strings.dropbox_sync_data_not_found,
-                                duration = 5000,
-                            )
-                            DropboxSyncService.DeleteSyncDataStatus.SUCCESS -> context.toast(
-                                SYMR.strings.dropbox_sync_data_purged,
-                                duration = 5000,
-                            )
-                            DropboxSyncService.DeleteSyncDataStatus.ERROR -> context.toast(
-                                SYMR.strings.dropbox_sync_data_purge_error,
-                                duration = 10000,
-                            )
-                        }
-                    }
-                },
-                onDismissRequest = { showPurgeDialog = false },
-            )
-        }
-
-        return Preference.PreferenceItem.TextPreference(
-            title = stringResource(SYMR.strings.pref_dropbox_purge_sync_data),
-            onClick = { showPurgeDialog = true },
-        )
-    }
-
-    @Composable
-    private fun PurgeConfirmationDialog(
-        onConfirm: () -> Unit,
-        onDismissRequest: () -> Unit,
-    ) {
-        AlertDialog(
-            onDismissRequest = onDismissRequest,
-            title = { Text(text = stringResource(SYMR.strings.pref_purge_confirmation_title)) },
-            text = { Text(text = stringResource(SYMR.strings.pref_purge_confirmation_message)) },
-            dismissButton = {
-                TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(MR.strings.action_cancel))
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = onConfirm) {
-                    Text(text = stringResource(MR.strings.action_ok))
-                }
-            },
-        )
     }
 
     @Composable

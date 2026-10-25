@@ -21,11 +21,6 @@ class SyncPreferences(
         "",
     )
 
-    fun dropboxAccessToken() = preferenceStore.getString(
-        Preference.appStateKey("dropbox_access_token"),
-        "",
-    )
-
     fun webdavUrl() = preferenceStore.getString("webdav_url", "")
     fun webdavUsername() = preferenceStore.getString("webdav_username", "")
     fun webdavPassword() = preferenceStore.getString("webdav_password", "")
