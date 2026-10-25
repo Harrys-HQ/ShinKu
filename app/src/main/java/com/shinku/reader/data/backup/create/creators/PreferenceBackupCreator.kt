@@ -43,7 +43,7 @@ class PreferenceBackupCreator(
     @Suppress("UNCHECKED_CAST")
     private fun Map<String, *>.toBackupPreferences(): List<BackupPreference> {
         return this
-            .filterKeys { !Preference.isAppState(it) }
+            .filterKeys { !Preference.isAppState(it) && !isCredential(it) }
             .mapNotNull { (key, value) ->
                 when (value) {
                     is Int -> BackupPreference(key, IntPreferenceValue(value))
@@ -65,4 +65,14 @@ class PreferenceBackupCreator(
         } else {
             this.filter { !Preference.isPrivate(it.key) }
         }
+
+    companion object {
+        fun isCredential(key: String): Boolean {
+            return key.contains("api_key", ignoreCase = true) ||
+                key.contains("apikey", ignoreCase = true) ||
+                key.contains("secret", ignoreCase = true) ||
+                key.contains("password", ignoreCase = true) ||
+                key.contains("token", ignoreCase = true)
+        }
+    }
 }

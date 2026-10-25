@@ -7,13 +7,11 @@ class ShinKuPreferences(
 ) {
     fun geminiApiKey() = preferenceStore.getString("pref_gemini_api_key", "")
 
-    fun geminiModel() = preferenceStore.getString("pref_gemini_model", "gemini-3.8-flash")
+    fun geminiModel() = preferenceStore.getString("pref_gemini_model", "auto")
 
     fun translationTargetLanguage() = preferenceStore.getString("pref_translation_target_language", "English")
 
     fun translationSourceLanguage() = preferenceStore.getString("pref_translation_source_language", "Auto-Detect")
-
-    fun aiProTier() = preferenceStore.getBoolean("pref_ai_pro_tier", false)
 
     fun liveTranslation() = preferenceStore.getBoolean("pref_live_translation", false)
 
@@ -41,6 +39,16 @@ class ShinKuPreferences(
     fun adaptiveNightRead() = preferenceStore.getBoolean("pref_adaptive_night_read", false)
 
     fun aiEngineProvider() = preferenceStore.getString("pref_ai_engine_provider", "auto")
+
+    fun openRouterApiKey() = preferenceStore.getString("pref_openrouter_api_key", "")
+
+    fun openRouterModel() = preferenceStore.getString("pref_openrouter_model", "auto")
+
+    fun openAiApiKey() = preferenceStore.getString("pref_openai_api_key", "")
+
+    fun openAiBaseUrl() = preferenceStore.getString("pref_openai_base_url", "https://api.openai.com/v1")
+
+    fun openAiModel() = preferenceStore.getString("pref_openai_model", "auto")
 
     fun translationEngine() = preferenceStore.getString("pref_translation_engine", "auto")
 

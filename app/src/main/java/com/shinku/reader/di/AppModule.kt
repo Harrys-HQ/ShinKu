@@ -178,6 +178,7 @@ class AppModule(val app: Application) : InjektModule {
             val engines = listOf(
                 com.shinku.reader.domain.ai.GoogleAiCoreEngine(app),
                 com.shinku.reader.domain.ai.CloudGeminiEngine(networkHelper, shinkuPreferences),
+                com.shinku.reader.domain.ai.OpenAiCompatibleEngine(networkHelper, shinkuPreferences),
             )
             com.shinku.reader.domain.ai.AiEngineRegistry(engines, shinkuPreferences)
         }

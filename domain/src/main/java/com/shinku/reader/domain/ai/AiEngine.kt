@@ -72,9 +72,6 @@ class CloudGeminiEngine(
         val preferredModel = resolveModel(shinkuPreferences.geminiModel().get())
         val modelsToTry = listOf(
             preferredModel,
-            "gemini-3.8-flash",
-            "gemini-3.5-flash-lite",
-            "gemini-3.1-pro",
             "gemini-2.5-flash",
             "gemini-2.0-flash",
             "gemini-1.5-flash",
@@ -142,7 +139,11 @@ class CloudGeminiEngine(
 
     private fun resolveModel(model: String): String {
         val trimmed = model.trim()
-        return if (trimmed.isBlank()) "gemini-3.8-flash" else trimmed
+        return if (trimmed.isBlank() || trimmed.equals("auto", ignoreCase = true) || trimmed.startsWith("gemini-3.")) {
+            "gemini-2.5-flash"
+        } else {
+            trimmed
+        }
     }
 }
 
@@ -156,12 +157,24 @@ class AiEngineRegistry(
 
     fun getActiveEngine(): AiEngine {
         val preferred = shinkuPreferences.aiEngineProvider().get()
-        if (preferred != "auto") {
-            engines.firstOrNull { it.id == preferred }?.let { return it }
+        if (preferred in listOf("openrouter", "deepseek", "groq", "openai", "custom", "openai_compatible")) {
+            engines.firstOrNull { it.id == "openai_compatible" }?.let { return it }
+        }
+        if (preferred == "cloud" || preferred == "gemini") {
+            engines.firstOrNull { it.id == "cloud" }?.let { return it }
+        }
+        if (preferred == "aicore") {
+            engines.firstOrNull { it.id == "aicore" && it.isAvailable }?.let { return it }
         }
         val nativeEngine = engines.firstOrNull { it.id == "aicore" && it.isAvailable }
         if (nativeEngine != null) return nativeEngine
 
-        return engines.firstOrNull { it.id == "cloud" } ?: engines.first()
+        val cloudEngine = engines.firstOrNull { it.id == "cloud" }
+        if (cloudEngine?.isAvailable == true) return cloudEngine
+
+        val openAiEngine = engines.firstOrNull { it.id == "openai_compatible" }
+        if (openAiEngine?.isAvailable == true) return openAiEngine
+
+        return engines.firstOrNull { it.isAvailable } ?: cloudEngine ?: engines.first()
     }
 }

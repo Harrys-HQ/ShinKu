@@ -41,9 +41,6 @@ class GeminiVibeSearch(
         vibeCache[cacheKey]?.let { return it }
 
         return withIOContext {
-            if (!shinkuPreferences.aiProTier().get()) {
-                kotlinx.coroutines.delay(1000)
-            }
             try {
                 val activeEngine = aiEngineRegistry.getActiveEngine()
                 val prompt = """
@@ -323,9 +320,6 @@ class GeminiVibeSearch(
         val resolvedModel = resolveModel(model)
         val modelsToTry = listOf(
             resolvedModel,
-            "gemini-3.8-flash",
-            "gemini-3.5-flash-lite",
-            "gemini-3.1-pro",
             "gemini-2.5-flash",
             "gemini-2.0-flash",
             "gemini-1.5-flash",
@@ -383,15 +377,22 @@ class GeminiVibeSearch(
 
     private suspend fun callGeminiForText(prompt: String, apiKey: String, model: String): String {
         return withIOContext {
+            val activeEngine = aiEngineRegistry.getActiveEngine()
+            if (activeEngine.id == "openai_compatible" && activeEngine.isAvailable) {
+                val res = activeEngine.generateText(prompt)
+                if (res.isSuccess) {
+                    return@withIOContext res.getOrThrow()
+                } else if (apiKey.isBlank()) {
+                    return@withIOContext "Error: ${res.exceptionOrNull()?.message ?: "Unknown error"}"
+                }
+            }
+
             val key = apiKey.trim()
             if (key.isBlank()) return@withIOContext "API Key not set"
 
             val preferredModel = resolveModel(model)
             val modelsToTry = listOf(
                 preferredModel,
-                "gemini-3.8-flash",
-                "gemini-3.5-flash-lite",
-                "gemini-3.1-pro",
                 "gemini-2.5-flash",
                 "gemini-2.0-flash",
                 "gemini-1.5-flash",
@@ -449,15 +450,26 @@ class GeminiVibeSearch(
     }
 
     private fun callGemini(query: String, apiKey: String, model: String): List<String> {
+        val activeEngine = aiEngineRegistry.getActiveEngine()
+        if (activeEngine.id == "openai_compatible" && activeEngine.isAvailable) {
+            val prompt = """
+                You are a manga discovery expert. Based on the following user description, provide a list of up to 10 real manga titles that match the "vibe".
+                User Description: "$query"
+                Return ONLY a JSON array of strings containing the titles. No extra text.
+                Example: ["Title 1", "Title 2"]
+            """.trimIndent()
+            val res = kotlinx.coroutines.runBlocking { activeEngine.generateTitles(prompt) }
+            if (res.isSuccess && res.getOrThrow().isNotEmpty()) {
+                return res.getOrThrow()
+            }
+        }
+
         val key = apiKey.trim()
         if (key.isBlank()) return emptyList()
 
         val preferredModel = resolveModel(model)
         val modelsToTry = listOf(
             preferredModel,
-            "gemini-3.8-flash",
-            "gemini-3.5-flash-lite",
-            "gemini-3.1-pro",
             "gemini-2.5-flash",
             "gemini-2.0-flash",
             "gemini-1.5-flash",
@@ -516,6 +528,10 @@ class GeminiVibeSearch(
 
     private fun resolveModel(model: String): String {
         val trimmed = model.trim()
-        return if (trimmed.isBlank()) "gemini-3.8-flash" else trimmed
+        return if (trimmed.isBlank() || trimmed.equals("auto", ignoreCase = true) || trimmed.startsWith("gemini-3.")) {
+            "gemini-2.5-flash"
+        } else {
+            trimmed
+        }
     }
 }

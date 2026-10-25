@@ -13,6 +13,7 @@ import com.shinku.reader.util.system.toast
 import com.shinku.reader.exh.source.ShinKuPreferences
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,6 +22,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import com.shinku.reader.core.common.i18n.stringResource
 import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.core.common.util.lang.withUIContext
 import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.domain.library.service.LibraryPreferences
 import com.shinku.reader.domain.source.service.SourcePreferences
@@ -187,107 +189,257 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val networkHelper = remember { Injekt.get<NetworkHelper>() }
+        val aiEngineRegistry = remember { Injekt.get<com.shinku.reader.domain.ai.AiEngineRegistry>() }
 
         val aiEngineProviderPref = shinkuPreferences.aiEngineProvider()
         val aiEngineProvider by aiEngineProviderPref.collectAsState()
 
-        return Preference.PreferenceGroup(
-            title = "ShinKu AI & Engines",
-            preferenceItems = persistentListOf(
+        val items = buildList<Preference.PreferenceItem<out Any, out Any>> {
+            add(
                 Preference.PreferenceItem.ListPreference(
                     preference = aiEngineProviderPref,
                     title = "AI Engine Provider",
-                    subtitle = "Select AI backend (Native OS AICore / OxygenOS / Galaxy AI or Cloud)",
+                    subtitle = "Select AI backend (Google Gemini, OpenRouter, DeepSeek, Groq, OpenAI, or Custom)",
                     entries = persistentMapOf(
-                        "auto" to "Automatic (Native OS Service with Cloud Fallback)",
+                        "auto" to "Automatic (Recommended - Best Available)",
+                        "cloud" to "Google Gemini (Official Cloud API)",
+                        "openrouter" to "OpenRouter (Claude, GPT, DeepSeek, Llama)",
+                        "deepseek" to "DeepSeek (api.deepseek.com)",
+                        "groq" to "Groq (api.groq.com - Ultra Fast)",
+                        "openai" to "OpenAI (api.openai.com)",
+                        "custom" to "Custom (OpenAI-Compatible / Ollama)",
                         "aicore" to "On-Device Native OS AI (Google AICore / OxygenOS)",
-                        "cloud" to "Google Gemini (Cloud API Key)",
                     ),
                 ),
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = shinkuPreferences.geminiApiKey(),
-                    title = stringResource(MR.strings.pref_gemini_api_key),
-                    subtitle = stringResource(MR.strings.pref_gemini_api_key_summary),
-                    enabled = aiEngineProvider != "aicore",
-                ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = shinkuPreferences.geminiModel(),
-                    title = stringResource(MR.strings.pref_gemini_model),
-                    subtitle = stringResource(MR.strings.pref_gemini_model_summary),
-                    enabled = aiEngineProvider != "aicore",
-                    entries = persistentMapOf(
-                        "gemini-3.8-flash" to "Gemini 3.8 Flash (Recommended - Fastest)",
-                        "gemini-3.5-flash-lite" to "Gemini 3.5 Flash-Lite (High Speed)",
-                        "gemini-3.1-pro" to "Gemini 3.1 Pro (Deep Nuance & Quality)",
-                        "gemini-2.5-flash" to "Gemini 2.5 Flash",
-                        "gemini-2.5-pro" to "Gemini 2.5 Pro",
-                        "gemini-2.0-flash" to "Gemini 2.0 Flash (Fast & Accurate)",
-                        "gemini-2.0-flash-lite" to "Gemini 2.0 Flash-Lite",
-                        "gemini-1.5-flash" to "Gemini 1.5 Flash (Legacy)",
-                        "gemini-1.5-pro" to "Gemini 1.5 Pro (Legacy)",
-                    ),
-                ),
-                Preference.PreferenceItem.TextPreference(
-                    title = "Test API Connection & Model",
-                    subtitle = "Sends a prompt to verify API key validity and '${shinkuPreferences.geminiModel().get()}' responsiveness",
-                    onClick = {
-                        val apiKey = shinkuPreferences.geminiApiKey().get().trim()
-                        val selectedModel = shinkuPreferences.geminiModel().get().trim().ifBlank { "gemini-3.8-flash" }
+            )
 
-                        if (apiKey.isBlank()) {
-                            context.toast("API Key cannot be empty")
-                            return@TextPreference
-                        }
+            when (aiEngineProvider) {
+                "openrouter" -> {
+                    add(
+                        Preference.PreferenceItem.EditTextPreference(
+                            preference = shinkuPreferences.openRouterApiKey(),
+                            title = "OpenRouter API Key",
+                            subtitle = "Enter your OpenRouter key (sk-or-v1-...) to access Claude, GPT, DeepSeek, etc.",
+                        ),
+                    )
+                    add(
+                        Preference.PreferenceItem.ListPreference(
+                            preference = shinkuPreferences.openRouterModel(),
+                            title = "OpenRouter Model",
+                            subtitle = "Select model to route via OpenRouter",
+                            entries = persistentMapOf(
+                                "auto" to "Auto (Recommended: Gemini 2.0 Flash / GPT-4o-mini)",
+                                "google/gemini-2.0-flash-001" to "Gemini 2.0 Flash (Fast & Cheap)",
+                                "anthropic/claude-3.5-sonnet" to "Claude 3.5 Sonnet (High Nuance)",
+                                "anthropic/claude-3-haiku" to "Claude 3 Haiku (Fast & Cheap)",
+                                "deepseek/deepseek-chat" to "DeepSeek V3 (Economic & Accurate)",
+                                "deepseek/deepseek-r1" to "DeepSeek R1 (Reasoning)",
+                                "openai/gpt-4o-mini" to "GPT-4o Mini (Fast)",
+                                "openai/gpt-4o" to "GPT-4o (High Accuracy)",
+                                "meta-llama/llama-3.3-70b-instruct" to "Llama 3.3 70B",
+                                "meta-llama/llama-3.3-70b-instruct:free" to "Llama 3.3 70B (Free Tier)",
+                            ),
+                        ),
+                    )
+                }
+                "deepseek" -> {
+                    add(
+                        Preference.PreferenceItem.EditTextPreference(
+                            preference = shinkuPreferences.openAiApiKey(),
+                            title = "DeepSeek API Key",
+                            subtitle = "Enter your API key from platform.deepseek.com",
+                        ),
+                    )
+                    add(
+                        Preference.PreferenceItem.ListPreference(
+                            preference = shinkuPreferences.openAiModel(),
+                            title = "DeepSeek Model",
+                            subtitle = "Select DeepSeek model",
+                            entries = persistentMapOf(
+                                "auto" to "Auto (deepseek-chat)",
+                                "deepseek-chat" to "DeepSeek Chat (V3)",
+                                "deepseek-reasoner" to "DeepSeek Reasoner (R1)",
+                            ),
+                        ),
+                    )
+                }
+                "groq" -> {
+                    add(
+                        Preference.PreferenceItem.EditTextPreference(
+                            preference = shinkuPreferences.openAiApiKey(),
+                            title = "Groq API Key",
+                            subtitle = "Enter your API key from console.groq.com (Ultra-fast inference)",
+                        ),
+                    )
+                    add(
+                        Preference.PreferenceItem.ListPreference(
+                            preference = shinkuPreferences.openAiModel(),
+                            title = "Groq Model",
+                            subtitle = "Select Groq model",
+                            entries = persistentMapOf(
+                                "auto" to "Auto (llama-3.3-70b-versatile)",
+                                "llama-3.3-70b-versatile" to "Llama 3.3 70B Versatile",
+                                "llama-3.1-8b-instant" to "Llama 3.1 8B Instant (Instant)",
+                                "mixtral-8x7b-32768" to "Mixtral 8x7B",
+                            ),
+                        ),
+                    )
+                }
+                "openai" -> {
+                    add(
+                        Preference.PreferenceItem.EditTextPreference(
+                            preference = shinkuPreferences.openAiApiKey(),
+                            title = "OpenAI API Key",
+                            subtitle = "Enter your API key from platform.openai.com",
+                        ),
+                    )
+                    add(
+                        Preference.PreferenceItem.ListPreference(
+                            preference = shinkuPreferences.openAiModel(),
+                            title = "OpenAI Model",
+                            subtitle = "Select OpenAI model",
+                            entries = persistentMapOf(
+                                "auto" to "Auto (gpt-4o-mini)",
+                                "gpt-4o-mini" to "GPT-4o Mini (Fast & Economical)",
+                                "gpt-4o" to "GPT-4o (Flagship)",
+                            ),
+                        ),
+                    )
+                }
+                "custom" -> {
+                    add(
+                        Preference.PreferenceItem.EditTextPreference(
+                            preference = shinkuPreferences.openAiBaseUrl(),
+                            title = "API Base URL",
+                            subtitle = "Base URL (e.g. http://10.0.2.2:11434/v1 for local Ollama)",
+                        ),
+                    )
+                    add(
+                        Preference.PreferenceItem.EditTextPreference(
+                            preference = shinkuPreferences.openAiApiKey(),
+                            title = "API Key",
+                            subtitle = "API key (optional for local Ollama)",
+                        ),
+                    )
+                    add(
+                        Preference.PreferenceItem.EditTextPreference(
+                            preference = shinkuPreferences.openAiModel(),
+                            title = "Model Name",
+                            subtitle = "Model name to pass in requests (e.g. llama3, mistral, gpt-4o)",
+                        ),
+                    )
+                }
+                "aicore" -> {
+                    // Native OS AI requires no credentials
+                }
+                else -> {
+                    // "cloud" or "auto" (Gemini)
+                    add(
+                        Preference.PreferenceItem.EditTextPreference(
+                            preference = shinkuPreferences.geminiApiKey(),
+                            title = stringResource(MR.strings.pref_gemini_api_key),
+                            subtitle = stringResource(MR.strings.pref_gemini_api_key_summary),
+                        ),
+                    )
+                    add(
+                        Preference.PreferenceItem.ListPreference(
+                            preference = shinkuPreferences.geminiModel(),
+                            title = stringResource(MR.strings.pref_gemini_model),
+                            subtitle = stringResource(MR.strings.pref_gemini_model_summary),
+                            entries = persistentMapOf(
+                                "auto" to "Auto (Recommended - Latest Fast Model)",
+                                "gemini-2.5-flash" to "Gemini 2.5 Flash (Fast & Best for Manga)",
+                                "gemini-2.0-flash" to "Gemini 2.0 Flash (Fast & Accurate)",
+                                "gemini-2.5-pro" to "Gemini 2.5 Pro (Deep Nuance & Quality)",
+                                "gemini-2.0-flash-lite" to "Gemini 2.0 Flash-Lite (Low Latency)",
+                                "gemini-1.5-flash" to "Gemini 1.5 Flash (Legacy)",
+                                "gemini-1.5-pro" to "Gemini 1.5 Pro (Legacy)",
+                            ),
+                        ),
+                    )
+                }
+            }
 
-                        scope.launch {
-                            try {
-                                val url = "https://generativelanguage.googleapis.com/v1beta/models/$selectedModel:generateContent?key=$apiKey"
-                                val bodyJson = """
-                                    {
-                                      "contents": [{
-                                        "parts":[{"text": "Respond with 'OK'"}]
-                                      }]
-                                    }
-                                """.trimIndent()
-                                val request = Request.Builder()
-                                    .url(url)
-                                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                                    .build()
-
-                                val startTime = System.currentTimeMillis()
-                                val (isSuccess, detail) = withIOContext {
-                                    networkHelper.client.newCall(request).execute().use { response ->
+            if (aiEngineProvider != "aicore") {
+                add(
+                    Preference.PreferenceItem.TextPreference(
+                        title = "Test API Connection",
+                        subtitle = "Sends a lightweight prompt to verify credentials and check roundtrip latency",
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    val startTime = System.currentTimeMillis()
+                                    if (aiEngineProvider in listOf("openrouter", "deepseek", "groq", "openai", "custom")) {
+                                        val engine = aiEngineRegistry.getActiveEngine()
+                                        val result = engine.generateText("Respond with 'OK'")
                                         val latency = System.currentTimeMillis() - startTime
-                                        if (response.isSuccessful) {
-                                            true to "$selectedModel is active and working! (${latency}ms)"
+                                        if (result.isSuccess) {
+                                            context.toast("Connected to $aiEngineProvider successfully! (${latency}ms)")
                                         } else {
-                                            val err = response.body.string()
-                                            false to "HTTP ${response.code} on $selectedModel: $err"
+                                            val err = result.exceptionOrNull()?.message ?: "Unknown error"
+                                            context.toast(context.stringResource(MR.strings.api_key_test_failed, err))
+                                        }
+                                    } else {
+                                        val apiKey = shinkuPreferences.geminiApiKey().get().trim()
+                                        if (apiKey.isBlank()) {
+                                            context.toast("API Key cannot be empty")
+                                            return@launch
+                                        }
+                                        val (isSuccess, detail) = testGeminiConnection(
+                                            networkHelper,
+                                            apiKey,
+                                            shinkuPreferences.geminiModel().get().trim(),
+                                        )
+                                        if (isSuccess) {
+                                            context.toast(detail)
+                                        } else {
+                                            context.toast(context.stringResource(MR.strings.api_key_test_failed, detail))
                                         }
                                     }
-                                }
-                                withContext(Dispatchers.Main) {
-                                    if (isSuccess) {
-                                        context.toast(detail)
-                                    } else {
-                                        context.toast(context.stringResource(MR.strings.api_key_test_failed, detail))
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                withContext(Dispatchers.Main) {
+                                } catch (e: Exception) {
                                     context.toast(context.stringResource(MR.strings.api_key_test_failed, e.message ?: "Unknown error"))
                                 }
                             }
-                        }
-                    },
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = shinkuPreferences.aiProTier(),
-                    title = stringResource(MR.strings.pref_ai_pro_tier),
-                    subtitle = stringResource(MR.strings.pref_ai_pro_tier_summary),
-                ),
-            ),
+                        },
+                    ),
+                )
+            }
+        }
+
+        return Preference.PreferenceGroup(
+            title = "ShinKu AI & Engines",
+            preferenceItems = items.toPersistentList(),
         )
+    }
+
+    private suspend fun testGeminiConnection(
+        networkHelper: NetworkHelper,
+        apiKey: String,
+        rawModel: String,
+    ): Pair<Boolean, String> = withIOContext {
+        val selectedModel = if (rawModel.isBlank() || rawModel.equals("auto", ignoreCase = true) || rawModel.startsWith("gemini-3.")) {
+            "gemini-2.5-flash"
+        } else {
+            rawModel
+        }
+        val modelDisplay = if (rawModel.equals("auto", ignoreCase = true) || rawModel.isBlank()) "Auto ($selectedModel)" else selectedModel
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/$selectedModel:generateContent?key=$apiKey"
+        val bodyJson = """{"contents":[{"parts":[{"text":"Respond with 'OK'"}]}]}"""
+        val request = Request.Builder()
+            .url(url)
+            .post(bodyJson.toRequestBody("application/json".toMediaType()))
+            .build()
+
+        val startTime = System.currentTimeMillis()
+        networkHelper.client.newCall(request).execute().use { response ->
+            val latency = System.currentTimeMillis() - startTime
+            if (response.isSuccessful) {
+                Pair(true, "$modelDisplay is active and working! (${latency}ms)")
+            } else {
+                val err = response.body.string()
+                Pair(false, "HTTP ${response.code} on $selectedModel: $err")
+            }
+        }
     }
 
     @Composable
@@ -336,12 +488,12 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = shinkuPreferences.translationEngine(),
                     title = "Translation Engine",
-                    subtitle = "Select translation provider (On-Device AICore / OxygenOS, ML Kit, or Gemini Cloud)",
+                    subtitle = "Select translation provider (Cloud AI, On-Device AICore, or ML Kit)",
                     entries = persistentMapOf(
-                        "auto" to "Automatic (Best Available: AICore > ML Kit)",
-                        "aicore" to "On-Device AICore / OxygenOS (Gemini Nano - High Context)",
-                        "mlkit" to "Standard ML Kit (NMT Engine - Instant Speed)",
-                        "gemini_cloud" to "Google Gemini API (Cloud - Highest Quality)",
+                        "auto" to "Automatic (Cloud AI if configured, with ML Kit fallback)",
+                        "gemini_cloud" to "Cloud AI (Gemini / OpenRouter / DeepSeek / Groq)",
+                        "mlkit" to "Standard ML Kit (Offline On-Device - Instant Speed)",
+                        "aicore" to "On-Device AICore / OxygenOS (Gemini Nano)",
                     ),
                 ),
             ),

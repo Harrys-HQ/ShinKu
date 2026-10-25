@@ -162,6 +162,7 @@ class ReaderViewModel(
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences,
     private val atmosphericAudioManager: com.shinku.reader.ui.reader.audio.AtmosphericAudioManager = Injekt.get(),
     private val mlKitTranslationInteractor: com.shinku.reader.domain.source.interactor.MlKitTranslationInteractor = Injekt.get(),
+    private val aiEngineRegistry: com.shinku.reader.domain.ai.AiEngineRegistry = Injekt.get(),
     private val chapterCache: com.shinku.reader.data.cache.ChapterCache = Injekt.get(),
     // SY <--
 ) : ViewModel() {
@@ -1560,14 +1561,17 @@ class ReaderViewModel(
                     com.shinku.reader.domain.source.interactor.GeminiVibeSearch.TranslationBlockInput(id = index, text = result.text)
                 }
 
+                val activeEngine = aiEngineRegistry.getActiveEngine()
+                val isAiConfigured = activeEngine.isAvailable || apiKey.isNotBlank()
+
                 val translated = when {
-                    translationEngine == "gemini_cloud" -> {
-                        if (apiKey.isBlank()) {
+                    translationEngine == "gemini_cloud" || translationEngine == "cloud" -> {
+                        if (!isAiConfigured) {
                             mutableState.update {
                                 it.copy(
                                     dialog = Dialog.AiInsight(
-                                        "Gemini API Key Required",
-                                        "Please configure your Google Gemini API Key in Settings > ShinKu AI & Engines, or select 'Standard ML Kit' for free on-device translation.",
+                                        "AI API Key Required",
+                                        "Please configure your AI Provider API Key in Settings > ShinKu AI & Engines, or select 'Standard ML Kit' for free on-device translation.",
                                     ),
                                 )
                             }
@@ -1579,8 +1583,8 @@ class ReaderViewModel(
                         mlKitTranslationInteractor.translateBlocks(inputs, targetLanguage, sourceLanguage)
                     }
                     else -> {
-                        // "auto" mode: prefer Gemini Cloud if API key is configured, fallback to on-device ML Kit
-                        if (apiKey.isNotBlank()) {
+                        // "auto" mode: prefer Cloud AI if configured, fallback to on-device ML Kit
+                        if (isAiConfigured) {
                             try {
                                 geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage)
                             } catch (e: Exception) {
@@ -1826,8 +1830,9 @@ class ReaderViewModel(
         performAiAction(page, "Interactive Footnotes") { text ->
             val apiKey = shinkuPreferences.geminiApiKey().get().trim()
             val model = shinkuPreferences.geminiModel().get()
-            if (apiKey.isBlank()) {
-                "Please configure your Google Gemini API Key in Settings > ShinKu AI & Engines to enable Interactive Footnotes."
+            val activeEngine = aiEngineRegistry.getActiveEngine()
+            if (!activeEngine.isAvailable && apiKey.isBlank()) {
+                "Please configure your AI API Key in Settings > ShinKu AI & Engines to enable Interactive Footnotes."
             } else {
                 geminiVibeSearch.explainFootnotes(text, apiKey, model)
             }

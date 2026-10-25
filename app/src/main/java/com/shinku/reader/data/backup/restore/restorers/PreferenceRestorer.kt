@@ -59,7 +59,9 @@ class PreferenceRestorer(
         val categoriesByName = allCategories.associateBy { it.name }
         val backupCategoriesById = backupCategories?.associateBy { it.id.toString() }.orEmpty()
         val prefs = preferenceStore.getAll()
-        toRestore.forEach { (key, value) ->
+        toRestore
+            .filter { !com.shinku.reader.data.backup.create.creators.PreferenceBackupCreator.isCredential(it.key) }
+            .forEach { (key, value) ->
             try {
                 when (value) {
                     is IntPreferenceValue -> {

@@ -342,9 +342,6 @@
     <string name="api_key_test_success">API Key is valid!</string>
     <string name="api_key_test_failed">API Key test failed: %s</string>
 
-    <string name="pref_ai_pro_tier">AI Pro Tier</string>
-    <string name="pref_ai_pro_tier_summary">Remove rate-limiting delays (requires Gemini Pro subscription)</string>
-
     <string name="pref_category_immersion_reader">Immersion &amp; Reader</string>
     <string name="pref_live_translation">Live Translation / OCR</string>
     <string name="pref_live_translation_summary">Translate text overlays using OCR and Gemini AI</string>
