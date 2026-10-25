@@ -701,6 +701,7 @@ class LibraryScreenModel(
             libraryPreferences.filterLewd().changes(),
             libraryPreferences.duplicateDetection().changes(),
             // SY <--
+            libraryPreferences.sourceBadge().changes(),
         ) {
             ItemPreferences(
                 downloadBadge = it[0] as Boolean,
@@ -719,6 +720,7 @@ class LibraryScreenModel(
                 filterLewd = it[12] as TriState,
                 duplicateDetection = it[13] as Boolean,
                 // SY <--
+                sourceBadge = it[14] as Boolean,
             )
         }
     }
@@ -757,6 +759,11 @@ class LibraryScreenModel(
                     },
                     sourceLanguage = if (preferences.languageBadge) {
                         sourceManager.getOrStub(manga.manga.source).lang
+                    } else {
+                        ""
+                    },
+                    sourceName = if (preferences.sourceBadge) {
+                        sourceManager.getOrStub(manga.manga.source).name
                     } else {
                         ""
                     },
@@ -1527,6 +1534,7 @@ class LibraryScreenModel(
         val filterLewd: TriState,
         val duplicateDetection: Boolean,
         // SY <--
+        val sourceBadge: Boolean,
     )
 
     @Immutable

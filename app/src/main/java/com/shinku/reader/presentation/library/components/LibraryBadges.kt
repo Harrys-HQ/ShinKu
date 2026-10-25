@@ -47,6 +47,17 @@ internal fun LanguageBadge(
     }
 }
 
+@Composable
+internal fun SourceBadge(sourceName: String) {
+    if (sourceName.isNotEmpty()) {
+        Badge(
+            text = sourceName,
+            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
+            textColor = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
 @PreviewLightDark
 @Composable
 private fun BadgePreview() {
