@@ -1,6 +1,18 @@
 # ShinKu Changelog
  
-## 2.7.14 "Smart Bubble Typesetting, Haptic Stability & Upstream Performance Sync" (2026-10-25)
+## 2.7.15 "Extension ABI Modernization, Batch Translation & Upstream Sync" (2026-10-26)
+### Fixed
+- **Extension ABI & Coroutines Modernization (Fixes #21)**: Resolved fatal `NoSuchMethodError: runBlockingK$default` and `toJavaInstant` exceptions caused by ABI desynchronization with modern Keiyoushi extensions by upgrading `kotlinx-coroutines` to `1.11.0`, raising `minSdk` to `26` (Android 8.0 Oreo) for native JVM `java.time.Instant` linking, and removing `,allowoptimization` in R8 proguard rules to preserve extension interface APIs.
+- **Safe Extension Replacement Staging (Upstream Mihon)**: Staged extension file replacement into `.part` files prior to atomic renaming, preventing deletion or corruption of installed extensions if copying or installing fails.
+- **Tab Badge Overflow Protection (Upstream Mihon)**: Replaced `Row` layout in `TabText` with custom constraint layout measurement offsetting, guaranteeing category pill badges stay visible and long tab labels truncate gracefully without clipping.
+
+### Features & Reader Experience
+- **Whole Chapter Batch Translation**: Read foreign-language manga seamlessly with on-demand background translation of entire chapters. Includes non-maximum suppression (NMS) bubble overlap prevention, bounding box collision merging, persistent per-chapter JSON disk caching, and an unobtrusive floating progress pill.
+- **Unified Translation Overlay Control**: Synchronized the reader overlay visibility master switch across Webtoon and Paged viewers, allowing instant on-the-fly toggling from both the reader action menu and translation progress sheets.
+- **Universal OpenAI-Compatible AI Engine**: Added support for OpenRouter, DeepSeek, Groq, and custom endpoints alongside Google Gemini and offline ML Kit, featuring client-side Zero-Leak data privacy guarantees.
+- **Google Drive SAF Cloud Sync**: Integrated native Google Drive cloud folder synchronization via Android's Storage Access Framework, allowing seamless, privacy-first cross-device library backup and restoration without 3rd-party servers.
+- **Manga Cover Source Badges**: Added an optional, configurable Source badge overlay for manga covers in the Library (available in Library > Filter > Display > Source).
+
 ### Fixed
 - **Haptic Feedback Crash on Samsung & Android 14+ (Fixes #20)**: Added missing `android.permission.VIBRATE` to the manifest and wrapped vibrator service invocations in safety guards, resolving fatal `SecurityException` crashes when turning on haptic feedback in settings.
 - **Reader Dialog Text Cropping & Overflow**: Resolved text clipping and broken word wraps on action buttons in the reader long-press page action sheet.

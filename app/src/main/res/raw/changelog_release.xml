@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.7.15" changeDate="October 26, 2026">
+        <changelogtext>[b]Extension ABI &amp; Coroutines Modernization (Fixes #21)[/b]: Upgraded coroutines to 1.11.0 to support runBlockingK synthetic ABI helper and elevated minSdk to 26 for native java.time.Instant JVM compatibility with modern Keiyoushi extensions</changelogtext>
+        <changelogtext>[b]Whole Chapter Batch Translation[/b]: Translate full chapters with intelligent background batching, persistent disk caching, non-maximum suppression (NMS) bubble de-duplication, and an interactive non-obstructive progress pill</changelogtext>
+        <changelogtext>[b]Unified Translation Overlay Control[/b]: Synchronized master overlay visibility toggle across Webtoon and Paged viewers with direct on-the-fly toggling from progress and options sheets</changelogtext>
+        <changelogtext>[b]Universal OpenAI-Compatible AI Engine[/b]: Integrated OpenRouter, DeepSeek, Groq, and custom endpoint support with client-side Zero-Leak data privacy guarantees</changelogtext>
+        <changelogtext>[b]Google Drive SAF Cloud Sync[/b]: Direct synchronization to user-controlled Google Drive cloud folders via Storage Access Framework</changelogtext>
+        <changelogtext>[b]Manga Cover Source Badges[/b]: Optional source badge overlay for library covers configured via Library Display settings</changelogtext>
+        <changelogtext>[b]Safe Extension Replacement (Upstream Mihon)[/b]: Staged extension replacement into .part files before renaming to eliminate extension loss on failed installations</changelogtext>
+        <changelogtext>[b]Tab Badge Overflow Protection (Upstream Mihon)[/b]: Applied layout constraint offsetting so tab counter badges never get clipped or pushed off screen by long titles</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.14" changeDate="October 25, 2026">
         <changelogtext>[b]Haptic Feedback Crash Fix (Fixes #20)[/b]: Added missing VIBRATE permission and robust vibrator service exception handling, eliminating crashes on Samsung Galaxy and modern Android 14+ devices</changelogtext>
         <changelogtext>[b]Komakun-Adapted Smart Typesetting[/b]: Integrated luminance and ink-edge bubble boundary probing to strictly contain translation boxes inside speech balloons without covering comic art</changelogtext>
