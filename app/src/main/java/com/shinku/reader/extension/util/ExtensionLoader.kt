@@ -24,6 +24,7 @@ import logcat.LogPriority
 import com.shinku.reader.core.common.util.system.logcat
 import uy.kohesive.injekt.injectLazy
 import java.io.File
+import java.io.IOException
 
 /**
  * Class that handles the loading of the extensions. Supports two kinds of extensions:
@@ -90,11 +91,13 @@ internal object ExtensionLoader {
         }
 
         val target = File(getPrivateExtensionDir(context), "${extension.packageName}-${PackageInfoCompat.getLongVersionCode(extension)}.$PRIVATE_EXTENSION_EXTENSION")
+        val staged = File(target.parentFile, "${target.name}.part")
         return try {
+            file.copyAndSetReadOnlyTo(staged, overwrite = true)
+            if (!staged.renameTo(target)) throw IOException("Unable to replace ${target.name}")
             getPrivateExtensionDir(context).listFiles()
-                ?.filter { it.name == "${extension.packageName}.$PRIVATE_EXTENSION_EXTENSION" || (it.name.startsWith("${extension.packageName}-") && it.name.endsWith(".$PRIVATE_EXTENSION_EXTENSION")) }
+                ?.filter { it != target && (it.name == "${extension.packageName}.$PRIVATE_EXTENSION_EXTENSION" || (it.name.startsWith("${extension.packageName}-") && it.name.endsWith(".$PRIVATE_EXTENSION_EXTENSION"))) }
                 ?.forEach { it.delete() }
-            file.copyAndSetReadOnlyTo(target, overwrite = true)
             if (currentExtension != null) {
                 ExtensionInstallReceiver.notifyReplaced(context, extension.packageName)
             } else {
@@ -105,6 +108,8 @@ internal object ExtensionLoader {
             logcat(LogPriority.ERROR, e) { "Failed to copy extension file." }
             target.delete()
             false
+        } finally {
+            staged.delete()
         }
     }
 
