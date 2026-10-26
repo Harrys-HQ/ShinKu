@@ -444,6 +444,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
 
     @Composable
     private fun getTranslationGroup(shinkuPreferences: ShinKuPreferences): Preference.PreferenceGroup {
+        val context = LocalContext.current
         return Preference.PreferenceGroup(
             title = "AI Translation Settings",
             preferenceItems = persistentListOf(
@@ -451,6 +452,11 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     preference = shinkuPreferences.liveTranslation(),
                     title = stringResource(MR.strings.pref_live_translation),
                     subtitle = stringResource(MR.strings.pref_live_translation_summary),
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.autoTranslateChapterOnOpen(),
+                    title = "Auto Pre-Translate Chapters",
+                    subtitle = "Automatically batch-translate new chapters in background when opened",
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = shinkuPreferences.translationSourceLanguage(),
@@ -495,6 +501,14 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                         "mlkit" to "Standard ML Kit (Offline On-Device - Instant Speed)",
                         "aicore" to "On-Device AICore / OxygenOS (Gemini Nano)",
                     ),
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = "Clear Translation Cache",
+                    subtitle = "Purge cached overlay files to free up storage",
+                    onClick = {
+                        com.shinku.reader.ui.reader.model.TranslationCache.clear()
+                        context.toast("Translation cache cleared")
+                    },
                 ),
             ),
         )

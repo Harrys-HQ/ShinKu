@@ -37,6 +37,11 @@ interface Viewer {
     fun updateTranslation(page: ReaderPage) {}
 
     /**
+     * Tells this viewer to update translation overlays for all visible pages.
+     */
+    fun updateAllTranslations() {}
+
+    /**
      * Called from the containing activity when a key [event] is received. It should return true
      * if the event was handled, false otherwise.
      */

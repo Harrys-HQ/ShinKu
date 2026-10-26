@@ -43,17 +43,53 @@ data class TranslatedBlock(
 )
 
 object TranslationCache {
-    private val cache = android.util.LruCache<String, List<TranslatedBlock>>(64)
+    private val memCache = android.util.LruCache<String, List<TranslatedBlock>>(128)
 
     fun get(chapterId: Long, pageIndex: Int, targetLanguage: String): List<TranslatedBlock>? {
-        return cache.get("${chapterId}_${pageIndex}_$targetLanguage")
+        val key = "${chapterId}_${pageIndex}_$targetLanguage"
+        memCache.get(key)?.let { return it }
+
+        // Fallback to persistent disk cache
+        val diskBlocks = com.shinku.reader.data.cache.TranslationDiskCache.getPage(chapterId, pageIndex, targetLanguage)
+        if (diskBlocks != null) {
+            memCache.put(key, diskBlocks)
+            return diskBlocks
+        }
+        return null
     }
 
     fun put(chapterId: Long, pageIndex: Int, targetLanguage: String, blocks: List<TranslatedBlock>) {
-        cache.put("${chapterId}_${pageIndex}_$targetLanguage", blocks)
+        val key = "${chapterId}_${pageIndex}_$targetLanguage"
+        memCache.put(key, blocks)
+        com.shinku.reader.data.cache.TranslationDiskCache.putPage(chapterId, pageIndex, targetLanguage, blocks)
+    }
+
+    fun getChapter(chapterId: Long, targetLanguage: String): Map<Int, List<TranslatedBlock>>? {
+        val diskChapter = com.shinku.reader.data.cache.TranslationDiskCache.getChapter(chapterId, targetLanguage)
+        diskChapter?.forEach { (index, blocks) ->
+            memCache.put("${chapterId}_${index}_$targetLanguage", blocks)
+        }
+        return diskChapter
+    }
+
+    fun saveChapter(chapterId: Long, targetLanguage: String, pages: Map<Int, List<TranslatedBlock>>) {
+        pages.forEach { (index, blocks) ->
+            memCache.put("${chapterId}_${index}_$targetLanguage", blocks)
+        }
+        com.shinku.reader.data.cache.TranslationDiskCache.saveChapter(chapterId, targetLanguage, pages)
+    }
+
+    fun hasChapter(chapterId: Long, targetLanguage: String): Boolean {
+        return com.shinku.reader.data.cache.TranslationDiskCache.hasChapterTranslation(chapterId, targetLanguage)
+    }
+
+    fun clearChapter(chapterId: Long) {
+        com.shinku.reader.data.cache.TranslationDiskCache.clearChapter(chapterId)
+        memCache.evictAll()
     }
 
     fun clear() {
-        cache.evictAll()
+        memCache.evictAll()
+        com.shinku.reader.data.cache.TranslationDiskCache.clearAll()
     }
 }

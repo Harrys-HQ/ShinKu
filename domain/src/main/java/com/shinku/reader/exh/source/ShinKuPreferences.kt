@@ -63,5 +63,7 @@ class ShinKuPreferences(
     fun showHeroJumpBack() = preferenceStore.getBoolean("pref_show_hero_jump_back", true)
 
     fun autoHideBottomBar() = preferenceStore.getBoolean("pref_auto_hide_bottom_bar", true)
+
+    fun autoTranslateChapterOnOpen() = preferenceStore.getBoolean("pref_auto_translate_chapter_on_open", false)
 }
 

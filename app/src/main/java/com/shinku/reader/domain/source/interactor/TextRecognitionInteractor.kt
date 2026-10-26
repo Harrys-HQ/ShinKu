@@ -66,11 +66,12 @@ class TextRecognitionInteractor {
                         val existingArea = (existingBox.right - existingBox.left) * (existingBox.bottom - existingBox.top)
                         val newArea = (newBox.right - newBox.left) * (newBox.bottom - newBox.top)
 
-                        // If boxes overlap by more than 50%
-                        val overlapRatio = intersectionArea.toFloat() / minOf(existingArea, newArea).toFloat()
-                        if (overlapRatio > 0.5f) {
+                        // If boxes overlap by more than 35% or one is contained in another
+                        val minArea = minOf(existingArea, newArea)
+                        val overlapRatio = if (minArea > 0) intersectionArea.toFloat() / minArea.toFloat() else 0f
+                        if (overlapRatio > 0.35f) {
                             isDuplicate = true
-                            // Quality Check: Keep the one with the longer text (preserves full English sentence over single-character artifacts)
+                            // Quality Check: Keep the one with the longer text (preserves full sentence over partial artifacts)
                             if (block.text.length > existing.text.length) {
                                 duplicateIndexToReplace = idx
                             }

@@ -41,6 +41,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.zIndex
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.MaterialTheme
@@ -352,6 +353,10 @@ class ReaderActivity : BaseActivity() {
                         viewModel.state.value.viewer?.updateTranslation(event.page)
                     }
 
+                    is ReaderViewModel.Event.UpdateAllTranslations -> {
+                        viewModel.state.value.viewer?.updateAllTranslations()
+                    }
+
                     is ReaderViewModel.Event.ShowSnackbar -> {
                         lifecycleScope.launch {
                             val msg = stringResource(event.stringRes)
@@ -389,6 +394,8 @@ class ReaderActivity : BaseActivity() {
             }
         }
 
+        val isOverlayVisible = state.currentChapter?.pages?.any { it.showTranslation } == true
+
         Box(modifier = Modifier.fillMaxSize()) {
             if (!state.menuVisible && showPageNumber && !zenMode) {
                 ReaderPageIndicator(
@@ -410,29 +417,78 @@ class ReaderActivity : BaseActivity() {
                 AppBars(state = state)
             }
 
-            // Floating Translate Button
+            // Redesigned Non-Obstructive Floating Translate Button
             val isLiveTranslationEnabled by shinkuPreferences.liveTranslation().collectAsState()
-            val isTranslationActive = state.activePage?.showTranslation ?: false
+            val hasAnyTranslations = state.currentChapter?.pages?.any { it.translationBlocks != null } == true
             val apiKey by shinkuPreferences.geminiApiKey().collectAsState()
             val translationEngine by shinkuPreferences.translationEngine().collectAsState()
             val hasValidCredentials = apiKey.isNotBlank() || translationEngine != "gemini_cloud"
-            
-            if (isLiveTranslationEnabled && hasValidCredentials && !state.menuVisible && !zenMode) {
-                androidx.compose.material3.FloatingActionButton(
-                    onClick = { viewModel.onTranslation() },
+            val batchProgress = state.batchTranslationProgress
+
+            if ((isLiveTranslationEnabled || hasAnyTranslations || batchProgress != null) && hasValidCredentials && !state.menuVisible && !zenMode) {
+                val isBatchRunning = batchProgress != null
+                val progressFraction = if (batchProgress != null && batchProgress.totalPages > 0) {
+                    (batchProgress.currentPage.toFloat() / batchProgress.totalPages.toFloat()).coerceIn(0f, 1f)
+                } else {
+                    0f
+                }
+
+                // Transparent, non-hindering aesthetic: soft translucent surface that melts into manga panels
+                val containerColor = when {
+                    isBatchRunning -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f)
+                    isOverlayVisible -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.60f)
+                    else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.40f)
+                }
+
+                val contentColor = when {
+                    isBatchRunning -> MaterialTheme.colorScheme.primary
+                    isOverlayVisible -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                }
+
+                androidx.compose.material3.Surface(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(bottom = 80.dp, end = 16.dp)
-                        .zIndex(50f),
+                        .zIndex(50f)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                        .combinedClickable(
+                            onClick = {
+                                viewModel.toggleTranslation()
+                            },
+                            onLongClick = {
+                                if (isBatchRunning) {
+                                    viewModel.showBatchTranslationProgress()
+                                } else {
+                                    viewModel.openTranslationOptions()
+                                }
+                            },
+                        ),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    containerColor = if (isTranslationActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = if (isTranslationActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                    color = containerColor,
+                    contentColor = contentColor,
+                    shadowElevation = 2.dp,
                 ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Outlined.Translate,
-                        contentDescription = "Live Translation",
-                    )
+                    Box(
+                        modifier = Modifier.size(52.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (isBatchRunning) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                progress = { progressFraction },
+                                modifier = Modifier.size(44.dp),
+                                strokeWidth = 2.5.dp,
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            )
+                        }
+
+                        androidx.compose.material3.Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Outlined.Translate,
+                            contentDescription = if (isBatchRunning) "Translating chapter: ${(progressFraction * 100).toInt()}%" else "Live Translation",
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
                 }
             }
         }
@@ -499,7 +555,43 @@ class ReaderActivity : BaseActivity() {
                     onSaveCombined = { viewModel.saveImages() },
                     onFootnotes = { viewModel.onFootnotes() },
                     onTranslation = { viewModel.onTranslation() },
+                    onBatchTranslation = { viewModel.startBatchChapterTranslation() },
                     hasExtraPage = dialog.extraPage != null,
+                )
+            }
+
+            is ReaderViewModel.Dialog.BatchTranslation -> {
+                val dialog = state.dialog as ReaderViewModel.Dialog.BatchTranslation
+                val targetLang = remember { shinkuPreferences.translationTargetLanguage().get() }
+                com.shinku.reader.presentation.reader.dialog.BatchTranslationProgressDialog(
+                    currentPage = dialog.currentPage,
+                    totalPages = dialog.totalPages,
+                    translatedCount = dialog.translatedCount,
+                    targetLanguage = targetLang,
+                    isOverlayVisible = isOverlayVisible,
+                    onToggleOverlay = { viewModel.toggleTranslation() },
+                    onRunInBackground = onDismissRequest,
+                    onCancel = { viewModel.cancelBatchChapterTranslation() },
+                )
+            }
+
+            is ReaderViewModel.Dialog.TranslationOptions -> {
+                val targetLang = remember { shinkuPreferences.translationTargetLanguage().get() }
+                val chapterId = state.currentChapter?.chapter?.id ?: 0L
+                val hasCached = remember(chapterId, targetLang) {
+                    com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
+                }
+                com.shinku.reader.presentation.reader.dialog.TranslationOptionsDialog(
+                    totalPages = state.totalPages,
+                    targetLanguage = targetLang,
+                    hasCachedTranslations = hasCached,
+                    isOverlayVisible = state.currentChapter?.pages?.any { it.showTranslation } == true,
+                    onDismissRequest = onDismissRequest,
+                    onToggleOverlay = { viewModel.toggleTranslation() },
+                    onTranslateCurrentPage = { viewModel.onTranslation() },
+                    onTranslateEntireChapter = { viewModel.startBatchChapterTranslation() },
+                    onChangeLanguages = { viewModel.openTranslationLanguageSelectDialog() },
+                    onClearTranslations = { viewModel.clearChapterTranslation(chapterId) },
                 )
             }
 

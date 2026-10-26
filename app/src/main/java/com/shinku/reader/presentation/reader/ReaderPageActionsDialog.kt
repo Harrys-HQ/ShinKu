@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.AutoAwesomeMotion
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Photo
@@ -62,6 +63,7 @@ fun ReaderPageActionsDialog(
     onSaveCombined: () -> Unit,
     onFootnotes: () -> Unit,
     onTranslation: () -> Unit,
+    onBatchTranslation: () -> Unit = {},
     hasExtraPage: Boolean,
 ) {
     var showSetCoverDialog by remember { mutableStateOf(false) }
@@ -131,6 +133,17 @@ fun ReaderPageActionsDialog(
                     contentColor = MaterialTheme.colorScheme.secondary,
                     onClick = {
                         onTranslation()
+                        onDismissRequest()
+                    },
+                )
+                AiToolRow(
+                    title = "Pre-Translate Chapter",
+                    subtitle = "Batch OCR & translate all pages in background",
+                    icon = Icons.Outlined.AutoAwesomeMotion,
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f),
+                    contentColor = MaterialTheme.colorScheme.tertiary,
+                    onClick = {
+                        onBatchTranslation()
                         onDismissRequest()
                     },
                 )

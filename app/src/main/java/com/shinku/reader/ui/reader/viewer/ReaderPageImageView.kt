@@ -113,6 +113,32 @@ open class ReaderPageImageView @JvmOverloads constructor(
     open fun onImageLoaded() {
         onImageLoaded?.invoke()
         background = pageBackground
+
+        val isLiveTranslation = Injekt.get<ShinKuPreferences>().liveTranslation().get()
+        val page = currentPage
+        if (page != null) {
+            val isChapterShowing = page.chapter.pages?.any { it.showTranslation } == true
+            val shouldShow = isLiveTranslation || isChapterShowing
+            if (page.translationBlocks == null) {
+                try {
+                    val chapterId = page.chapter.chapter.id ?: 0L
+                    if (chapterId > 0L) {
+                        val targetLang = Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()
+                        val cached = com.shinku.reader.ui.reader.model.TranslationCache.get(chapterId, page.index, targetLang)
+                        if (cached != null) {
+                            page.translationBlocks = cached
+                            page.showTranslation = shouldShow
+                        }
+                    }
+                } catch (_: Throwable) {
+                }
+            } else if (shouldShow) {
+                page.showTranslation = true
+            }
+        }
+        if (currentPage?.showTranslation == true) {
+            updateTranslationOverlay()
+        }
     }
 
     @CallSuper
@@ -593,6 +619,13 @@ open class ReaderPageImageView @JvmOverloads constructor(
 
     private fun ensureTranslationOverlay(targetPage: ReaderPage? = null) {
         val pageToUse = targetPage ?: this.currentPage
+        // Ensure strictly 1 TranslationOverlay view exists in this container
+        for (i in childCount - 1 downTo 0) {
+            val child = getChildAt(i)
+            if (child is TranslationOverlay && child !== translationOverlay) {
+                removeViewAt(i)
+            }
+        }
         if (translationOverlay == null) {
             translationOverlay = TranslationOverlay(context).apply {
                 this.pageView = this@ReaderPageImageView.pageView
@@ -603,6 +636,9 @@ open class ReaderPageImageView @JvmOverloads constructor(
             }
             addView(translationOverlay, android.widget.FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         } else {
+            if (translationOverlay?.parent == null) {
+                addView(translationOverlay, android.widget.FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+            }
             translationOverlay?.pageView = this.pageView
             translationOverlay?.page = pageToUse
             translationOverlay?.elevation = 20f
@@ -612,6 +648,20 @@ open class ReaderPageImageView @JvmOverloads constructor(
 
     fun updateTranslationOverlay(targetPage: ReaderPage? = null) {
         val pageToUse = targetPage ?: this.currentPage ?: return
+        if (pageToUse.translationBlocks == null) {
+            try {
+                val chapterId = pageToUse.chapter.chapter.id ?: 0L
+                if (chapterId > 0L) {
+                    val targetLang = Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()
+                    val cached = com.shinku.reader.ui.reader.model.TranslationCache.get(chapterId, pageToUse.index, targetLang)
+                    if (cached != null) {
+                        pageToUse.translationBlocks = cached
+                        pageToUse.showTranslation = true
+                    }
+                }
+            } catch (_: Throwable) {
+            }
+        }
         ensureTranslationOverlay(pageToUse)
         translationOverlay?.page = pageToUse
         translationOverlay?.pageView = this.pageView
@@ -648,6 +698,8 @@ class TranslationOverlay(context: Context) : View(context) {
         if (!page.showTranslation) return
         val blocks = page.translationBlocks ?: return
         val view = pageView ?: return
+
+        val drawnBounds = mutableListOf<RectF>()
 
         for (block in blocks) {
             val box = block.bubbleRect ?: block.boundingBox ?: continue
@@ -704,6 +756,28 @@ class TranslationOverlay(context: Context) : View(context) {
             val width = (actualRight - actualLeft).toInt()
             val height = (actualBottom - actualTop).toInt()
             if (width <= 0 || height <= 0) continue
+
+            // Non-Maximum Suppression / Occlusion Suppression: avoid rendering colliding overlays
+            val currentRect = RectF(actualLeft, actualTop, actualRight, actualBottom)
+            val currentArea = (actualRight - actualLeft) * (actualBottom - actualTop)
+            var collides = false
+            for (drawn in drawnBounds) {
+                val iLeft = maxOf(drawn.left, actualLeft)
+                val iTop = maxOf(drawn.top, actualTop)
+                val iRight = minOf(drawn.right, actualRight)
+                val iBottom = minOf(drawn.bottom, actualBottom)
+                if (iLeft < iRight && iTop < iBottom) {
+                    val iArea = (iRight - iLeft) * (iBottom - iTop)
+                    val drawnArea = (drawn.right - drawn.left) * (drawn.bottom - drawn.top)
+                    val minArea = minOf(currentArea, drawnArea)
+                    if (minArea > 0 && iArea / minArea > 0.40f) {
+                        collides = true
+                        break
+                    }
+                }
+            }
+            if (collides) continue
+            drawnBounds.add(currentRect)
 
             // 1. Draw clean background mask matching scanlation/Komakun typesetting boxes
             maskPaint.color = block.bgColor

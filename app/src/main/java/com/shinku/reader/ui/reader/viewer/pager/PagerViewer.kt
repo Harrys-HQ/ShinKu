@@ -344,6 +344,15 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
         getPageHolder(page)?.updateTranslationOverlay(page)
     }
 
+    override fun updateAllTranslations() {
+        pager.children
+            .filterIsInstance<PagerPageHolder>()
+            .forEach { holder ->
+                (holder.item.first as? ReaderPage)?.let { holder.updateTranslationOverlay(it) }
+                (holder.item.second as? ReaderPage)?.let { holder.updateTranslationOverlay(it) }
+            }
+    }
+
     /**
      * Moves to the next page.
      */
