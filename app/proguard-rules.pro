@@ -5,27 +5,27 @@
 -keep class eu.kanade.tachiyomi.** { *; }
 
 # Keep common dependencies used in extensions
--keep,allowoptimization class androidx.preference.** { public protected *; }
--keep,allowoptimization class kotlin.** { public protected *; }
--keep,allowoptimization class kotlinx.coroutines.** { public protected *; }
--keep,allowoptimization class kotlinx.serialization.** { public protected *; }
+-keep class androidx.preference.** { public protected *; }
+-keep class kotlin.** { *; }
+-keep class kotlinx.coroutines.** { *; }
+-keep class kotlinx.serialization.** { *; }
 -keep class kotlin.time.** { *; }
 -keep class kotlin.time.jdk8.** { *; }
 -dontwarn kotlin.time.jdk8.**
--keep,allowoptimization class okhttp3.** { public protected *; }
--keep,allowoptimization class okio.** { public protected *; }
--keep,allowoptimization class org.jsoup.** { public protected *; }
--keep,allowoptimization class rx.** { public protected *; }
--keep,allowoptimization class app.cash.quickjs.** { public protected *; }
--keep,allowoptimization class uy.kohesive.injekt.** { public protected *; }
+-keep class okhttp3.** { public protected *; }
+-keep class okio.** { public protected *; }
+-keep class org.jsoup.** { public protected *; }
+-keep class rx.** { public protected *; }
+-keep class app.cash.quickjs.** { public protected *; }
+-keep class uy.kohesive.injekt.** { public protected *; }
 
 # From extensions-lib
--keep,allowoptimization class com.shinku.reader.network.interceptor.RateLimitInterceptorKt { public protected *; }
--keep,allowoptimization class com.shinku.reader.network.interceptor.SpecificHostRateLimitInterceptorKt { public protected *; }
--keep,allowoptimization class com.shinku.reader.network.NetworkHelper { public protected *; }
--keep,allowoptimization class com.shinku.reader.network.OkHttpExtensionsKt { public protected *; }
--keep,allowoptimization class com.shinku.reader.network.RequestsKt { public protected *; }
--keep,allowoptimization class com.shinku.reader.AppInfo { public protected *; }
+-keep class com.shinku.reader.network.interceptor.RateLimitInterceptorKt { *; }
+-keep class com.shinku.reader.network.interceptor.SpecificHostRateLimitInterceptorKt { *; }
+-keep class com.shinku.reader.network.NetworkHelper { *; }
+-keep class com.shinku.reader.network.OkHttpExtensionsKt { *; }
+-keep class com.shinku.reader.network.RequestsKt { *; }
+-keep class com.shinku.reader.AppInfo { *; }
 
 # Debug functions
 -keep,allowoptimization class com.shinku.reader.exh.debug.DebugFunctions { public *; }
