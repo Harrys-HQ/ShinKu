@@ -6,12 +6,31 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.util.fastAny
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.lang.launchNonCancellable
+import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.core.common.util.system.logcat
+import com.shinku.reader.domain.history.model.HistoryWithRelations
+import com.shinku.reader.domain.manga.interactor.GetManga
+import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.manga.interactor.UpdateManga
+import com.shinku.reader.domain.manga.model.toDomainManga
+import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchGlobal
+import com.shinku.reader.domain.source.interactor.DeleteFeedSavedSearchById
+import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchGlobal
+import com.shinku.reader.domain.source.interactor.GetRemoteManga
+import com.shinku.reader.domain.source.interactor.GetSavedSearchBySourceId
+import com.shinku.reader.domain.source.interactor.GetSavedSearchGlobalFeed
+import com.shinku.reader.domain.source.interactor.InsertFeedSavedSearch
+import com.shinku.reader.domain.source.model.FeedSavedSearch
+import com.shinku.reader.domain.source.model.SavedSearch
+import com.shinku.reader.domain.source.repository.SourceHealthRepository
+import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.presentation.browse.FeedItemUI
+import com.shinku.reader.util.system.LocaleHelper
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
-import com.shinku.reader.util.system.LocaleHelper
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -22,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -32,27 +52,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
-import com.shinku.reader.core.common.util.system.logcat
-import com.shinku.reader.domain.manga.model.toDomainManga
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.core.common.util.lang.launchNonCancellable
-import com.shinku.reader.core.common.util.lang.withIOContext
-import com.shinku.reader.core.common.util.lang.withUIContext
-import com.shinku.reader.domain.history.model.HistoryWithRelations
-import com.shinku.reader.domain.manga.interactor.GetManga
-import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
-import com.shinku.reader.domain.source.interactor.GetRemoteManga
-import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchGlobal
-import com.shinku.reader.domain.source.interactor.DeleteFeedSavedSearchById
-import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchGlobal
-import com.shinku.reader.domain.source.interactor.GetSavedSearchBySourceId
-import com.shinku.reader.domain.source.interactor.GetSavedSearchGlobalFeed
-import com.shinku.reader.domain.source.interactor.InsertFeedSavedSearch
-import com.shinku.reader.domain.source.model.FeedSavedSearch
-import com.shinku.reader.domain.source.model.SavedSearch
-import com.shinku.reader.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
@@ -79,11 +81,13 @@ open class FeedScreenModel(
     val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
     private val getRemoteManga: GetRemoteManga = Injekt.get(),
     private val getLibraryManga: com.shinku.reader.domain.manga.interactor.GetLibraryManga = Injekt.get(),
+    private val sourceHealthRepository: SourceHealthRepository = Injekt.get(),
 ) : StateScreenModel<FeedScreenState>(FeedScreenState()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
 
+    // Bounded parallelism prevents Cloudflare 429 rate-limiting across extensions
     private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(4)
     var pushed: Boolean = false
     var isInitialized: Boolean = false
@@ -130,47 +134,53 @@ open class FeedScreenModel(
         init(force = true)
     }
 
-    private fun fetchAiRecommendations() {
-        val apiKey = shinkuPreferences.geminiApiKey().get()
-        val model = shinkuPreferences.geminiModel().get()
-        if (apiKey.isBlank()) return
+    private suspend fun fetchAiRecommendations(
+        bestGenres: List<String>,
+        healthySources: List<CatalogueSource>,
+        libraryIds: Set<Long>,
+    ) {
+        if (!shinkuPreferences.isAiConfigured() || bestGenres.isEmpty() || healthySources.isEmpty()) return
 
-        screenModelScope.launchIO {
-            try {
-                val stats = getReadingStats.await()
-                if (stats.bestGenres.isEmpty()) return@launchIO
+        try {
+            val apiKey = shinkuPreferences.geminiApiKey().get()
+            val model = shinkuPreferences.geminiModel().get()
+            val recentHistory = getHistory.subscribeRecent(10).first()
+            val recentTitles = recentHistory.map<HistoryWithRelations, String> { it.title }.distinct()
 
-                val recentHistory = getHistory.subscribeRecent(10).first()
-                val recentTitles = recentHistory.map<HistoryWithRelations, String> { it.title }.distinct()
+            val titles = geminiVibeSearch.getForYouRecommendations(
+                historyTitles = recentTitles,
+                topGenres = bestGenres,
+                apiKey = apiKey,
+                model = model,
+            )
 
-                val titles = geminiVibeSearch.getForYouRecommendations(
-                    historyTitles = recentTitles,
-                    topGenres = stats.bestGenres,
-                    apiKey = apiKey,
-                    model = model
-                )
-                
-                if (titles.isNotEmpty()) {
-                    val sourceId = sourcePreferences.lastUsedSource().get()
-                    val source = sourceManager.get(sourceId) as? CatalogueSource ?: return@launchIO
-                    
-                    val recommendedManga = titles.mapNotNull<String, DomainManga> { title ->
-                        try {
-                            val searchResult = withContext(coroutineDispatcher) {
-                                source.getSearchManga(1, title, FilterList())
-                            }.mangas.firstOrNull()
-                            searchResult?.toDomainManga(sourceId)
-                        } catch (e: Throwable) {
-                            null
+            if (titles.isNotEmpty()) {
+                val primarySource = healthySources.first()
+                val recommendedManga = coroutineScope {
+                    titles.take(8).map { title ->
+                        async(coroutineDispatcher) {
+                            withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                                try {
+                                    primarySource.getSearchManga(1, title, FilterList())
+                                        .mangas
+                                        .firstOrNull()
+                                        ?.toDomainManga(primarySource.id)
+                                } catch (e: Throwable) {
+                                    null
+                                }
+                            }
                         }
-                    }
-                    
+                    }.awaitAll().filterNotNull()
+                }
+
+                if (recommendedManga.isNotEmpty()) {
                     val localManga = networkToLocalManga(recommendedManga)
+                        .sortedBy { it.id in libraryIds }
                     mutableState.update { it.copy(recommendations = localManga.toImmutableList()) }
                 }
-            } catch (e: Throwable) {
-                logcat(LogPriority.ERROR, e)
             }
+        } catch (e: Throwable) {
+            logcat(LogPriority.ERROR, e)
         }
     }
 
@@ -196,7 +206,7 @@ open class FeedScreenModel(
         "Cultivation",
     )
 
-    fun getFilteredCatalogueSources(): List<CatalogueSource> {
+    suspend fun getFilteredCatalogueSources(): List<CatalogueSource> {
         val sourceFilterMode = shinkuPreferences.feedSourceFilter().get()
         val languageFilterMode = shinkuPreferences.feedLanguageFilter().get()
         val pinnedSources = sourcePreferences.pinnedSources().get()
@@ -221,63 +231,88 @@ open class FeedScreenModel(
             }
         }
 
-        return filtered.ifEmpty { allSources }
+        val candidates = filtered.ifEmpty { allSources }
+        if (candidates.size <= 1) return candidates
+
+        // Prioritize healthy, low-latency sources so broken/Cloudflare-blocked extensions don't stall Discover
+        val healthMap = runCatching {
+            sourceHealthRepository.subscribeAll().first().associateBy { it.sourceId }
+        }.getOrDefault(emptyMap())
+
+        val healthyCandidates = candidates.filter { source ->
+            val health = healthMap[source.id]
+            health == null || (!health.isDnsDead && !health.isServerDown && health.performanceScore >= 40)
+        }
+
+        val pool = healthyCandidates.ifEmpty { candidates }
+        return pool.shuffled().sortedByDescending { source ->
+            val score = healthMap[source.id]?.performanceScore ?: 85
+            // Bucket into tiers (e.g. 80+, 50-79, <50) so sources within the same health tier stay randomized
+            score / 25
+        }
     }
 
-    private fun loadFeaturedAndForYou() {
-        screenModelScope.launchIO {
-            try {
-                // Instantly pre-populate from local library cache so feed is interactive immediately (0ms lag)
-                fallbackToLibraryFeatured()
+    private suspend fun loadFeaturedAndForYou(
+        bestGenres: List<String>,
+        libraryManga: List<DomainManga>,
+        sources: List<CatalogueSource>,
+    ) {
+        val libraryIds = libraryManga.map { it.id }.toSet()
+        try {
+            // Only seed from local library on initial cold load if feed is completely empty
+            if (state.value.featuredManga.isEmpty() && state.value.forYouManga.isEmpty()) {
+                fallbackToLibraryFeatured(libraryManga)
+            }
 
-                val sources = getFilteredCatalogueSources().shuffled()
-                if (sources.isNotEmpty()) {
-                    // Fetch reading stats to personalize suggestions based on reading behaviour
-                    val stats = runCatching { getReadingStats.await() }.getOrNull()
-                    val bestGenres = stats?.bestGenres.orEmpty()
-                    val topUserGenre = bestGenres.firstOrNull()
+            if (sources.isNotEmpty()) {
+                val topUserGenre = bestGenres.firstOrNull()
+                val popularPage = (1..2).random()
+                val latestPage = (1..2).random()
 
-                    // Randomize page offset (1..2) to ensure fresh content on each refresh
-                    val popularPage = (1..2).random()
-                    val latestPage = (1..2).random()
-
-                    // 1. Query popular manga for featured carousel across up to 3 randomized sources
-                    val popularDeferred = sources.take(3).map { source ->
-                        async(Dispatchers.IO) {
-                            try {
-                                source.getPopularManga(popularPage).mangas.take(8).map { it.toDomainManga(source.id) }
-                            } catch (e: Throwable) {
-                                emptyList()
-                            }
-                        }
-                    }
-
-                    // 2. Query new releases (latest updates) across randomized sources supporting it
-                    val latestSources = sources.filter { it.supportsLatest }.take(3).ifEmpty { sources.take(2) }
-                    val latestDeferred = latestSources.map { source ->
-                        async(Dispatchers.IO) {
-                            try {
-                                source.getLatestUpdates(latestPage).mangas.take(8).map { it.toDomainManga(source.id) }
-                            } catch (e: Throwable) {
-                                emptyList()
-                            }
-                        }
-                    }
-
-                    // 3. Query suggestions based on user's reading behavior (top genre) with true genre filtering
-                    val behaviorDeferred = if (!topUserGenre.isNullOrBlank()) {
-                        sources.take(3).map { source ->
-                            async(Dispatchers.IO) {
+                coroutineScope {
+                    // 1. Popular manga for Featured Hero Carousel (max 2 healthy sources)
+                    val popularDeferred = sources.take(2).map { source ->
+                        async(coroutineDispatcher) {
+                            withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
                                 try {
-                                    val filterList = GenreFilterHelper.buildGenreFilterList(source, topUserGenre)
-                                    if (filterList != null) {
-                                        source.getSearchManga(1, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
-                                    } else {
-                                        emptyList()
-                                    }
+                                    source.getPopularManga(popularPage).mangas.take(8).map { it.toDomainManga(source.id) }
                                 } catch (e: Throwable) {
                                     emptyList()
                                 }
+                            }.orEmpty()
+                        }
+                    }
+
+                    // 2. Latest releases across up to 2 sources supporting latest
+                    val latestSources = sources.filter { it.supportsLatest }.take(2).ifEmpty { sources.take(2) }
+                    val latestDeferred = latestSources.map { source ->
+                        async(coroutineDispatcher) {
+                            withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                                try {
+                                    source.getLatestUpdates(latestPage).mangas.take(8).map { it.toDomainManga(source.id) }
+                                } catch (e: Throwable) {
+                                    emptyList()
+                                }
+                            }.orEmpty()
+                        }
+                    }
+
+                    // 3. Personalized top-genre suggestions across up to 2 sources
+                    val behaviorDeferred = if (!topUserGenre.isNullOrBlank()) {
+                        sources.take(2).map { source ->
+                            async(coroutineDispatcher) {
+                                withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                                    try {
+                                        val filterList = GenreFilterHelper.buildGenreFilterList(source, topUserGenre)
+                                        if (filterList != null) {
+                                            source.getSearchManga(1, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
+                                        } else {
+                                            emptyList()
+                                        }
+                                    } catch (e: Throwable) {
+                                        emptyList()
+                                    }
+                                }.orEmpty()
                             }
                         }
                     } else {
@@ -312,10 +347,9 @@ open class FeedScreenModel(
                     }
 
                     if (localPopular.isNotEmpty() || localLatest.isNotEmpty() || localBehavior.isNotEmpty()) {
-                        val featured = localPopular.take(5)
+                        val featured = localPopular.ifEmpty { localLatest }.take(5)
                         val featuredIds = featured.map { it.id }.toSet()
 
-                        // Build "Titles For You": blend new releases + reading behaviour suggestions + trending
                         val forYouPool = mutableListOf<DomainManga>()
                         val maxBlend = maxOf(localBehavior.size, localLatest.size, localPopular.size)
                         for (i in 0 until maxBlend) {
@@ -324,9 +358,11 @@ open class FeedScreenModel(
                             if (i < localPopular.size) forYouPool.add(localPopular[i])
                         }
 
+                        // Prioritize fresh discoveries not already in the user's Library
                         val forYou = forYouPool
                             .filterNot { it.id in featuredIds }
                             .distinctBy { it.id }
+                            .sortedBy { it.id in libraryIds }
                             .take(15)
 
                         mutableState.update {
@@ -335,57 +371,55 @@ open class FeedScreenModel(
                                 forYouManga = forYou.toImmutableList(),
                             )
                         }
-                    } else {
-                        fallbackToLibraryFeatured()
-                    }
-
-                    // Preload randomized suggestions for 5 dynamic genre highlights
-                    loadGenreSections(sources, bestGenres)
-                } else {
-                    fallbackToLibraryFeatured()
-                }
-            } catch (e: Throwable) {
-                logcat(LogPriority.ERROR, e)
-                fallbackToLibraryFeatured()
-            } finally {
-                mutableState.update { it.copy(isInitialLoadDone = true) }
-            }
-        }
-    }
-
-    private suspend fun fallbackToLibraryFeatured() {
-        try {
-            val library = getLibraryManga.await()
-            val libraryManga = library.map { it.manga }
-            if (libraryManga.isNotEmpty()) {
-                val featured = libraryManga.shuffled().take(5)
-                val forYou = if (libraryManga.size > 5) libraryManga.filter { it !in featured }.take(10) else libraryManga
-
-                val offlineGenreMap = mutableMapOf<String, ImmutableList<DomainManga>>()
-                GENRE_POOL.forEach { poolGenre ->
-                    val matching = libraryManga.filter { manga ->
-                        manga.genre.orEmpty().any { it.contains(poolGenre, ignoreCase = true) }
-                    }
-                    if (matching.isNotEmpty()) {
-                        offlineGenreMap[poolGenre] = matching.distinctBy { it.id }.take(10).toImmutableList()
+                    } else if (state.value.featuredManga.isEmpty()) {
+                        fallbackToLibraryFeatured(libraryManga)
                     }
                 }
-
-                mutableState.update {
-                    it.copy(
-                        featuredManga = featured.toImmutableList(),
-                        forYouManga = forYou.toImmutableList(),
-                        genreSections = offlineGenreMap.toImmutableMap(),
-                    )
-                }
+            } else if (state.value.featuredManga.isEmpty()) {
+                fallbackToLibraryFeatured(libraryManga)
             }
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e)
+            if (state.value.featuredManga.isEmpty()) {
+                fallbackToLibraryFeatured(libraryManga)
+            }
+        } finally {
+            mutableState.update { it.copy(isInitialLoadDone = true) }
         }
     }
 
-    private suspend fun loadGenreSections(sources: List<CatalogueSource>, userBestGenres: List<String> = emptyList()) {
-        // Pick 5 genres dynamically: blend user's favorite genres with randomized pool
+    private fun fallbackToLibraryFeatured(libraryManga: List<DomainManga>) {
+        if (libraryManga.isEmpty()) return
+        val featured = libraryManga.shuffled().take(5)
+        val forYou = if (libraryManga.size > 5) libraryManga.filter { it !in featured }.take(10) else libraryManga
+
+        val offlineGenreMap = mutableMapOf<String, ImmutableList<DomainManga>>()
+        GENRE_POOL.take(4).forEach { poolGenre ->
+            val matching = libraryManga.filter { manga ->
+                manga.genre.orEmpty().any { it.contains(poolGenre, ignoreCase = true) }
+            }
+            if (matching.isNotEmpty()) {
+                offlineGenreMap[poolGenre] = matching.distinctBy { it.id }.take(10).toImmutableList()
+            }
+        }
+
+        mutableState.update {
+            it.copy(
+                featuredManga = featured.toImmutableList(),
+                forYouManga = forYou.toImmutableList(),
+                genreSections = offlineGenreMap.toImmutableMap(),
+            )
+        }
+    }
+
+    private suspend fun loadGenreSections(
+        sources: List<CatalogueSource>,
+        userBestGenres: List<String>,
+        allLibraryManga: List<DomainManga>,
+    ) {
+        if (sources.isEmpty()) return
+
+        // Curate 3 genre rows per refresh (2 from user's top genres + 1 discovery genre) to keep network fast
         val personalizedGenres = userBestGenres.filter { genre ->
             GENRE_POOL.any { it.equals(genre, ignoreCase = true) }
         }.shuffled().take(2)
@@ -394,57 +428,58 @@ open class FeedScreenModel(
             personalizedGenres.any { it.equals(poolGenre, ignoreCase = true) }
         }.shuffled()
 
-        val selectedGenres = (personalizedGenres + remainingPool).take(5)
+        val selectedGenres = (personalizedGenres + remainingPool).take(3)
+        val libraryIds = allLibraryManga.map { it.id }.toSet()
 
-        // Query library manga once to blend local favorites matching each genre
-        val allLibraryManga = runCatching { getLibraryManga.await().map { it.manga } }.getOrDefault(emptyList())
+        val results = coroutineScope {
+            selectedGenres.map { genre ->
+                async(coroutineDispatcher) {
+                    try {
+                        val supportingSources = sources.shuffled().mapNotNull { source ->
+                            val filterList = GenreFilterHelper.buildGenreFilterList(source, genre)
+                            if (filterList != null) source to filterList else null
+                        }.take(2)
 
-        // Concurrently query genre highlights across bounded dispatcher
-        val deferredSections = selectedGenres.map { genre ->
-            screenModelScope.async(coroutineDispatcher) {
-                try {
-                    val supportingSources = sources.shuffled().mapNotNull { source ->
-                        val filterList = GenreFilterHelper.buildGenreFilterList(source, genre)
-                        if (filterList != null) source to filterList else null
-                    }.take(2)
-
-                    val genrePage = (1..2).random()
-                    val genreResults = supportingSources.map { (source, filterList) ->
-                        async(Dispatchers.IO) {
-                            try {
-                                source.getSearchManga(genrePage, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
-                            } catch (e: Throwable) {
-                                emptyList()
+                        val genrePage = (1..2).random()
+                        val genreResults = supportingSources.map { (source, filterList) ->
+                            async(coroutineDispatcher) {
+                                withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                                    try {
+                                        source.getSearchManga(genrePage, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
+                                    } catch (e: Throwable) {
+                                        emptyList()
+                                    }
+                                }.orEmpty()
                             }
+                        }.awaitAll().flatten()
+
+                        val localGenreManga = if (genreResults.isNotEmpty()) {
+                            networkToLocalManga(genreResults)
+                        } else {
+                            emptyList()
                         }
-                    }.awaitAll().flatten()
 
-                    val localGenreManga = if (genreResults.isNotEmpty()) {
-                        networkToLocalManga(genreResults)
-                    } else {
-                        emptyList()
-                    }
+                        val validNetworkManga = localGenreManga
+                            .filter { GenreFilterHelper.matchesGenre(it, genre) }
+                            .sortedBy { it.id in libraryIds }
+                        val libraryMatches = allLibraryManga.filter { GenreFilterHelper.matchesGenre(it, genre) }
 
-                    // Blend library titles with network titles, strictly filtering out any mismatched tags
-                    val libraryMatches = allLibraryManga.filter { GenreFilterHelper.matchesGenre(it, genre) }
-                    val validNetworkManga = localGenreManga.filter { GenreFilterHelper.matchesGenre(it, genre) }
+                        val combined = (validNetworkManga + libraryMatches.shuffled().take(2))
+                            .distinctBy { it.id }
 
-                    val combined = (libraryMatches.shuffled().take(2) + validNetworkManga)
-                        .distinctBy { it.id }
-
-                    if (combined.isNotEmpty()) {
-                        genre to combined.take(10).toImmutableList()
-                    } else {
+                        if (combined.isNotEmpty()) {
+                            genre to combined.take(10).toImmutableList()
+                        } else {
+                            null
+                        }
+                    } catch (e: Throwable) {
+                        logcat(LogPriority.ERROR, e)
                         null
                     }
-                } catch (e: Throwable) {
-                    logcat(LogPriority.ERROR, e)
-                    null
                 }
-            }
+            }.awaitAll().filterNotNull()
         }
 
-        val results = deferredSections.awaitAll().filterNotNull()
         if (results.isNotEmpty()) {
             mutableState.update {
                 it.copy(genreSections = results.toMap().toImmutableMap())
@@ -461,22 +496,26 @@ open class FeedScreenModel(
         mutableState.update { it.copy(selectedGenre = genre, isLoadingGenre = true) }
         screenModelScope.launchIO {
             try {
-                val sources = getFilteredCatalogueSources().shuffled()
+                val sources = getFilteredCatalogueSources()
                 if (sources.isNotEmpty()) {
                     val supportingSources = sources.mapNotNull { source ->
                         val filterList = GenreFilterHelper.buildGenreFilterList(source, genre)
                         if (filterList != null) source to filterList else null
                     }.take(3)
 
-                    val genreResults = supportingSources.map { (source, filterList) ->
-                        async(Dispatchers.IO) {
-                            try {
-                                source.getSearchManga(1, "", filterList).mangas.take(10).map { it.toDomainManga(source.id) }
-                            } catch (e: Throwable) {
-                                emptyList()
+                    val genreResults = coroutineScope {
+                        supportingSources.map { (source, filterList) ->
+                            async(coroutineDispatcher) {
+                                withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                                    try {
+                                        source.getSearchManga(1, "", filterList).mangas.take(10).map { it.toDomainManga(source.id) }
+                                    } catch (e: Throwable) {
+                                        emptyList()
+                                    }
+                                }.orEmpty()
                             }
-                        }
-                    }.awaitAll().flatten()
+                        }.awaitAll().flatten()
+                    }
 
                     val localGenreManga = if (genreResults.isNotEmpty()) {
                         networkToLocalManga(genreResults).filter { GenreFilterHelper.matchesGenre(it, genre) }
@@ -484,41 +523,25 @@ open class FeedScreenModel(
                         emptyList()
                     }
 
-                    val finalGenreManga = if (localGenreManga.isNotEmpty()) {
-                        localGenreManga
-                    } else {
-                        try {
-                            val library = getLibraryManga.await()
-                            library.map { it.manga }.filter { manga ->
+                    val finalGenreManga = localGenreManga.ifEmpty {
+                        runCatching {
+                            getLibraryManga.await().map { it.manga }.filter { manga ->
                                 manga.genre.orEmpty().any { it.contains(genre, ignoreCase = true) }
                             }
-                        } catch (e: Throwable) {
-                            emptyList()
-                        }
+                        }.getOrDefault(emptyList())
                     }
                     mutableState.update { it.copy(selectedGenreManga = finalGenreManga.toImmutableList(), isLoadingGenre = false) }
                 } else {
-                    val offlineManga = try {
-                        val library = getLibraryManga.await()
-                        library.map { it.manga }.filter { manga ->
+                    val offlineManga = runCatching {
+                        getLibraryManga.await().map { it.manga }.filter { manga ->
                             manga.genre.orEmpty().any { it.contains(genre, ignoreCase = true) }
                         }
-                    } catch (e: Throwable) {
-                        emptyList()
-                    }
+                    }.getOrDefault(emptyList())
                     mutableState.update { it.copy(selectedGenreManga = offlineManga.toImmutableList(), isLoadingGenre = false) }
                 }
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
-                val offlineManga = try {
-                    val library = getLibraryManga.await()
-                    library.map { it.manga }.filter { manga ->
-                        manga.genre.orEmpty().any { it.contains(genre, ignoreCase = true) }
-                    }
-                } catch (ex: Throwable) {
-                    emptyList()
-                }
-                mutableState.update { it.copy(selectedGenreManga = offlineManga.toImmutableList(), isLoadingGenre = false) }
+                mutableState.update { it.copy(selectedGenreManga = persistentListOf(), isLoadingGenre = false) }
             }
         }
     }
@@ -538,8 +561,40 @@ open class FeedScreenModel(
         }
         screenModelScope.launchIO {
             try {
-                fetchAiRecommendations()
-                loadFeaturedAndForYou()
+                sourceManager.isInitialized.first { it }
+                // Query DB once per refresh cycle and share across all sections
+                val libraryManga = runCatching { getLibraryManga.await().map { it.manga } }.getOrDefault(emptyList())
+                val stats = runCatching { getReadingStats.await() }.getOrNull()
+                val bestGenres = stats?.bestGenres.orEmpty()
+                val sources = getFilteredCatalogueSources()
+                val libraryIds = libraryManga.map { it.id }.toSet()
+
+                // 1. Load Hero Carousel + Titles For You first so top of screen is ready fast
+                loadFeaturedAndForYou(
+                    bestGenres = bestGenres,
+                    libraryManga = libraryManga,
+                    sources = sources,
+                )
+
+                // Release pull-to-refresh spinner as soon as Hero + Titles For You are ready
+                mutableState.update { it.copy(isRefreshing = false) }
+
+                // 2. Load Genre rows, AI Picks, and Custom Source Feeds in background
+                launchIO {
+                    loadGenreSections(
+                        sources = sources,
+                        userBestGenres = bestGenres,
+                        allLibraryManga = libraryManga,
+                    )
+                }
+                launchIO {
+                    fetchAiRecommendations(
+                        bestGenres = bestGenres,
+                        healthySources = sources,
+                        libraryIds = libraryIds,
+                    )
+                }
+
                 val newItems = state.value.items?.map { it.copy(results = null) }
                 if (newItems != null) {
                     mutableState.update { state ->
@@ -643,9 +698,6 @@ open class FeedScreenModel(
             .map { it to savedSearches[it.savedSearch] }
     }
 
-    /**
-     * Creates a catalogue search item
-     */
     private fun createCatalogueSearchItem(
         feed: FeedSavedSearch,
         savedSearch: SavedSearch?,
@@ -666,9 +718,6 @@ open class FeedScreenModel(
         )
     }
 
-    /**
-     * Initiates get manga per feed.
-     */
     private fun getFeed(feedSavedSearch: List<FeedItemUI>) {
         screenModelScope.launch {
             feedSavedSearch.map { itemUI ->
@@ -676,16 +725,18 @@ open class FeedScreenModel(
                     val page = try {
                         if (itemUI.source != null) {
                             withContext(coroutineDispatcher) {
-                                if (itemUI.savedSearch == null) {
-                                    itemUI.source.getLatestUpdates(1)
-                                } else {
-                                    itemUI.source.getSearchManga(
-                                        1,
-                                        itemUI.savedSearch.query.orEmpty(),
-                                        getFilterList(itemUI.savedSearch, itemUI.source),
-                                    )
-                                }
-                            }.mangas
+                                withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                                    if (itemUI.savedSearch == null) {
+                                        itemUI.source.getLatestUpdates(1)
+                                    } else {
+                                        itemUI.source.getSearchManga(
+                                            1,
+                                            itemUI.savedSearch.query.orEmpty(),
+                                            getFilterList(itemUI.savedSearch, itemUI.source),
+                                        )
+                                    }
+                                }?.mangas.orEmpty()
+                            }
                         } else {
                             emptyList()
                         }
@@ -752,6 +803,10 @@ open class FeedScreenModel(
     sealed class Event {
         data object FailedFetchingSources : Event()
         data object TooManyFeeds : Event()
+    }
+
+    companion object {
+        private const val SOURCE_CALL_TIMEOUT_MS = 8_000L
     }
 }
 

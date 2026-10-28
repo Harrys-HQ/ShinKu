@@ -83,6 +83,7 @@ import com.shinku.reader.domain.manga.model.readingMode
 import com.shinku.reader.presentation.reader.ChapterListDialog
 import com.shinku.reader.presentation.reader.DisplayRefreshHost
 import com.shinku.reader.presentation.reader.OrientationSelectDialog
+import com.shinku.reader.presentation.reader.ReaderCompletionBanner
 import com.shinku.reader.presentation.reader.ReaderContentOverlay
 import com.shinku.reader.presentation.reader.ReaderMoodLighting
 import com.shinku.reader.presentation.reader.ReaderPageActionsDialog
@@ -397,6 +398,15 @@ class ReaderActivity : BaseActivity() {
         val isOverlayVisible = state.currentChapter?.pages?.any { it.showTranslation } == true
 
         Box(modifier = Modifier.fillMaxSize()) {
+            ReaderCompletionBanner(
+                chapterId = state.currentChapter?.chapter?.id,
+                currentPage = state.currentPage,
+                totalPages = state.totalPages,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .zIndex(60f),
+            )
+
             if (!state.menuVisible && showPageNumber && !zenMode) {
                 ReaderPageIndicator(
                     currentPage = state.currentPage,
@@ -422,7 +432,7 @@ class ReaderActivity : BaseActivity() {
             val hasAnyTranslations = state.currentChapter?.pages?.any { it.translationBlocks != null } == true
             val apiKey by shinkuPreferences.geminiApiKey().collectAsState()
             val translationEngine by shinkuPreferences.translationEngine().collectAsState()
-            val hasValidCredentials = apiKey.isNotBlank() || translationEngine != "gemini_cloud"
+            val hasValidCredentials = shinkuPreferences.isAiConfigured() || apiKey.isNotBlank() || translationEngine != "gemini_cloud"
             val batchProgress = state.batchTranslationProgress
 
             if ((isLiveTranslationEnabled || hasAnyTranslations || batchProgress != null) && hasValidCredentials && !state.menuVisible && !zenMode) {
@@ -554,6 +564,8 @@ class ReaderActivity : BaseActivity() {
                     onShareCombined = { viewModel.shareImages(it) },
                     onSaveCombined = { viewModel.saveImages() },
                     onFootnotes = { viewModel.onFootnotes() },
+                    onCharacterCodex = { viewModel.onCharacterCodex() },
+                    onChapterRecap = { viewModel.onChapterRecap() },
                     onTranslation = { viewModel.onTranslation() },
                     onBatchTranslation = { viewModel.startBatchChapterTranslation() },
                     hasExtraPage = dialog.extraPage != null,
@@ -581,266 +593,61 @@ class ReaderActivity : BaseActivity() {
                 val hasCached = remember(chapterId, targetLang) {
                     com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
                 }
+                val activePageBlocks = state.activePage?.translationBlocks?.size ?: 0
                 com.shinku.reader.presentation.reader.dialog.TranslationOptionsDialog(
                     totalPages = state.totalPages,
                     targetLanguage = targetLang,
                     hasCachedTranslations = hasCached,
                     isOverlayVisible = state.currentChapter?.pages?.any { it.showTranslation } == true,
+                    currentPageBlockCount = activePageBlocks,
                     onDismissRequest = onDismissRequest,
                     onToggleOverlay = { viewModel.toggleTranslation() },
                     onTranslateCurrentPage = { viewModel.onTranslation() },
+                    onRetranslateCurrentPage = { viewModel.retranslateCurrentPage() },
+                    onInspectBubbles = { viewModel.openBubbleInspector() },
                     onTranslateEntireChapter = { viewModel.startBatchChapterTranslation() },
                     onChangeLanguages = { viewModel.openTranslationLanguageSelectDialog() },
                     onClearTranslations = { viewModel.clearChapterTranslation(chapterId) },
                 )
             }
 
-            is ReaderViewModel.Dialog.AiProcessing -> {
-                AlertDialog(
+            is ReaderViewModel.Dialog.BubbleInspector -> {
+                val targetLang = remember { shinkuPreferences.translationTargetLanguage().get() }
+                com.shinku.reader.presentation.reader.dialog.BubbleInspectorDialog(
+                    pageNumber = (state.activePage?.number ?: state.currentPage).coerceAtLeast(1),
+                    targetLanguage = targetLang,
+                    blocks = state.activePage?.translationBlocks.orEmpty(),
                     onDismissRequest = onDismissRequest,
-                    confirmButton = {},
-                    title = { Text("AI Processing") },
-                    text = {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            CircularProgressIndicator()
-                            Text("Analyzing page content...")
-                        }
-                    },
+                    onRetranslatePage = { viewModel.retranslateCurrentPage() },
+                )
+            }
+
+            is ReaderViewModel.Dialog.AiProcessing -> {
+                com.shinku.reader.presentation.reader.dialog.ReaderAiProcessingDialog(
+                    onDismissRequest = onDismissRequest,
                 )
             }
 
             is ReaderViewModel.Dialog.TranslationLanguageSelect -> {
                 val currentSourceLanguage = remember { shinkuPreferences.translationSourceLanguage().get() }
                 val currentTargetLanguage = remember { shinkuPreferences.translationTargetLanguage().get() }
-                
-                var selectedSource by remember { mutableStateOf(currentSourceLanguage) }
-                var selectedTarget by remember { mutableStateOf(currentTargetLanguage) }
-                
-                val sourceLanguages = remember {
-                    listOf(
-                        "Auto-Detect" to "Auto-Detect (自动检测)",
-                        "Japanese" to "Japanese (日本語)",
-                        "Chinese" to "Chinese (中文)",
-                        "Korean" to "Korean (한국어)",
-                        "English" to "English",
-                        "Spanish" to "Spanish (Español)",
-                        "French" to "French (Français)",
-                        "German" to "German (Deutsch)",
-                        "Italian" to "Italian (Italiano)"
-                    )
-                }
-                
-                val targetLanguages = remember {
-                    listOf(
-                        "English" to "English",
-                        "Spanish" to "Spanish (Español)",
-                        "French" to "French (Français)",
-                        "German" to "German (Deutsch)",
-                        "Portuguese" to "Portuguese (Português)",
-                        "Italian" to "Italian (Italiano)",
-                        "Russian" to "Russian (Русский)",
-                        "Indonesian" to "Indonesian (Bahasa Indonesia)",
-                        "Tagalog" to "Tagalog (Filipino)",
-                        "Arabic" to "Arabic (العربية)"
-                    )
-                }
-
-                AlertDialog(
+                com.shinku.reader.presentation.reader.dialog.ReaderTranslationLanguageDialog(
+                    currentSourceLanguage = currentSourceLanguage,
+                    currentTargetLanguage = currentTargetLanguage,
+                    onConfirm = { selectedSource, selectedTarget ->
+                        viewModel.changeTranslationSourceLanguage(selectedSource)
+                        viewModel.changeTranslationTargetLanguage(selectedTarget)
+                    },
                     onDismissRequest = onDismissRequest,
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                viewModel.changeTranslationSourceLanguage(selectedSource)
-                                viewModel.changeTranslationTargetLanguage(selectedTarget)
-                                onDismissRequest()
-                            }
-                        ) {
-                            Text(stringResource(MR.strings.action_ok))
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = onDismissRequest) {
-                            Text(stringResource(MR.strings.action_cancel))
-                        }
-                    },
-                    title = { Text("Translation Settings") },
-                    text = {
-                        androidx.compose.foundation.layout.Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Source Language Dropdown
-                            var sourceExpanded by remember { mutableStateOf(false) }
-                            androidx.compose.foundation.layout.Column {
-                                Text(
-                                    text = "Translate From",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
-                                        .clickable { sourceExpanded = true }
-                                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        val displayName = sourceLanguages.find { it.first == selectedSource }?.second ?: selectedSource
-                                        Text(
-                                            text = displayName,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        androidx.compose.material3.Icon(
-                                            imageVector = androidx.compose.material.icons.Icons.Default.ArrowDropDown,
-                                            contentDescription = "Expand",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    androidx.compose.material3.DropdownMenu(
-                                        expanded = sourceExpanded,
-                                        onDismissRequest = { sourceExpanded = false }
-                                    ) {
-                                        sourceLanguages.forEach { (code, name) ->
-                                            androidx.compose.material3.DropdownMenuItem(
-                                                text = { Text(name) },
-                                                onClick = {
-                                                    selectedSource = code
-                                                    sourceExpanded = false
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Swap Button
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                TextButton(
-                                    onClick = {
-                                        val temp = selectedSource
-                                        if (temp != "Auto-Detect") {
-                                            val targetAsSource = targetLanguages.find { it.first == selectedTarget }
-                                            val sourceAsTarget = targetLanguages.find { it.first == temp }
-                                            if (targetAsSource != null && sourceAsTarget != null) {
-                                                selectedSource = selectedTarget
-                                                selectedTarget = temp
-                                            }
-                                        }
-                                    },
-                                    enabled = selectedSource != "Auto-Detect"
-                                ) {
-                                    Text("⇅ Swap Languages")
-                                }
-                            }
-
-                            // Target Language Dropdown
-                            var targetExpanded by remember { mutableStateOf(false) }
-                            androidx.compose.foundation.layout.Column {
-                                Text(
-                                    text = "Translate To",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
-                                        .clickable { targetExpanded = true }
-                                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        val displayName = targetLanguages.find { it.first == selectedTarget }?.second ?: selectedTarget
-                                        Text(
-                                            text = displayName,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        androidx.compose.material3.Icon(
-                                            imageVector = androidx.compose.material.icons.Icons.Default.ArrowDropDown,
-                                            contentDescription = "Expand",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    androidx.compose.material3.DropdownMenu(
-                                        expanded = targetExpanded,
-                                        onDismissRequest = { targetExpanded = false }
-                                    ) {
-                                        targetLanguages.forEach { (code, name) ->
-                                            androidx.compose.material3.DropdownMenuItem(
-                                                text = { Text(name) },
-                                                onClick = {
-                                                    selectedTarget = code
-                                                    targetExpanded = false
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                 )
             }
 
             is ReaderViewModel.Dialog.AiInsight -> {
                 val dialog = state.dialog as ReaderViewModel.Dialog.AiInsight
-                AlertDialog(
+                com.shinku.reader.presentation.reader.dialog.ReaderAiInsightDialog(
+                    title = dialog.title,
+                    content = dialog.content,
                     onDismissRequest = onDismissRequest,
-                    confirmButton = {
-                        TextButton(onClick = onDismissRequest) {
-                            Text(stringResource(MR.strings.action_ok))
-                        }
-                    },
-                    title = {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            androidx.compose.material3.Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(22.dp),
-                            )
-                            Text(dialog.title)
-                        }
-                    },
-                    text = {
-                        androidx.compose.foundation.layout.Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .verticalScroll(rememberScrollState()),
-                        ) {
-                            Text(
-                                text = dialog.content,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    },
                 )
             }
 

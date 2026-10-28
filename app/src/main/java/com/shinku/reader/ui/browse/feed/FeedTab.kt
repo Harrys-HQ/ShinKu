@@ -13,11 +13,11 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.stack.StackEvent
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.shinku.reader.presentation.browse.FeedAddDialog
-import com.shinku.reader.presentation.browse.FeedAddSearchDialog
-import com.shinku.reader.presentation.browse.FeedDeleteConfirmDialog
-import com.shinku.reader.presentation.browse.FeedFilterDialog
 import com.shinku.reader.presentation.browse.FeedScreen
+import com.shinku.reader.presentation.browse.components.FeedAddDialog
+import com.shinku.reader.presentation.browse.components.FeedAddSearchDialog
+import com.shinku.reader.presentation.browse.components.FeedDeleteConfirmDialog
+import com.shinku.reader.presentation.browse.components.FeedFilterDialog
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.TabContent
 import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreen

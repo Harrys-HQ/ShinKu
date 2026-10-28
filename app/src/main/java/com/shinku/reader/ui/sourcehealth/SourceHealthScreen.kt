@@ -1,6 +1,7 @@
 package com.shinku.reader.ui.sourcehealth
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -29,8 +30,8 @@ import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.LoadingScreen
 import com.shinku.reader.presentation.more.sourcehealth.SourceHealthScreenContent
 import com.shinku.reader.presentation.more.sourcehealth.SourceHealthScreenState
-import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.presentation.more.sourcehealth.SourceHealthSort
+import com.shinku.reader.presentation.util.Screen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 
@@ -44,7 +45,7 @@ class SourceHealthScreen : Screen() {
 
         val screenModel = rememberScreenModel { SourceHealthScreenModel() }
         val state by screenModel.state.collectAsState()
-        
+
         val pagerState = rememberPagerState { 2 }
 
         Scaffold(
@@ -59,9 +60,9 @@ class SourceHealthScreen : Screen() {
                                 AppBar.Action(
                                     title = stringResource(MR.strings.action_update_library),
                                     icon = Icons.Outlined.Refresh,
-                                    onClick = { 
+                                    onClick = {
                                         // Scan Installed only if on tab 0, else scan All (English)
-                                        RepoHealthScanJob.startNow(context, onlyInstalled = pagerState.currentPage == 0) 
+                                        RepoHealthScanJob.startNow(context, onlyInstalled = pagerState.currentPage == 0)
                                     },
                                 ),
                                 AppBar.OverflowAction(
@@ -112,12 +113,14 @@ class SourceHealthScreen : Screen() {
                     when (page) {
                         0 -> SourceHealthScreenContent(
                             healthList = successState.installedList,
-                            paddingValues = androidx.compose.foundation.layout.PaddingValues(),
+                            paddingValues = PaddingValues(),
+                            testingSourceIds = successState.testingSourceIds,
                             onTestSingleSource = screenModel::testSingleSource,
                         )
                         1 -> SourceHealthScreenContent(
                             healthList = successState.repoList,
-                            paddingValues = androidx.compose.foundation.layout.PaddingValues(),
+                            paddingValues = PaddingValues(),
+                            testingSourceIds = successState.testingSourceIds,
                             onTestSingleSource = screenModel::testSingleSource,
                         )
                     }

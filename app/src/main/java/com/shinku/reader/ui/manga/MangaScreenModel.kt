@@ -254,7 +254,7 @@ class MangaScreenModel(
         val manga = manga ?: return
         val apiKey = shinkuPreferences.geminiApiKey().get()
         val model = shinkuPreferences.geminiModel().get()
-        if (apiKey.isBlank()) return
+        if (!shinkuPreferences.isAiConfigured()) return
 
         screenModelScope.launch {
             updateSuccessState { it.copy(dialog = Dialog.VibeSearching) }
@@ -402,7 +402,7 @@ class MangaScreenModel(
                 .flowWithLifecycle(lifecycle)
                 .collectLatest { apiKey ->
                     updateSuccessState {
-                        it.copy(showVibeButton = apiKey.isNotBlank())
+                        it.copy(showVibeButton = shinkuPreferences.isAiConfigured())
                     }
                 }
         }
@@ -485,7 +485,7 @@ class MangaScreenModel(
             val showRecap = if (lastReadHistory != null && lastReadHistory.readAt != null) {
                 val lastReadTime = lastReadHistory.readAt!!.time
                 val fourteenDaysMs = 14L * 24L * 60L * 60L * 1000L
-                System.currentTimeMillis() - lastReadTime > fourteenDaysMs && shinkuPreferences.geminiApiKey().get().isNotBlank()
+                System.currentTimeMillis() - lastReadTime > fourteenDaysMs && shinkuPreferences.isAiConfigured()
             } else {
                 false
             }
@@ -523,7 +523,7 @@ class MangaScreenModel(
                     alwaysShowReadingProgress =
                     readerPreferences.preserveReadingPosition().get() && manga.isEhBasedManga(),
                     previewsRowCount = uiPreferences.previewsRowCount().get(),
-                    showVibeButton = shinkuPreferences.geminiApiKey().get().isNotBlank(),
+                    showVibeButton = shinkuPreferences.isAiConfigured(),
                     backdropBlurEnabled = shinkuPreferences.backdropBlur().get(),
                     showRecapPrompt = showRecap,
                     // SY <--
@@ -1804,7 +1804,7 @@ class MangaScreenModel(
         val apiKey = shinkuPreferences.geminiApiKey().get()
         val model = shinkuPreferences.geminiModel().get()
 
-        if (apiKey.isBlank()) {
+        if (!shinkuPreferences.isAiConfigured()) {
             context.toast(MR.strings.gemini_api_key_not_set)
             return
         }
@@ -1852,7 +1852,7 @@ class MangaScreenModel(
         val state = successState ?: return
         val apiKey = shinkuPreferences.geminiApiKey().get()
         val model = shinkuPreferences.geminiModel().get()
-        if (apiKey.isBlank()) {
+        if (!shinkuPreferences.isAiConfigured()) {
             context.toast(MR.strings.gemini_api_key_not_set)
             return
         }

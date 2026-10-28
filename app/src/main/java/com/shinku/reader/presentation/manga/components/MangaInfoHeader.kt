@@ -1,18 +1,10 @@
 package com.shinku.reader.presentation.manga.components
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.graphics.res.animatedVectorResource
-import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
-import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -21,10 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.appendInlineContent
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.CallMerge
 import androidx.compose.material.icons.filled.Brush
@@ -42,8 +30,6 @@ import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Sync
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
@@ -54,52 +40,28 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withLink
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.mikepenz.markdown.model.markdownAnnotator
-import com.mikepenz.markdown.model.markdownAnnotatorConfig
-import com.mikepenz.markdown.utils.getUnescapedTextInNode
-import com.shinku.reader.domain.ui.UiPreferences
-import com.shinku.reader.presentation.components.DropdownMenu
-import com.shinku.reader.R
-import eu.kanade.tachiyomi.source.model.SManga
-import com.shinku.reader.util.system.copyToClipboard
-import org.intellij.markdown.MarkdownElementTypes
-import org.intellij.markdown.MarkdownTokenTypes
-import org.intellij.markdown.ast.findChildOfType
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
@@ -108,13 +70,15 @@ import com.shinku.reader.presentation.core.components.material.TextButton
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.i18n.pluralStringResource
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.util.clickableNoIndication
 import com.shinku.reader.presentation.core.util.secondaryItemAlpha
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
+import com.shinku.reader.util.system.copyToClipboard
+import eu.kanade.tachiyomi.source.model.SManga
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import kotlin.math.roundToInt
 
 @Composable
 fun MangaInfoBox(
@@ -128,7 +92,6 @@ fun MangaInfoBox(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier) {
-        // Backdrop
         val backdropGradientColors = listOf(
             Color.Transparent,
             MaterialTheme.colorScheme.background.copy(alpha = 0.65f),
@@ -153,7 +116,6 @@ fun MangaInfoBox(
                 .alpha(0.42f),
         )
 
-        // Manga & source info
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             if (!isTabletUi) {
                 MangaAndSourceTitlesSmall(
@@ -197,7 +159,6 @@ fun MangaActionRow(
 ) {
     val defaultActionButtonColor = MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA)
 
-    // TODO: show something better when using custom interval
     val nextUpdateDays = remember(nextUpdate) {
         return@remember if (nextUpdate != null) {
             val now = Instant.now()
@@ -209,14 +170,15 @@ fun MangaActionRow(
 
     Surface(
         modifier = modifier
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = MaterialTheme.padding.medium, vertical = 6.dp)
             .fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.5.dp),
-        tonalElevation = 1.5.dp,
+        shape = SanctuaryShapes.card,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+        border = SanctuaryBrushes.subtleBorder(),
+        shadowElevation = SanctuaryElevation.subtle,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -282,127 +244,6 @@ fun MangaActionRow(
 }
 
 @Composable
-fun ExpandableMangaDescription(
-    defaultExpandState: Boolean,
-    description: String?,
-    tagsProvider: () -> List<String>?,
-    notes: String,
-    onTagSearch: (String) -> Unit,
-    onCopyTagToClipboard: (tag: String) -> Unit,
-    onEditNotes: () -> Unit,
-    // SY -->
-    searchMetadataChips: SearchMetadataChips?,
-    doSearch: (query: String, global: Boolean) -> Unit,
-    // SY <--
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        val (expanded, onExpanded) = rememberSaveable {
-            mutableStateOf(defaultExpandState)
-        }
-        val desc =
-            description.takeIf { !it.isNullOrBlank() } ?: stringResource(MR.strings.description_placeholder)
-
-        MangaSummary(
-            description = desc,
-            expanded = expanded,
-            notes = notes,
-            onEditNotesClicked = onEditNotes,
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .padding(horizontal = 16.dp)
-                .clickableNoIndication { onExpanded(!expanded) },
-        )
-        val tags = tagsProvider()
-        if (!tags.isNullOrEmpty()) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .padding(vertical = 12.dp)
-                    .animateContentSize(animationSpec = spring())
-                    .fillMaxWidth(),
-            ) {
-                var showMenu by remember { mutableStateOf(false) }
-                var tagSelected by remember { mutableStateOf("") }
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(MR.strings.action_search)) },
-                        onClick = {
-                            onTagSearch(tagSelected)
-                            showMenu = false
-                        },
-                    )
-                    // SY -->
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(MR.strings.action_global_search)) },
-                        onClick = {
-                            doSearch(tagSelected, true)
-                            showMenu = false
-                        },
-                    )
-                    // SY <--
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(MR.strings.action_copy_to_clipboard)) },
-                        onClick = {
-                            onCopyTagToClipboard(tagSelected)
-                            showMenu = false
-                        },
-                    )
-                }
-                if (expanded) {
-                    // SY -->
-                    if (searchMetadataChips != null) {
-                        NamespaceTags(
-                            tags = searchMetadataChips,
-                            onClick = {
-                                tagSelected = it
-                                showMenu = true
-                            },
-                        )
-                    } else {
-                        // SY <--
-                        FlowRow(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
-                        ) {
-                            tags.forEach {
-                                TagsChip(
-                                    modifier = DefaultTagChipModifier,
-                                    text = it,
-                                    onClick = {
-                                        tagSelected = it
-                                        showMenu = true
-                                    },
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = MaterialTheme.padding.medium),
-                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
-                    ) {
-                        items(items = tags) {
-                            TagsChip(
-                                modifier = DefaultTagChipModifier,
-                                text = it,
-                                onClick = {
-                                    tagSelected = it
-                                    showMenu = true
-                                },
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun MangaAndSourceTitlesLarge(
     appBarPadding: Dp,
     manga: Manga,
@@ -414,11 +255,16 @@ private fun MangaAndSourceTitlesLarge(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, top = appBarPadding + 16.dp, end = 16.dp),
+            .padding(
+                start = MaterialTheme.padding.medium,
+                top = appBarPadding + MaterialTheme.padding.medium,
+                end = MaterialTheme.padding.medium,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         MangaCover.Book(
             modifier = Modifier.fillMaxWidth(0.65f),
+            shape = SanctuaryShapes.coverLarge,
             data = ImageRequest.Builder(LocalContext.current)
                 .data(manga)
                 .crossfade(true)
@@ -426,7 +272,7 @@ private fun MangaAndSourceTitlesLarge(
             contentDescription = stringResource(MR.strings.manga_cover),
             onClick = onCoverClick,
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.padding.medium))
         MangaContentInfo(
             title = manga.title,
             author = manga.author,
@@ -452,19 +298,23 @@ private fun MangaAndSourceTitlesSmall(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, top = appBarPadding + 16.dp, end = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(
+                start = MaterialTheme.padding.medium,
+                top = appBarPadding + MaterialTheme.padding.medium,
+                end = MaterialTheme.padding.medium,
+            ),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
                 .sizeIn(maxWidth = 105.dp)
                 .align(Alignment.Top)
-                .shadow(elevation = 10.dp, shape = RoundedCornerShape(14.dp), clip = false),
+                .shadow(elevation = SanctuaryElevation.hero, shape = SanctuaryShapes.coverLarge, clip = false),
         ) {
             MangaCover.Book(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
+                shape = SanctuaryShapes.coverLarge,
                 data = ImageRequest.Builder(LocalContext.current)
                     .data(manga)
                     .crossfade(true)
@@ -503,7 +353,7 @@ private fun ColumnScope.MangaContentInfo(
     val context = LocalContext.current
     Text(
         text = title.ifBlank { stringResource(MR.strings.unknown_title) },
-        style = MaterialTheme.typography.titleLarge,
+        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
         modifier = Modifier.clickableNoIndication(
             onLongClick = {
                 if (title.isNotBlank()) {
@@ -635,137 +485,6 @@ private fun ColumnScope.MangaContentInfo(
     }
 }
 
-private fun descriptionAnnotator(loadImages: Boolean, linkStyle: SpanStyle) = markdownAnnotator(
-    annotate = { content, child ->
-        if (!loadImages && child.type == MarkdownElementTypes.IMAGE) {
-            val inlineLink = child.findChildOfType(MarkdownElementTypes.INLINE_LINK)
-
-            val url = inlineLink?.findChildOfType(MarkdownElementTypes.LINK_DESTINATION)
-                ?.getUnescapedTextInNode(content)
-                ?: inlineLink?.findChildOfType(MarkdownElementTypes.AUTOLINK)
-                    ?.findChildOfType(MarkdownTokenTypes.AUTOLINK)
-                    ?.getUnescapedTextInNode(content)
-                ?: return@markdownAnnotator false
-
-            val textNode = inlineLink?.findChildOfType(MarkdownElementTypes.LINK_TITLE)
-                ?: inlineLink?.findChildOfType(MarkdownElementTypes.LINK_TEXT)
-            val altText = textNode?.findChildOfType(MarkdownTokenTypes.TEXT)
-                ?.getUnescapedTextInNode(content).orEmpty()
-
-            withLink(LinkAnnotation.Url(url = url)) {
-                pushStyle(linkStyle)
-                appendInlineContent(MARKDOWN_INLINE_IMAGE_TAG)
-                append(altText)
-                pop()
-            }
-
-            return@markdownAnnotator true
-        }
-
-        if (child.type in DISALLOWED_MARKDOWN_TYPES) {
-            append(content.substring(child.startOffset, child.endOffset))
-            return@markdownAnnotator true
-        }
-
-        false
-    },
-    config = markdownAnnotatorConfig(
-        eolAsNewLine = true,
-    ),
-)
-
-@Composable
-private fun MangaSummary(
-    description: String,
-    notes: String,
-    expanded: Boolean,
-    onEditNotesClicked: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val preferences = remember { Injekt.get<UiPreferences>() }
-    val loadImages = remember { preferences.imagesInDescription().get() }
-    val animProgress by animateFloatAsState(
-        targetValue = if (expanded) 1f else 0f,
-        label = "summary",
-    )
-    var infoHeight by remember { mutableIntStateOf(0) }
-    Layout(
-        modifier = modifier.clipToBounds(),
-        contents = listOf(
-            {
-                Text(
-                    // Shows at least 3 lines if no notes
-                    // when there are notes show 6
-                    text = if (notes.isBlank()) "\n\n" else "\n\n\n\n\n",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            },
-            {
-                Column(
-                    modifier = Modifier.onSizeChanged { size ->
-                        infoHeight = size.height
-                    },
-                ) {
-                    MangaNotesSection(
-                        content = notes,
-                        expanded = expanded,
-                        onEditNotes = onEditNotesClicked,
-                    )
-                    SelectionContainer {
-                        MarkdownRender(
-                            content = description,
-                            modifier = Modifier.secondaryItemAlpha(),
-                            annotator = descriptionAnnotator(
-                                loadImages = loadImages,
-                                linkStyle = getMarkdownLinkStyle().toSpanStyle(),
-                            ),
-                            loadImages = loadImages,
-                        )
-                    }
-                }
-            },
-            {
-                val colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background)
-                Box(
-                    modifier = Modifier.background(Brush.verticalGradient(colors = colors)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_caret_down)
-                    Icon(
-                        painter = rememberAnimatedVectorPainter(image, !expanded),
-                        contentDescription = stringResource(
-                            if (expanded) MR.strings.manga_info_collapse else MR.strings.manga_info_expand,
-                        ),
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.background(Brush.radialGradient(colors = colors.asReversed())),
-                    )
-                }
-            },
-        ),
-    ) { (shrunk, actual, scrim), constraints ->
-        val shrunkHeight = shrunk.single()
-            .measure(constraints)
-            .height
-        val heightDelta = infoHeight - shrunkHeight
-        val scrimHeight = 24.dp.roundToPx()
-
-        val actualPlaceable = actual.single()
-            .measure(constraints)
-        val scrimPlaceable = scrim.single()
-            .measure(Constraints.fixed(width = constraints.maxWidth, height = scrimHeight))
-
-        val currentHeight = shrunkHeight + ((heightDelta + scrimHeight) * animProgress).roundToInt()
-        layout(constraints.maxWidth, currentHeight) {
-            actualPlaceable.place(0, 0)
-
-            val scrimY = currentHeight - scrimHeight
-            scrimPlaceable.place(0, scrimY)
-        }
-    }
-}
-
-private val DefaultTagChipModifier = Modifier.padding(vertical = 4.dp)
-
 @Composable
 private fun RowScope.MangaActionButton(
     title: String,
@@ -785,9 +504,9 @@ private fun RowScope.MangaActionButton(
             .weight(1f)
             .background(
                 color = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent,
-                shape = RoundedCornerShape(12.dp),
+                shape = SanctuaryShapes.medium,
             ),
-        shape = RoundedCornerShape(12.dp),
+        shape = SanctuaryShapes.medium,
         onLongClick = onLongClick,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -801,8 +520,9 @@ private fun RowScope.MangaActionButton(
             Text(
                 text = title,
                 color = color,
-                fontSize = 11.sp,
-                fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                ),
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

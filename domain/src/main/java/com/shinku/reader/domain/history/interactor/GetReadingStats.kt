@@ -3,6 +3,8 @@ package com.shinku.reader.domain.history.interactor
 import com.shinku.reader.domain.history.model.Badge
 import com.shinku.reader.domain.history.model.BadgeCategory
 import com.shinku.reader.domain.history.model.BadgeTier
+import com.shinku.reader.domain.history.model.SanctuaryLevelInfo
+import com.shinku.reader.domain.history.model.SanctuaryXpEngine
 import com.shinku.reader.domain.history.repository.HistoryRepository
 import com.shinku.reader.domain.manga.repository.MangaRepository
 import com.shinku.reader.domain.chapter.repository.ChapterRepository
@@ -22,6 +24,7 @@ class GetReadingStats(
         completedMangaCount: Int = 0,
         trackedTitleCount: Int = 0,
         trackerCount: Int = 0,
+        readChapterCount: Int = 0,
     ): ReadingStats {
         val history = historyRepository.getAllHistory()
         val totalDuration = history.sumOf { it.readDuration }
@@ -32,17 +35,27 @@ class GetReadingStats(
             .distinct()
             .sortedDescending()
 
+        val todayDate = truncateDate(Date())
         var currentStreak = 0
+        var shieldProtectedDays = 0
         if (readDates.isNotEmpty()) {
-            val today = truncateDate(Date())
-            val yesterday = Date(today.time - TimeUnit.DAYS.toMillis(1))
-            
-            if (readDates[0] == today || readDates[0] == yesterday) {
+            val yesterday = Date(todayDate.time - TimeUnit.DAYS.toMillis(1))
+            val twoDaysAgo = Date(todayDate.time - TimeUnit.DAYS.toMillis(2))
+
+            if (readDates[0] == todayDate || readDates[0] == yesterday || readDates[0] == twoDaysAgo) {
+                if (readDates[0] == twoDaysAgo) {
+                    shieldProtectedDays++
+                }
                 currentStreak = 1
                 for (i in 0 until readDates.size - 1) {
                     val current = readDates[i]
                     val next = readDates[i + 1]
-                    if (current.time - next.time <= TimeUnit.DAYS.toMillis(1)) {
+                    val diffDays = TimeUnit.MILLISECONDS.toDays(current.time - next.time)
+                    if (diffDays <= 1L) {
+                        currentStreak++
+                    } else if (diffDays == 2L && shieldProtectedDays < (1 + currentStreak / 7)) {
+                        // Streak Shield automatically bridges a 1-day missed gap
+                        shieldProtectedDays++
                         currentStreak++
                     } else {
                         break
@@ -160,6 +173,8 @@ class GetReadingStats(
             allManga.values.count { it.favorite && it.status.toInt() == 2 }
         }
 
+        val effectiveChapterCount = maxOf(readChapterCount, history.size)
+
         val badges = calculateBadges(
             totalDuration = totalDuration,
             currentStreak = currentStreak,
@@ -170,7 +185,7 @@ class GetReadingStats(
             weekendDuration = weekendDuration,
             maxDailyDuration = maxDailyDuration,
             averageVelocity = averageVelocity,
-            chapterCount = history.size,
+            chapterCount = effectiveChapterCount,
             libraryCount = actualLibraryCount,
             completedCount = actualCompletedCount,
             actionChapters = actionChapters,
@@ -179,6 +194,22 @@ class GetReadingStats(
             solChapters = solChapters,
             trackedTitleCount = trackedTitleCount,
             trackerCount = trackerCount,
+        )
+
+        val dailyChaptersToday = history.count { entry ->
+            entry.readAt?.let { truncateDate(it) == todayDate } == true
+        }
+        val dailyMinutesToday = TimeUnit.MILLISECONDS.toMinutes(dailyDurations[todayDate] ?: 0L).toInt()
+        val earnedBadges = badges.filter { it.isEarned }
+        val levelInfo = SanctuaryXpEngine.calculate(
+            chaptersRead = effectiveChapterCount,
+            totalDurationMs = totalDuration,
+            currentStreak = currentStreak,
+            completedMangaCount = actualCompletedCount,
+            earnedBadges = earnedBadges,
+            dailyChaptersToday = dailyChaptersToday,
+            dailyMinutesToday = dailyMinutesToday,
+            shieldProtectedDays = shieldProtectedDays,
         )
 
         return ReadingStats(
@@ -192,7 +223,8 @@ class GetReadingStats(
             dailyHistory = dailyDurations,
             averageVelocity = averageVelocity,
             dailyVelocity = dailyVelocity,
-            badges = badges
+            badges = badges,
+            levelInfo = levelInfo,
         )
     }
 
@@ -365,5 +397,6 @@ class GetReadingStats(
         val averageVelocity: Double,
         val dailyVelocity: Map<Date, Double>,
         val badges: List<Badge>,
+        val levelInfo: SanctuaryLevelInfo,
     )
 }

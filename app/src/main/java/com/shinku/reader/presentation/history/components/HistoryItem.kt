@@ -1,6 +1,5 @@
 package com.shinku.reader.presentation.history.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -17,6 +15,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -27,14 +26,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import com.shinku.reader.presentation.manga.components.MangaCover
-import com.shinku.reader.presentation.theme.TachiyomiPreviewTheme
-import com.shinku.reader.presentation.util.formatChapterNumber
-import com.shinku.reader.util.lang.toTimestampString
 import com.shinku.reader.domain.history.model.HistoryWithRelations
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.manga.components.MangaCover
+import com.shinku.reader.presentation.theme.TachiyomiPreviewTheme
+import com.shinku.reader.presentation.util.formatChapterNumber
+import com.shinku.reader.util.lang.toTimestampString
 
 @Composable
 fun HistoryItem(
@@ -45,14 +47,15 @@ fun HistoryItem(
     onClickFavorite: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = SanctuaryShapes.deckCard
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(horizontal = MaterialTheme.padding.medium, vertical = 4.dp),
         shape = shape,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f)),
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+        border = SanctuaryBrushes.subtleBorder(),
+        shadowElevation = SanctuaryElevation.subtle,
     ) {
         Row(
             modifier = Modifier
@@ -64,7 +67,7 @@ fun HistoryItem(
             MangaCover.Book(
                 modifier = Modifier
                     .height(72.dp)
-                    .clip(RoundedCornerShape(10.dp)),
+                    .clip(SanctuaryShapes.pill),
                 data = history.coverData,
                 onClick = onClickCover,
             )
@@ -83,8 +86,8 @@ fun HistoryItem(
                 val readAt = remember { history.readAt?.toTimestampString() ?: "" }
                 if (history.chapterNumber > -1) {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        shape = SanctuaryShapes.tag,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                         modifier = Modifier.padding(top = 4.dp),
                     ) {
                         Text(
@@ -102,7 +105,7 @@ fun HistoryItem(
                         text = readAt,
                         modifier = Modifier.padding(top = 3.dp),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                     )
                 }
             }
@@ -110,7 +113,7 @@ fun HistoryItem(
             if (!history.coverData.isMangaFavorite) {
                 IconButton(
                     onClick = onClickFavorite,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.FavoriteBorder,
@@ -123,12 +126,12 @@ fun HistoryItem(
 
             IconButton(
                 onClick = onClickDelete,
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier.size(40.dp),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Delete,
                     contentDescription = stringResource(MR.strings.action_delete),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                     modifier = Modifier.size(20.dp),
                 )
             }

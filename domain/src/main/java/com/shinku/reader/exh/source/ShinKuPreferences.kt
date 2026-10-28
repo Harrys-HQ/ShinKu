@@ -54,6 +54,12 @@ class ShinKuPreferences(
 
     fun readerNickname() = preferenceStore.getString("pref_reader_nickname", "")
 
+    fun readerAvatarUri() = preferenceStore.getString("pref_reader_avatar_uri", "")
+
+    fun equippedBadgeTitle() = preferenceStore.getString("pref_equipped_badge_title", "")
+
+    fun streakShieldCount() = preferenceStore.getInt("pref_streak_shield_count", 1)
+
     fun feedSourceFilter() = preferenceStore.getString("pref_feed_source_filter", "all")
 
     fun feedLanguageFilter() = preferenceStore.getString("pref_feed_language_filter", "en")
@@ -65,5 +71,20 @@ class ShinKuPreferences(
     fun autoHideBottomBar() = preferenceStore.getBoolean("pref_auto_hide_bottom_bar", true)
 
     fun autoTranslateChapterOnOpen() = preferenceStore.getBoolean("pref_auto_translate_chapter_on_open", false)
-}
 
+    fun dynamicLibraryTheme() = preferenceStore.getBoolean("pref_dynamic_library_theme", true)
+
+    fun dynamicLibrarySeedColor() = preferenceStore.getInt("pref_dynamic_library_seed_color", 0)
+
+    fun isAiConfigured(): Boolean {
+        return when (aiEngineProvider().get()) {
+            "openrouter" -> openRouterApiKey().get().isNotBlank()
+            "deepseek", "groq", "openai" -> openAiApiKey().get().isNotBlank()
+            "custom" -> openAiBaseUrl().get().isNotBlank()
+            "cloud" -> geminiApiKey().get().isNotBlank()
+            else -> geminiApiKey().get().isNotBlank() ||
+                openRouterApiKey().get().isNotBlank() ||
+                openAiApiKey().get().isNotBlank()
+        }
+    }
+}

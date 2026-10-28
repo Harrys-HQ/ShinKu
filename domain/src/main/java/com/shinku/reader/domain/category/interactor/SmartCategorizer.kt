@@ -2,7 +2,6 @@ package com.shinku.reader.domain.category.interactor
 
 import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.flow.first
-import com.shinku.reader.domain.category.interactor.UpdateCategory
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.domain.category.model.CategoryUpdate
 import com.shinku.reader.domain.manga.interactor.GetLibraryManga
@@ -28,58 +27,62 @@ class SmartCategorizer(
         val libraryManga = getLibraryManga.await()
         var categories = getCategories.subscribe().first()
 
-        // 1. Cleanup: Delete all categories that are not our smart categories
-        val smartNames = setOf(
-            names.all.trim().lowercase(),
-            names.reading.trim().lowercase(),
-            names.queue.trim().lowercase(),
-            names.finished.trim().lowercase(),
-            names.dropped.trim().lowercase(),
-        )
-
-        categories.filterNot { it.isSystemCategory }.forEach { category ->
-            if (category.name.trim().lowercase() !in smartNames) {
-                deleteCategory.await(category.id)
-            }
-        }
-
-        // Refresh categories list after deletion
+        // 1. Ensure smart categories exist without deleting user-created custom categories
+        val allCat = ensureCategory(categories, names.all)
+        categories = getCategories.subscribe().first()
+        val readingCat = ensureCategory(categories, names.reading)
+        categories = getCategories.subscribe().first()
+        val queueCat = ensureCategory(categories, names.queue)
+        categories = getCategories.subscribe().first()
+        val droppedCat = ensureCategory(categories, names.dropped)
+        categories = getCategories.subscribe().first()
+        val finishedCat = ensureCategory(categories, names.finished)
         categories = getCategories.subscribe().first()
 
-        // 2. Ensure categories exist in specific order
-        val allCat = ensureCategory(categories, names.all)
-        val readingCat = ensureCategory(categories, names.reading)
-        val queueCat = ensureCategory(categories, names.queue)
-        val droppedCat = ensureCategory(categories, names.dropped)
-        val finishedCat = ensureCategory(categories, names.finished)
+        val smartCategoryList = listOfNotNull(allCat, readingCat, queueCat, droppedCat, finishedCat)
+        val smartCategoryIds = smartCategoryList.map { it.id }.toSet()
 
-        // Force ordering in database
-        val categoryUpdates = listOfNotNull(
-            allCat?.let { CategoryUpdate(id = it.id, order = 0L) },
-            readingCat?.let { CategoryUpdate(id = it.id, order = 1L) },
-            queueCat?.let { CategoryUpdate(id = it.id, order = 2L) },
-            droppedCat?.let { CategoryUpdate(id = it.id, order = 3L) },
-            finishedCat?.let { CategoryUpdate(id = it.id, order = 4L) },
-        )
+        // 2. Order smart categories first (0..4), followed by any user custom categories in their existing order
+        val customCategories = categories
+            .filterNot { it.isSystemCategory || it.id in smartCategoryIds }
+            .sortedBy { it.order }
+
+        val categoryUpdates = buildList {
+            smartCategoryList.forEachIndexed { index, cat ->
+                add(CategoryUpdate(id = cat.id, order = index.toLong()))
+            }
+            customCategories.forEachIndexed { index, cat ->
+                add(CategoryUpdate(id = cat.id, order = (smartCategoryList.size + index).toLong()))
+            }
+        }
         categoryUpdates.forEach { updateCategory.await(it) }
 
-        // 3. Process each manga
+        // 3. Process each manga based on actual reading progress + publication status, preserving custom categories
         libraryManga.forEachIndexed { index, mangaWithChapters ->
             val manga = mangaWithChapters.manga
             val readCount = mangaWithChapters.readCount
+            val totalChapters = mangaWithChapters.totalChapters
+            val unreadCount = mangaWithChapters.unreadCount
+            val status = manga.status.toInt()
+
+            val isFullyRead = totalChapters > 0L && readCount > 0L && unreadCount <= 0L
+            val isDroppedOrHiatus = status == SManga.CANCELLED || status == SManga.ON_HIATUS
 
             val statusCategory = when {
-                // Priority 1: Finished
-                manga.status.toInt() == SManga.COMPLETED || manga.status.toInt() == SManga.PUBLISHING_FINISHED -> finishedCat
-                // Priority 2: Dropped
-                manga.status.toInt() == SManga.CANCELLED || manga.status.toInt() == SManga.ON_HIATUS -> droppedCat
-                // Priority 3: Reading
-                readCount >= 5 -> readingCat
-                // Priority 4: Queue
+                // Priority 1: Actually finished reading (all chapters read, and not an ongoing weekly series)
+                isFullyRead && status != SManga.ONGOING -> finishedCat
+                // Priority 2: Cancelled or on hiatus (and not already finished)
+                isDroppedOrHiatus -> droppedCat
+                // Priority 3: Started reading (at least 1 chapter read)
+                readCount > 0L -> readingCat
+                // Priority 4: Unread backlog / Plan to read
                 else -> queueCat
             }
 
-            val targetCategories = listOfNotNull(allCat?.id, statusCategory?.id)
+            val preservedCustomCategories = mangaWithChapters.categories.filter {
+                it != Category.UNCATEGORIZED_ID && it !in smartCategoryIds
+            }
+            val targetCategories = (listOfNotNull(allCat?.id, statusCategory?.id) + preservedCustomCategories).distinct()
             if (targetCategories.isNotEmpty()) {
                 setMangaCategories.await(manga.id, targetCategories)
             }

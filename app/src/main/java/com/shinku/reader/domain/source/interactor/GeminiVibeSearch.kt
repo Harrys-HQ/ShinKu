@@ -63,7 +63,7 @@ class GeminiVibeSearch(
 
     suspend fun getLatestUserAgent(apiKey: String, model: String, currentUa: String): String {
         return withIOContext {
-            if (apiKey.isBlank()) return@withIOContext ""
+            if (!shinkuPreferences.isAiConfigured() && apiKey.isBlank()) return@withIOContext ""
             try {
                 val prompt = "Based on this User-Agent string: '$currentUa', provide the latest stable version of it for the same browser and platform. Return ONLY the updated User-Agent string, no extra text."
                 val text = callGeminiForText(prompt, apiKey, model)
@@ -79,7 +79,7 @@ class GeminiVibeSearch(
         similarCache[cacheKey]?.let { return it }
 
         return withIOContext {
-            if (apiKey.isBlank()) return@withIOContext emptyList()
+            if (!shinkuPreferences.isAiConfigured() && apiKey.isBlank()) return@withIOContext emptyList()
             try {
                 val prompt = """
                     Based on the manga title "$title" and its description: "$description",
@@ -113,6 +113,27 @@ class GeminiVibeSearch(
         )
     }
 
+    suspend fun explainCharacterAndLoreCodex(
+        text: String,
+        mangaTitle: String,
+        chapterName: String,
+        apiKey: String,
+        model: String,
+    ): String {
+        val prompt = """
+            You are a spoiler-safe manga/manhwa companion for the series "$mangaTitle" (currently reading "$chapterName").
+            Based on the dialogue/text from the current page below, provide a concise, bulleted "Who's Here & Lore Codex" covering:
+            1. Any character names, titles, or factions mentioned or implied in this scene and their role up to "$chapterName".
+            2. Any in-universe terminology, martial arts/magic systems, or plot callbacks referenced on this page.
+            
+            CRITICAL RULE: Strictly NO SPOILERS beyond "$chapterName". Keep it concise and easy to scan.
+            
+            Page Text:
+            "$text"
+        """.trimIndent()
+        return callGeminiForText(prompt, apiKey, model)
+    }
+
     suspend fun translateText(text: String, apiKey: String, model: String, targetLanguage: String = "English"): String {
         return callGeminiForText(
             "Translate this manga text to $targetLanguage, preserving the tone and style: \"$text\". Return ONLY the translation.",
@@ -138,11 +159,13 @@ class GeminiVibeSearch(
         apiKey: String,
         model: String,
         targetLanguage: String,
-        sourceLanguage: String = "Auto-Detect"
+        sourceLanguage: String = "Auto-Detect",
+        mangaTitle: String? = null,
+        mangaGenres: List<String>? = null,
     ): List<TranslationBlockOutput> {
         if (blocks.isEmpty()) return emptyList()
         val blocksJson = json.encodeToString(blocks)
-        val cacheKey = "$sourceLanguage::$targetLanguage::$blocksJson"
+        val cacheKey = "$sourceLanguage::$targetLanguage::${mangaTitle.orEmpty()}::$blocksJson"
         translationCache[cacheKey]?.let { return it }
 
         val translationContext = if (sourceLanguage == "Auto-Detect") {
@@ -150,13 +173,25 @@ class GeminiVibeSearch(
         } else {
             "from $sourceLanguage to $targetLanguage"
         }
+        val seriesContext = buildString {
+            if (!mangaTitle.isNullOrBlank()) {
+                append("Series title: \"$mangaTitle\". ")
+            }
+            if (!mangaGenres.isNullOrEmpty()) {
+                append("Genres: ${mangaGenres.take(5).joinToString(", ")}. ")
+            }
+        }
         val prompt = """
-            You are a professional manga translator. Translate the following text blocks (JSON array of ID and text) $translationContext, preserving the tone, style, character nuances, and context of the page.
-            Return the translations in a JSON array of objects with the exact same 'id' and the translated 'text'.
-            Return ONLY the valid JSON array, do not wrap it in markdown block or any additional text.
-            
+            You are an expert manga/manhwa scanlation translator and typesetter. Translate the following OCR text blocks $translationContext.
+            $seriesContext
+            Guidelines:
+            1. The input comes from optical character recognition (OCR) of speech bubbles; silently infer and heal minor OCR character mistakes or broken words using the surrounding dialogue context.
+            2. Keep translations natural, punchy, and concise so they fit comfortably inside comic speech balloons without wordy filler.
+            3. Preserve character voice, honorifics/terminology where appropriate for the series, and dramatic tone.
+            4. Return ONLY a valid JSON array of objects with the exact same integer "id" and translated "text" (no markdown code fences or commentary).
+
             Input:
-            ${blocksJson}
+            $blocksJson
         """.trimIndent()
         
         val resultText = callGeminiForText(prompt, apiKey, model)
@@ -230,7 +265,7 @@ class GeminiVibeSearch(
 
     suspend fun enrichMetadata(title: String, currentDescription: String, apiKey: String, model: String): EnrichedMetadata? {
         return withIOContext {
-            if (apiKey.isBlank()) return@withIOContext null
+            if (!shinkuPreferences.isAiConfigured() && apiKey.isBlank()) return@withIOContext null
             try {
                 val prompt = """
                     You are a manga librarian. Based on the title "$title" and description "$currentDescription", 

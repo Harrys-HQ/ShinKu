@@ -115,7 +115,7 @@ class MlKitTranslationInteractor {
     private fun languageNameToCode(name: String): String {
         return when (name.lowercase().trim()) {
             "japanese", "ja" -> TranslateLanguage.JAPANESE
-            "chinese", "zh" -> TranslateLanguage.CHINESE
+            "chinese", "chinese (simplified)", "chinese (traditional)", "zh" -> TranslateLanguage.CHINESE
             "korean", "ko" -> TranslateLanguage.KOREAN
             "english", "en" -> TranslateLanguage.ENGLISH
             "spanish", "es" -> TranslateLanguage.SPANISH
@@ -125,6 +125,8 @@ class MlKitTranslationInteractor {
             "italian", "it" -> TranslateLanguage.ITALIAN
             "russian", "ru" -> TranslateLanguage.RUSSIAN
             "indonesian", "id" -> TranslateLanguage.INDONESIAN
+            "vietnamese", "vi" -> TranslateLanguage.VIETNAMESE
+            "thai", "th" -> TranslateLanguage.THAI
             "tagalog", "tl", "filipino" -> TranslateLanguage.TAGALOG
             "arabic", "ar" -> TranslateLanguage.ARABIC
             else -> TranslateLanguage.ENGLISH

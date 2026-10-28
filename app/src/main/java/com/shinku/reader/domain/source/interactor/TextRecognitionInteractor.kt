@@ -1,14 +1,18 @@
 package com.shinku.reader.domain.source.interactor
 
 import android.graphics.Bitmap
+import android.graphics.Rect
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.chinese.ChineseTextRecognizerOptions
+import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
+import java.util.Collections
 
 class TextRecognitionInteractor {
 
@@ -17,40 +21,72 @@ class TextRecognitionInteractor {
     private val chineseRecognizer = TextRecognition.getClient(ChineseTextRecognizerOptions.Builder().build())
     private val koreanRecognizer = TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
 
-    private val recognitionCache = java.util.Collections.synchronizedMap(object : LinkedHashMap<Int, List<TextRecognitionResult>>(30, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, List<TextRecognitionResult>>?): Boolean = size > 30
-    })
+    private val recognitionCache = Collections.synchronizedMap(
+        object : LinkedHashMap<String, List<TextRecognitionResult>>(40, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<TextRecognitionResult>>?): Boolean = size > 40
+        },
+    )
 
-    suspend fun recognizeText(bitmap: Bitmap): List<TextRecognitionResult> = kotlinx.coroutines.coroutineScope {
-        val cacheKey = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1 && bitmap.generationId != 0) {
+    suspend fun recognizeText(
+        bitmap: Bitmap,
+        sourceLanguage: String = "Auto-Detect",
+    ): List<TextRecognitionResult> = coroutineScope {
+        val baseKey = if (bitmap.generationId != 0) {
             bitmap.generationId
         } else {
             bitmap.width * 31 + bitmap.height + bitmap.byteCount
         }
+        val normalizedLang = sourceLanguage.trim().lowercase()
+        val cacheKey = "$baseKey:$normalizedLang"
         recognitionCache[cacheKey]?.let { return@coroutineScope it }
 
         val image = InputImage.fromBitmap(bitmap, 0)
 
-        val latinJob = async {
-            try { latinRecognizer.process(image).await().textBlocks } catch (e: Exception) { emptyList() }
-        }
-        val japaneseJob = async {
-            try { japaneseRecognizer.process(image).await().textBlocks } catch (e: Exception) { emptyList() }
-        }
-        val chineseJob = async {
-            try { chineseRecognizer.process(image).await().textBlocks } catch (e: Exception) { emptyList() }
-        }
-        val koreanJob = async {
-            try { koreanRecognizer.process(image).await().textBlocks } catch (e: Exception) { emptyList() }
+        // 1. Script-Aware OCR Execution: avoids 4x NPU/CPU overhead and cross-script line-art hallucinations
+        val rawBlocks: List<Text.TextBlock> = when (normalizedLang) {
+            "japanese", "ja" -> {
+                runCatching { japaneseRecognizer.process(image).await().textBlocks }.getOrDefault(emptyList())
+            }
+            "korean", "ko" -> {
+                runCatching { koreanRecognizer.process(image).await().textBlocks }.getOrDefault(emptyList())
+            }
+            "chinese", "zh" -> {
+                runCatching { chineseRecognizer.process(image).await().textBlocks }.getOrDefault(emptyList())
+            }
+            "english", "en", "spanish", "es", "french", "fr", "german", "de", "italian", "it", "portuguese", "pt", "indonesian", "id", "tagalog", "tl" -> {
+                runCatching { latinRecognizer.process(image).await().textBlocks }.getOrDefault(emptyList())
+            }
+            else -> {
+                // Auto-Detect: Run CJK recognizers in parallel first
+                val jaJob = async { runCatching { japaneseRecognizer.process(image).await().textBlocks }.getOrDefault(emptyList()) }
+                val koJob = async { runCatching { koreanRecognizer.process(image).await().textBlocks }.getOrDefault(emptyList()) }
+                val zhJob = async { runCatching { chineseRecognizer.process(image).await().textBlocks }.getOrDefault(emptyList()) }
+
+                val cjkBlocks = jaJob.await() + koJob.await() + zhJob.await()
+                val hasRealCjk = cjkBlocks.any { containsCjkCharacters(it.text) }
+
+                if (hasRealCjk) {
+                    // Keep blocks that contain CJK or at least a 3+ letter Latin word (suppresses speed-line '||' / '11' noise)
+                    cjkBlocks.filter { containsCjkCharacters(it.text) || hasValidLatinWord(it.text) }
+                } else {
+                    val latinBlocks = runCatching { latinRecognizer.process(image).await().textBlocks }.getOrDefault(emptyList())
+                    cjkBlocks + latinBlocks
+                }
+            }
         }
 
-        val allBlocks = latinJob.await() + japaneseJob.await() + chineseJob.await() + koreanJob.await()
+        // 2. Filter out non-speech-bubble noise (screentone lines, tiny specks, pure numbers/punctuation, page borders)
+        val filteredBlocks = rawBlocks.filter { block ->
+            val box = block.boundingBox ?: return@filter false
+            isLikelyValidMangaText(block.text, box, bitmap.width, bitmap.height)
+        }
 
-        val uniqueBlocks = mutableListOf<com.google.mlkit.vision.text.Text.TextBlock>()
-        for (block in allBlocks) {
+        // 3. Deduplicate overlapping blocks across recognizers, preferring higher CJK/letter density
+        val uniqueBlocks = mutableListOf<Text.TextBlock>()
+        for (block in filteredBlocks) {
             var isDuplicate = false
             var duplicateIndexToReplace = -1
-            
+
             for (idx in uniqueBlocks.indices) {
                 val existing = uniqueBlocks[idx]
                 val existingBox = existing.boundingBox
@@ -66,13 +102,11 @@ class TextRecognitionInteractor {
                         val existingArea = (existingBox.right - existingBox.left) * (existingBox.bottom - existingBox.top)
                         val newArea = (newBox.right - newBox.left) * (newBox.bottom - newBox.top)
 
-                        // If boxes overlap by more than 35% or one is contained in another
                         val minArea = minOf(existingArea, newArea)
                         val overlapRatio = if (minArea > 0) intersectionArea.toFloat() / minArea.toFloat() else 0f
                         if (overlapRatio > 0.35f) {
                             isDuplicate = true
-                            // Quality Check: Keep the one with the longer text (preserves full sentence over partial artifacts)
-                            if (block.text.length > existing.text.length) {
+                            if (textQualityScore(block.text) > textQualityScore(existing.text)) {
                                 duplicateIndexToReplace = idx
                             }
                             break
@@ -83,17 +117,15 @@ class TextRecognitionInteractor {
                     break
                 }
             }
-            
-            if (block.text.isNotBlank()) {
-                if (duplicateIndexToReplace != -1) {
-                    uniqueBlocks[duplicateIndexToReplace] = block
-                } else if (!isDuplicate) {
-                    uniqueBlocks.add(block)
-                }
+
+            if (duplicateIndexToReplace != -1) {
+                uniqueBlocks[duplicateIndexToReplace] = block
+            } else if (!isDuplicate) {
+                uniqueBlocks.add(block)
             }
         }
 
-        // Proximity-based block merging (combines nearby lines belonging to the same bubble)
+        // 4. Proximity & layout-aware block merging (combines lines belonging to the same speech balloon)
         val mergedResults = mutableListOf<TextRecognitionResult>()
         val visited = BooleanArray(uniqueBlocks.size)
 
@@ -101,11 +133,9 @@ class TextRecognitionInteractor {
             if (visited[i]) continue
             visited[i] = true
             val currentBlock = uniqueBlocks[i]
-            var currentText = currentBlock.text
-            val currentBox = currentBlock.boundingBox?.let { android.graphics.Rect(it) } ?: android.graphics.Rect(0, 0, 0, 0)
+            val currentBox = currentBlock.boundingBox?.let { Rect(it) } ?: Rect(0, 0, 0, 0)
             val cluster = mutableListOf(i)
 
-            // Keep finding and merging overlapping/closely neighboring blocks in a loop
             var expanded = true
             while (expanded) {
                 expanded = false
@@ -114,64 +144,156 @@ class TextRecognitionInteractor {
                     val targetBlock = uniqueBlocks[j]
                     val targetBox = targetBlock.boundingBox ?: continue
 
-                    // Calculate horizontal and vertical distances between current cluster bounding box and target box
                     val horizontalDist = maxOf(0, maxOf(currentBox.left - targetBox.right, targetBox.left - currentBox.right))
                     val verticalDist = maxOf(0, maxOf(currentBox.top - targetBox.bottom, targetBox.top - currentBox.bottom))
 
-                    // Determine max proximity threshold based on size of the blocks (roughly 1.5x character height/width)
-                    val currentHeight = currentBox.height()
-                    val targetHeight = targetBox.height()
-                    val threshold = (maxOf(currentHeight, targetHeight) * 1.5).toInt().coerceIn(30, 150)
+                    val isVerticalBubble = currentBox.height() > currentBox.width() * 1.15f ||
+                        targetBox.height() > targetBox.width() * 1.15f
 
-                    if (horizontalDist <= threshold && verticalDist <= threshold) {
+                    val charScale = if (isVerticalBubble) {
+                        maxOf(currentBox.width(), targetBox.width()).coerceAtLeast(18)
+                    } else {
+                        maxOf(currentBox.height(), targetBox.height()).coerceAtLeast(18)
+                    }
+
+                    val maxHorizThreshold = if (isVerticalBubble) {
+                        (charScale * 1.75f).toInt().coerceIn(24, 130)
+                    } else {
+                        (charScale * 1.15f).toInt().coerceIn(20, 90)
+                    }
+                    val maxVertThreshold = if (isVerticalBubble) {
+                        (charScale * 1.0f).toInt().coerceIn(18, 80)
+                    } else {
+                        (charScale * 1.65f).toInt().coerceIn(24, 120)
+                    }
+
+                    if (horizontalDist <= maxHorizThreshold && verticalDist <= maxVertThreshold) {
                         visited[j] = true
                         cluster.add(j)
-                        // Merge bounding boxes by creating a union
                         currentBox.set(
                             minOf(currentBox.left, targetBox.left),
                             minOf(currentBox.top, targetBox.top),
                             maxOf(currentBox.right, targetBox.right),
-                            maxOf(currentBox.bottom, targetBox.bottom)
+                            maxOf(currentBox.bottom, targetBox.bottom),
                         )
                         expanded = true
                     }
                 }
             }
 
-            // Order cluster items logically based on position (vertical vertical-reading or horizontal horizontal-reading)
+            // Order cluster lines by reading direction (Right-to-Left for vertical Japanese tategaki, Top-to-Bottom for horizontal)
+            val isVerticalLayout = currentBox.height() > currentBox.width() * 1.15f &&
+                cluster.any { containsCjkCharacters(uniqueBlocks[it].text) }
+
             val sortedClusterIndices = cluster.sortedWith { idx1, idx2 ->
-                val box1 = uniqueBlocks[idx1].boundingBox ?: android.graphics.Rect()
-                val box2 = uniqueBlocks[idx2].boundingBox ?: android.graphics.Rect()
-                // If it looks like vertical manga text layout (lines are side-by-side)
-                if (currentBox.height() > currentBox.width()) {
-                    // Right-to-left line order, then top-to-bottom
-                    val xCompare = box2.left.compareTo(box1.left)
-                    if (xCompare != 0) xCompare else box1.top.compareTo(box2.top)
+                val box1 = uniqueBlocks[idx1].boundingBox ?: Rect()
+                val box2 = uniqueBlocks[idx2].boundingBox ?: Rect()
+                if (isVerticalLayout) {
+                    val xDiff = box2.centerX() - box1.centerX()
+                    if (kotlin.math.abs(xDiff) > 12) xDiff.compareTo(0) else box1.top.compareTo(box2.top)
                 } else {
-                    // Left-to-right line order, then top-to-bottom
-                    val yCompare = box1.top.compareTo(box2.top)
-                    if (yCompare != 0) yCompare else box1.left.compareTo(box2.left)
+                    val yDiff = box1.centerY() - box2.centerY()
+                    if (kotlin.math.abs(yDiff) > 12) yDiff.compareTo(0) else box1.left.compareTo(box2.left)
                 }
             }
 
-            val mergedText = sortedClusterIndices.map { uniqueBlocks[it].text.replace("\n", " ").trim() }
+            val mergedText = sortedClusterIndices
+                .map { cleanOcrBlockText(uniqueBlocks[it].text) }
                 .filter { it.isNotEmpty() }
-                .joinToString(" ")
+                .joinToString(if (isVerticalLayout) "" else " ")
+                .trim()
 
-            mergedResults.add(
-                TextRecognitionResult(
-                    text = mergedText,
-                    boundingBox = currentBox
+            if (mergedText.isNotEmpty() && isLikelyValidMangaText(mergedText, currentBox, bitmap.width, bitmap.height)) {
+                mergedResults.add(
+                    TextRecognitionResult(
+                        text = mergedText,
+                        boundingBox = currentBox,
+                    ),
                 )
-            )
+            }
         }
 
         recognitionCache[cacheKey] = mergedResults
         mergedResults
     }
 
+    private fun cleanOcrBlockText(raw: String): String {
+        return raw
+            .replace("\r\n", " ")
+            .replace("\n", " ")
+            .replace(Regex("""\s{2,}"""), " ")
+            .trim()
+    }
+
+    private fun containsCjkCharacters(text: String): Boolean {
+        for (ch in text) {
+            val code = ch.code
+            if (
+                code in 0x3040..0x30FF || // Hiragana & Katakana
+                code in 0x4E00..0x9FFF || // CJK Unified Ideographs
+                code in 0x3400..0x4DBF || // CJK Extension A
+                code in 0xAC00..0xD7AF || // Hangul Syllables
+                code in 0x1100..0x11FF || // Hangul Jamo
+                code in 0x3130..0x318F    // Hangul Compatibility Jamo
+            ) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun hasValidLatinWord(text: String): Boolean {
+        return Regex("""[A-Za-zÀ-ÿ]{3,}""").containsMatchIn(text)
+    }
+
+    private fun textQualityScore(text: String): Int {
+        var score = 0
+        for (ch in text) {
+            val code = ch.code
+            when {
+                code in 0x3040..0x30FF || code in 0x4E00..0x9FFF || code in 0xAC00..0xD7AF -> score += 3
+                ch.isLetter() -> score += 2
+                ch.isDigit() -> score += 1
+            }
+        }
+        return score
+    }
+
+    private fun isLikelyValidMangaText(
+        text: String,
+        box: Rect,
+        bitmapWidth: Int,
+        bitmapHeight: Int,
+    ): Boolean {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return false
+
+        val w = box.width()
+        val h = box.height()
+        if (w < 14 || h < 14) return false
+
+        // Reject thin panel border lines or watermarks spanning the entire edge
+        if (bitmapWidth > 0 && bitmapHeight > 0) {
+            if (w > bitmapWidth * 0.92f && h < 22) return false
+            if (h > bitmapHeight * 0.92f && w < 22) return false
+        }
+
+        // Reject common speed-line / hatching OCR hallucinations (e.g. "|||", "///", "111", "...")
+        if (Regex("""^[|/\\1Il!.\-_~+=*:;,?'"`()\[\]{}\s0-9]+$""").matches(trimmed)) {
+            return false
+        }
+
+        if (containsCjkCharacters(trimmed)) {
+            return true
+        }
+
+        // For non-CJK text, require at least 2 letters so stray single-letter artifacts ('I', 'l', 'V') are ignored
+        val letterCount = trimmed.count { it.isLetter() }
+        return letterCount >= 2
+    }
+
     data class TextRecognitionResult(
         val text: String,
-        val boundingBox: android.graphics.Rect?,
+        val boundingBox: Rect?,
     )
 }

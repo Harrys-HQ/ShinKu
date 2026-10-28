@@ -5,22 +5,23 @@ import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import cafe.adriel.voyager.koin.koinScreenModel
-import com.shinku.reader.presentation.components.AppBar
-import com.shinku.reader.presentation.components.AppBarActions
-import com.shinku.reader.presentation.more.stats.StatsScreenContent
-import com.shinku.reader.presentation.more.stats.StatsScreenState
-import com.shinku.reader.presentation.util.Screen
-import com.shinku.reader.util.system.toShareIntent
-import kotlinx.collections.immutable.persistentListOf
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.components.AppBar
+import com.shinku.reader.presentation.components.AppBarActions
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.LoadingScreen
+import com.shinku.reader.presentation.more.stats.StatsScreenContent
+import com.shinku.reader.presentation.more.stats.StatsScreenState
+import com.shinku.reader.presentation.util.Screen
+import kotlinx.collections.immutable.persistentListOf
 
 class StatsScreen : Screen() {
 
@@ -30,6 +31,7 @@ class StatsScreen : Screen() {
 
         val screenModel = koinScreenModel<StatsScreenModel>()
         val state by screenModel.state.collectAsState()
+        var showShareDialog by remember { mutableStateOf(false) }
 
         Scaffold(
             topBar = { scrollBehavior ->
@@ -39,19 +41,13 @@ class StatsScreen : Screen() {
                     scrollBehavior = scrollBehavior,
                     // SY -->
                     actions = {
-                        val context = LocalContext.current
                         val allRead by screenModel.allRead.collectAsState()
                         AppBarActions(
                             persistentListOf(
                                 AppBar.Action(
                                     title = stringResource(SYMR.strings.action_share_wrapped),
                                     icon = Icons.Outlined.Share,
-                                    onClick = {
-                                        val summary = screenModel.getWrappedSummary(context)
-                                        if (summary.isNotBlank()) {
-                                            context.startActivity(summary.toShareIntent(context))
-                                        }
-                                    },
+                                    onClick = { showShareDialog = true },
                                 ),
                                 AppBar.OverflowAction(
                                     title = if (allRead) {
@@ -76,6 +72,8 @@ class StatsScreen : Screen() {
             StatsScreenContent(
                 state = state as? StatsScreenState.Success ?: return@Scaffold,
                 paddingValues = paddingValues,
+                showShareDialog = showShareDialog,
+                onDismissShareDialog = { showShareDialog = false },
             )
         }
     }

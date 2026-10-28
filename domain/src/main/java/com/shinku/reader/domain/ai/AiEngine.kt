@@ -1,6 +1,5 @@
 package com.shinku.reader.domain.ai
 
-import android.content.Context
 import com.shinku.reader.exh.source.ShinKuPreferences
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.Dispatchers
@@ -21,36 +20,6 @@ sealed interface AiEngine {
 
     suspend fun generateText(prompt: String): Result<String>
     suspend fun generateTitles(prompt: String): Result<List<String>>
-}
-
-class GoogleAiCoreEngine(
-    private val context: Context,
-) : AiEngine {
-    override val id: String = "aicore"
-    override val name: String = "Native OS AI (Google AICore / OxygenOS / Galaxy AI)"
-
-    override val isAvailable: Boolean
-        get() {
-            return try {
-                val pm = context.packageManager
-                val hasAiCorePackage = pm.getLaunchIntentForPackage("com.google.android.aicore") != null ||
-                    pm.getLaunchIntentForPackage("com.coloros.ai") != null ||
-                    pm.getLaunchIntentForPackage("com.samsung.android.rubin.app") != null
-                
-                val hasSystemFeature = android.os.Build.VERSION.SDK_INT >= 34
-                hasAiCorePackage || hasSystemFeature
-            } catch (e: Exception) {
-                false
-            }
-        }
-
-    override suspend fun generateText(prompt: String): Result<String> {
-        return Result.failure(UnsupportedOperationException("AICore runtime pending system service binding"))
-    }
-
-    override suspend fun generateTitles(prompt: String): Result<List<String>> {
-        return Result.failure(UnsupportedOperationException("AICore runtime pending system service binding"))
-    }
 }
 
 class CloudGeminiEngine(
@@ -163,11 +132,6 @@ class AiEngineRegistry(
         if (preferred == "cloud" || preferred == "gemini") {
             engines.firstOrNull { it.id == "cloud" }?.let { return it }
         }
-        if (preferred == "aicore") {
-            engines.firstOrNull { it.id == "aicore" && it.isAvailable }?.let { return it }
-        }
-        val nativeEngine = engines.firstOrNull { it.id == "aicore" && it.isAvailable }
-        if (nativeEngine != null) return nativeEngine
 
         val cloudEngine = engines.firstOrNull { it.id == "cloud" }
         if (cloudEngine?.isAvailable == true) return cloudEngine

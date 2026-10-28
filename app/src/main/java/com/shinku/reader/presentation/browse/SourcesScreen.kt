@@ -45,6 +45,7 @@ import com.shinku.reader.domain.source.model.Source
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.components.LabeledCheckbox
+import com.shinku.reader.presentation.core.components.ListGroupHeader
 import com.shinku.reader.presentation.core.components.ScrollbarLazyColumn
 import com.shinku.reader.presentation.core.components.material.SECONDARY_ALPHA
 import com.shinku.reader.presentation.core.components.material.padding
@@ -52,7 +53,10 @@ import com.shinku.reader.presentation.core.components.material.topSmallPaddingVa
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.EmptyScreen
 import com.shinku.reader.presentation.core.screens.LoadingScreen
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.theme.header
+import com.shinku.reader.presentation.core.theme.statusExcellent
+import com.shinku.reader.presentation.core.theme.statusWarning
 import com.shinku.reader.presentation.core.util.plus
 import eu.kanade.tachiyomi.source.local.isLocal
 
@@ -132,27 +136,10 @@ private fun SourceHeader(
     } else {
         language
     }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(end = 8.dp)
-                .size(width = 3.dp, height = 14.dp)
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(1.5.dp)),
-        )
-        Text(
-            text = title.uppercase(),
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                letterSpacing = 1.sp,
-                color = MaterialTheme.colorScheme.primary,
-            ),
-        )
-    }
+    ListGroupHeader(
+        text = title,
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -193,9 +180,9 @@ private fun SourceItem(
                     )
                     if (health != null) {
                         val color = when {
-                            health.healthScore >= 80 -> Color(0xFF4CAF50)
-                            health.healthScore >= 50 -> Color(0xFFFFC107)
-                            else -> Color(0xFFF44336)
+                            health.healthScore >= 80 -> MaterialTheme.colorScheme.statusExcellent
+                            health.healthScore >= 50 -> MaterialTheme.colorScheme.statusWarning
+                            else -> MaterialTheme.colorScheme.error
                         }
                         Box(
                             modifier = Modifier
@@ -203,7 +190,7 @@ private fun SourceItem(
                                 .size(8.dp)
                                 .background(
                                     color = color,
-                                    shape = RoundedCornerShape(2.5.dp),
+                                    shape = SanctuaryShapes.microIndicator,
                                 ),
                         )
                     }
@@ -267,7 +254,7 @@ private fun SourcePinButton(
     val description = if (isPinned) MR.strings.action_unpin else MR.strings.action_pin
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(36.dp),
+        modifier = Modifier.size(40.dp),
     ) {
         Icon(
             imageVector = icon,

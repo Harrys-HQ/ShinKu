@@ -7,18 +7,20 @@ import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.domain.manga.model.toDomainManga
+import com.shinku.reader.domain.source.repository.SourceHealthRepository
 import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.exh.source.ShinKuPreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.model.FilterList
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
 import com.shinku.reader.core.common.util.system.logcat
 import uy.kohesive.injekt.Injekt
@@ -40,6 +42,7 @@ class SuggestedTitlesScreenModel(
     private val sourceManager: SourceManager = Injekt.get(),
     private val sourcePreferences: SourcePreferences = Injekt.get(),
     private val shinkuPreferences: ShinKuPreferences = Injekt.get(),
+    private val sourceHealthRepository: SourceHealthRepository = Injekt.get(),
     private val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
     private val getManga: GetManga = Injekt.get(),
 ) : StateScreenModel<SuggestedTitlesScreenState>(
@@ -48,6 +51,7 @@ class SuggestedTitlesScreenModel(
         hasMore = mode == "genre" || mode == "for_you",
     ),
 ) {
+    private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(4)
     private var currentPage = if (initialMangas.isEmpty() && initialMangaIds.isEmpty()) 0 else 1
     private val loadedIds = mutableSetOf<Long>().apply {
         addAll(initialMangas.map { it.id })
@@ -77,7 +81,7 @@ class SuggestedTitlesScreenModel(
         }
     }
 
-    private fun getEligibleSources(): List<CatalogueSource> {
+    private suspend fun getEligibleSources(): List<CatalogueSource> {
         val sourceFilterMode = shinkuPreferences.feedSourceFilter().get()
         val languageFilterMode = shinkuPreferences.feedLanguageFilter().get()
         val pinnedSources = sourcePreferences.pinnedSources().get()
@@ -102,7 +106,22 @@ class SuggestedTitlesScreenModel(
             }
         }
 
-        return filtered.ifEmpty { allSources }
+        val candidates = filtered.ifEmpty { allSources }
+        if (candidates.size <= 1) return candidates
+
+        val healthMap = runCatching {
+            sourceHealthRepository.subscribeAll().first().associateBy { it.sourceId }
+        }.getOrDefault(emptyMap())
+
+        val healthyCandidates = candidates.filter { source ->
+            val health = healthMap[source.id]
+            health == null || (!health.isDnsDead && !health.isServerDown && health.performanceScore >= 40)
+        }
+
+        val pool = healthyCandidates.ifEmpty { candidates }
+        return pool.sortedByDescending { source ->
+            healthMap[source.id]?.performanceScore ?: 85
+        }
     }
 
     fun loadNextPage() {
@@ -130,14 +149,16 @@ class SuggestedTitlesScreenModel(
                             }.take(3)
 
                             supportingSources.map { (source, filterList) ->
-                                async(Dispatchers.IO) {
-                                    try {
-                                        source.getSearchManga(nextPage, "", filterList).mangas.map {
-                                            it.toDomainManga(source.id)
+                                async(coroutineDispatcher) {
+                                    withTimeoutOrNull(8_000L) {
+                                        try {
+                                            source.getSearchManga(nextPage, "", filterList).mangas.map {
+                                                it.toDomainManga(source.id)
+                                            }
+                                        } catch (e: Throwable) {
+                                            emptyList()
                                         }
-                                    } catch (e: Throwable) {
-                                        emptyList()
-                                    }
+                                    } ?: emptyList()
                                 }
                             }.awaitAll().flatten()
                         }
@@ -145,14 +166,16 @@ class SuggestedTitlesScreenModel(
                     "for_you" -> {
                         val latestSources = sources.filter { it.supportsLatest }.take(2).ifEmpty { sources.take(2) }
                         latestSources.map { source ->
-                            async(Dispatchers.IO) {
-                                try {
-                                    source.getLatestUpdates(nextPage).mangas.map {
-                                        it.toDomainManga(source.id)
+                            async(coroutineDispatcher) {
+                                withTimeoutOrNull(8_000L) {
+                                    try {
+                                        source.getLatestUpdates(nextPage).mangas.map {
+                                            it.toDomainManga(source.id)
+                                        }
+                                    } catch (e: Throwable) {
+                                        emptyList()
                                     }
-                                } catch (e: Throwable) {
-                                    emptyList()
-                                }
+                                } ?: emptyList()
                             }
                         }.awaitAll().flatten()
                     }

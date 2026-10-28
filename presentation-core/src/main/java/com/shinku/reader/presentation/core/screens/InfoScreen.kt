@@ -1,9 +1,12 @@
 package com.shinku.reader.presentation.core.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,16 +23,22 @@ import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.util.secondaryItemAlpha
 
 @Composable
@@ -47,7 +56,7 @@ fun InfoScreen(
     Scaffold(
         bottomBar = {
             val strokeWidth = Dp.Hairline
-            val borderColor = MaterialTheme.colorScheme.outline
+            val borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             Column(
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.background)
@@ -64,17 +73,23 @@ fun InfoScreen(
                         horizontal = MaterialTheme.padding.medium,
                         vertical = MaterialTheme.padding.small,
                     ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = SanctuaryShapes.medium,
                     enabled = canAccept,
                     onClick = onAcceptClick,
                 ) {
-                    Text(text = acceptText)
+                    Text(
+                        text = acceptText,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
                 if (rejectText != null && onRejectClick != null) {
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
+                        shape = SanctuaryShapes.medium,
                         onClick = onRejectClick,
                     ) {
                         Text(text = rejectText)
@@ -98,20 +113,38 @@ fun InfoScreen(
                 .verticalScroll(rememberScrollState())
                 .fillMaxWidth()
                 .padding(paddingValues)
-                .padding(top = 48.dp)
+                .padding(top = 36.dp)
                 .padding(horizontal = MaterialTheme.padding.medium),
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
+            SanctuaryOverlineBadge(
+                text = "SHINKU SANCTUARY",
+                compact = true,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(
                 modifier = Modifier
                     .padding(bottom = MaterialTheme.padding.small)
-                    .size(48.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
+                    .size(56.dp)
+                    .clip(SanctuaryShapes.deckCard)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
+                        shape = SanctuaryShapes.deckCard,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
             Text(
                 text = headingText,
                 style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Black,
             )
             Text(
                 text = subtitleText,

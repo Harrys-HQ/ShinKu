@@ -1,10 +1,5 @@
 package com.shinku.reader.presentation.browse.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
@@ -28,12 +22,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.i18n.stringResource
-import com.shinku.reader.presentation.core.util.secondaryItemAlpha
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.util.shimmer
 
 @Composable
@@ -69,21 +65,28 @@ fun GlobalSearchResultItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.secondaryItemAlpha(),
+                if (!subtitle.isNullOrBlank()) {
+                    SanctuaryOverlineBadge(
+                        text = subtitle.uppercase(),
+                        compact = true,
                     )
                 }
             }
             IconButton(onClick = onClick) {
-                Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
             }
         }
         content()
@@ -94,16 +97,16 @@ fun GlobalSearchResultItem(
 fun GlobalSearchLoadingResultItem() {
     Row(
         modifier = Modifier
-            .padding(MaterialTheme.padding.small)
+            .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small)
             .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        repeat(3) {
+        repeat(4) {
             Box(
                 modifier = Modifier
                     .width(96.dp)
-                    .height(150.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
+                    .height(144.dp)
+                    .clip(SanctuaryShapes.medium)
                     .shimmer(),
             )
         }
@@ -122,10 +125,16 @@ fun GlobalSearchErrorResultItem(message: String?) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(imageVector = Icons.Outlined.Error, contentDescription = null)
+        Icon(
+            imageVector = Icons.Outlined.Error,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+        )
         Spacer(Modifier.height(4.dp))
         Text(
             text = message ?: stringResource(MR.strings.unknown_error),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
     }

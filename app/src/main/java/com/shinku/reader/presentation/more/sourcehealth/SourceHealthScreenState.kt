@@ -11,6 +11,7 @@ sealed interface SourceHealthScreenState {
         val installedList: List<SourceHealthItem>,
         val repoList: List<SourceHealthItem>,
         val sortMode: SourceHealthSort = SourceHealthSort.Health,
+        val testingSourceIds: Set<Long> = emptySet(),
     ) : SourceHealthScreenState
 }
 

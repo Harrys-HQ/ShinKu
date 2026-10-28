@@ -43,6 +43,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
@@ -94,8 +96,9 @@ fun AdaptiveSheet(
                     .systemBarsPadding()
                     .padding(vertical = 16.dp)
                     .then(modifier),
-                shape = MaterialTheme.shapes.extraLarge,
+                shape = SanctuaryShapes.hero,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = SanctuaryBrushes.subtleBorder(),
                 content = {
                     BackHandler(
                         enabled = remember { derivedStateOf { alpha > 0f } }.value,
@@ -179,8 +182,9 @@ fun AdaptiveSheet(
                     )
                     .navigationBarsPadding()
                     .statusBarsPadding(),
-                shape = MaterialTheme.shapes.extraLarge,
+                shape = SanctuaryShapes.hero,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = SanctuaryBrushes.subtleBorder(),
                 content = {
                     BackHandler(
                         enabled = anchoredDraggableState.targetValue == 0,
@@ -231,7 +235,6 @@ private fun <T> AnchoredDraggableState<T>.preUpPostDownNestedScrollConnection(
         val toFling = available.toFloat()
         return if (toFling < 0 && offset > anchors.minPosition()) {
             onFling(toFling)
-            // since we go to the anchor with tween settling, consume all for the best UX
             available
         } else {
             Velocity.Zero

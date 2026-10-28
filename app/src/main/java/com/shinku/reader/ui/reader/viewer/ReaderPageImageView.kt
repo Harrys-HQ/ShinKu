@@ -687,10 +687,115 @@ class TranslationOverlay(context: Context) : View(context) {
         isAntiAlias = true
     }
 
+    private val maskBorderPaint = Paint().apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.2f
+        isAntiAlias = true
+    }
+
+    private val boldTypeface: android.graphics.Typeface by lazy {
+        android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
+    }
+
+    private val drawnBounds = ArrayList<RectF>(24)
     private val sTopLeft = PointF()
     private val vTopLeft = PointF()
     private val sBottomRight = PointF()
     private val vBottomRight = PointF()
+
+    private data class LayoutCacheKey(
+        val text: String,
+        val widthBucket: Int,
+        val heightBucket: Int,
+        val textColor: Int,
+        val bgColor: Int,
+    )
+
+    private data class CachedBubbleLayout(
+        val fillLayout: StaticLayout,
+        val strokeLayout: StaticLayout,
+        val contentWidth: Int,
+    )
+
+    private val layoutCache = object : LinkedHashMap<LayoutCacheKey, CachedBubbleLayout>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<LayoutCacheKey, CachedBubbleLayout>?): Boolean = size > 80
+    }
+
+    private fun getOrBuildBubbleLayout(
+        text: String,
+        width: Int,
+        height: Int,
+        textColor: Int,
+        bgColor: Int,
+    ): CachedBubbleLayout {
+        // Quantize dimensions to 2px buckets so minor pan/zoom subpixel jitter hits cache 100% of the time
+        val widthBucket = (width / 2).coerceAtLeast(1) * 2
+        val heightBucket = (height / 2).coerceAtLeast(1) * 2
+        val key = LayoutCacheKey(text, widthBucket, heightBucket, textColor, bgColor)
+        layoutCache[key]?.let { return it }
+
+        val horizontalPadding = (widthBucket * 0.06f).coerceIn(4f, 16f)
+        val verticalPadding = (heightBucket * 0.06f).coerceIn(4f, 16f)
+        val contentWidth = (widthBucket - 2f * horizontalPadding).toInt().coerceAtLeast(1)
+        val maxContentHeight = heightBucket - 2f * verticalPadding
+
+        val fillPaint = TextPaint().apply {
+            color = textColor
+            isAntiAlias = true
+            typeface = boldTypeface
+            letterSpacing = 0.012f
+        }
+
+        // Start with an adaptive font size based on bubble area and character count
+        val charCount = text.length.coerceAtLeast(1)
+        val areaEstimate = kotlin.math.sqrt((contentWidth * maxContentHeight).toDouble() / (charCount * 0.85)).toFloat()
+        var fontSizePx = minOf(heightBucket * 0.25f, areaEstimate).coerceIn(10f, 42f)
+        val minFontSize = 8f
+        var fillLayout: StaticLayout? = null
+
+        while (fontSizePx >= minFontSize) {
+            fillPaint.textSize = fontSizePx
+            val candidate = StaticLayout.Builder.obtain(text, 0, text.length, fillPaint, contentWidth)
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setLineSpacing(0f, 1.04f)
+                .setIncludePad(false)
+                .setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED)
+                .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL)
+                .build()
+
+            fillLayout = candidate
+            if (candidate.height <= maxContentHeight) {
+                break
+            }
+            fontSizePx -= 1.25f
+        }
+
+        val finalFillLayout = fillLayout ?: StaticLayout.Builder.obtain(text, 0, text.length, fillPaint, contentWidth)
+            .setAlignment(Layout.Alignment.ALIGN_CENTER)
+            .build()
+
+        // Build matching stroke layout for crisp scanlation halo around glyphs
+        val strokePaint = TextPaint(fillPaint).apply {
+            color = bgColor
+            style = Paint.Style.STROKE
+            strokeWidth = (fillPaint.textSize * 0.16f).coerceIn(2f, 5f)
+            strokeJoin = Paint.Join.ROUND
+            strokeCap = Paint.Cap.ROUND
+        }
+        val strokeLayout = StaticLayout.Builder.obtain(text, 0, text.length, strokePaint, contentWidth)
+            .setAlignment(Layout.Alignment.ALIGN_CENTER)
+            .setLineSpacing(0f, 1.04f)
+            .setIncludePad(false)
+            .setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED)
+            .setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL)
+            .build()
+
+        return CachedBubbleLayout(
+            fillLayout = finalFillLayout,
+            strokeLayout = strokeLayout,
+            contentWidth = contentWidth,
+        ).also { layoutCache[key] = it }
+    }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -699,10 +804,11 @@ class TranslationOverlay(context: Context) : View(context) {
         val blocks = page.translationBlocks ?: return
         val view = pageView ?: return
 
-        val drawnBounds = mutableListOf<RectF>()
+        drawnBounds.clear()
 
         for (block in blocks) {
             val box = block.bubbleRect ?: block.boundingBox ?: continue
+            if (block.translatedText.isBlank()) continue
 
             val left: Float
             val top: Float
@@ -755,10 +861,9 @@ class TranslationOverlay(context: Context) : View(context) {
 
             val width = (actualRight - actualLeft).toInt()
             val height = (actualBottom - actualTop).toInt()
-            if (width <= 0 || height <= 0) continue
+            if (width <= 6 || height <= 6) continue
 
             // Non-Maximum Suppression / Occlusion Suppression: avoid rendering colliding overlays
-            val currentRect = RectF(actualLeft, actualTop, actualRight, actualBottom)
             val currentArea = (actualRight - actualLeft) * (actualBottom - actualTop)
             var collides = false
             for (drawn in drawnBounds) {
@@ -777,73 +882,35 @@ class TranslationOverlay(context: Context) : View(context) {
                 }
             }
             if (collides) continue
-            drawnBounds.add(currentRect)
+            drawnBounds.add(RectF(actualLeft, actualTop, actualRight, actualBottom))
 
-            // 1. Draw clean background mask matching scanlation/Komakun typesetting boxes
+            // 1. Draw soft-cornered speech-balloon mask so corners blend naturally inside oval comic bubbles
             maskPaint.color = block.bgColor
-            val scaleForRadius = when (view) {
-                is com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView -> view.scale
-                is com.shinku.reader.ui.reader.viewer.webtoon.WebtoonStripImageView -> if (view.sourceWidth > 0) view.width.toFloat() / view.sourceWidth.toFloat() else 1f
-                else -> 1f
-            }
-            val rx = (6f * scaleForRadius).coerceIn(4f, 14f)
-            val ry = (6f * scaleForRadius).coerceIn(4f, 14f)
-            canvas.drawRoundRect(actualLeft, actualTop, actualRight, actualBottom, rx, ry, maskPaint)
+            maskPaint.alpha = 248
+            val cornerRadius = (minOf(width, height) * 0.22f).coerceIn(6f, 22f)
+            canvas.drawRoundRect(actualLeft, actualTop, actualRight, actualBottom, cornerRadius, cornerRadius, maskPaint)
 
-            // 2. Typesetting (standard rectangular text layout like Komakun):
-            val horizontalPadding = (width * 0.06f).coerceIn(4f, 16f)
-            val verticalPadding = (height * 0.06f).coerceIn(4f, 16f)
+            maskBorderPaint.color = block.bgColor
+            maskBorderPaint.alpha = 180
+            canvas.drawRoundRect(actualLeft, actualTop, actualRight, actualBottom, cornerRadius, cornerRadius, maskBorderPaint)
 
-            val contentWidth = (width - 2f * horizontalPadding).toInt().coerceAtLeast(1)
-            val maxContentHeight = height - 2f * verticalPadding
+            // 2. Typeset cached layout with crisp scanlation halo + foreground text (0 frame allocations)
+            val cached = getOrBuildBubbleLayout(
+                text = block.translatedText,
+                width = width,
+                height = height,
+                textColor = block.textColor,
+                bgColor = block.bgColor,
+            )
 
-            val text = block.translatedText
-            val textPaint = TextPaint().apply {
-                color = block.textColor
-                isAntiAlias = true
-                typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
-                letterSpacing = 0.015f
-            }
-
-            // Dynamic font sizing to fit the speech bubble
-            var fontSizePx = (height * 0.22f).coerceIn(11f, 44f)
-            var layout: StaticLayout? = null
-            val minFontSize = 8f
-
-            while (fontSizePx >= minFontSize) {
-                textPaint.textSize = fontSizePx
-                layout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    StaticLayout.Builder.obtain(text, 0, text.length, textPaint, contentWidth)
-                        .setAlignment(Layout.Alignment.ALIGN_CENTER)
-                        .setLineSpacing(0f, 1.05f)
-                        .setIncludePad(false)
-                        .apply {
-                            setBreakStrategy(Layout.BREAK_STRATEGY_BALANCED)
-                            setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_FULL)
-                        }
-                        .build()
-                } else {
-                    @Suppress("DEPRECATION")
-                    StaticLayout(
-                        text, textPaint, contentWidth,
-                        Layout.Alignment.ALIGN_CENTER, 1.05f, 0f, false,
-                    )
-                }
-                if (layout.height <= maxContentHeight) {
-                    break
-                }
-                fontSizePx -= 1f
-            }
-
-            if (layout != null) {
-                canvas.save()
-                val textHeight = layout.height
-                val textLeft = actualLeft + (width - contentWidth) / 2f
-                val dy = actualTop + (height - textHeight) / 2f
-                canvas.translate(textLeft, dy)
-                layout.draw(canvas)
-                canvas.restore()
-            }
+            canvas.save()
+            val textHeight = cached.fillLayout.height
+            val textLeft = actualLeft + (width - cached.contentWidth) / 2f
+            val dy = actualTop + (height - textHeight) / 2f
+            canvas.translate(textLeft, dy)
+            cached.strokeLayout.draw(canvas)
+            cached.fillLayout.draw(canvas)
+            canvas.restore()
         }
     }
 }

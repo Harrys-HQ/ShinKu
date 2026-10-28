@@ -43,6 +43,7 @@ fun MoreScreen(
     readChapters: Int,
     readDuration: Long,
     readStreak: Int,
+    levelInfo: com.shinku.reader.domain.history.model.SanctuaryLevelInfo? = null,
     // SY <--
     onClickDownloadQueue: () -> Unit,
     onClickDataAndStorage: () -> Unit,
@@ -75,7 +76,7 @@ fun MoreScreen(
         ScrollbarLazyColumn(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
                 top = contentPadding.calculateTopPadding() + 8.dp,
-                bottom = contentPadding.calculateBottomPadding() + 96.dp,
+                bottom = contentPadding.calculateBottomPadding() + 124.dp,
             ),
         ) {
             // 1. Reading Identity & Stats Header
@@ -84,6 +85,7 @@ fun MoreScreen(
                     readChapters = readChapters,
                     readDuration = readDuration,
                     readStreak = readStreak,
+                    levelInfoOverride = levelInfo,
                     onClick = onClickStats,
                 )
             }

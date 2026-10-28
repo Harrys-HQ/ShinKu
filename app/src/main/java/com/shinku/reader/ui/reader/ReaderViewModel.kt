@@ -813,6 +813,11 @@ class ReaderViewModel(
             downloadNextChapters()
         }
 
+        // Automatically translate current page + prefetch next page when Live Translation is active
+        if (shinkuPreferences.liveTranslation().get() && batchTranslationJob?.isActive != true) {
+            triggerAutoLiveTranslation(page, selectedChapter)
+        }
+
         eventChannel.trySend(Event.PageChanged)
     }
 
@@ -1649,7 +1654,7 @@ class ReaderViewModel(
         apiKey: String,
         model: String,
     ): List<TranslatedBlock> {
-        val ocrResults = textRecognitionInteractor.recognizeText(bitmap)
+        val ocrResults = textRecognitionInteractor.recognizeText(bitmap, sourceLanguage)
         if (ocrResults.isEmpty()) {
             return emptyList()
         }
@@ -1660,13 +1665,15 @@ class ReaderViewModel(
 
         val activeEngine = aiEngineRegistry.getActiveEngine()
         val isAiConfigured = activeEngine.isAvailable || apiKey.isNotBlank()
+        val mangaTitle = manga?.title
+        val mangaGenres = manga?.genre
 
         val translated = when {
             translationEngine == "gemini_cloud" || translationEngine == "cloud" -> {
                 if (!isAiConfigured) {
                     throw IllegalStateException("AI API Key Required. Please configure your AI Provider in Settings.")
                 }
-                geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage)
+                geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage, mangaTitle, mangaGenres)
             }
             translationEngine == "mlkit" || translationEngine == "aicore" -> {
                 mlKitTranslationInteractor.translateBlocks(inputs, targetLanguage, sourceLanguage)
@@ -1674,7 +1681,7 @@ class ReaderViewModel(
             else -> {
                 if (isAiConfigured) {
                     try {
-                        geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage)
+                        geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage, mangaTitle, mangaGenres)
                     } catch (e: Exception) {
                         logcat(LogPriority.WARN, e) { "Cloud translation failed; falling back to on-device ML Kit" }
                         mlKitTranslationInteractor.translateBlocks(inputs, targetLanguage, sourceLanguage)
@@ -1751,6 +1758,64 @@ class ReaderViewModel(
     }
 
     private var batchTranslationJob: Job? = null
+    private var autoPageTranslationJob: Job? = null
+
+    private fun triggerAutoLiveTranslation(page: ReaderPage, chapter: ReaderChapter) {
+        val chapterId = chapter.chapter.id ?: return
+        if (chapterId <= 0L) return
+
+        val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
+        val sourceLanguage = shinkuPreferences.translationSourceLanguage().get()
+        val translationEngine = shinkuPreferences.translationEngine().get()
+        val apiKey = shinkuPreferences.geminiApiKey().get().trim()
+        val model = shinkuPreferences.geminiModel().get()
+
+        autoPageTranslationJob?.cancel()
+        autoPageTranslationJob = viewModelScope.launchIO {
+            val pagesToTranslate = listOfNotNull(
+                page,
+                chapter.pages?.getOrNull(page.index + 1),
+            )
+            for (targetPage in pagesToTranslate) {
+                if (!isActive || !shinkuPreferences.liveTranslation().get()) break
+
+                if (targetPage.translationBlocks != null) {
+                    if (!targetPage.showTranslation) {
+                        targetPage.showTranslation = true
+                        eventChannel.trySend(Event.TranslationOverlayReady(targetPage))
+                    }
+                    continue
+                }
+
+                val cached = TranslationCache.get(chapterId, targetPage.index, targetLanguage)
+                if (cached != null) {
+                    targetPage.translationBlocks = cached
+                    targetPage.showTranslation = true
+                    eventChannel.trySend(Event.TranslationOverlayReady(targetPage))
+                    continue
+                }
+
+                val stream = getPageStream(targetPage, chapter.pageLoader) ?: continue
+                try {
+                    val bitmap = ImageDecoder.newInstance(stream())?.decode() ?: continue
+                    val blocks = translateBitmap(
+                        bitmap = bitmap,
+                        targetLanguage = targetLanguage,
+                        sourceLanguage = sourceLanguage,
+                        translationEngine = translationEngine,
+                        apiKey = apiKey,
+                        model = model,
+                    )
+                    targetPage.translationBlocks = blocks
+                    targetPage.showTranslation = shinkuPreferences.liveTranslation().get()
+                    TranslationCache.put(chapterId, targetPage.index, targetLanguage, blocks)
+                    eventChannel.trySend(Event.TranslationOverlayReady(targetPage))
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Auto live translation skipped on page ${targetPage.number}: ${e.message}" }
+                }
+            }
+        }
+    }
 
     fun startBatchChapterTranslation(targetChapter: ReaderChapter? = null) {
         val chapter = targetChapter ?: state.value.currentChapter ?: run {
@@ -1791,11 +1856,17 @@ class ReaderViewModel(
             return
         }
 
+        autoPageTranslationJob?.cancel()
         batchTranslationJob?.cancel()
         batchTranslationJob = viewModelScope.launchIO {
             val total = pages.size
             var translatedCount = 0
             val chapterTranslations = mutableMapOf<Int, List<TranslatedBlock>>()
+
+            // Start from the user's current active page forward, then wrap around to earlier pages
+            val startIdx = (state.value.activePage?.index ?: (state.value.currentPage - 1))
+                .coerceIn(0, (total - 1).coerceAtLeast(0))
+            val orderedPages = pages.drop(startIdx) + pages.take(startIdx)
 
             mutableState.update {
                 it.copy(
@@ -1812,12 +1883,12 @@ class ReaderViewModel(
                 )
             }
 
-            for ((index, page) in pages.withIndex()) {
+            for ((stepIndex, page) in orderedPages.withIndex()) {
                 if (!isActive) break
 
-                val pageNum = index + 1
+                val processedCount = stepIndex + 1
                 val progress = BatchTranslationProgress(
-                    currentPage = pageNum,
+                    currentPage = processedCount,
                     totalPages = total,
                     translatedCount = translatedCount,
                 )
@@ -1825,7 +1896,7 @@ class ReaderViewModel(
                     it.copy(
                         batchTranslationProgress = progress,
                         dialog = (it.dialog as? Dialog.BatchTranslation)?.copy(
-                            currentPage = pageNum,
+                            currentPage = processedCount,
                             totalPages = total,
                             translatedCount = translatedCount,
                         ) ?: it.dialog,
@@ -1846,7 +1917,7 @@ class ReaderViewModel(
 
                 val stream = getPageStream(page, chapter.pageLoader)
                 if (stream == null) {
-                    logcat(LogPriority.WARN) { "Batch translation: Page $pageNum stream unavailable, skipping" }
+                    logcat(LogPriority.WARN) { "Batch translation: Page ${page.number} stream unavailable, skipping" }
                     continue
                 }
 
@@ -1871,7 +1942,7 @@ class ReaderViewModel(
                         eventChannel.send(Event.TranslationOverlayReady(page))
                     }
                 } catch (e: Exception) {
-                    logcat(LogPriority.WARN, e) { "Batch translation error on page $pageNum: ${e.message}" }
+                    logcat(LogPriority.WARN, e) { "Batch translation error on page ${page.number}: ${e.message}" }
                 }
 
                 if (translationEngine != "mlkit") {
@@ -1933,6 +2004,31 @@ class ReaderViewModel(
 
     fun openTranslationOptions() {
         mutableState.update { it.copy(dialog = Dialog.TranslationOptions) }
+    }
+
+    fun openBubbleInspector() {
+        mutableState.update { it.copy(dialog = Dialog.BubbleInspector) }
+    }
+
+    fun retranslateCurrentPage() {
+        val page = (state.value.dialog as? Dialog.PageActions)?.page
+            ?: state.value.activePage
+            ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.pager.PagerViewer)?.currentPage as? ReaderPage
+            ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.webtoon.WebtoonViewer)?.currentPage as? ReaderPage
+            ?: run {
+                eventChannel.trySend(Event.ShowToast("No active page selected"))
+                return
+            }
+
+        val chapterId = page.chapter.chapter.id ?: 0L
+        val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
+        if (chapterId > 0L) {
+            TranslationCache.removePage(chapterId, page.index, targetLanguage)
+        }
+        page.translationBlocks = null
+        page.showTranslation = false
+        eventChannel.trySend(Event.TranslationOverlayReady(page))
+        onTranslation()
     }
 
     private suspend fun getPageStream(page: ReaderPage, loader: com.shinku.reader.ui.reader.loader.PageLoader?): (() -> java.io.InputStream)? {
@@ -2163,6 +2259,58 @@ class ReaderViewModel(
         }
     }
 
+    fun onCharacterCodex() {
+        val page = (state.value.dialog as? Dialog.PageActions)?.page ?: return
+        performAiAction(page, "Who's Here? • Lore Codex") { text ->
+            val apiKey = shinkuPreferences.geminiApiKey().get().trim()
+            val model = shinkuPreferences.geminiModel().get()
+            val activeEngine = aiEngineRegistry.getActiveEngine()
+            if (!activeEngine.isAvailable && apiKey.isBlank()) {
+                "Please configure your AI API Key in Settings > ShinKu AI & Engines to enable the Spoiler-Safe Character & Lore Codex."
+            } else {
+                geminiVibeSearch.explainCharacterAndLoreCodex(
+                    text = text,
+                    mangaTitle = manga?.title.orEmpty(),
+                    chapterName = state.value.currentChapter?.chapter?.name.orEmpty(),
+                    apiKey = apiKey,
+                    model = model,
+                )
+            }
+        }
+    }
+
+    fun onChapterRecap() {
+        val currentChapterName = state.value.currentChapter?.chapter?.name ?: "Current Chapter"
+        val mangaTitle = manga?.title ?: "Unknown Series"
+        viewModelScope.launchIO {
+            mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
+            try {
+                val apiKey = shinkuPreferences.geminiApiKey().get().trim()
+                val model = shinkuPreferences.geminiModel().get()
+                val activeEngine = aiEngineRegistry.getActiveEngine()
+                val recap = if (!activeEngine.isAvailable && apiKey.isBlank()) {
+                    "Please configure your AI API Key in Settings > ShinKu AI & Engines to enable Story So Far Recaps."
+                } else {
+                    val readChapters = chapterList
+                        .filter { it.chapter.read || it.chapter.id == state.value.currentChapter?.chapter?.id }
+                        .takeLast(8)
+                        .map { it.chapter.name }
+                        .ifEmpty { listOf(currentChapterName) }
+                    geminiVibeSearch.getChapterRecap(
+                        title = mangaTitle,
+                        chapterNames = readChapters,
+                        apiKey = apiKey,
+                        model = model,
+                    )
+                }
+                mutableState.update { it.copy(dialog = Dialog.AiInsight("Story So Far • $currentChapterName", recap)) }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+                mutableState.update { it.copy(dialog = Dialog.AiInsight("Recap Error", e.message ?: "Unknown error")) }
+            }
+        }
+    }
+
     fun onPageReady(page: ReaderPage) {
         if (!readerPreferences.guidedView().get()) return
         
@@ -2188,7 +2336,10 @@ class ReaderViewModel(
             mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
             try {
                 val bitmap = ImageDecoder.newInstance(stream())?.decode() ?: throw Exception("Failed to decode image")
-                val ocrResults = textRecognitionInteractor.recognizeText(bitmap)
+                val ocrResults = textRecognitionInteractor.recognizeText(
+                    bitmap,
+                    shinkuPreferences.translationSourceLanguage().get(),
+                )
                 val fullText = ocrResults.joinToString("\n") { it.text }
 
                 if (fullText.isBlank()) {
@@ -2370,6 +2521,7 @@ class ReaderViewModel(
             val translatedCount: Int,
         ) : Dialog
         data object TranslationOptions : Dialog
+        data object BubbleInspector : Dialog
         // SY <--
     }
 

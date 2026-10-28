@@ -35,6 +35,9 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.reader.components.ChapterNavigator
 import com.shinku.reader.ui.reader.setting.ReaderOrientation
 import com.shinku.reader.ui.reader.setting.ReadingMode
@@ -278,10 +281,11 @@ fun ReaderAppBars(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 6.dp)
                             .windowInsetsPadding(WindowInsets.navigationBars),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = SanctuaryShapes.hero,
                         color = backgroundColor,
-                        tonalElevation = 4.dp,
-                        shadowElevation = 8.dp,
+                        border = SanctuaryBrushes.subtleBorder(),
+                        tonalElevation = 6.dp,
+                        shadowElevation = 12.dp,
                     ) {
                         ReaderBottomBar(
                             // SY -->

@@ -1,6 +1,7 @@
 package com.shinku.reader.presentation.reader.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
@@ -37,15 +37,18 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.shinku.reader.presentation.theme.TachiyomiPreviewTheme
-import com.shinku.reader.presentation.util.isTabletUi
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.material.Slider
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.theme.TachiyomiPreviewTheme
+import com.shinku.reader.presentation.util.isTabletUi
 
 @Composable
 fun ChapterNavigator(
@@ -80,20 +83,18 @@ fun ChapterNavigator(
     }
     // SY <--
     val isTabletUi = isTabletUi()
-    val horizontalPadding = if (isTabletUi) 24.dp else 8.dp
+    val horizontalPadding = if (isTabletUi) 24.dp else 12.dp
     val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
     val haptic = LocalHapticFeedback.current
 
-    // Match with toolbar background color set in ReaderActivity
     val backgroundColor = MaterialTheme.colorScheme
         .surfaceColorAtElevation(3.dp)
-        .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+        .copy(alpha = if (isSystemInDarkTheme()) 0.92f else 0.96f)
     val buttonColor = IconButtonDefaults.filledIconButtonColors(
         containerColor = backgroundColor,
         disabledContainerColor = backgroundColor,
     )
 
-    // We explicitly handle direction based on the reader viewer rather than the system direction
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(
             modifier = Modifier
@@ -105,6 +106,8 @@ fun ChapterNavigator(
                 enabled = if (isRtl) enabledNext else enabledPrevious,
                 onClick = if (isRtl) onNextChapter else onPreviousChapter,
                 colors = buttonColor,
+                shape = SanctuaryShapes.deckCard,
+                modifier = Modifier.border(SanctuaryBrushes.subtleBorder(), SanctuaryShapes.deckCard),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.SkipPrevious,
@@ -119,13 +122,20 @@ fun ChapterNavigator(
                     Row(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(24.dp))
+                            .padding(horizontal = 6.dp)
+                            .clip(SanctuaryShapes.hero)
                             .background(backgroundColor)
+                            .border(SanctuaryBrushes.subtleBorder(), SanctuaryShapes.hero)
                             .padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         // SY -->
-                        Text(text = currentPageText)
+                        Text(
+                            text = currentPageText,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
                         // SY <--
 
                         val interactionSource = remember { MutableInteractionSource() }
@@ -149,7 +159,11 @@ fun ChapterNavigator(
                             interactionSource = interactionSource,
                         )
 
-                        Text(text = totalPages.toString())
+                        Text(
+                            text = totalPages.toString(),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             } else {
@@ -160,6 +174,8 @@ fun ChapterNavigator(
                 enabled = if (isRtl) enabledPrevious else enabledNext,
                 onClick = if (isRtl) onPreviousChapter else onNextChapter,
                 colors = buttonColor,
+                shape = SanctuaryShapes.deckCard,
+                modifier = Modifier.border(SanctuaryBrushes.subtleBorder(), SanctuaryShapes.deckCard),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.SkipNext,
@@ -197,10 +213,9 @@ fun ChapterNavigatorVert(
             .padding(vertical = verticalPadding, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Match with toolbar background color set in ReaderActivity
         val backgroundColor = MaterialTheme.colorScheme
             .surfaceColorAtElevation(3.dp)
-            .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+            .copy(alpha = if (isSystemInDarkTheme()) 0.92f else 0.96f)
 
         val buttonColor = IconButtonDefaults.filledIconButtonColors(
             containerColor = backgroundColor,
@@ -210,6 +225,8 @@ fun ChapterNavigatorVert(
             enabled = enabledPrevious,
             onClick = onPreviousChapter,
             colors = buttonColor,
+            shape = SanctuaryShapes.deckCard,
+            modifier = Modifier.border(SanctuaryBrushes.subtleBorder(), SanctuaryShapes.deckCard),
         ) {
             Icon(
                 imageVector = Icons.Outlined.SkipPrevious,
@@ -222,13 +239,20 @@ fun ChapterNavigatorVert(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(24.dp))
+                    .padding(vertical = 6.dp)
+                    .clip(SanctuaryShapes.hero)
                     .background(backgroundColor)
+                    .border(SanctuaryBrushes.subtleBorder(), SanctuaryShapes.hero)
                     .padding(vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // SY -->
-                Text(text = currentPageText)
+                Text(
+                    text = currentPageText,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
                 // SY <--
 
                 val interactionSource = remember { MutableInteractionSource() }
@@ -269,7 +293,11 @@ fun ChapterNavigatorVert(
                     interactionSource = interactionSource,
                 )
 
-                Text(text = totalPages.toString())
+                Text(
+                    text = totalPages.toString(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         } else {
             Spacer(Modifier.weight(1f))
@@ -279,6 +307,8 @@ fun ChapterNavigatorVert(
             enabled = enabledNext,
             onClick = onNextChapter,
             colors = buttonColor,
+            shape = SanctuaryShapes.deckCard,
+            modifier = Modifier.border(SanctuaryBrushes.subtleBorder(), SanctuaryShapes.deckCard),
         ) {
             Icon(
                 imageVector = Icons.Outlined.SkipNext,

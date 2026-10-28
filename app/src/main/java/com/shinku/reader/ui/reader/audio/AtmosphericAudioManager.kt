@@ -142,12 +142,20 @@ class AtmosphericAudioManager(
     private val context: Context,
     private val shinkuPreferences: ShinKuPreferences,
 ) {
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val audioDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val scope = CoroutineScope(audioDispatcher + SupervisorJob())
     private val okHttpClient: OkHttpClient by lazy { Injekt.get<NetworkHelper>().client }
 
+    @Volatile
     private var mediaPlayer: MediaPlayer? = null
+
+    @Volatile
     private var currentTrack: AmbientTrack? = null
+
+    @Volatile
     private var isPaused: Boolean = false
+
+    @Volatile
     private var currentVolume: Float = 0.3f
 
     fun getCurrentPlayingTrack(): AmbientTrack? = currentTrack
@@ -166,66 +174,76 @@ class AtmosphericAudioManager(
         }
         val targetVolume = (volumePercent.coerceIn(0, 100) / 100f)
         currentVolume = targetVolume
+        currentTrack = track
 
-        // If the same track is already loaded, update volume and ensure playing if not paused
-        if (mediaPlayer != null && currentTrack == track) {
+        scope.launch {
+            if (!shinkuPreferences.atmosphericAudio().get()) {
+                stopInternal()
+                return@launch
+            }
+
+            // If the same track is already loaded, update volume and ensure playing if not paused
+            val existingPlayer = mediaPlayer
+            if (existingPlayer != null && currentTrack == track) {
+                try {
+                    existingPlayer.setVolume(targetVolume, targetVolume)
+                    if (!isPaused && !existingPlayer.isPlaying) {
+                        existingPlayer.start()
+                    }
+                    return@launch
+                } catch (e: Exception) {
+                    logcat(LogPriority.ERROR, e) { "Failed to update atmospheric audio volume" }
+                }
+            }
+
+            stopInternal(resetTrack = false)
+            currentTrack = track
+
+            val cacheFile = getCacheFile(track)
+            var player: MediaPlayer? = null
+            var isCached = false
+
+            if (cacheFile.exists() && cacheFile.length() > 1024) {
+                player = createPlayerForFile(cacheFile)
+                if (player != null) {
+                    isCached = true
+                }
+            }
+
+            // Fallback to bundled soundscape if remote file is not yet cached or failed
+            if (player == null) {
+                player = createPlayerForRes(track.bundledFallbackRes)
+            }
+
+            if (player == null) {
+                logcat(LogPriority.WARN) { "Failed to initialize player for track: ${track.id}" }
+                return@launch
+            }
+
             try {
-                mediaPlayer?.setVolume(targetVolume, targetVolume)
-                if (!isPaused && mediaPlayer?.isPlaying == false) {
-                    mediaPlayer?.start()
+                player.isLooping = true
+                player.setVolume(currentVolume, currentVolume)
+                player.setOnErrorListener { _, what, extra ->
+                    logcat(LogPriority.ERROR) { "MediaPlayer error: what=$what, extra=$extra" }
+                    scope.launch { stopInternal() }
+                    true
+                }
+
+                mediaPlayer = player
+                currentTrack = track
+                if (!isPaused) {
+                    player.start()
                 }
             } catch (e: Exception) {
-                logcat(LogPriority.ERROR, e) { "Failed to update atmospheric audio volume" }
-            }
-            return
-        }
-
-        stop()
-
-        val cacheFile = getCacheFile(track)
-        var player: MediaPlayer? = null
-        var isCached = false
-
-        if (cacheFile.exists() && cacheFile.length() > 1024) {
-            player = createPlayerForFile(cacheFile)
-            if (player != null) {
-                isCached = true
-            }
-        }
-
-        // Fallback to bundled soundscape if remote file is not yet cached or failed
-        if (player == null) {
-            player = createPlayerForRes(track.bundledFallbackRes)
-        }
-
-        if (player == null) {
-            logcat(LogPriority.WARN) { "Failed to initialize player for track: ${track.id}" }
-            return
-        }
-
-        try {
-            player.isLooping = true
-            player.setVolume(targetVolume, targetVolume)
-            player.setOnErrorListener { _, what, extra ->
-                logcat(LogPriority.ERROR) { "MediaPlayer error: what=$what, extra=$extra" }
-                stop()
-                true
+                logcat(LogPriority.ERROR, e) { "Failed to start atmospheric audio" }
+                stopInternal()
             }
 
-            mediaPlayer = player
-            currentTrack = track
-            if (!isPaused) {
-                player.start()
-            }
-        } catch (e: Exception) {
-            logcat(LogPriority.ERROR, e) { "Failed to start atmospheric audio" }
-            stop()
-        }
-
-        // Pre-cache remote track in background if not yet cached
-        if (!isCached) {
-            scope.launch {
-                downloadTrack(track)
+            // Pre-cache remote track in background if not yet cached
+            if (!isCached) {
+                launch(Dispatchers.IO) {
+                    downloadTrack(track)
+                }
             }
         }
     }
@@ -237,38 +255,52 @@ class AtmosphericAudioManager(
     fun setVolume(volumePercent: Int) {
         val targetVolume = (volumePercent.coerceIn(0, 100) / 100f)
         currentVolume = targetVolume
-        try {
-            mediaPlayer?.setVolume(targetVolume, targetVolume)
-        } catch (e: Exception) {
-            logcat(LogPriority.ERROR, e) { "Failed to set atmospheric audio volume" }
+        scope.launch {
+            try {
+                mediaPlayer?.setVolume(targetVolume, targetVolume)
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to set atmospheric audio volume" }
+            }
         }
     }
 
     fun pause() {
         isPaused = true
-        try {
-            if (mediaPlayer?.isPlaying == true) {
-                mediaPlayer?.pause()
+        scope.launch {
+            try {
+                if (mediaPlayer?.isPlaying == true) {
+                    mediaPlayer?.pause()
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to pause atmospheric audio" }
             }
-        } catch (e: Exception) {
-            logcat(LogPriority.ERROR, e) { "Failed to pause atmospheric audio" }
         }
     }
 
     fun resume() {
         isPaused = false
         if (!shinkuPreferences.atmosphericAudio().get()) return
-        try {
-            if (mediaPlayer != null && mediaPlayer?.isPlaying == false) {
-                mediaPlayer?.setVolume(currentVolume, currentVolume)
-                mediaPlayer?.start()
+        scope.launch {
+            try {
+                if (mediaPlayer != null && mediaPlayer?.isPlaying == false) {
+                    mediaPlayer?.setVolume(currentVolume, currentVolume)
+                    mediaPlayer?.start()
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to resume atmospheric audio" }
             }
-        } catch (e: Exception) {
-            logcat(LogPriority.ERROR, e) { "Failed to resume atmospheric audio" }
         }
     }
 
     fun stop() {
+        currentTrack = null
+        isPaused = false
+        scope.launch {
+            stopInternal()
+        }
+    }
+
+    private fun stopInternal(resetTrack: Boolean = true) {
         try {
             mediaPlayer?.apply {
                 if (isPlaying) {
@@ -280,8 +312,10 @@ class AtmosphericAudioManager(
             logcat(LogPriority.ERROR, e) { "Failed to stop atmospheric audio" }
         } finally {
             mediaPlayer = null
-            currentTrack = null
-            isPaused = false
+            if (resetTrack) {
+                currentTrack = null
+                isPaused = false
+            }
         }
     }
 

@@ -31,8 +31,7 @@ import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.data.category.SmartCategorizerJob
-import com.shinku.reader.data.ai.AiClusteringJob
-import com.shinku.reader.data.ai.MangaEmbeddingJob
+import com.shinku.reader.presentation.more.components.ReaderIdentityDialog
 import com.shinku.reader.ui.browse.migration.dead.DeadSourceScannerScreen
 import com.shinku.reader.ui.browse.migration.failed.FailedUpdatesMigrationScreen
 import com.shinku.reader.ui.sourcehealth.SourceHealthScreen
@@ -113,14 +112,6 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_smart_categorizer),
                     subtitle = stringResource(MR.strings.pref_smart_categorizer_summary),
                     onClick = { SmartCategorizerJob.startNow(context) },
-                ),
-                Preference.PreferenceItem.TextPreference(
-                    title = "AI Categorizer (Experimental)",
-                    subtitle = "Use AI to group library into 'vibe-based' categories",
-                    onClick = {
-                        MangaEmbeddingJob.startNow(context)
-                        AiClusteringJob.startNow(context)
-                    },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.dead_source_scanner_title),
@@ -208,7 +199,6 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                         "groq" to "Groq (api.groq.com - Ultra Fast)",
                         "openai" to "OpenAI (api.openai.com)",
                         "custom" to "Custom (OpenAI-Compatible / Ollama)",
-                        "aicore" to "On-Device Native OS AI (Google AICore / OxygenOS)",
                     ),
                 ),
             )
@@ -329,9 +319,6 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                         ),
                     )
                 }
-                "aicore" -> {
-                    // Native OS AI requires no credentials
-                }
                 else -> {
                     // "cloud" or "auto" (Gemini)
                     add(
@@ -360,50 +347,48 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                 }
             }
 
-            if (aiEngineProvider != "aicore") {
-                add(
-                    Preference.PreferenceItem.TextPreference(
-                        title = "Test API Connection",
-                        subtitle = "Sends a lightweight prompt to verify credentials and check roundtrip latency",
-                        onClick = {
-                            scope.launch {
-                                try {
-                                    val startTime = System.currentTimeMillis()
-                                    if (aiEngineProvider in listOf("openrouter", "deepseek", "groq", "openai", "custom")) {
-                                        val engine = aiEngineRegistry.getActiveEngine()
-                                        val result = engine.generateText("Respond with 'OK'")
-                                        val latency = System.currentTimeMillis() - startTime
-                                        if (result.isSuccess) {
-                                            context.toast("Connected to $aiEngineProvider successfully! (${latency}ms)")
-                                        } else {
-                                            val err = result.exceptionOrNull()?.message ?: "Unknown error"
-                                            context.toast(context.stringResource(MR.strings.api_key_test_failed, err))
-                                        }
+            add(
+                Preference.PreferenceItem.TextPreference(
+                    title = "Test API Connection",
+                    subtitle = "Sends a lightweight prompt to verify credentials and check roundtrip latency",
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val startTime = System.currentTimeMillis()
+                                if (aiEngineProvider in listOf("openrouter", "deepseek", "groq", "openai", "custom")) {
+                                    val engine = aiEngineRegistry.getActiveEngine()
+                                    val result = engine.generateText("Respond with 'OK'")
+                                    val latency = System.currentTimeMillis() - startTime
+                                    if (result.isSuccess) {
+                                        context.toast("Connected to $aiEngineProvider successfully! (${latency}ms)")
                                     } else {
-                                        val apiKey = shinkuPreferences.geminiApiKey().get().trim()
-                                        if (apiKey.isBlank()) {
-                                            context.toast("API Key cannot be empty")
-                                            return@launch
-                                        }
-                                        val (isSuccess, detail) = testGeminiConnection(
-                                            networkHelper,
-                                            apiKey,
-                                            shinkuPreferences.geminiModel().get().trim(),
-                                        )
-                                        if (isSuccess) {
-                                            context.toast(detail)
-                                        } else {
-                                            context.toast(context.stringResource(MR.strings.api_key_test_failed, detail))
-                                        }
+                                        val err = result.exceptionOrNull()?.message ?: "Unknown error"
+                                        context.toast(context.stringResource(MR.strings.api_key_test_failed, err))
                                     }
-                                } catch (e: Exception) {
-                                    context.toast(context.stringResource(MR.strings.api_key_test_failed, e.message ?: "Unknown error"))
+                                } else {
+                                    val apiKey = shinkuPreferences.geminiApiKey().get().trim()
+                                    if (apiKey.isBlank()) {
+                                        context.toast("API Key cannot be empty")
+                                        return@launch
+                                    }
+                                    val (isSuccess, detail) = testGeminiConnection(
+                                        networkHelper,
+                                        apiKey,
+                                        shinkuPreferences.geminiModel().get().trim(),
+                                    )
+                                    if (isSuccess) {
+                                        context.toast(detail)
+                                    } else {
+                                        context.toast(context.stringResource(MR.strings.api_key_test_failed, detail))
+                                    }
                                 }
+                            } catch (e: Exception) {
+                                context.toast(context.stringResource(MR.strings.api_key_test_failed, e.message ?: "Unknown error"))
                             }
-                        },
-                    ),
-                )
-            }
+                        }
+                    },
+                ),
+            )
         }
 
         return Preference.PreferenceGroup(
@@ -494,12 +479,11 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = shinkuPreferences.translationEngine(),
                     title = "Translation Engine",
-                    subtitle = "Select translation provider (Cloud AI, On-Device AICore, or ML Kit)",
+                    subtitle = "Select translation provider (Cloud AI or Offline ML Kit)",
                     entries = persistentMapOf(
                         "auto" to "Automatic (Cloud AI if configured, with ML Kit fallback)",
                         "gemini_cloud" to "Cloud AI (Gemini / OpenRouter / DeepSeek / Groq)",
                         "mlkit" to "Standard ML Kit (Offline On-Device - Instant Speed)",
-                        "aicore" to "On-Device AICore / OxygenOS (Gemini Nano)",
                     ),
                 ),
                 Preference.PreferenceItem.TextPreference(
@@ -740,6 +724,11 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
             title = stringResource(MR.strings.label_library),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.dynamicLibraryTheme(),
+                    title = "Dynamic Library Sanctuary Theme",
+                    subtitle = "Automatically adapt the app's accent and surface palette to your active Library manga cover.",
+                ),
+                Preference.PreferenceItem.SwitchPreference(
                     preference = shinkuPreferences.showHeroJumpBack(),
                     title = "Show 'Continue Reading' Jump-Back Deck",
                     subtitle = "Display recent in-progress titles at the top of the Library tab.",
@@ -792,14 +781,32 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences,
     ): Preference.PreferenceGroup {
         val previewsRowCount by uiPreferences.previewsRowCount().collectAsState()
+        val nickname by shinkuPreferences.readerNickname().collectAsState()
+        val equippedTitle by shinkuPreferences.equippedBadgeTitle().collectAsState()
+        var showIdentityDialog by remember { mutableStateOf(false) }
+
+        if (showIdentityDialog) {
+            ReaderIdentityDialog(
+                onDismiss = { showIdentityDialog = false },
+            )
+        }
+
+        val identitySubtitle = buildString {
+            append(nickname.ifBlank { "Reader" })
+            if (equippedTitle.isNotBlank()) {
+                append(" • ")
+                append(equippedTitle)
+            }
+            append(" (Tap to customize avatar, nickname & title)")
+        }
 
         return Preference.PreferenceGroup(
             "Interface Enhancements",
             preferenceItems = persistentListOf(
-                Preference.PreferenceItem.EditTextPreference(
-                    preference = shinkuPreferences.readerNickname(),
-                    title = "Reader Identity Nickname",
-                    subtitle = "Personalize your sanctuary welcome name and profile",
+                Preference.PreferenceItem.TextPreference(
+                    title = "Sanctuary Reader Identity",
+                    subtitle = identitySubtitle,
+                    onClick = { showIdentityDialog = true },
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = uiPreferences.expandFilters(),
@@ -945,11 +952,6 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     preference = readerPreferences.flashOnPageChange(),
                     title = stringResource(MR.strings.pref_flash_page),
                     subtitle = stringResource(MR.strings.pref_flash_page_summ),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = readerPreferences.aggressivePageLoading(),
-                    title = stringResource(SYMR.strings.aggressively_load_pages),
-                    subtitle = stringResource(SYMR.strings.aggressively_load_pages_summary),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = sourcePreferences.dataSaverImageFormatJpeg(),

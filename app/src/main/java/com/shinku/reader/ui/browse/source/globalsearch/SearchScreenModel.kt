@@ -275,7 +275,7 @@ abstract class SearchScreenModel(
             val apiKey = shinkuPreferences.geminiApiKey().get()
             val model = shinkuPreferences.geminiModel().get()
             
-            val isVibeEnabled = useVibeSearch && apiKey.isNotBlank()
+            val isVibeEnabled = useVibeSearch && shinkuPreferences.isAiConfigured()
             
             val finalQueries = if (isVibeEnabled) {
                 withContext(Dispatchers.Main) {

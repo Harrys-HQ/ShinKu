@@ -3,6 +3,7 @@ package com.shinku.reader.presentation.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -17,11 +18,12 @@ import com.shinku.reader.domain.manga.model.Manga
 fun DynamicBackdrop(
     manga: Manga?,
     modifier: Modifier = Modifier,
-    blurRadius: Int = 24,
-    overlayColor: Color = Color.Black.copy(alpha = 0.5f),
+    blurRadius: Int = 28,
+    overlayColor: Color = MaterialTheme.colorScheme.surface,
 ) {
     if (manga == null) return
 
+    val accentTint = MaterialTheme.colorScheme.primaryContainer
     Box(modifier = modifier.fillMaxSize()) {
         AsyncImage(
             model = manga,
@@ -32,16 +34,16 @@ fun DynamicBackdrop(
             contentScale = ContentScale.Crop,
         )
 
-        // Gradient overlay for better readability
+        // Theme-aware Sanctuary gradient overlay for crisp readability in Light, Dark, and AMOLED modes
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            overlayColor,
-                            overlayColor.copy(alpha = 0.7f),
-                            overlayColor,
+                            overlayColor.copy(alpha = 0.76f),
+                            accentTint.copy(alpha = 0.28f),
+                            overlayColor.copy(alpha = 0.92f),
                         ),
                     ),
                 ),

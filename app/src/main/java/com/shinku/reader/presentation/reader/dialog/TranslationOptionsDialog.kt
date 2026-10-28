@@ -3,17 +3,17 @@ package com.shinku.reader.presentation.reader.dialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesomeMotion
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.FindInPage
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +32,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.R
+import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 
 @Composable
 fun TranslationOptionsDialog(
@@ -38,15 +43,21 @@ fun TranslationOptionsDialog(
     targetLanguage: String,
     hasCachedTranslations: Boolean,
     isOverlayVisible: Boolean = false,
+    currentPageBlockCount: Int = 0,
     onDismissRequest: () -> Unit,
     onToggleOverlay: () -> Unit = {},
     onTranslateCurrentPage: () -> Unit,
+    onRetranslateCurrentPage: () -> Unit = {},
+    onInspectBubbles: () -> Unit = {},
     onTranslateEntireChapter: () -> Unit,
     onChangeLanguages: () -> Unit,
     onClearTranslations: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
+        shape = SanctuaryShapes.hero,
+        containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.card),
+        tonalElevation = SanctuaryElevation.card,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -57,13 +68,19 @@ fun TranslationOptionsDialog(
                     contentDescription = null,
                     modifier = Modifier
                         .size(32.dp)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .clip(SanctuaryShapes.tag),
                 )
-                Text(
-                    text = "Translation Options",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
+                Column {
+                    SanctuaryOverlineBadge(
+                        text = "SHINKU AI",
+                        compact = true,
+                    )
+                    Text(
+                        text = "Translation Options",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
         },
         text = {
@@ -86,16 +103,40 @@ fun TranslationOptionsDialog(
                     )
                 }
 
-                OptionRow(
-                    icon = Icons.Outlined.Translate,
-                    title = "Translate Current Page",
-                    subtitle = "Live OCR & speech bubble overlay",
-                    iconTint = MaterialTheme.colorScheme.primary,
-                    onClick = {
-                        onDismissRequest()
-                        onTranslateCurrentPage()
-                    },
-                )
+                if (currentPageBlockCount > 0) {
+                    OptionRow(
+                        icon = Icons.Outlined.FindInPage,
+                        title = "Inspect Page Bubbles ($currentPageBlockCount)",
+                        subtitle = "Compare original OCR & translated text, or copy dialogue",
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        onClick = {
+                            onDismissRequest()
+                            onInspectBubbles()
+                        },
+                    )
+
+                    OptionRow(
+                        icon = Icons.Outlined.Refresh,
+                        title = "Re-Translate Current Page",
+                        subtitle = "Bypass cache and run fresh OCR & translation",
+                        iconTint = MaterialTheme.colorScheme.tertiary,
+                        onClick = {
+                            onDismissRequest()
+                            onRetranslateCurrentPage()
+                        },
+                    )
+                } else {
+                    OptionRow(
+                        icon = Icons.Outlined.Translate,
+                        title = "Translate Current Page",
+                        subtitle = "Live OCR & speech bubble overlay",
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        onClick = {
+                            onDismissRequest()
+                            onTranslateCurrentPage()
+                        },
+                    )
+                }
 
                 OptionRow(
                     icon = Icons.Outlined.AutoAwesomeMotion,
@@ -135,7 +176,7 @@ fun TranslationOptionsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismissRequest) {
-                Text("Close")
+                Text("Close", fontWeight = FontWeight.SemiBold)
             }
         },
     )
@@ -152,10 +193,11 @@ private fun OptionRow(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(SanctuaryShapes.medium)
             .clickable(onClick = onClick),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+        shape = SanctuaryShapes.medium,
+        border = SanctuaryBrushes.subtleBorder(),
     ) {
         Row(
             modifier = Modifier

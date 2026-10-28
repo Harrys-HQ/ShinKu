@@ -6,17 +6,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -25,7 +20,9 @@ import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,28 +30,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.data.download.model.Download
+import com.shinku.reader.domain.updates.model.UpdatesWithRelations
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.components.relativeDateText
+import com.shinku.reader.presentation.core.components.ListGroupHeader
+import com.shinku.reader.presentation.core.components.material.DISABLED_ALPHA
+import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.manga.components.ChapterDownloadAction
 import com.shinku.reader.presentation.manga.components.ChapterDownloadIndicator
 import com.shinku.reader.presentation.manga.components.DotSeparatorText
 import com.shinku.reader.presentation.manga.components.MangaCover
 import com.shinku.reader.presentation.util.animateItemFastScroll
 import com.shinku.reader.presentation.util.relativeTimeSpanString
-import com.shinku.reader.data.download.model.Download
 import com.shinku.reader.ui.updates.UpdatesItem
-import com.shinku.reader.domain.updates.model.UpdatesWithRelations
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.presentation.core.components.ListGroupHeader
-import com.shinku.reader.presentation.core.components.material.DISABLED_ALPHA
-import com.shinku.reader.presentation.core.components.material.padding
-import com.shinku.reader.presentation.core.i18n.stringResource
-import com.shinku.reader.presentation.core.util.selectedBackground
 
 internal fun LazyListScope.updatesLastUpdatedItem(
     lastUpdated: Long,
@@ -67,6 +68,8 @@ internal fun LazyListScope.updatesLastUpdatedItem(
         ) {
             Text(
                 text = stringResource(MR.strings.updates_last_update_info, relativeTimeSpanString(lastUpdated)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontStyle = FontStyle.Italic,
             )
         }
@@ -163,26 +166,24 @@ private fun UpdatesUiItem(
 ) {
     val haptic = LocalHapticFeedback.current
     val textAlpha = if (update.read) DISABLED_ALPHA else 1f
-    val shape = RoundedCornerShape(16.dp)
+    val shape = SanctuaryShapes.deckCard
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 3.dp),
+            .padding(horizontal = MaterialTheme.padding.medium, vertical = 4.dp),
         shape = shape,
         color = if (selected) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
         } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle)
         },
-        border = BorderStroke(
-            1.dp,
-            if (selected) {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-            } else {
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f)
-            },
-        ),
+        border = if (selected) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
+        } else {
+            SanctuaryBrushes.subtleBorder()
+        },
+        shadowElevation = SanctuaryElevation.subtle,
     ) {
         Row(
             modifier = Modifier
@@ -194,13 +195,13 @@ private fun UpdatesUiItem(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     },
                 )
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             MangaCover.Square(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(10.dp)),
+                    .size(50.dp)
+                    .clip(SanctuaryShapes.pill),
                 data = update.coverData,
                 onClick = onClickCover,
             )
@@ -260,6 +261,7 @@ private fun UpdatesUiItem(
                         Text(
                             text = readProgress,
                             maxLines = 1,
+                            style = MaterialTheme.typography.bodySmall,
                             color = LocalContentColor.current.copy(alpha = DISABLED_ALPHA),
                             overflow = TextOverflow.Ellipsis,
                         )

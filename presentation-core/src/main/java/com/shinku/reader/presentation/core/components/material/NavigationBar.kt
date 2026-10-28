@@ -1,6 +1,7 @@
 package com.shinku.reader.presentation.core.components.material
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Surface
@@ -25,9 +25,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 
 /**
- * Floating Dynamic Island Manga Dock
+ * Floating Sanctuary Island Manga Dock with Bottom Scroll Fade Scrim
  */
 @Composable
 fun NavigationBar(
@@ -38,24 +39,31 @@ fun NavigationBar(
     windowInsets: WindowInsets = NavigationBarDefaults.windowInsets,
     content: @Composable RowScope.() -> Unit,
 ) {
-    val islandShape = RoundedCornerShape(22.dp)
+    val islandShape = SanctuaryShapes.hero
     val borderGradient = Brush.verticalGradient(
         colors = listOf(
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.55f),
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f),
         ),
+    )
+    val bg = MaterialTheme.colorScheme.background
+    val bottomScrim = Brush.verticalGradient(
+        0.0f to Color.Transparent,
+        0.35f to bg.copy(alpha = 0.86f),
+        1.0f to bg,
     )
 
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .background(bottomScrim)
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 8.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Surface(
             shape = islandShape,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
             contentColor = contentColor,
             tonalElevation = 6.dp,
             shadowElevation = 14.dp,

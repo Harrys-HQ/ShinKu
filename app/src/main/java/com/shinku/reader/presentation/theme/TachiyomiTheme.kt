@@ -2,18 +2,22 @@ package com.shinku.reader.presentation.theme
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.runtime.getValue
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.ColorUtils
+import com.materialkolor.dynamicColorScheme
 import com.shinku.reader.domain.ui.UiPreferences
 import com.shinku.reader.domain.ui.model.AppTheme
+import com.shinku.reader.exh.source.ShinKuPreferences
+import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.theme.colorscheme.BaseColorScheme
 import com.shinku.reader.presentation.theme.colorscheme.CatppuccinColorScheme
 import com.shinku.reader.presentation.theme.colorscheme.GreenAppleColorScheme
@@ -97,16 +101,39 @@ fun TachiyomiTheme(
     genres: List<String>? = null,
     content: @Composable () -> Unit,
 ) {
-    val uiPreferences = Injekt.get<UiPreferences>()
+    val uiPreferences = remember { Injekt.get<UiPreferences>() }
+    val shinkuPreferences = remember { Injekt.get<ShinKuPreferences>() }
+    val dynamicLibraryEnabled by shinkuPreferences.dynamicLibraryTheme().collectAsState()
+    val dynamicSeedColorInt by shinkuPreferences.dynamicLibrarySeedColor().collectAsState()
     val isEInk = com.shinku.reader.util.system.DeviceUtil.isEInkDevice
-    
-    var colorScheme = if (isEInk) {
-        if (isSystemInDarkTheme()) MonochromeColorScheme.darkScheme else MonochromeColorScheme.lightScheme
-    } else {
-        overrideColorScheme ?: getThemeColorScheme(
-            appTheme = appTheme ?: uiPreferences.appTheme().get(),
-            isAmoled = amoled ?: uiPreferences.themeDarkAmoled().get(),
-        )
+    val isDark = isSystemInDarkTheme()
+    val isAmoled = amoled ?: uiPreferences.themeDarkAmoled().get()
+
+    var colorScheme = when {
+        isEInk -> {
+            if (isDark) MonochromeColorScheme.darkScheme else MonochromeColorScheme.lightScheme
+        }
+        overrideColorScheme != null -> overrideColorScheme
+        appTheme == null && dynamicLibraryEnabled && dynamicSeedColorInt != 0 -> {
+            runCatching {
+                dynamicColorScheme(
+                    seedColor = Color(dynamicSeedColorInt),
+                    isDark = isDark,
+                    isAmoled = isAmoled,
+                )
+            }.getOrElse {
+                getThemeColorScheme(
+                    appTheme = uiPreferences.appTheme().get(),
+                    isAmoled = isAmoled,
+                )
+            }
+        }
+        else -> {
+            getThemeColorScheme(
+                appTheme = appTheme ?: uiPreferences.appTheme().get(),
+                isAmoled = isAmoled,
+            )
+        }
     }
 
     if (!isEInk && genres != null && (appTheme ?: uiPreferences.appTheme().get()) == AppTheme.STRAWBERRY_DAIQUIRI) {

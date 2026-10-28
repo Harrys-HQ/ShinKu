@@ -56,8 +56,11 @@ class UpscalingInterceptor : Interceptor {
     }
 
     private fun upscale(bitmap: Bitmap): Bitmap {
-        val matrix = Matrix()
-        matrix.postScale(2f, 2f)
+        val maxDim = maxOf(bitmap.width, bitmap.height).coerceAtLeast(1)
+        val scale = (2048f / maxDim.toFloat()).coerceIn(1.25f, 2.0f)
+        val matrix = Matrix().apply {
+            postScale(scale, scale)
+        }
 
         // Hardware bitmaps cannot be used with Matrix scaling on some devices/versions
         val config = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && bitmap.config == Bitmap.Config.HARDWARE) {
@@ -73,7 +76,15 @@ class UpscalingInterceptor : Interceptor {
         } ?: return bitmap
 
         return try {
-            val scaled = Bitmap.createBitmap(softwareBitmap, 0, 0, softwareBitmap.width, softwareBitmap.height, matrix, true)
+            val scaled = Bitmap.createBitmap(
+                softwareBitmap,
+                0,
+                0,
+                softwareBitmap.width,
+                softwareBitmap.height,
+                matrix,
+                true,
+            )
             val sharpened = applyUnsharpMask(scaled)
             if (scaled != softwareBitmap && scaled != sharpened) {
                 scaled.recycle()
@@ -82,70 +93,82 @@ class UpscalingInterceptor : Interceptor {
                 softwareBitmap.recycle()
             }
             sharpened
-        } catch (_: Exception) {
+        } catch (_: Throwable) {
             bitmap
         }
     }
 
+    /**
+     * Memory-safe 3x3 Unsharp Mask using a 3-row rolling scanline buffer (~32 KB total)
+     * instead of allocating two full-frame IntArray(width * height) buffers (~62 MB).
+     */
     private fun applyUnsharpMask(src: Bitmap): Bitmap {
         val width = src.width
         val height = src.height
+        if (width < 3 || height < 3) return src
+
         val dest = Bitmap.createBitmap(width, height, src.config ?: Bitmap.Config.ARGB_8888)
-        
-        val pixels = IntArray(width * height)
-        val outPixels = IntArray(width * height)
-        src.getPixels(pixels, 0, width, 0, 0, width, height)
-        System.arraycopy(pixels, 0, outPixels, 0, width * height)
-        
-        // Optimized 3x3 Sharpening filter:
-        // [ 0, -1,  0 ]
-        // [-1,  5, -1 ]
-        // [ 0, -1,  0 ]
+
+        var rowPrev = IntArray(width)
+        var rowCurr = IntArray(width)
+        var rowNext = IntArray(width)
+        val outRow = IntArray(width)
+
+        src.getPixels(rowPrev, 0, width, 0, 0, width, 1)
+        src.getPixels(rowCurr, 0, width, 0, 1, width, 1)
+
+        // Copy top border row unchanged
+        dest.setPixels(rowPrev, 0, width, 0, 0, width, 1)
+
         for (y in 1 until height - 1) {
-            val offset = y * width
+            src.getPixels(rowNext, 0, width, 0, y + 1, width, 1)
+
+            // Preserve left and right border pixels
+            outRow[0] = rowCurr[0]
+            outRow[width - 1] = rowCurr[width - 1]
+
             for (x in 1 until width - 1) {
-                val idx = offset + x
-                
-                val c00 = pixels[idx - width] // Top
-                val c10 = pixels[idx - 1]     // Left
-                val c11 = pixels[idx]         // Center
-                val c12 = pixels[idx + 1]     // Right
-                val c22 = pixels[idx + width] // Bottom
-                
-                val r00 = (c00 shr 16) and 0xFF
-                val g00 = (c00 shr 8) and 0xFF
-                val b00 = c00 and 0xFF
-                
-                val r10 = (c10 shr 16) and 0xFF
-                val g10 = (c10 shr 8) and 0xFF
-                val b10 = c10 and 0xFF
-                
-                val r11 = (c11 shr 16) and 0xFF
-                val g11 = (c11 shr 8) and 0xFF
-                val b11 = c11 and 0xFF
-                
-                val r12 = (c12 shr 16) and 0xFF
-                val g12 = (c12 shr 8) and 0xFF
-                val b12 = c12 and 0xFF
-                
-                val r22 = (c22 shr 16) and 0xFF
-                val g22 = (c22 shr 8) and 0xFF
-                val b22 = c22 and 0xFF
-                
-                val r = (r11 * 5) - r00 - r10 - r12 - r22
-                val g = (g11 * 5) - g00 - g10 - g12 - g22
-                val b = (b11 * 5) - b00 - b10 - b12 - b22
-                
+                val c00 = rowPrev[x]     // Top
+                val c10 = rowCurr[x - 1] // Left
+                val c11 = rowCurr[x]     // Center
+                val c12 = rowCurr[x + 1] // Right
+                val c22 = rowNext[x]     // Bottom
+
+                val r = ((c11 shr 16 and 0xFF) * 5) -
+                    (c00 shr 16 and 0xFF) -
+                    (c10 shr 16 and 0xFF) -
+                    (c12 shr 16 and 0xFF) -
+                    (c22 shr 16 and 0xFF)
+                val g = ((c11 shr 8 and 0xFF) * 5) -
+                    (c00 shr 8 and 0xFF) -
+                    (c10 shr 8 and 0xFF) -
+                    (c12 shr 8 and 0xFF) -
+                    (c22 shr 8 and 0xFF)
+                val b = ((c11 and 0xFF) * 5) -
+                    (c00 and 0xFF) -
+                    (c10 and 0xFF) -
+                    (c12 and 0xFF) -
+                    (c22 and 0xFF)
+
                 val nr = r.coerceIn(0, 255)
                 val ng = g.coerceIn(0, 255)
                 val nb = b.coerceIn(0, 255)
-                val alpha = (c11 shr 24) and 0xFF
-                
-                outPixels[idx] = (alpha shl 24) or (nr shl 16) or (ng shl 8) or nb
+                val alpha = (c11 ushr 24) and 0xFF
+
+                outRow[x] = (alpha shl 24) or (nr shl 16) or (ng shl 8) or nb
             }
+
+            dest.setPixels(outRow, 0, width, 0, y, width, 1)
+
+            // Rotate row buffers without allocating new arrays
+            val tmp = rowPrev
+            rowPrev = rowCurr
+            rowCurr = rowNext
+            rowNext = tmp
         }
-        
-        dest.setPixels(outPixels, 0, width, 0, 0, width, height)
+
+        // Copy bottom border row unchanged
+        dest.setPixels(rowCurr, 0, width, 0, height - 1, width, 1)
         return dest
     }
 }

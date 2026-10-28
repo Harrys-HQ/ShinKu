@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -16,29 +15,30 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import com.shinku.reader.R
+import com.shinku.reader.core.common.util.lang.launchIO
 import com.shinku.reader.core.preference.asState
+import com.shinku.reader.data.download.DownloadManager
 import com.shinku.reader.domain.base.BasePreferences
+import com.shinku.reader.domain.history.model.SanctuaryLevelInfo
+import com.shinku.reader.domain.manga.interactor.GetLibraryManga
 import com.shinku.reader.domain.ui.UiPreferences
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.more.MoreScreen
 import com.shinku.reader.presentation.more.settings.screen.SettingsShinKuSettingsScreen
 import com.shinku.reader.presentation.util.Tab
-import com.shinku.reader.R
-import com.shinku.reader.data.download.DownloadManager
 import com.shinku.reader.ui.download.DownloadQueueScreen
 import com.shinku.reader.ui.history.HistoryTab
 import com.shinku.reader.ui.setting.SettingsScreen
 import com.shinku.reader.ui.stats.StatsScreen
 import com.shinku.reader.ui.updates.UpdatesTab
+import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.domain.history.interactor.GetTotalReadDuration
-import com.shinku.reader.domain.manga.interactor.GetLibraryManga
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.presentation.core.i18n.stringResource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -68,6 +68,7 @@ data object MoreTab : Tab {
         val readChapters by screenModel.readChapters.collectAsState()
         val readDuration by screenModel.readDuration.collectAsState()
         val readStreak by screenModel.readStreak.collectAsState()
+        val levelInfo by screenModel.levelInfo.collectAsState()
         MoreScreen(
             downloadQueueStateProvider = { downloadQueueState },
             downloadedOnly = screenModel.downloadedOnly,
@@ -80,6 +81,7 @@ data object MoreTab : Tab {
             readChapters = readChapters,
             readDuration = readDuration,
             readStreak = readStreak,
+            levelInfo = levelInfo,
             // SY <--
             onClickDownloadQueue = { navigator.push(DownloadQueueScreen) },
             onClickDataAndStorage = { navigator.push(SettingsScreen(SettingsScreen.Destination.DataAndStorage)) },
@@ -96,7 +98,6 @@ data object MoreTab : Tab {
 private class MoreScreenModel(
     private val downloadManager: DownloadManager = Injekt.get(),
     private val getLibraryManga: GetLibraryManga = Injekt.get(),
-    private val getTotalReadDuration: GetTotalReadDuration = Injekt.get(),
     private val getReadingStats: com.shinku.reader.domain.history.interactor.GetReadingStats = Injekt.get(),
     preferences: BasePreferences = Injekt.get(),
     // SY -->
@@ -119,6 +120,9 @@ private class MoreScreenModel(
 
     private val _readStreak = MutableStateFlow(0)
     val readStreak = _readStreak.asStateFlow()
+
+    private val _levelInfo = MutableStateFlow<SanctuaryLevelInfo?>(null)
+    val levelInfo = _levelInfo.asStateFlow()
     // SY <--
 
     private var _downloadQueueState: MutableStateFlow<DownloadQueueState> = MutableStateFlow(DownloadQueueState.Stopped)
@@ -127,11 +131,20 @@ private class MoreScreenModel(
     init {
         // SY -->
         screenModelScope.launchIO {
-            val libraryManga = getLibraryManga.await()
-            val stats = getReadingStats.await()
-            _readChapters.value = libraryManga.sumOf { it.readCount }.toInt()
+            val libraryManga = getLibraryManga.await().distinctBy { it.id }
+            val chaptersReadCount = libraryManga.sumOf { it.readCount }.toInt()
+            val completedCount = libraryManga.count {
+                it.manga.status.toInt() == SManga.COMPLETED && it.unreadCount == 0L
+            }
+            val stats = getReadingStats.await(
+                libraryMangaCount = libraryManga.size,
+                completedMangaCount = completedCount,
+                readChapterCount = chaptersReadCount,
+            )
+            _readChapters.value = chaptersReadCount
             _readDuration.value = stats.totalReadDuration
             _readStreak.value = stats.currentStreak
+            _levelInfo.value = stats.levelInfo
         }
         // SY <--
         // Handle running/paused status change and queue progress updating

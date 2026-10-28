@@ -64,6 +64,11 @@ object TranslationCache {
         com.shinku.reader.data.cache.TranslationDiskCache.putPage(chapterId, pageIndex, targetLanguage, blocks)
     }
 
+    fun removePage(chapterId: Long, pageIndex: Int, targetLanguage: String) {
+        val key = "${chapterId}_${pageIndex}_$targetLanguage"
+        memCache.remove(key)
+    }
+
     fun getChapter(chapterId: Long, targetLanguage: String): Map<Int, List<TranslatedBlock>>? {
         val diskChapter = com.shinku.reader.data.cache.TranslationDiskCache.getChapter(chapterId, targetLanguage)
         diskChapter?.forEach { (index, blocks) ->

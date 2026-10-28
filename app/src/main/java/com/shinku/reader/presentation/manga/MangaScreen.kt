@@ -103,11 +103,13 @@ import com.shinku.reader.presentation.manga.components.MangaChapterListItem
 import com.shinku.reader.presentation.manga.components.MangaCover
 import com.shinku.reader.presentation.manga.components.MangaInfoBox
 import com.shinku.reader.presentation.manga.components.MangaInfoButtons
+import com.shinku.reader.presentation.manga.components.MangaRecapCard
 import com.shinku.reader.presentation.manga.components.MangaToolbar
 import com.shinku.reader.presentation.manga.components.MissingChapterCountListItem
 import com.shinku.reader.presentation.manga.components.PagePreviewItems
 import com.shinku.reader.presentation.manga.components.PagePreviews
 import com.shinku.reader.presentation.manga.components.SearchMetadataChips
+import com.shinku.reader.presentation.manga.components.SimilarVibesSection
 import com.shinku.reader.presentation.theme.DynamicThemeProvider
 import com.shinku.reader.presentation.theme.TachiyomiTheme
 import com.shinku.reader.presentation.util.formatChapterNumber
@@ -471,75 +473,47 @@ private fun MangaScreenSmallImpl(
                 )
             }
 
+            item(key = MangaScreenItem.INFO_BUTTONS) {
+                MangaInfoButtons(
+                    showRecommendsButton = !state.showRecommendationsInOverflow,
+                    showMergeWithAnotherButton = state.showMergeWithAnother,
+                    showVibeButton = state.showVibeButton,
+                    onRecommendClicked = onRecommendClicked,
+                    onMergeWithAnotherClicked = onMergeWithAnotherClicked,
+                    onVibeClicked = onVibeClicked,
+                )
+            }
+
             if (state.showRecapPrompt) {
                 item(key = "ai_chapter_recap_prompt") {
-                    androidx.compose.material3.ElevatedCard(
-                        modifier = Modifier.padding(16.dp),
-                        colors = androidx.compose.material3.CardDefaults.elevatedCardColors(
-                            containerColor = androidx.compose.material3.MaterialTheme.colorScheme.secondaryContainer
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Welcome Back!",
-                                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                            Text(
-                                text = "It has been over 2 weeks since you last read this manga. Would you like a quick AI summary of what happened in the last read chapters to get you back up to speed?",
-                                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                            if (state.isLoadingRecap) {
-                                androidx.compose.material3.CircularProgressIndicator(
-                                    modifier = Modifier.padding(top = 8.dp)
-                                )
-                            } else if (state.recapText != null) {
-                                Text(
-                                    text = state.recapText,
-                                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                                    color = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.padding(vertical = 8.dp)
-                                )
-                                Row(
-                                    horizontalArrangement = Arrangement.End,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    androidx.compose.material3.TextButton(onClick = { onDismissRecap?.invoke() }) {
-                                        Text("Close", color = androidx.compose.material3.MaterialTheme.colorScheme.primary)
-                                    }
-                                }
-                            } else {
-                                Row(
-                                    horizontalArrangement = Arrangement.End,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    androidx.compose.material3.TextButton(onClick = { onDismissRecap?.invoke() }) {
-                                        Text("Ignore", color = androidx.compose.material3.MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f))
-                                    }
-                                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
-                                    androidx.compose.material3.Button(
-                                        onClick = { onGenerateRecap?.invoke() }
-                                    ) {
-                                        Text("Generate AI Recap")
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    MangaRecapCard(
+                        isLoadingRecap = state.isLoadingRecap,
+                        recapText = state.recapText,
+                        onGenerateRecap = onGenerateRecap,
+                        onDismissRecap = onDismissRecap,
+                    )
                 }
             }
 
             if (state.similarVibes.isNotEmpty()) {
                 item(key = MangaScreenItem.SIMILAR_VIBES) {
-                    SimilarVibes(
+                    SimilarVibesSection(
                         mangaList = state.similarVibes,
-                        onClick = { onSearch(it.title, true) }
+                        onClick = { onSearch(it.title, true) },
                     )
                 }
+            }
+
+            item(key = MangaScreenItem.CHAPTER_HEADER) {
+                val missingChapterCount = remember(listItem) {
+                    listItem.filterIsInstance<ChapterList.MissingCount>().sumOf { it.count }
+                }
+                ChapterHeader(
+                    enabled = !isAnySelected,
+                    chapterCount = chapters.size,
+                    missingChapterCount = missingChapterCount,
+                    onClick = onFilterClicked,
+                )
             }
 
             // Chapter list items implementation
@@ -640,56 +614,6 @@ private fun onChapterItemClick(
         chapterItem.selected -> onToggleSelection(false)
         isAnyChapterSelected -> onToggleSelection(true)
         else -> onChapterClicked(chapterItem.chapter)
-    }
-}
-
-@Composable
-private fun SimilarVibes(
-    mangaList: List<Manga>,
-    onClick: (Manga) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = MaterialTheme.padding.small),
-    ) {
-        Text(
-            text = "Similar Vibes",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
-        )
-        LazyRow(
-            contentPadding = PaddingValues(
-                horizontal = MaterialTheme.padding.medium,
-                vertical = MaterialTheme.padding.small,
-            ),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-        ) {
-            items(
-                items = mangaList,
-                key = { it.id },
-            ) { manga ->
-                Column(
-                    modifier = Modifier
-                        .width(120.dp)
-                        .clickable { onClick(manga) },
-                ) {
-                    MangaCover.Book(
-                        data = manga,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(0.66f),
-                    )
-                    Text(
-                        text = manga.title,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
-            }
-        }
     }
 }
 

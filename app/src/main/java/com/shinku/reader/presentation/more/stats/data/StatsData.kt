@@ -41,6 +41,7 @@ sealed interface StatsData {
 
     data class TimeStats(
         val timeOfDayHistory: Map<Int, Long>,
+        val dailyHistory: Map<java.util.Date, Long> = emptyMap(),
     ) : StatsData
 
     data class VelocityStats(
@@ -51,6 +52,7 @@ sealed interface StatsData {
     data class Milestones(
         val badges: List<com.shinku.reader.domain.history.model.Badge>,
         val earnedBadges: List<com.shinku.reader.domain.history.model.Badge> = badges.filter { it.isEarned },
+        val levelInfo: com.shinku.reader.domain.history.model.SanctuaryLevelInfo? = null,
     ) : StatsData
     // SY <--
 }

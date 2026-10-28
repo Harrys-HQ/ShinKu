@@ -260,10 +260,13 @@ data object LibraryTab : Tab {
 
                 else -> {
                     Box(modifier = Modifier.fillMaxWidth().fillMaxHeight()) {
+                        val activeCategory = state.displayedCategories.getOrNull(state.coercedActiveCategoryIndex)
+                        val firstManga = activeCategory?.let { state.getItemsForCategory(it).firstOrNull()?.libraryManga?.manga }
+                        val themeAnchorManga = firstManga ?: state.lastReadItem?.manga
+                        com.shinku.reader.presentation.theme.SyncLibraryThemeEffect(manga = themeAnchorManga)
+
                         if (state.backdropBlurEnabled) {
-                            val activeCategory = state.displayedCategories.getOrNull(state.coercedActiveCategoryIndex)
-                            val firstManga = activeCategory?.let { state.getItemsForCategory(it).firstOrNull()?.libraryManga?.manga }
-                            DynamicBackdrop(manga = firstManga)
+                            DynamicBackdrop(manga = themeAnchorManga)
                         }
 
                         val layoutDirection = LocalLayoutDirection.current

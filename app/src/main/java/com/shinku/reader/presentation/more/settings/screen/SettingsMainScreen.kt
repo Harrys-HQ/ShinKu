@@ -2,14 +2,13 @@ package com.shinku.reader.presentation.more.settings.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ChromeReaderMode
-import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.Explore
@@ -38,21 +37,20 @@ import androidx.core.graphics.ColorUtils
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.icerock.moko.resources.StringResource
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.AppBarActions
+import com.shinku.reader.presentation.core.components.material.Scaffold
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.more.components.CommandGroup
+import com.shinku.reader.presentation.more.components.CommandRowItem
 import com.shinku.reader.presentation.more.settings.screen.about.AboutScreen
 import com.shinku.reader.presentation.more.settings.widget.TextPreferenceWidget
 import com.shinku.reader.presentation.util.LocalBackPress
 import com.shinku.reader.presentation.util.Screen
-import com.shinku.reader.exh.assets.EhAssets
-import com.shinku.reader.exh.assets.ehassets.EhLogo
-import com.shinku.reader.exh.assets.ehassets.MangadexLogo
+import dev.icerock.moko.resources.StringResource
 import kotlinx.collections.immutable.persistentListOf
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.components.material.Scaffold
-import com.shinku.reader.presentation.core.i18n.stringResource
 import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 
 object SettingsMainScreen : Screen() {
@@ -108,39 +106,31 @@ object SettingsMainScreen : Screen() {
             containerColor = containerColor,
             content = { contentPadding ->
                 val state = rememberLazyListState()
-                // SY -->
-                val items = items.filter { it.screen !is SearchableSettings || it.screen.isEnabled() }
-                // SY <--
-                val indexSelected = if (twoPane) {
-                    items.indexOfFirst { it.screen::class == navigator.items.first()::class }
+                val visibleItems = items.filter { it.screen !is SearchableSettings || it.screen.isEnabled() }
+
+                if (twoPane) {
+                    val indexSelected = visibleItems.indexOfFirst { it.screen::class == navigator.items.first()::class }
                         .also {
                             LaunchedEffect(Unit) {
                                 state.animateScrollToItem(it)
                                 if (it > 0) {
-                                    // Lift scroll
                                     topBarState.contentOffset = topBarState.heightOffsetLimit
                                 }
                             }
                         }
-                } else {
-                    null
-                }
 
-                LazyColumn(
-                    state = state,
-                    contentPadding = contentPadding,
-                ) {
-                    itemsIndexed(
-                        items = items,
-                        key = { _, item -> item.hashCode() },
-                    ) { index, item ->
-                        val selected = indexSelected == index
-                        var modifier: Modifier = Modifier
-                        var contentColor = LocalContentColor.current
-                        if (twoPane) {
-                            modifier = Modifier
+                    LazyColumn(
+                        state = state,
+                        contentPadding = contentPadding,
+                    ) {
+                        itemsIndexed(
+                            items = visibleItems,
+                            key = { _, item -> item.hashCode() },
+                        ) { index, item ->
+                            val selected = indexSelected == index
+                            val modifier = Modifier
                                 .padding(horizontal = 8.dp)
-                                .clip(RoundedCornerShape(24.dp))
+                                .clip(SanctuaryShapes.hero)
                                 .then(
                                     if (selected) {
                                         Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
@@ -148,18 +138,75 @@ object SettingsMainScreen : Screen() {
                                         Modifier
                                     },
                                 )
-                            if (selected) {
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            val contentColor = if (selected) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                LocalContentColor.current
+                            }
+                            CompositionLocalProvider(LocalContentColor provides contentColor) {
+                                TextPreferenceWidget(
+                                    modifier = modifier,
+                                    title = stringResource(item.titleRes),
+                                    subtitle = item.formatSubtitle(),
+                                    icon = item.icon,
+                                    onPreferenceClick = { navigator.navigate(item.screen, twoPane) },
+                                )
                             }
                         }
-                        CompositionLocalProvider(LocalContentColor provides contentColor) {
-                            TextPreferenceWidget(
-                                modifier = modifier,
-                                title = stringResource(item.titleRes),
-                                subtitle = item.formatSubtitle(),
-                                icon = item.icon,
-                                onPreferenceClick = { navigator.navigate(item.screen, twoPane) },
-                            )
+                    }
+                } else {
+                    val experienceGroup = visibleItems.take(3)
+                    val contentSyncGroup = visibleItems.drop(3).take(3)
+                    val systemGroup = visibleItems.drop(6)
+
+                    LazyColumn(
+                        state = state,
+                        contentPadding = PaddingValues(
+                            top = contentPadding.calculateTopPadding() + 4.dp,
+                            bottom = contentPadding.calculateBottomPadding() + 24.dp,
+                        ),
+                    ) {
+                        if (experienceGroup.isNotEmpty()) {
+                            item {
+                                CommandGroup(title = "Visuals & Reading Experience") {
+                                    experienceGroup.forEach { item ->
+                                        CommandRowItem(
+                                            title = stringResource(item.titleRes),
+                                            subtitle = item.formatSubtitle(),
+                                            icon = item.icon,
+                                            onClick = { navigator.navigate(item.screen, twoPane) },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (contentSyncGroup.isNotEmpty()) {
+                            item {
+                                CommandGroup(title = "Content, Sources & Sync") {
+                                    contentSyncGroup.forEach { item ->
+                                        CommandRowItem(
+                                            title = stringResource(item.titleRes),
+                                            subtitle = item.formatSubtitle(),
+                                            icon = item.icon,
+                                            onClick = { navigator.navigate(item.screen, twoPane) },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (systemGroup.isNotEmpty()) {
+                            item {
+                                CommandGroup(title = "Storage, Security & System") {
+                                    systemGroup.forEach { item ->
+                                        CommandRowItem(
+                                            title = stringResource(item.titleRes),
+                                            subtitle = item.formatSubtitle(),
+                                            icon = item.icon,
+                                            onClick = { navigator.navigate(item.screen, twoPane) },
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

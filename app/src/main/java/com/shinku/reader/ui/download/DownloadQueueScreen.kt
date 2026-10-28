@@ -4,7 +4,6 @@ import android.view.LayoutInflater
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,20 +45,20 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.shinku.reader.core.common.util.lang.launchUI
+import com.shinku.reader.databinding.DownloadListBinding
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.AppBarActions
 import com.shinku.reader.presentation.components.DropdownMenu
 import com.shinku.reader.presentation.components.NestedMenuItem
-import com.shinku.reader.presentation.util.Screen
-import com.shinku.reader.databinding.DownloadListBinding
-import kotlinx.collections.immutable.persistentListOf
-import com.shinku.reader.core.common.util.lang.launchUI
-import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.Pill
 import com.shinku.reader.presentation.core.components.material.ExtendedFloatingActionButton
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.EmptyScreen
+import com.shinku.reader.presentation.util.Screen
+import kotlinx.collections.immutable.persistentListOf
 import kotlin.math.roundToInt
 
 object DownloadQueueScreen : Screen() {
@@ -110,13 +109,12 @@ object DownloadQueueScreen : Screen() {
                                 overflow = TextOverflow.Ellipsis,
                             )
                             if (downloadCount > 0) {
-                                val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
                                 Pill(
                                     text = "$downloadCount",
-                                    modifier = Modifier.padding(start = 4.dp),
-                                    color = MaterialTheme.colorScheme.onBackground
-                                        .copy(alpha = pillAlpha),
-                                    fontSize = 14.sp,
+                                    modifier = Modifier.padding(start = 6.dp),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                    contentColor = MaterialTheme.colorScheme.primary,
+                                    fontSize = 13.sp,
                                 )
                             }
                         }

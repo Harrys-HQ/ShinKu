@@ -5,16 +5,8 @@ import androidx.compose.ui.util.fastFilter
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.shinku.reader.core.util.fastCountNot
-import com.shinku.reader.presentation.more.stats.StatsScreenState
-import com.shinku.reader.presentation.more.stats.data.StatsData
 import com.shinku.reader.data.download.DownloadManager
 import com.shinku.reader.data.track.TrackerManager
-import eu.kanade.tachiyomi.source.model.SManga
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
 import com.shinku.reader.domain.history.interactor.GetTotalReadDuration
 import com.shinku.reader.domain.library.model.LibraryManga
 import com.shinku.reader.domain.library.service.LibraryPreferences
@@ -25,8 +17,15 @@ import com.shinku.reader.domain.manga.interactor.GetLibraryManga
 import com.shinku.reader.domain.manga.interactor.GetReadMangaNotInLibraryView
 import com.shinku.reader.domain.track.interactor.GetTracksPerManga
 import com.shinku.reader.domain.track.model.Track
+import com.shinku.reader.presentation.more.stats.StatsScreenState
+import com.shinku.reader.presentation.more.stats.data.StatsData
 import eu.kanade.tachiyomi.source.local.isLocal
-
+import eu.kanade.tachiyomi.source.model.SManga
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -100,6 +99,7 @@ class StatsScreenModel(
                 completedMangaCount = overviewStatData.completedMangaCount,
                 trackedTitleCount = trackersStatData.trackedTitleCount,
                 trackerCount = trackersStatData.trackerCount,
+                readChapterCount = chaptersStatData.readChapterCount,
             )
             val streaksStatData = StatsData.Streaks(
                 currentStreak = readingStats.currentStreak,
@@ -112,6 +112,7 @@ class StatsScreenModel(
             )
             val timeStatData = StatsData.TimeStats(
                 timeOfDayHistory = readingStats.timeOfDayHistory,
+                dailyHistory = readingStats.dailyHistory,
             )
             val velocityStatData = StatsData.VelocityStats(
                 averageVelocity = readingStats.averageVelocity,
@@ -119,6 +120,7 @@ class StatsScreenModel(
             )
             val milestonesStatData = StatsData.Milestones(
                 badges = readingStats.badges,
+                levelInfo = readingStats.levelInfo,
             )
             // SY <--
 
@@ -203,8 +205,7 @@ class StatsScreenModel(
 
     fun getWrappedSummary(context: android.content.Context): String {
         val state = state.value as? StatsScreenState.Success ?: return ""
-        val none = context.getString(com.shinku.reader.i18n.MR.strings.none.resourceId)
-        
+
         val duration = state.overview.totalReadDuration
             .toDuration(DurationUnit.MILLISECONDS)
             .let { d ->
@@ -221,14 +222,14 @@ class StatsScreenModel(
             append("✅ Completed: ${state.overview.completedMangaCount}\n")
             append("🔥 Current Streak: ${state.streaks.currentStreak} days\n")
             append("🏆 Badges Unlocked: ${state.milestones.earnedBadges.size}\n\n")
-            
+
             if (state.genres.topGenres.isNotEmpty()) {
                 append("🎭 Top Genres: ${state.genres.topGenres.take(3).joinToString(", ")}\n")
             }
             if (state.authors.topAuthors.isNotEmpty()) {
                 append("✍️ Top Authors: ${state.authors.topAuthors.take(3).joinToString(", ")}\n")
             }
-            
+
             append("\n#ShinKuReader #Manga")
         }
     }
