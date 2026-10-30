@@ -1459,16 +1459,24 @@ class ReaderActivity : BaseActivity() {
     }
 
     fun captureViewerSnapshot(): android.graphics.Bitmap? {
-        if (!::binding.isInitialized) return null
-        val view = binding.viewerContainer
-        val width = view.width
-        val height = view.height
-        if (width <= 0 || height <= 0) return null
+        try {
+            if (!::binding.isInitialized) return null
+            val view = binding.viewerContainer
+            val width = view.width
+            val height = view.height
+            if (width <= 0 || height <= 0) {
+                logcat(LogPriority.WARN) { "captureViewerSnapshot: viewerContainer size is invalid (${width}x${height})" }
+                return null
+            }
 
-        val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
-        val canvas = android.graphics.Canvas(bitmap)
-        view.draw(canvas)
-        return bitmap
+            val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(bitmap)
+            view.draw(canvas)
+            return bitmap
+        } catch (e: Throwable) {
+            logcat(LogPriority.ERROR, e) { "Failed to capture viewer snapshot" }
+            return null
+        }
     }
 
     /**

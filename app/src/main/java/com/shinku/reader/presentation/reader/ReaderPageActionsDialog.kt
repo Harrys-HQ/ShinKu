@@ -144,7 +144,6 @@ fun ReaderPageActionsDialog(
                     contentColor = MaterialTheme.colorScheme.primary,
                     onClick = {
                         onAreaOcr()
-                        onDismissRequest()
                     },
                 )
                 AiToolRow(
