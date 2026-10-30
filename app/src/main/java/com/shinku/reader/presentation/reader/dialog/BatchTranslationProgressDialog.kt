@@ -160,14 +160,18 @@ fun BatchTranslationProgressDialog(
                         fontWeight = FontWeight.Medium,
                     )
                     TextButton(onClick = onToggleOverlay) {
-                        Text(if (isOverlayVisible) "Hide Overlays" else "Show Overlays")
+                        Text(
+                            text = if (isOverlayVisible) "Hide Overlays" else "Show Overlays",
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onRunInBackground) {
-                Text("Run in Background", fontWeight = FontWeight.Bold)
+                Text("Run in Background", fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
             }
         },
         dismissButton = {
@@ -175,6 +179,8 @@ fun BatchTranslationProgressDialog(
                 Text(
                     text = "Cancel",
                     color = MaterialTheme.colorScheme.error,
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
         },

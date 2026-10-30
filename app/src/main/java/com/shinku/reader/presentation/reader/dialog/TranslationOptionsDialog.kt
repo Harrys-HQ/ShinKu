@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesomeMotion
 import androidx.compose.material.icons.outlined.DeleteOutline
@@ -87,6 +90,8 @@ fun TranslationOptionsDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
                     .padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -176,7 +181,7 @@ fun TranslationOptionsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismissRequest) {
-                Text("Close", fontWeight = FontWeight.SemiBold)
+                Text("Close", fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
             }
         },
     )

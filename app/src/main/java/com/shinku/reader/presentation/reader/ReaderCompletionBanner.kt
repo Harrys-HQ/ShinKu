@@ -104,6 +104,8 @@ fun ReaderCompletionBanner(
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    softWrap = false,
                 )
                 Icon(
                     imageVector = Icons.Outlined.LocalFireDepartment,

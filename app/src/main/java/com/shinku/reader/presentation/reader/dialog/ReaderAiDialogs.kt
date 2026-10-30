@@ -169,7 +169,7 @@ fun ReaderAiInsightDialog(
                     modifier = Modifier.size(16.dp),
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Copy")
+                Text("Copy", maxLines = 1, softWrap = false)
             }
         },
         confirmButton = {
@@ -177,7 +177,7 @@ fun ReaderAiInsightDialog(
                 onClick = onDismissRequest,
                 shape = SanctuaryShapes.medium,
             ) {
-                Text(stringResource(MR.strings.action_ok))
+                Text(stringResource(MR.strings.action_ok), maxLines = 1, softWrap = false)
             }
         },
     )
@@ -300,7 +300,7 @@ fun ReaderTranslationLanguageDialog(
                             modifier = Modifier.size(16.dp),
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Swap Languages")
+                        Text("Swap Languages", maxLines = 1, softWrap = false)
                     }
                 }
 
@@ -314,7 +314,7 @@ fun ReaderTranslationLanguageDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(stringResource(MR.strings.action_cancel))
+                Text(stringResource(MR.strings.action_cancel), maxLines = 1, softWrap = false)
             }
         },
         confirmButton = {
@@ -325,7 +325,7 @@ fun ReaderTranslationLanguageDialog(
                 },
                 shape = SanctuaryShapes.medium,
             ) {
-                Text(stringResource(MR.strings.action_ok))
+                Text(stringResource(MR.strings.action_ok), maxLines = 1, softWrap = false)
             }
         },
     )

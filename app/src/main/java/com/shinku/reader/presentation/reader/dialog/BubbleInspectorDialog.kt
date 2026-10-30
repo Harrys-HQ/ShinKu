@@ -170,12 +170,12 @@ fun BubbleInspectorDialog(
                     modifier = Modifier.size(16.dp),
                 )
                 Spacer(modifier = Modifier.size(6.dp))
-                Text("Re-Translate Page")
+                Text("Re-Translate Page", maxLines = 1, softWrap = false)
             }
         },
         confirmButton = {
             TextButton(onClick = onDismissRequest) {
-                Text("Close", fontWeight = FontWeight.Bold)
+                Text("Close", fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
             }
         },
     )

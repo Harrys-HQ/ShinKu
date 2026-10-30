@@ -42,7 +42,11 @@ fun ModeSelectionDialog(
             ) {
                 onUseDefault?.let {
                     OutlinedButton(onClick = it) {
-                        Text(text = stringResource(MR.strings.action_revert_to_default))
+                        Text(
+                            text = stringResource(MR.strings.action_revert_to_default),
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                 }
 
@@ -59,7 +63,11 @@ fun ModeSelectionDialog(
                             imageVector = Icons.Outlined.Check,
                             contentDescription = null,
                         )
-                        Text(text = stringResource(MR.strings.action_apply))
+                        Text(
+                            text = stringResource(MR.strings.action_apply),
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                 }
             }

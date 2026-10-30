@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.CropFree
 import androidx.compose.material.icons.outlined.Translate
@@ -65,32 +66,50 @@ fun AreaTranslationResultDialog(
         tonalElevation = SanctuaryElevation.card,
         title = {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Surface(
-                    shape = SanctuaryShapes.tag,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(36.dp),
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f, fill = false),
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Outlined.Translate,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp),
+                    Surface(
+                        shape = SanctuaryShapes.tag,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(36.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.Translate,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                    Column {
+                        SanctuaryOverlineBadge(
+                            text = "BILINGUAL AI RESULT",
+                            compact = true,
+                        )
+                        Text(
+                            text = "Area Translation",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
                         )
                     }
                 }
-                Column {
-                    SanctuaryOverlineBadge(
-                        text = "BILINGUAL AI RESULT",
-                        compact = true,
-                    )
-                    Text(
-                        text = "Area Translation",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                IconButton(
+                    onClick = onDismissRequest,
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = "Close",
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
@@ -199,60 +218,44 @@ fun AreaTranslationResultDialog(
             }
         },
         confirmButton = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (onApplyOverlay != null) {
-                    Button(
-                        onClick = onApplyOverlay,
-                        shape = SanctuaryShapes.pill,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Translate,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "Overlay on Page")
-                    }
-                } else {
-                    Button(
-                        onClick = onDismissRequest,
-                        shape = SanctuaryShapes.pill,
-                    ) {
-                        Text(text = "Done")
-                    }
-                }
-            }
-        },
-        dismissButton = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextButton(
-                    onClick = onDismissRequest,
+            if (onApplyOverlay != null) {
+                Button(
+                    onClick = onApplyOverlay,
                     shape = SanctuaryShapes.pill,
-                ) {
-                    Text(text = "Close")
-                }
-                FilledTonalButton(
-                    onClick = onSelectAnotherArea,
-                    shape = SanctuaryShapes.pill,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.CropFree,
+                        imageVector = Icons.Outlined.Translate,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "Another Area")
+                    Text(text = "Overlay", maxLines = 1, softWrap = false)
                 }
+            } else {
+                Button(
+                    onClick = onDismissRequest,
+                    shape = SanctuaryShapes.pill,
+                ) {
+                    Text(text = "Done", maxLines = 1, softWrap = false)
+                }
+            }
+        },
+        dismissButton = {
+            FilledTonalButton(
+                onClick = onSelectAnotherArea,
+                shape = SanctuaryShapes.pill,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.CropFree,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = "Reselect", maxLines = 1, softWrap = false)
             }
         },
     )
