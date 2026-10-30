@@ -126,6 +126,9 @@ fun ReaderAppBars(
     onClickChapterList: () -> Unit,
     onClickPageLayout: () -> Unit,
     onClickShiftPage: () -> Unit,
+    onClickTranslate: (() -> Unit)? = null,
+    onLongClickTranslate: (() -> Unit)? = null,
+    isTranslationActive: Boolean = false,
     // SY <--
 ) {
     val isRtl = viewer is R2LPagerViewer
@@ -308,6 +311,9 @@ fun ReaderAppBars(
                             onClickShare = onShare,
                             onClickPageLayout = onClickPageLayout,
                             onClickShiftPage = onClickShiftPage,
+                            onClickTranslate = onClickTranslate,
+                            onLongClickTranslate = onLongClickTranslate,
+                            isTranslationActive = isTranslationActive,
                             // SY <--
                             modifier = Modifier
                                 .fillMaxWidth()

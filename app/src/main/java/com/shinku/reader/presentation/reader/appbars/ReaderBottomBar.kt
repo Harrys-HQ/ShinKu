@@ -1,6 +1,16 @@
 package com.shinku.reader.presentation.reader.appbars
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.outlined.Translate
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FormatListNumbered
@@ -23,6 +33,7 @@ import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.i18n.stringResource
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ReaderBottomBar(
     // SY -->
@@ -45,6 +56,9 @@ fun ReaderBottomBar(
     onClickShare: (() -> Unit)?,
     onClickPageLayout: () -> Unit,
     onClickShiftPage: () -> Unit,
+    onClickTranslate: (() -> Unit)? = null,
+    onLongClickTranslate: (() -> Unit)? = null,
+    isTranslationActive: Boolean = false,
     // SY <--
     modifier: Modifier = Modifier,
 ) {
@@ -143,6 +157,25 @@ fun ReaderBottomBar(
                 Icon(
                     painter = painterResource(R.drawable.ic_page_next_outline_24dp),
                     contentDescription = stringResource(SYMR.strings.shift_double_pages),
+                )
+            }
+        }
+
+        if (onClickTranslate != null) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .combinedClickable(
+                        onClick = onClickTranslate,
+                        onLongClick = onLongClickTranslate,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Translate,
+                    contentDescription = stringResource(MR.strings.action_live_translation),
+                    tint = if (isTranslationActive) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                 )
             }
         }

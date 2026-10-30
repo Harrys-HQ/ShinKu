@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -425,86 +427,57 @@ class ReaderActivity : BaseActivity() {
                     .fillMaxSize()
                     .alpha(if (zenMode && !state.menuVisible) 0f else 1f)
             ) {
-                AppBars(state = state)
+                AppBars(
+                    state = state,
+                    onClickTranslate = {
+                        hapticGenerator.shortPress()
+                        viewModel.toggleTranslation()
+                    },
+                    onLongClickTranslate = {
+                        hapticGenerator.longPress()
+                        viewModel.openTranslationOptions()
+                    },
+                    isTranslationActive = isOverlayVisible,
+                )
             }
 
-            // Redesigned Non-Obstructive Floating Translate Button
-            val isLiveTranslationEnabled by shinkuPreferences.liveTranslation().collectAsState()
-            val hasAnyTranslations = state.currentChapter?.pages?.any { it.translationBlocks != null } == true
-            val apiKey by shinkuPreferences.geminiApiKey().collectAsState()
-            val translationEngine by shinkuPreferences.translationEngine().collectAsState()
-            val hasValidCredentials = shinkuPreferences.isAiConfigured() || apiKey.isNotBlank() || translationEngine != "gemini_cloud"
+            // Sleek Non-Obstructive Top Batch Translation Progress Pill (active only during background chapter translation)
             val batchProgress = state.batchTranslationProgress
-
-            val shouldShowTranslateFab = when {
-                zenMode -> false
-                batchProgress != null -> true // Actively translating in background: keep progress ring visible
-                state.menuVisible -> (isLiveTranslationEnabled || hasAnyTranslations) && hasValidCredentials // Visible only alongside reader controls
-                else -> false // Completely unobstructed reading experience while immersed in manga panels
-            }
-
-            if (shouldShowTranslateFab) {
-                val isBatchRunning = batchProgress != null
-                val progressFraction = if (batchProgress != null && batchProgress.totalPages > 0) {
+            if (batchProgress != null && !zenMode) {
+                val progressFraction = if (batchProgress.totalPages > 0) {
                     (batchProgress.currentPage.toFloat() / batchProgress.totalPages.toFloat()).coerceIn(0f, 1f)
                 } else {
                     0f
                 }
-
-                // Transparent, non-hindering aesthetic: soft translucent surface that melts into manga panels
-                val containerColor = when {
-                    isBatchRunning -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f)
-                    isOverlayVisible -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.60f)
-                    else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.40f)
-                }
-
-                val contentColor = when {
-                    isBatchRunning -> MaterialTheme.colorScheme.primary
-                    isOverlayVisible -> MaterialTheme.colorScheme.primary
-                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
-                }
-
                 androidx.compose.material3.Surface(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(bottom = 80.dp, end = 16.dp)
-                        .zIndex(50f)
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-                        .combinedClickable(
-                            onClick = {
-                                viewModel.toggleTranslation()
-                            },
-                            onLongClick = {
-                                if (isBatchRunning) {
-                                    viewModel.showBatchTranslationProgress()
-                                } else {
-                                    viewModel.openTranslationOptions()
-                                }
-                            },
-                        ),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    color = containerColor,
-                    contentColor = contentColor,
-                    shadowElevation = 2.dp,
+                        .align(Alignment.TopCenter)
+                        .statusBarsPadding()
+                        .padding(top = 8.dp)
+                        .zIndex(65f)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .clickable { viewModel.showBatchTranslationProgress() },
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(6.dp).copy(alpha = 0.95f),
+                    border = com.shinku.reader.presentation.core.theme.SanctuaryBrushes.subtleBorder(),
+                    shadowElevation = 8.dp,
                 ) {
-                    Box(
-                        modifier = Modifier.size(52.dp),
-                        contentAlignment = Alignment.Center,
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        if (isBatchRunning) {
-                            androidx.compose.material3.CircularProgressIndicator(
-                                progress = { progressFraction },
-                                modifier = Modifier.size(44.dp),
-                                strokeWidth = 2.5.dp,
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            )
-                        }
-
-                        androidx.compose.material3.Icon(
-                            imageVector = androidx.compose.material.icons.Icons.Outlined.Translate,
-                            contentDescription = if (isBatchRunning) "Translating chapter: ${(progressFraction * 100).toInt()}%" else "Live Translation",
-                            modifier = Modifier.size(22.dp),
+                        androidx.compose.material3.CircularProgressIndicator(
+                            progress = { progressFraction },
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        androidx.compose.material3.Text(
+                            text = "Translating ${batchProgress.currentPage}/${batchProgress.totalPages} (${(progressFraction * 100).toInt()}%)",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -641,7 +614,15 @@ class ReaderActivity : BaseActivity() {
                     pageNumber = if (dialog.page.number > 0) dialog.page.number else state.currentPage.coerceAtLeast(1),
                     onDismissRequest = onDismissRequest,
                     onConfirmOverlay = { screenCropRect ->
-                        val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(screenCropRect)
+                        val containerLoc = IntArray(2)
+                        binding.viewerContainer.getLocationOnScreen(containerLoc)
+                        val absScreenRect = android.graphics.Rect(
+                            screenCropRect.left + containerLoc[0],
+                            screenCropRect.top + containerLoc[1],
+                            screenCropRect.right + containerLoc[0],
+                            screenCropRect.bottom + containerLoc[1],
+                        )
+                        val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(absScreenRect)
                         val targetPage = mapped?.page ?: dialog.page
                         val pageCropRect = mapped?.pageRect ?: screenCropRect
                         viewModel.translateArea(
@@ -655,7 +636,15 @@ class ReaderActivity : BaseActivity() {
                         )
                     },
                     onConfirmInspect = { screenCropRect ->
-                        val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(screenCropRect)
+                        val containerLoc = IntArray(2)
+                        binding.viewerContainer.getLocationOnScreen(containerLoc)
+                        val absScreenRect = android.graphics.Rect(
+                            screenCropRect.left + containerLoc[0],
+                            screenCropRect.top + containerLoc[1],
+                            screenCropRect.right + containerLoc[0],
+                            screenCropRect.bottom + containerLoc[1],
+                        )
+                        val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(absScreenRect)
                         val targetPage = mapped?.page ?: dialog.page
                         val pageCropRect = mapped?.pageRect ?: screenCropRect
                         viewModel.translateArea(
@@ -683,7 +672,15 @@ class ReaderActivity : BaseActivity() {
                     },
                     onApplyOverlay = dialog.cropRect?.let { cropRect ->
                         {
-                            val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(cropRect)
+                            val containerLoc = IntArray(2)
+                            binding.viewerContainer.getLocationOnScreen(containerLoc)
+                            val absCropRect = android.graphics.Rect(
+                                cropRect.left + containerLoc[0],
+                                cropRect.top + containerLoc[1],
+                                cropRect.right + containerLoc[0],
+                                cropRect.bottom + containerLoc[1],
+                            )
+                            val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(absCropRect)
                             val targetPage = mapped?.page ?: dialog.page
                             val pageCropRect = mapped?.pageRect ?: cropRect
                             viewModel.applyAreaTranslationAsOverlay(
@@ -964,7 +961,12 @@ class ReaderActivity : BaseActivity() {
     }
 
     @Composable
-    fun AppBars(state: ReaderViewModel.State) {
+    fun AppBars(
+        state: ReaderViewModel.State,
+        onClickTranslate: (() -> Unit)? = null,
+        onLongClickTranslate: (() -> Unit)? = null,
+        isTranslationActive: Boolean = false,
+    ) {
         if (!ifSourcesLoaded()) {
             return
         }
@@ -1084,6 +1086,9 @@ class ReaderActivity : BaseActivity() {
                 }
             },
             onClickShiftPage = ::shiftDoublePages,
+            onClickTranslate = onClickTranslate,
+            onLongClickTranslate = onLongClickTranslate,
+            isTranslationActive = isTranslationActive,
             // SY <--
         )
     }

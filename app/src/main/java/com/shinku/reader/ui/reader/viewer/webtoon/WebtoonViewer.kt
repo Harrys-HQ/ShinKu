@@ -292,7 +292,11 @@ class WebtoonViewer(
     }
 
     override fun mapScreenRectToPage(screenRect: android.graphics.Rect): Viewer.PageMappedRect? {
-        val child = recycler.findChildViewUnder(screenRect.exactCenterX(), screenRect.exactCenterY())
+        val recyclerLoc = IntArray(2)
+        recycler.getLocationOnScreen(recyclerLoc)
+        val rx = screenRect.exactCenterX() - recyclerLoc[0]
+        val ry = screenRect.exactCenterY() - recyclerLoc[1]
+        val child = recycler.findChildViewUnder(rx, ry)
             ?: recycler.getChildAt(0) ?: return null
         val holder = recycler.getChildViewHolder(child) as? WebtoonPageHolder ?: return null
         val page = holder.page ?: return null
