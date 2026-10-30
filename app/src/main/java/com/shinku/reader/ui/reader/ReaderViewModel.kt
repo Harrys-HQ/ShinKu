@@ -2282,6 +2282,138 @@ class ReaderViewModel(
         }
     }
 
+    fun onAreaOcr() {
+        val page = (state.value.dialog as? Dialog.PageActions)?.page
+            ?: state.value.activePage
+            ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.pager.PagerViewer)?.currentPage as? ReaderPage
+            ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.webtoon.WebtoonViewer)?.currentPage as? ReaderPage
+            ?: run {
+                eventChannel.trySend(Event.ShowToast("No active page selected"))
+                return
+            }
+
+        if (page.status != Page.State.Ready) {
+            eventChannel.trySend(Event.ShowToast("Page is still loading..."))
+            return
+        }
+
+        val stream = page.stream ?: run {
+            val imageUrl = page.imageUrl
+            if (imageUrl != null && chapterCache.isImageInCache(imageUrl)) {
+                val fn = { chapterCache.getImageFile(imageUrl).inputStream() }
+                page.stream = fn
+                fn
+            } else {
+                null
+            }
+        } ?: run {
+            eventChannel.trySend(Event.ShowToast("Page image not available for OCR"))
+            return
+        }
+
+        viewModelScope.launchIO {
+            mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
+            try {
+                val bitmap = ImageDecoder.newInstance(stream())?.decode() ?: throw Exception("Failed to decode image")
+                mutableState.update { it.copy(dialog = Dialog.AreaOcr(page, bitmap)) }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+                mutableState.update { it.copy(dialog = Dialog.AiInsight("Area OCR Error", e.message ?: "Failed to decode page")) }
+            }
+        }
+    }
+
+    fun openAreaOcrWithBitmap(page: ReaderPage, bitmap: android.graphics.Bitmap) {
+        mutableState.update { it.copy(dialog = Dialog.AreaOcr(page, bitmap)) }
+    }
+
+    fun translateArea(page: ReaderPage, bitmap: android.graphics.Bitmap, cropRect: android.graphics.Rect) {
+        val left = cropRect.left.coerceIn(0, bitmap.width - 1)
+        val top = cropRect.top.coerceIn(0, bitmap.height - 1)
+        val right = cropRect.right.coerceIn(left + 1, bitmap.width)
+        val bottom = cropRect.bottom.coerceIn(top + 1, bitmap.height)
+        val width = right - left
+        val height = bottom - top
+
+        if (width <= 0 || height <= 0) {
+            eventChannel.trySend(Event.ShowToast("Invalid area selected"))
+            return
+        }
+
+        viewModelScope.launchIO {
+            mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
+            try {
+                val cropped = android.graphics.Bitmap.createBitmap(bitmap, left, top, width, height)
+                val sourceLanguage = shinkuPreferences.translationSourceLanguage().get()
+                val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
+                val translationEngine = shinkuPreferences.translationEngine().get()
+                val apiKey = shinkuPreferences.geminiApiKey().get().trim()
+                val model = shinkuPreferences.geminiModel().get()
+
+                val ocrResults = textRecognitionInteractor.recognizeText(cropped, sourceLanguage)
+                val rawText = ocrResults.joinToString("\n") { it.text }.trim()
+
+                if (rawText.isBlank()) {
+                    mutableState.update {
+                        it.copy(dialog = Dialog.AiInsight("Area Translation", "No text detected in selected area."))
+                    }
+                    return@launchIO
+                }
+
+                val inputs = listOf(
+                    com.shinku.reader.domain.source.interactor.GeminiVibeSearch.TranslationBlockInput(id = 0, text = rawText)
+                )
+
+                val activeEngine = aiEngineRegistry.getActiveEngine()
+                val isAiConfigured = activeEngine.isAvailable || apiKey.isNotBlank()
+                val mangaTitle = manga?.title
+                val mangaGenres = manga?.genre
+
+                val translated = when {
+                    translationEngine == "gemini_cloud" || translationEngine == "cloud" -> {
+                        if (!isAiConfigured) {
+                            throw IllegalStateException("AI API Key Required. Please configure your AI Provider in Settings.")
+                        }
+                        geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage, mangaTitle, mangaGenres)
+                    }
+                    translationEngine == "mlkit" || translationEngine == "aicore" -> {
+                        mlKitTranslationInteractor.translateBlocks(inputs, targetLanguage, sourceLanguage)
+                    }
+                    else -> {
+                        if (isAiConfigured) {
+                            try {
+                                geminiVibeSearch.translateBlocks(inputs, apiKey, model, targetLanguage, sourceLanguage, mangaTitle, mangaGenres)
+                            } catch (e: Exception) {
+                                logcat(LogPriority.WARN, e) { "Cloud translation failed; falling back to ML Kit" }
+                                mlKitTranslationInteractor.translateBlocks(inputs, targetLanguage, sourceLanguage)
+                            }
+                        } else {
+                            mlKitTranslationInteractor.translateBlocks(inputs, targetLanguage, sourceLanguage)
+                        }
+                    }
+                }
+
+                val translatedText = translated.firstOrNull()?.text ?: rawText
+                mutableState.update {
+                    it.copy(
+                        dialog = Dialog.AreaTranslationResult(
+                            originalText = rawText,
+                            translatedText = translatedText,
+                            targetLanguage = targetLanguage,
+                            page = page,
+                            bitmap = bitmap,
+                        ),
+                    )
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+                mutableState.update {
+                    it.copy(dialog = Dialog.AiInsight("Translation Error", e.message ?: "Failed to translate area"))
+                }
+            }
+        }
+    }
+
     fun onChapterRecap() {
         val currentChapter = state.value.currentChapter
         val currentChapterName = currentChapter?.chapter?.name ?: "Current Chapter"
@@ -2545,6 +2677,14 @@ class ReaderViewModel(
         ) : Dialog
         data object TranslationOptions : Dialog
         data object BubbleInspector : Dialog
+        data class AreaOcr(val page: ReaderPage, val bitmap: android.graphics.Bitmap) : Dialog
+        data class AreaTranslationResult(
+            val originalText: String,
+            val translatedText: String,
+            val targetLanguage: String,
+            val page: ReaderPage,
+            val bitmap: android.graphics.Bitmap,
+        ) : Dialog
         // SY <--
     }
 

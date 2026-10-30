@@ -567,6 +567,7 @@ class ReaderActivity : BaseActivity() {
                     onFootnotes = { viewModel.onFootnotes() },
                     onCharacterCodex = { viewModel.onCharacterCodex() },
                     onChapterRecap = { viewModel.onChapterRecap() },
+                    onAreaOcr = { viewModel.onAreaOcr() },
                     onTranslation = { viewModel.onTranslation() },
                     onBatchTranslation = { viewModel.startBatchChapterTranslation() },
                     hasExtraPage = dialog.extraPage != null,
@@ -620,6 +621,31 @@ class ReaderActivity : BaseActivity() {
                     blocks = state.activePage?.translationBlocks.orEmpty(),
                     onDismissRequest = onDismissRequest,
                     onRetranslatePage = { viewModel.retranslateCurrentPage() },
+                )
+            }
+
+            is ReaderViewModel.Dialog.AreaOcr -> {
+                val dialog = state.dialog as ReaderViewModel.Dialog.AreaOcr
+                com.shinku.reader.presentation.reader.dialog.AreaOcrCropOverlay(
+                    bitmap = dialog.bitmap,
+                    pageNumber = if (dialog.page.number > 0) dialog.page.number else state.currentPage.coerceAtLeast(1),
+                    onDismissRequest = onDismissRequest,
+                    onConfirmArea = { cropRect ->
+                        viewModel.translateArea(dialog.page, dialog.bitmap, cropRect)
+                    },
+                )
+            }
+
+            is ReaderViewModel.Dialog.AreaTranslationResult -> {
+                val dialog = state.dialog as ReaderViewModel.Dialog.AreaTranslationResult
+                com.shinku.reader.presentation.reader.dialog.AreaTranslationResultDialog(
+                    originalText = dialog.originalText,
+                    translatedText = dialog.translatedText,
+                    targetLanguage = dialog.targetLanguage,
+                    onDismissRequest = onDismissRequest,
+                    onSelectAnotherArea = {
+                        viewModel.openAreaOcrWithBitmap(dialog.page, dialog.bitmap)
+                    },
                 )
             }
 

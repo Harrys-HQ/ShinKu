@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.AutoAwesomeMotion
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.CropFree
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.HistoryEdu
 import androidx.compose.material.icons.outlined.MenuBook
@@ -64,6 +65,7 @@ fun ReaderPageActionsDialog(
     onFootnotes: () -> Unit,
     onCharacterCodex: () -> Unit = {},
     onChapterRecap: () -> Unit = {},
+    onAreaOcr: () -> Unit = {},
     onTranslation: () -> Unit,
     onBatchTranslation: () -> Unit = {},
     hasExtraPage: Boolean,
@@ -131,6 +133,17 @@ fun ReaderPageActionsDialog(
                     contentColor = MaterialTheme.colorScheme.secondary,
                     onClick = {
                         onFootnotes()
+                        onDismissRequest()
+                    },
+                )
+                AiToolRow(
+                    title = "Area OCR & Translate",
+                    subtitle = "Select a speech bubble or panel to translate",
+                    icon = Icons.Outlined.CropFree,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    onClick = {
+                        onAreaOcr()
                         onDismissRequest()
                     },
                 )
