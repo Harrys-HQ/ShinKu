@@ -2065,15 +2065,15 @@ class ReaderViewModel(
         // Inflate the bounding box slightly (by 15%) to sample the actual speech balloon area rather than text glyphs
         val paddingX = (rect.width() * 0.15).toInt().coerceAtLeast(8)
         val paddingY = (rect.height() * 0.15).toInt().coerceAtLeast(8)
-        
+
         val left = (rect.left - paddingX).coerceIn(0, bitmap.width - 1)
         val top = (rect.top - paddingY).coerceIn(0, bitmap.height - 1)
         val right = (rect.right + paddingX).coerceIn(0, bitmap.width - 1)
         val bottom = (rect.bottom + paddingY).coerceIn(0, bitmap.height - 1)
 
         val colors = mutableListOf<Int>()
-        val stepX = kotlin.math.max(1, (right - left) / 10)
-        val stepY = kotlin.math.max(1, (bottom - top) / 10)
+        val stepX = kotlin.math.max(1, (right - left) / 12)
+        val stepY = kotlin.math.max(1, (bottom - top) / 12)
 
         // Sample top and bottom borders
         for (x in left..right step stepX) {
@@ -2088,16 +2088,23 @@ class ReaderViewModel(
 
         if (colors.isEmpty()) return android.graphics.Color.WHITE
 
-        var totalR = 0L
-        var totalG = 0L
-        var totalB = 0L
+        // In manga scanlation, background paper is either clean white or dark inverted panel.
+        // Indiscriminately averaging black ink lines and white paper produces muddy gray.
+        var lightCount = 0
+        var darkCount = 0
         for (c in colors) {
-            totalR += android.graphics.Color.red(c)
-            totalG += android.graphics.Color.green(c)
-            totalB += android.graphics.Color.blue(c)
+            val r = android.graphics.Color.red(c)
+            val g = android.graphics.Color.green(c)
+            val b = android.graphics.Color.blue(c)
+            val luminance = 0.299 * r + 0.587 * g + 0.114 * b
+            if (luminance >= 140) lightCount++ else darkCount++
         }
-        val count = colors.size.toLong()
-        return android.graphics.Color.rgb((totalR / count).toInt(), (totalG / count).toInt(), (totalB / count).toInt())
+
+        return if (lightCount >= darkCount) {
+            android.graphics.Color.WHITE
+        } else {
+            android.graphics.Color.BLACK
+        }
     }
 
     private fun isDarkColor(color: Int): Boolean {
@@ -2340,18 +2347,26 @@ class ReaderViewModel(
         translatedText: String,
         sourceWidth: Int = 0,
         sourceHeight: Int = 0,
+        screenCropRect: android.graphics.Rect? = null,
     ) {
-        val left = cropRect.left.coerceIn(0, bitmap.width - 1)
-        val top = cropRect.top.coerceIn(0, bitmap.height - 1)
-        val right = cropRect.right.coerceIn(left + 1, bitmap.width)
-        val bottom = cropRect.bottom.coerceIn(top + 1, bitmap.height)
-        val safeRect = android.graphics.Rect(left, top, right, bottom)
-
-        val bgColor = detectBackgroundColor(bitmap, safeRect)
-        val textColor = if (isDarkColor(bgColor)) android.graphics.Color.WHITE else android.graphics.Color.BLACK
-
         val sWidth = if (sourceWidth > 0) sourceWidth else bitmap.width
         val sHeight = if (sourceHeight > 0) sourceHeight else bitmap.height
+
+        val left = cropRect.left.coerceIn(0, sWidth - 1)
+        val top = cropRect.top.coerceIn(0, sHeight - 1)
+        val right = cropRect.right.coerceIn(left + 1, sWidth)
+        val bottom = cropRect.bottom.coerceIn(top + 1, sHeight)
+        val safeRect = android.graphics.Rect(left, top, right, bottom)
+
+        val sampleRect = screenCropRect ?: safeRect
+        val sampleSafe = android.graphics.Rect(
+            sampleRect.left.coerceIn(0, bitmap.width - 1),
+            sampleRect.top.coerceIn(0, bitmap.height - 1),
+            sampleRect.right.coerceIn(sampleRect.left + 1, bitmap.width),
+            sampleRect.bottom.coerceIn(sampleRect.top + 1, bitmap.height),
+        )
+        val bgColor = detectBackgroundColor(bitmap, sampleSafe)
+        val textColor = if (isDarkColor(bgColor)) android.graphics.Color.WHITE else android.graphics.Color.BLACK
 
         val newBlock = TranslatedBlock(
             originalText = originalText,
@@ -2482,6 +2497,7 @@ class ReaderViewModel(
                         translatedText = translatedText,
                         sourceWidth = sourceWidth,
                         sourceHeight = sourceHeight,
+                        screenCropRect = safeRect,
                     )
                 } else {
                     mutableState.update {

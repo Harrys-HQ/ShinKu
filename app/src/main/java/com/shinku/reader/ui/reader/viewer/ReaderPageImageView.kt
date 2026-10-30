@@ -86,17 +86,22 @@ open class ReaderPageImageView @JvmOverloads constructor(
 
     fun mapScreenPointToSource(screenX: Float, screenY: Float): PointF? {
         val view = pageView ?: return null
+        val loc = IntArray(2)
+        view.getLocationOnScreen(loc)
+        val localX = screenX - loc[0]
+        val localY = screenY - loc[1]
+
         return when (view) {
             is SubsamplingScaleImageView -> {
                 if (!view.isReady) return null
                 val pt = PointF()
-                view.viewToSourceCoord(PointF(screenX, screenY), pt)
+                view.viewToSourceCoord(PointF(localX, localY), pt)
             }
             is WebtoonStripImageView -> {
                 val imgWidth = view.sourceWidth
                 if (imgWidth <= 0 || view.width <= 0) return null
                 val scale = view.width.toFloat() / imgWidth.toFloat()
-                PointF(screenX / scale, screenY / scale)
+                PointF(localX / scale, localY / scale)
             }
             is android.widget.ImageView -> {
                 val drawable = view.drawable ?: return null
@@ -105,7 +110,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
                 if (dWidth <= 0 || dHeight <= 0 || view.width <= 0 || view.height <= 0) return null
                 val scaleX = view.width.toFloat() / dWidth.toFloat()
                 val scaleY = view.height.toFloat() / dHeight.toFloat()
-                PointF(screenX / scaleX, screenY / scaleY)
+                PointF(localX / scaleX, localY / scaleY)
             }
             else -> null
         }
@@ -788,7 +793,7 @@ class TranslationOverlay(context: Context) : View(context) {
         // Start with an adaptive font size based on bubble area and character count
         val charCount = text.length.coerceAtLeast(1)
         val areaEstimate = kotlin.math.sqrt((contentWidth * maxContentHeight).toDouble() / (charCount * 0.85)).toFloat()
-        var fontSizePx = minOf(heightBucket * 0.25f, areaEstimate).coerceIn(10f, 42f)
+        var fontSizePx = minOf(heightBucket * 0.45f, areaEstimate).coerceIn(12f, 48f)
         val minFontSize = 8f
         var fillLayout: StaticLayout? = null
 
@@ -926,11 +931,17 @@ class TranslationOverlay(context: Context) : View(context) {
             // 1. Draw soft-cornered speech-balloon mask so corners blend naturally inside oval comic bubbles
             maskPaint.color = block.bgColor
             maskPaint.alpha = 248
-            val cornerRadius = (minOf(width, height) * 0.22f).coerceIn(6f, 22f)
+            val cornerRadius = (minOf(width, height) * 0.18f).coerceIn(4f, 18f)
             canvas.drawRoundRect(actualLeft, actualTop, actualRight, actualBottom, cornerRadius, cornerRadius, maskPaint)
 
-            maskBorderPaint.color = block.bgColor
-            maskBorderPaint.alpha = 180
+            // 2. Draw clean subtle hairline border for comic panel / bubble definition
+            maskBorderPaint.color = if (block.bgColor == android.graphics.Color.WHITE) {
+                android.graphics.Color.BLACK
+            } else {
+                android.graphics.Color.WHITE
+            }
+            maskBorderPaint.alpha = 36
+            maskBorderPaint.strokeWidth = 1.5f
             canvas.drawRoundRect(actualLeft, actualTop, actualRight, actualBottom, cornerRadius, cornerRadius, maskBorderPaint)
 
             // 2. Typeset cached layout with crisp scanlation halo + foreground text (0 frame allocations)

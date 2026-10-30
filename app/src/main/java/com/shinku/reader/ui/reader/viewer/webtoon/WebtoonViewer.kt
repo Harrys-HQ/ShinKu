@@ -296,16 +296,10 @@ class WebtoonViewer(
             ?: recycler.getChildAt(0) ?: return null
         val holder = recycler.getChildViewHolder(child) as? WebtoonPageHolder ?: return null
         val page = holder.page ?: return null
-        val localRect = android.graphics.Rect(
-            screenRect.left - child.left,
-            screenRect.top - child.top,
-            screenRect.right - child.left,
-            screenRect.bottom - child.top,
-        )
-        val mappedRect = holder.frame.mapScreenRectToSource(localRect) ?: localRect
+        val mappedRect = holder.frame.mapScreenRectToSource(screenRect) ?: screenRect
         val stripView = holder.frame.pageView as? WebtoonStripImageView
         val sWidth = stripView?.sourceWidth ?: 0
-        val sHeight = stripView?.height ?: 0
+        val sHeight = stripView?.sourceHeight ?: 0
         return Viewer.PageMappedRect(page, mappedRect, sWidth, sHeight)
     }
 

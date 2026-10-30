@@ -436,7 +436,14 @@ class ReaderActivity : BaseActivity() {
             val hasValidCredentials = shinkuPreferences.isAiConfigured() || apiKey.isNotBlank() || translationEngine != "gemini_cloud"
             val batchProgress = state.batchTranslationProgress
 
-            if ((isLiveTranslationEnabled || hasAnyTranslations || batchProgress != null) && hasValidCredentials && !state.menuVisible && !zenMode) {
+            val shouldShowTranslateFab = when {
+                zenMode -> false
+                batchProgress != null -> true // Actively translating in background: keep progress ring visible
+                state.menuVisible -> (isLiveTranslationEnabled || hasAnyTranslations) && hasValidCredentials // Visible only alongside reader controls
+                else -> false // Completely unobstructed reading experience while immersed in manga panels
+            }
+
+            if (shouldShowTranslateFab) {
                 val isBatchRunning = batchProgress != null
                 val progressFraction = if (batchProgress != null && batchProgress.totalPages > 0) {
                     (batchProgress.currentPage.toFloat() / batchProgress.totalPages.toFloat()).coerceIn(0f, 1f)
