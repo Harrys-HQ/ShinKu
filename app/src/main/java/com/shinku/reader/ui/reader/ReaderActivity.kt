@@ -567,7 +567,10 @@ class ReaderActivity : BaseActivity() {
                     onFootnotes = { viewModel.onFootnotes() },
                     onCharacterCodex = { viewModel.onCharacterCodex() },
                     onChapterRecap = { viewModel.onChapterRecap() },
-                    onAreaOcr = { viewModel.onAreaOcr() },
+                    onAreaOcr = {
+                        val snapshot = captureViewerSnapshot()
+                        viewModel.onAreaOcr(snapshot)
+                    },
                     onTranslation = { viewModel.onTranslation() },
                     onBatchTranslation = { viewModel.startBatchChapterTranslation() },
                     hasExtraPage = dialog.extraPage != null,
@@ -630,11 +633,33 @@ class ReaderActivity : BaseActivity() {
                     bitmap = dialog.bitmap,
                     pageNumber = if (dialog.page.number > 0) dialog.page.number else state.currentPage.coerceAtLeast(1),
                     onDismissRequest = onDismissRequest,
-                    onConfirmOverlay = { cropRect ->
-                        viewModel.translateArea(dialog.page, dialog.bitmap, cropRect, asOverlay = true)
+                    onConfirmOverlay = { screenCropRect ->
+                        val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(screenCropRect)
+                        val targetPage = mapped?.page ?: dialog.page
+                        val pageCropRect = mapped?.pageRect ?: screenCropRect
+                        viewModel.translateArea(
+                            page = targetPage,
+                            bitmap = dialog.bitmap,
+                            cropRect = screenCropRect,
+                            pageCropRect = pageCropRect,
+                            sourceWidth = mapped?.sourceWidth ?: 0,
+                            sourceHeight = mapped?.sourceHeight ?: 0,
+                            asOverlay = true,
+                        )
                     },
-                    onConfirmInspect = { cropRect ->
-                        viewModel.translateArea(dialog.page, dialog.bitmap, cropRect, asOverlay = false)
+                    onConfirmInspect = { screenCropRect ->
+                        val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(screenCropRect)
+                        val targetPage = mapped?.page ?: dialog.page
+                        val pageCropRect = mapped?.pageRect ?: screenCropRect
+                        viewModel.translateArea(
+                            page = targetPage,
+                            bitmap = dialog.bitmap,
+                            cropRect = screenCropRect,
+                            pageCropRect = pageCropRect,
+                            sourceWidth = mapped?.sourceWidth ?: 0,
+                            sourceHeight = mapped?.sourceHeight ?: 0,
+                            asOverlay = false,
+                        )
                     },
                 )
             }
@@ -651,12 +676,17 @@ class ReaderActivity : BaseActivity() {
                     },
                     onApplyOverlay = dialog.cropRect?.let { cropRect ->
                         {
+                            val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(cropRect)
+                            val targetPage = mapped?.page ?: dialog.page
+                            val pageCropRect = mapped?.pageRect ?: cropRect
                             viewModel.applyAreaTranslationAsOverlay(
-                                page = dialog.page,
+                                page = targetPage,
                                 bitmap = dialog.bitmap,
-                                cropRect = cropRect,
+                                cropRect = pageCropRect,
                                 originalText = dialog.originalText,
                                 translatedText = dialog.translatedText,
+                                sourceWidth = mapped?.sourceWidth ?: 0,
+                                sourceHeight = mapped?.sourceHeight ?: 0,
                             )
                         }
                     },
@@ -1426,6 +1456,19 @@ class ReaderActivity : BaseActivity() {
         }
         viewModel.onPageSelected(page, currentPageText, hasExtraPage)
         // SY <--
+    }
+
+    fun captureViewerSnapshot(): android.graphics.Bitmap? {
+        if (!::binding.isInitialized) return null
+        val view = binding.viewerContainer
+        val width = view.width
+        val height = view.height
+        if (width <= 0 || height <= 0) return null
+
+        val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        view.draw(canvas)
+        return bitmap
     }
 
     /**

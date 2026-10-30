@@ -32,7 +32,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -43,7 +42,6 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -59,108 +57,74 @@ import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
 import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 
-private data class ImageStrip(val bitmap: ImageBitmap, val srcTop: Int, val height: Int)
-
+/**
+ * Google Lens / Google Translate style screen-capture Area OCR overlay.
+ * Renders the frozen 1:1 viewport snapshot and provides an interactive bounding box.
+ */
 @Composable
 fun AreaOcrCropOverlay(
     bitmap: Bitmap,
     pageNumber: Int,
     onDismissRequest: () -> Unit,
-    onConfirmOverlay: (cropRectOnBitmap: android.graphics.Rect) -> Unit,
-    onConfirmInspect: ((cropRectOnBitmap: android.graphics.Rect) -> Unit)? = null,
+    onConfirmOverlay: (cropRectOnScreen: android.graphics.Rect) -> Unit,
+    onConfirmInspect: ((cropRectOnScreen: android.graphics.Rect) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
     val primaryColor = MaterialTheme.colorScheme.primary
     val cornerColor = MaterialTheme.colorScheme.tertiary
-
-    // Slice tall bitmaps into strips of <= 2048px to prevent GPU max texture clipping
-    val strips = remember(bitmap) {
-        val maxStripHeight = 2048
-        if (bitmap.height <= maxStripHeight) {
-            listOf(ImageStrip(bitmap.asImageBitmap(), 0, bitmap.height))
-        } else {
-            val list = mutableListOf<ImageStrip>()
-            for (y in 0 until bitmap.height step maxStripHeight) {
-                val h = minOf(maxStripHeight, bitmap.height - y)
-                val slice = Bitmap.createBitmap(bitmap, 0, y, bitmap.width, h)
-                list.add(ImageStrip(slice.asImageBitmap(), y, h))
-            }
-            list
-        }
-    }
+    val density = LocalDensity.current
 
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black),
     ) {
-        val density = LocalDensity.current
-        val pad24Px = with(density) { 24.dp.toPx() }
-        val pad160Px = with(density) { 160.dp.toPx() }
-        val topMargin = with(density) { 72.dp.toPx() }
-        val bottomMargin = with(density) { 88.dp.toPx() }
-
         val containerWidth = constraints.maxWidth.toFloat()
         val containerHeight = constraints.maxHeight.toFloat()
         val bmpWidth = bitmap.width.toFloat()
         val bmpHeight = bitmap.height.toFloat()
-        val isTall = (bmpHeight / bmpWidth) > 1.35f
 
-        // Fit width for tall webtoon pages; fit container for normal manga pages
-        val scale = if (isTall) {
-            (containerWidth - pad24Px).coerceAtLeast(100f) / bmpWidth
-        } else {
-            minOf(
-                (containerWidth - pad24Px).coerceAtLeast(100f) / bmpWidth,
-                (containerHeight - pad160Px).coerceAtLeast(100f) / bmpHeight,
-            )
-        }
-
+        // 1:1 Scale fitting viewport snapshot cleanly
+        val scale = minOf(containerWidth / bmpWidth, containerHeight / bmpHeight)
         val dstWidth = bmpWidth * scale
         val dstHeight = bmpHeight * scale
         val dstLeft = (containerWidth - dstWidth) / 2f
-        val visibleHeight = containerHeight - topMargin - bottomMargin
+        val dstTop = (containerHeight - dstHeight) / 2f
 
-        var scrollY by remember(bitmap) {
-            mutableFloatStateOf(if (isTall) 0f else (visibleHeight - dstHeight).coerceAtLeast(0f) / 2f)
-        }
-
-        val maxScrollY = topMargin
-        val minScrollY = if (dstHeight > visibleHeight) topMargin + visibleHeight - dstHeight else topMargin
-
-        // Normalized crop box relative to full bitmap (0..1)
+        // Normalized crop box relative to snapshot (0..1)
         var cropNorm by remember(bitmap) {
-            val initialH = if (isTall) (visibleHeight * 0.22f / dstHeight).coerceIn(0.04f, 0.25f) else 0.25f
-            val initialW = 0.60f
-            mutableStateOf(Rect(0.20f, 0.20f, 0.20f + initialW, 0.20f + initialH))
+            mutableStateOf(Rect(0.20f, 0.35f, 0.80f, 0.55f))
         }
 
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(dstLeft, dstWidth, dstHeight, scrollY) {
-                    var dragMode = 0 // 0: scroll page, 1: move box, 2: resize handle
-                    var startOffset = Offset.Zero
-                    var startCropNorm = cropNorm
+                .pointerInput(dstLeft, dstTop, dstWidth, dstHeight) {
+                    var dragMode = 0 // 0: new box, 1: move box, 2: resize bottom-right
+                    var startPoint = Offset.Zero
 
                     detectDragGestures(
                         onDragStart = { offset ->
-                            startOffset = offset
-                            startCropNorm = cropNorm
-
                             val sLeft = dstLeft + cropNorm.left * dstWidth
-                            val sTop = scrollY + cropNorm.top * dstHeight
+                            val sTop = dstTop + cropNorm.top * dstHeight
                             val sRight = dstLeft + cropNorm.right * dstWidth
-                            val sBottom = scrollY + cropNorm.bottom * dstHeight
+                            val sBottom = dstTop + cropNorm.bottom * dstHeight
 
                             val handleTol = 44.dp.toPx()
                             val nearBR = (offset.x - sRight).let { it * it } + (offset.y - sBottom).let { it * it } < handleTol * handleTol
                             val inside = offset.x in sLeft..sRight && offset.y in sTop..sBottom
 
-                            dragMode = when {
-                                nearBR -> 2
-                                inside -> 1
-                                else -> 0
+                            when {
+                                nearBR -> dragMode = 2
+                                inside -> dragMode = 1
+                                else -> {
+                                    dragMode = 0
+                                    startPoint = offset
+                                    val nX = ((offset.x - dstLeft) / dstWidth).coerceIn(0f, 1f)
+                                    val nY = ((offset.y - dstTop) / dstHeight).coerceIn(0f, 1f)
+                                    cropNorm = Rect(nX, nY, nX, nY)
+                                }
                             }
                         },
                         onDrag = { change, dragAmount ->
@@ -179,47 +143,50 @@ fun AreaOcrCropOverlay(
                                 2 -> {
                                     // Resize handle (bottom right)
                                     val currentR = dstLeft + cropNorm.right * dstWidth + dragAmount.x
-                                    val currentB = scrollY + cropNorm.bottom * dstHeight + dragAmount.y
+                                    val currentB = dstTop + cropNorm.bottom * dstHeight + dragAmount.y
                                     val nR = ((currentR - dstLeft) / dstWidth).coerceIn(cropNorm.left + 0.05f, 1f)
-                                    val nB = ((currentB - scrollY) / dstHeight).coerceIn(cropNorm.top + 0.02f, 1f)
+                                    val nB = ((currentB - dstTop) / dstHeight).coerceIn(cropNorm.top + 0.03f, 1f)
                                     cropNorm = Rect(cropNorm.left, cropNorm.top, nR, nB)
                                 }
                                 else -> {
-                                    // Scroll tall page vertically
-                                    if (dstHeight > visibleHeight) {
-                                        scrollY = (scrollY + dragAmount.y).coerceIn(minScrollY, maxScrollY)
-                                    }
+                                    // Drawing new selection box
+                                    val p1 = startPoint
+                                    val p2 = change.position
+                                    val minX = minOf(p1.x, p2.x)
+                                    val maxX = maxOf(p1.x, p2.x)
+                                    val minY = minOf(p1.y, p2.y)
+                                    val maxY = maxOf(p1.y, p2.y)
+
+                                    val nLeft = ((minX - dstLeft) / dstWidth).coerceIn(0f, 1f)
+                                    val nTop = ((minY - dstTop) / dstHeight).coerceIn(0f, 1f)
+                                    val nRight = ((maxX - dstLeft) / dstWidth).coerceIn(0f, 1f)
+                                    val nBottom = ((maxY - dstTop) / dstHeight).coerceIn(0f, 1f)
+                                    cropNorm = Rect(nLeft, nTop, maxOf(nRight, nLeft + 0.02f), maxOf(nBottom, nTop + 0.02f))
                                 }
                             }
                         },
                     )
                 },
         ) {
-            // 1. Draw sliced bitmap strips (GPU-safe, never truncated at 4096px)
-            for (strip in strips) {
-                val stripDstTop = scrollY + (strip.srcTop * scale)
-                val stripDstHeight = strip.height * scale
-                if (stripDstTop + stripDstHeight >= 0 && stripDstTop <= containerHeight) {
-                    drawImage(
-                        image = strip.bitmap,
-                        dstOffset = IntOffset(dstLeft.toInt(), stripDstTop.toInt()),
-                        dstSize = IntSize(dstWidth.toInt(), stripDstHeight.toInt()),
-                    )
-                }
-            }
+            // 1. Draw frozen 1:1 viewport snapshot
+            drawImage(
+                image = imageBitmap,
+                dstOffset = IntOffset(dstLeft.toInt(), dstTop.toInt()),
+                dstSize = IntSize(dstWidth.toInt(), dstHeight.toInt()),
+            )
 
-            // 2. Compute on-screen crop box coordinates
+            // 2. Compute screen coordinates of the crop box
             val cropScreenLeft = dstLeft + cropNorm.left * dstWidth
-            val cropScreenTop = scrollY + cropNorm.top * dstHeight
+            val cropScreenTop = dstTop + cropNorm.top * dstHeight
             val cropScreenWidth = cropNorm.width * dstWidth
             val cropScreenHeight = cropNorm.height * dstHeight
 
-            // 3. Draw dimmed scrim outside selection box
+            // 3. Draw dimmed scrim outside selected area
             val cropRectPath = Path().apply {
                 addRect(Rect(cropScreenLeft, cropScreenTop, cropScreenLeft + cropScreenWidth, cropScreenTop + cropScreenHeight))
             }
             clipPath(cropRectPath, clipOp = ClipOp.Difference) {
-                drawRect(Color.Black.copy(alpha = 0.65f))
+                drawRect(Color.Black.copy(alpha = 0.60f))
             }
 
             // 4. Draw bounding box border
@@ -230,8 +197,8 @@ fun AreaOcrCropOverlay(
                 style = Stroke(width = 2.dp.toPx()),
             )
 
-            // 5. Draw corner indicators for resize grab
-            val cLen = 18.dp.toPx()
+            // 5. Draw sleek corner indicators for handle grab
+            val cLen = 20.dp.toPx()
             val cStroke = 4.dp.toPx()
             val r = cropScreenLeft + cropScreenWidth
             val b = cropScreenTop + cropScreenHeight
@@ -272,11 +239,11 @@ fun AreaOcrCropOverlay(
                     )
                     Column {
                         SanctuaryOverlineBadge(
-                            text = "SHINKU AI • PAGE $pageNumber",
+                            text = "SHINKU LENS • VIEWPORT SNAPSHOT",
                             compact = true,
                         )
                         Text(
-                            text = if (isTall) "Select Area (Drag to Scroll)" else "Select Bubble or Panel Area",
+                            text = "Select Bubble or Text",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                         )
@@ -311,8 +278,7 @@ fun AreaOcrCropOverlay(
             ) {
                 FilledTonalButton(
                     onClick = {
-                        val initialH = if (isTall) (visibleHeight * 0.22f / dstHeight).coerceIn(0.04f, 0.25f) else 0.25f
-                        cropNorm = Rect(0.20f, 0.20f, 0.80f, 0.20f + initialH)
+                        cropNorm = Rect(0.20f, 0.35f, 0.80f, 0.55f)
                     },
                     shape = SanctuaryShapes.pill,
                 ) {

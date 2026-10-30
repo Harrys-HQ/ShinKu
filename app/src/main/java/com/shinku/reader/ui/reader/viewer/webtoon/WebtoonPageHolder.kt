@@ -43,7 +43,7 @@ import com.shinku.reader.i18n.MR
  * @constructor creates a new webtoon holder.
  */
 class WebtoonPageHolder(
-    private val frame: ReaderPageImageView,
+    internal val frame: ReaderPageImageView,
     viewer: WebtoonViewer,
 ) : WebtoonBaseHolder(frame, viewer) {
 
@@ -72,7 +72,7 @@ class WebtoonPageHolder(
     /**
      * Page of a chapter.
      */
-    private var page: ReaderPage? = null
+    internal var page: ReaderPage? = null
 
     private val scope = MainScope()
 

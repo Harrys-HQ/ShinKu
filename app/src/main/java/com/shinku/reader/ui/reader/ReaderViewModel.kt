@@ -2282,7 +2282,7 @@ class ReaderViewModel(
         }
     }
 
-    fun onAreaOcr() {
+    fun onAreaOcr(snapshot: android.graphics.Bitmap? = null) {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
             ?: state.value.activePage
             ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.pager.PagerViewer)?.currentPage as? ReaderPage
@@ -2291,6 +2291,11 @@ class ReaderViewModel(
                 eventChannel.trySend(Event.ShowToast("No active page selected"))
                 return
             }
+
+        if (snapshot != null) {
+            mutableState.update { it.copy(dialog = Dialog.AreaOcr(page, snapshot)) }
+            return
+        }
 
         if (page.status != Page.State.Ready) {
             eventChannel.trySend(Event.ShowToast("Page is still loading..."))
@@ -2333,6 +2338,8 @@ class ReaderViewModel(
         cropRect: android.graphics.Rect,
         originalText: String,
         translatedText: String,
+        sourceWidth: Int = 0,
+        sourceHeight: Int = 0,
     ) {
         val left = cropRect.left.coerceIn(0, bitmap.width - 1)
         val top = cropRect.top.coerceIn(0, bitmap.height - 1)
@@ -2343,13 +2350,16 @@ class ReaderViewModel(
         val bgColor = detectBackgroundColor(bitmap, safeRect)
         val textColor = if (isDarkColor(bgColor)) android.graphics.Color.WHITE else android.graphics.Color.BLACK
 
+        val sWidth = if (sourceWidth > 0) sourceWidth else bitmap.width
+        val sHeight = if (sourceHeight > 0) sourceHeight else bitmap.height
+
         val newBlock = TranslatedBlock(
             originalText = originalText,
             translatedText = translatedText,
             boundingBox = safeRect,
             bubbleRect = safeRect,
-            sourceWidth = bitmap.width,
-            sourceHeight = bitmap.height,
+            sourceWidth = sWidth,
+            sourceHeight = sHeight,
             bgColor = bgColor,
             textColor = textColor,
         )
@@ -2389,6 +2399,9 @@ class ReaderViewModel(
         page: ReaderPage,
         bitmap: android.graphics.Bitmap,
         cropRect: android.graphics.Rect,
+        pageCropRect: android.graphics.Rect = cropRect,
+        sourceWidth: Int = 0,
+        sourceHeight: Int = 0,
         asOverlay: Boolean = true,
     ) {
         val left = cropRect.left.coerceIn(0, bitmap.width - 1)
@@ -2461,7 +2474,15 @@ class ReaderViewModel(
                 val translatedText = translated.firstOrNull()?.text ?: rawText
 
                 if (asOverlay) {
-                    applyAreaTranslationAsOverlay(page, bitmap, safeRect, rawText, translatedText)
+                    applyAreaTranslationAsOverlay(
+                        page = page,
+                        bitmap = bitmap,
+                        cropRect = pageCropRect,
+                        originalText = rawText,
+                        translatedText = translatedText,
+                        sourceWidth = sourceWidth,
+                        sourceHeight = sourceHeight,
+                    )
                 } else {
                     mutableState.update {
                         it.copy(

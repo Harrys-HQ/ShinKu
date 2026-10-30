@@ -42,6 +42,18 @@ interface Viewer {
     fun updateAllTranslations() {}
 
     /**
+     * Maps a rectangle in viewer screen coordinates to the underlying [ReaderPage] and its source bitmap coordinates.
+     */
+    fun mapScreenRectToPage(screenRect: android.graphics.Rect): PageMappedRect? = null
+
+    data class PageMappedRect(
+        val page: ReaderPage,
+        val pageRect: android.graphics.Rect,
+        val sourceWidth: Int = 0,
+        val sourceHeight: Int = 0,
+    )
+
+    /**
      * Called from the containing activity when a key [event] is received. It should return true
      * if the event was handled, false otherwise.
      */

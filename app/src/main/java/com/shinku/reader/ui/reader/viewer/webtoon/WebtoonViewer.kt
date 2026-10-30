@@ -291,6 +291,24 @@ class WebtoonViewer(
         }
     }
 
+    override fun mapScreenRectToPage(screenRect: android.graphics.Rect): Viewer.PageMappedRect? {
+        val child = recycler.findChildViewUnder(screenRect.exactCenterX(), screenRect.exactCenterY())
+            ?: recycler.getChildAt(0) ?: return null
+        val holder = recycler.getChildViewHolder(child) as? WebtoonPageHolder ?: return null
+        val page = holder.page ?: return null
+        val localRect = android.graphics.Rect(
+            screenRect.left - child.left,
+            screenRect.top - child.top,
+            screenRect.right - child.left,
+            screenRect.bottom - child.top,
+        )
+        val mappedRect = holder.frame.mapScreenRectToSource(localRect) ?: localRect
+        val stripView = holder.frame.pageView as? WebtoonStripImageView
+        val sWidth = stripView?.sourceWidth ?: 0
+        val sHeight = stripView?.height ?: 0
+        return Viewer.PageMappedRect(page, mappedRect, sWidth, sHeight)
+    }
+
     fun onScrolled(pos: Int? = null) {
         val position = pos ?: layoutManager.findLastEndVisibleItemPosition()
         val item = adapter.items.getOrNull(position)

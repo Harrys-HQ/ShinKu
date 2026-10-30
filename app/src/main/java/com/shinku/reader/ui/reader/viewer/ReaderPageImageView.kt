@@ -81,7 +81,46 @@ open class ReaderPageImageView @JvmOverloads constructor(
         Injekt.get<BasePreferences>().alwaysDecodeLongStripWithSSIV().get()
     }
 
-    private var pageView: View? = null
+    var pageView: View? = null
+        private set
+
+    fun mapScreenPointToSource(screenX: Float, screenY: Float): PointF? {
+        val view = pageView ?: return null
+        return when (view) {
+            is SubsamplingScaleImageView -> {
+                if (!view.isReady) return null
+                val pt = PointF()
+                view.viewToSourceCoord(PointF(screenX, screenY), pt)
+            }
+            is WebtoonStripImageView -> {
+                val imgWidth = view.sourceWidth
+                if (imgWidth <= 0 || view.width <= 0) return null
+                val scale = view.width.toFloat() / imgWidth.toFloat()
+                PointF(screenX / scale, screenY / scale)
+            }
+            is android.widget.ImageView -> {
+                val drawable = view.drawable ?: return null
+                val dWidth = drawable.intrinsicWidth
+                val dHeight = drawable.intrinsicHeight
+                if (dWidth <= 0 || dHeight <= 0 || view.width <= 0 || view.height <= 0) return null
+                val scaleX = view.width.toFloat() / dWidth.toFloat()
+                val scaleY = view.height.toFloat() / dHeight.toFloat()
+                PointF(screenX / scaleX, screenY / scaleY)
+            }
+            else -> null
+        }
+    }
+
+    fun mapScreenRectToSource(screenRect: android.graphics.Rect): android.graphics.Rect? {
+        val topLeft = mapScreenPointToSource(screenRect.left.toFloat(), screenRect.top.toFloat()) ?: return null
+        val bottomRight = mapScreenPointToSource(screenRect.right.toFloat(), screenRect.bottom.toFloat()) ?: return null
+        return android.graphics.Rect(
+            minOf(topLeft.x, bottomRight.x).toInt().coerceAtLeast(0),
+            minOf(topLeft.y, bottomRight.y).toInt().coerceAtLeast(0),
+            maxOf(topLeft.x, bottomRight.x).toInt(),
+            maxOf(topLeft.y, bottomRight.y).toInt(),
+        )
+    }
 
     private var stripRequest: Disposable? = null
 

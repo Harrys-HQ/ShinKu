@@ -183,10 +183,20 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
     /**
      * Returns the PagerPageHolder for the provided page
      */
-    private fun getPageHolder(page: ReaderPage): PagerPageHolder? =
+    internal fun getPageHolder(page: ReaderPage): PagerPageHolder? =
         pager.children
             .filterIsInstance<PagerPageHolder>()
             .firstOrNull { it.item.first == page || it.item.second == page || it.item.first.index == page.index || it.item.second?.index == page.index }
+
+    override fun mapScreenRectToPage(screenRect: android.graphics.Rect): Viewer.PageMappedRect? {
+        val page = currentPage as? ReaderPage ?: return null
+        val holder = getPageHolder(page) ?: return Viewer.PageMappedRect(page, screenRect)
+        val mappedRect = holder.mapScreenRectToSource(screenRect) ?: screenRect
+        val pageView = holder.pageView as? com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
+        val sWidth = pageView?.sWidth ?: 0
+        val sHeight = pageView?.sHeight ?: 0
+        return Viewer.PageMappedRect(page, mappedRect, sWidth, sHeight)
+    }
 
     /**
      * Called when a new page (either a [ReaderPage] or [ChapterTransition]) is marked as active
