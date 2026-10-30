@@ -2327,7 +2327,70 @@ class ReaderViewModel(
         mutableState.update { it.copy(dialog = Dialog.AreaOcr(page, bitmap)) }
     }
 
-    fun translateArea(page: ReaderPage, bitmap: android.graphics.Bitmap, cropRect: android.graphics.Rect) {
+    fun applyAreaTranslationAsOverlay(
+        page: ReaderPage,
+        bitmap: android.graphics.Bitmap,
+        cropRect: android.graphics.Rect,
+        originalText: String,
+        translatedText: String,
+    ) {
+        val left = cropRect.left.coerceIn(0, bitmap.width - 1)
+        val top = cropRect.top.coerceIn(0, bitmap.height - 1)
+        val right = cropRect.right.coerceIn(left + 1, bitmap.width)
+        val bottom = cropRect.bottom.coerceIn(top + 1, bitmap.height)
+        val safeRect = android.graphics.Rect(left, top, right, bottom)
+
+        val bgColor = detectBackgroundColor(bitmap, safeRect)
+        val textColor = if (isDarkColor(bgColor)) android.graphics.Color.WHITE else android.graphics.Color.BLACK
+
+        val newBlock = TranslatedBlock(
+            originalText = originalText,
+            translatedText = translatedText,
+            boundingBox = safeRect,
+            bubbleRect = safeRect,
+            sourceWidth = bitmap.width,
+            sourceHeight = bitmap.height,
+            bgColor = bgColor,
+            textColor = textColor,
+        )
+
+        val currentBlocks = page.translationBlocks.orEmpty().toMutableList()
+        currentBlocks.removeAll { block ->
+            val r = block.bubbleRect ?: block.boundingBox
+            if (r != null) {
+                val iLeft = maxOf(r.left, safeRect.left)
+                val iTop = maxOf(r.top, safeRect.top)
+                val iRight = minOf(r.right, safeRect.right)
+                val iBottom = minOf(r.bottom, safeRect.bottom)
+                if (iLeft < iRight && iTop < iBottom) {
+                    val iArea = (iRight - iLeft) * (iBottom - iTop)
+                    val minArea = minOf(r.width() * r.height(), safeRect.width() * safeRect.height())
+                    minArea > 0 && (iArea.toFloat() / minArea.toFloat()) > 0.40f
+                } else false
+            } else false
+        }
+        currentBlocks.add(newBlock)
+        page.translationBlocks = currentBlocks
+        page.showTranslation = true
+        shinkuPreferences.liveTranslation().set(true)
+
+        val chapterId = page.chapter.chapter.id ?: 0L
+        val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
+        if (chapterId > 0L) {
+            TranslationCache.put(chapterId, page.index, targetLanguage, currentBlocks)
+        }
+
+        mutableState.update { it.copy(dialog = null) }
+        eventChannel.trySend(Event.TranslationOverlayReady(page))
+        eventChannel.trySend(Event.ShowToast("Translation placed over selected area"))
+    }
+
+    fun translateArea(
+        page: ReaderPage,
+        bitmap: android.graphics.Bitmap,
+        cropRect: android.graphics.Rect,
+        asOverlay: Boolean = true,
+    ) {
         val left = cropRect.left.coerceIn(0, bitmap.width - 1)
         val top = cropRect.top.coerceIn(0, bitmap.height - 1)
         val right = cropRect.right.coerceIn(left + 1, bitmap.width)
@@ -2339,6 +2402,8 @@ class ReaderViewModel(
             eventChannel.trySend(Event.ShowToast("Invalid area selected"))
             return
         }
+
+        val safeRect = android.graphics.Rect(left, top, right, bottom)
 
         viewModelScope.launchIO {
             mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
@@ -2361,7 +2426,7 @@ class ReaderViewModel(
                 }
 
                 val inputs = listOf(
-                    com.shinku.reader.domain.source.interactor.GeminiVibeSearch.TranslationBlockInput(id = 0, text = rawText)
+                    com.shinku.reader.domain.source.interactor.GeminiVibeSearch.TranslationBlockInput(id = 0, text = rawText),
                 )
 
                 val activeEngine = aiEngineRegistry.getActiveEngine()
@@ -2394,16 +2459,22 @@ class ReaderViewModel(
                 }
 
                 val translatedText = translated.firstOrNull()?.text ?: rawText
-                mutableState.update {
-                    it.copy(
-                        dialog = Dialog.AreaTranslationResult(
-                            originalText = rawText,
-                            translatedText = translatedText,
-                            targetLanguage = targetLanguage,
-                            page = page,
-                            bitmap = bitmap,
-                        ),
-                    )
+
+                if (asOverlay) {
+                    applyAreaTranslationAsOverlay(page, bitmap, safeRect, rawText, translatedText)
+                } else {
+                    mutableState.update {
+                        it.copy(
+                            dialog = Dialog.AreaTranslationResult(
+                                originalText = rawText,
+                                translatedText = translatedText,
+                                targetLanguage = targetLanguage,
+                                page = page,
+                                bitmap = bitmap,
+                                cropRect = safeRect,
+                            ),
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
@@ -2684,6 +2755,7 @@ class ReaderViewModel(
             val targetLanguage: String,
             val page: ReaderPage,
             val bitmap: android.graphics.Bitmap,
+            val cropRect: android.graphics.Rect? = null,
         ) : Dialog
         // SY <--
     }

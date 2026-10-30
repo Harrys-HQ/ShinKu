@@ -53,6 +53,7 @@ fun AreaTranslationResultDialog(
     targetLanguage: String,
     onDismissRequest: () -> Unit,
     onSelectAnotherArea: () -> Unit,
+    onApplyOverlay: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -198,25 +199,60 @@ fun AreaTranslationResultDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = onDismissRequest,
-                shape = SanctuaryShapes.pill,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = "Done")
+                if (onApplyOverlay != null) {
+                    Button(
+                        onClick = onApplyOverlay,
+                        shape = SanctuaryShapes.pill,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Translate,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "Overlay on Page")
+                    }
+                } else {
+                    Button(
+                        onClick = onDismissRequest,
+                        shape = SanctuaryShapes.pill,
+                    ) {
+                        Text(text = "Done")
+                    }
+                }
             }
         },
         dismissButton = {
-            FilledTonalButton(
-                onClick = onSelectAnotherArea,
-                shape = SanctuaryShapes.pill,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.CropFree,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(text = "Another Area")
+                TextButton(
+                    onClick = onDismissRequest,
+                    shape = SanctuaryShapes.pill,
+                ) {
+                    Text(text = "Close")
+                }
+                FilledTonalButton(
+                    onClick = onSelectAnotherArea,
+                    shape = SanctuaryShapes.pill,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.CropFree,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = "Another Area")
+                }
             }
         },
     )

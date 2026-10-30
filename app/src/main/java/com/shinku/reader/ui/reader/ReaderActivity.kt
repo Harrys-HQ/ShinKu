@@ -630,8 +630,11 @@ class ReaderActivity : BaseActivity() {
                     bitmap = dialog.bitmap,
                     pageNumber = if (dialog.page.number > 0) dialog.page.number else state.currentPage.coerceAtLeast(1),
                     onDismissRequest = onDismissRequest,
-                    onConfirmArea = { cropRect ->
-                        viewModel.translateArea(dialog.page, dialog.bitmap, cropRect)
+                    onConfirmOverlay = { cropRect ->
+                        viewModel.translateArea(dialog.page, dialog.bitmap, cropRect, asOverlay = true)
+                    },
+                    onConfirmInspect = { cropRect ->
+                        viewModel.translateArea(dialog.page, dialog.bitmap, cropRect, asOverlay = false)
                     },
                 )
             }
@@ -645,6 +648,17 @@ class ReaderActivity : BaseActivity() {
                     onDismissRequest = onDismissRequest,
                     onSelectAnotherArea = {
                         viewModel.openAreaOcrWithBitmap(dialog.page, dialog.bitmap)
+                    },
+                    onApplyOverlay = dialog.cropRect?.let { cropRect ->
+                        {
+                            viewModel.applyAreaTranslationAsOverlay(
+                                page = dialog.page,
+                                bitmap = dialog.bitmap,
+                                cropRect = cropRect,
+                                originalText = dialog.originalText,
+                                translatedText = dialog.translatedText,
+                            )
+                        }
                     },
                 )
             }
