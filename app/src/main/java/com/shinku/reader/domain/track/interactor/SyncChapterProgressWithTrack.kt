@@ -1,21 +1,22 @@
 package com.shinku.reader.domain.track.interactor
 
-import com.shinku.reader.domain.track.model.toDbTrack
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.data.track.EnhancedTracker
 import com.shinku.reader.data.track.Tracker
-import logcat.LogPriority
-import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.domain.chapter.interactor.GetChaptersByMangaId
 import com.shinku.reader.domain.chapter.interactor.UpdateChapter
 import com.shinku.reader.domain.chapter.model.toChapterUpdate
-import com.shinku.reader.domain.track.interactor.InsertTrack
 import com.shinku.reader.domain.track.model.Track
+import com.shinku.reader.domain.track.model.toDbTrack
+import com.shinku.reader.domain.track.service.TrackPreferences
+import logcat.LogPriority
 import kotlin.math.max
 
 class SyncChapterProgressWithTrack(
     private val updateChapter: UpdateChapter,
     private val insertTrack: InsertTrack,
     private val getChaptersByMangaId: GetChaptersByMangaId,
+    private val trackPreferences: TrackPreferences,
 ) {
 
     suspend fun await(
@@ -23,7 +24,12 @@ class SyncChapterProgressWithTrack(
         remoteTrack: Track,
         tracker: Tracker,
     ) {
-        if (tracker !is EnhancedTracker) {
+        val isEnhanced = tracker is EnhancedTracker
+        if (!isEnhanced && !trackPreferences.autoSyncChaptersWithTrack().get()) {
+            return
+        }
+
+        if (remoteTrack.lastChapterRead <= 0.0) {
             return
         }
 
@@ -41,8 +47,12 @@ class SyncChapterProgressWithTrack(
         val updatedTrack = remoteTrack.copy(lastChapterRead = lastRead)
 
         try {
-            tracker.update(updatedTrack.toDbTrack())
-            updateChapter.awaitAll(chapterUpdates)
+            if (isEnhanced && lastRead > remoteTrack.lastChapterRead) {
+                tracker.update(updatedTrack.toDbTrack())
+            }
+            if (chapterUpdates.isNotEmpty()) {
+                updateChapter.awaitAll(chapterUpdates)
+            }
             insertTrack.await(updatedTrack)
         } catch (e: Throwable) {
             logcat(LogPriority.WARN, e)

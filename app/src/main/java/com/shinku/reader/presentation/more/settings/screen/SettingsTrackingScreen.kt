@@ -146,6 +146,11 @@ object SettingsTrackingScreen : SearchableSettings {
                 title = stringResource(SYMR.strings.pref_tracker_resolve_using_source_metadata),
                 subtitle = stringResource(SYMR.strings.pref_tracker_resolve_using_source_metadata_summary),
             ),
+            Preference.PreferenceItem.SwitchPreference(
+                preference = trackPreferences.autoSyncChaptersWithTrack(),
+                title = stringResource(SYMR.strings.pref_tracker_sync_read_chapters),
+                subtitle = stringResource(SYMR.strings.pref_tracker_sync_read_chapters_summary),
+            ),
             // SY <--
             Preference.PreferenceGroup(
                 title = stringResource(MR.strings.services),

@@ -48,5 +48,10 @@ class TrackPreferences(
         "pref_resolve_using_source_metadata_key",
         true,
     )
+
+    fun autoSyncChaptersWithTrack() = preferenceStore.getBoolean(
+        "pref_auto_sync_chapters_with_track",
+        true,
+    )
     // SY <--
 }
