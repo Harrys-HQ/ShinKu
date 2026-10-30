@@ -1,21 +1,22 @@
 package com.shinku.reader.presentation.reader.dialog
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CropFree
@@ -53,9 +54,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
 import com.shinku.reader.presentation.core.theme.SanctuaryElevation
-import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 
 /**
  * Google Lens / Google Translate style screen-capture Area OCR overlay.
@@ -198,146 +197,175 @@ fun AreaOcrCropOverlay(
             )
 
             // 5. Draw sleek corner indicators for handle grab
-            val cLen = 20.dp.toPx()
-            val cStroke = 4.dp.toPx()
+            val cLen = 18.dp.toPx()
+            val cStroke = 3.5.dp.toPx()
             val r = cropScreenLeft + cropScreenWidth
             val b = cropScreenTop + cropScreenHeight
 
-            drawLine(cornerColor, Offset(r - cLen, b), Offset(r, b), strokeWidth = cStroke)
-            drawLine(cornerColor, Offset(r, b - cLen), Offset(r, b), strokeWidth = cStroke)
+            // Top-left corner
             drawLine(primaryColor, Offset(cropScreenLeft, cropScreenTop), Offset(cropScreenLeft + cLen, cropScreenTop), strokeWidth = cStroke)
             drawLine(primaryColor, Offset(cropScreenLeft, cropScreenTop), Offset(cropScreenLeft, cropScreenTop + cLen), strokeWidth = cStroke)
+
+            // Top-right corner
+            drawLine(primaryColor, Offset(r, cropScreenTop), Offset(r - cLen, cropScreenTop), strokeWidth = cStroke)
+            drawLine(primaryColor, Offset(r, cropScreenTop), Offset(r, cropScreenTop + cLen), strokeWidth = cStroke)
+
+            // Bottom-left corner
+            drawLine(primaryColor, Offset(cropScreenLeft, b), Offset(cropScreenLeft + cLen, b), strokeWidth = cStroke)
+            drawLine(primaryColor, Offset(cropScreenLeft, b), Offset(cropScreenLeft, b - cLen), strokeWidth = cStroke)
+
+            // Bottom-right corner (accented resize handle)
+            drawLine(cornerColor, Offset(r - cLen, b), Offset(r, b), strokeWidth = cStroke)
+            drawLine(cornerColor, Offset(r, b - cLen), Offset(r, b), strokeWidth = cStroke)
+            drawCircle(
+                color = cornerColor,
+                radius = 4.dp.toPx(),
+                center = Offset(r, b),
+            )
         }
 
-        // Top bar
+        // Top-start badge: minimal non-intrusive floating pill
         Surface(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
+                .align(Alignment.TopStart)
                 .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-            shape = SanctuaryShapes.card,
-            tonalElevation = SanctuaryElevation.card,
+                .padding(start = 16.dp, top = 12.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+            tonalElevation = SanctuaryElevation.subtle,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.CropFree,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                    Column {
-                        SanctuaryOverlineBadge(
-                            text = "SHINKU LENS • VIEWPORT SNAPSHOT",
-                            compact = true,
-                        )
-                        Text(
-                            text = "Select Bubble or Text",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-                IconButton(onClick = onDismissRequest) {
-                    Icon(
-                        imageVector = Icons.Outlined.Close,
-                        contentDescription = "Close",
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Outlined.CropFree,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = "ShinKu Lens",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
         }
 
-        // Bottom floating action bar
+        // Top-end close button: minimal floating circular button
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = 16.dp, top = 12.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+            tonalElevation = SanctuaryElevation.subtle,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)),
+        ) {
+            IconButton(
+                onClick = onDismissRequest,
+                modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = "Close",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+
+        // Bottom floating action pill (FAB bar)
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(bottom = 20.dp),
+            shape = CircleShape,
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-            shape = SanctuaryShapes.hero,
             tonalElevation = SanctuaryElevation.hero,
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                FilledTonalButton(
+                IconButton(
                     onClick = {
                         cropNorm = Rect(0.20f, 0.35f, 0.80f, 0.55f)
                     },
-                    shape = SanctuaryShapes.pill,
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
+                        contentDescription = "Reset Selection",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Reset", fontSize = 12.sp)
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (onConfirmInspect != null) {
-                        FilledTonalButton(
-                            onClick = {
-                                val sLeft = (cropNorm.left * bitmap.width).toInt().coerceIn(0, bitmap.width - 1)
-                                val sTop = (cropNorm.top * bitmap.height).toInt().coerceIn(0, bitmap.height - 1)
-                                val sRight = (cropNorm.right * bitmap.width).toInt().coerceIn(sLeft + 1, bitmap.width)
-                                val sBottom = (cropNorm.bottom * bitmap.height).toInt().coerceIn(sTop + 1, bitmap.height)
-                                onConfirmInspect(android.graphics.Rect(sLeft, sTop, sRight, sBottom))
-                            },
-                            shape = SanctuaryShapes.pill,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.FindInPage,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Details", fontSize = 12.sp)
-                        }
-                    }
-
-                    Button(
+                if (onConfirmInspect != null) {
+                    FilledTonalButton(
                         onClick = {
                             val sLeft = (cropNorm.left * bitmap.width).toInt().coerceIn(0, bitmap.width - 1)
                             val sTop = (cropNorm.top * bitmap.height).toInt().coerceIn(0, bitmap.height - 1)
                             val sRight = (cropNorm.right * bitmap.width).toInt().coerceIn(sLeft + 1, bitmap.width)
                             val sBottom = (cropNorm.bottom * bitmap.height).toInt().coerceIn(sTop + 1, bitmap.height)
-                            onConfirmOverlay(android.graphics.Rect(sLeft, sTop, sRight, sBottom))
+                            onConfirmInspect(android.graphics.Rect(sLeft, sTop, sRight, sBottom))
                         },
-                        shape = SanctuaryShapes.pill,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Translate,
+                            imageVector = Icons.Outlined.FindInPage,
                             contentDescription = null,
-                            modifier = Modifier.size(18.dp),
+                            modifier = Modifier.size(16.dp),
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "Overlay on Page", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Details",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
+                }
+
+                Button(
+                    onClick = {
+                        val sLeft = (cropNorm.left * bitmap.width).toInt().coerceIn(0, bitmap.width - 1)
+                        val sTop = (cropNorm.top * bitmap.height).toInt().coerceIn(0, bitmap.height - 1)
+                        val sRight = (cropNorm.right * bitmap.width).toInt().coerceIn(sLeft + 1, bitmap.width)
+                        val sBottom = (cropNorm.bottom * bitmap.height).toInt().coerceIn(sTop + 1, bitmap.height)
+                        onConfirmOverlay(android.graphics.Rect(sLeft, sTop, sRight, sBottom))
+                    },
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Translate,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Translate",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
                 }
             }
         }
