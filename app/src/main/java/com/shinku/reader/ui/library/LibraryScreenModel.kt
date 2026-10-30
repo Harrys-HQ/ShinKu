@@ -436,7 +436,10 @@ class LibraryScreenModel(
         }
 
         val filterFnCompleted: (LibraryItem) -> Boolean = {
-            applyFilter(filterCompleted) { it.libraryManga.manga.status.toInt() == SManga.COMPLETED }
+            applyFilter(filterCompleted) {
+            it.libraryManga.manga.status.toInt() == SManga.COMPLETED ||
+            it.libraryManga.manga.status.toInt() == SManga.PUBLISHING_FINISHED
+        }
         }
 
         val filterFnIntervalCustom: (LibraryItem) -> Boolean = {

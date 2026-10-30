@@ -70,7 +70,7 @@ class StatsScreenModel(
             val overviewStatData = StatsData.Overview(
                 libraryMangaCount = distinctLibraryManga.size,
                 completedMangaCount = distinctLibraryManga.count {
-                    it.manga.status.toInt() == SManga.COMPLETED && it.unreadCount == 0L
+                    (it.manga.status.toInt() == SManga.COMPLETED || it.manga.status.toInt() == SManga.PUBLISHING_FINISHED) && it.unreadCount == 0L
                 },
                 totalReadDuration = getTotalReadDuration.await(),
             )
@@ -156,7 +156,11 @@ class StatsScreenModel(
             included && !excluded
         }
             .fastCountNot {
-                (MANGA_NON_COMPLETED in updateRestrictions && it.manga.status.toInt() == SManga.COMPLETED) ||
+                (MANGA_NON_COMPLETED in updateRestrictions && (
+                    it.manga.status.toInt() == SManga.COMPLETED ||
+                    it.manga.status.toInt() == SManga.PUBLISHING_FINISHED ||
+                    it.manga.status.toInt() == SManga.CANCELLED
+                )) ||
                     (MANGA_HAS_UNREAD in updateRestrictions && it.unreadCount != 0L) ||
                     (MANGA_NON_READ in updateRestrictions && it.totalChapters > 0 && !it.hasStarted)
             }

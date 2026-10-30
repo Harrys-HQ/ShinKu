@@ -134,7 +134,7 @@ private class MoreScreenModel(
             val libraryManga = getLibraryManga.await().distinctBy { it.id }
             val chaptersReadCount = libraryManga.sumOf { it.readCount }.toInt()
             val completedCount = libraryManga.count {
-                it.manga.status.toInt() == SManga.COMPLETED && it.unreadCount == 0L
+                (it.manga.status.toInt() == SManga.COMPLETED || it.manga.status.toInt() == SManga.PUBLISHING_FINISHED) && it.unreadCount == 0L
             }
             val stats = getReadingStats.await(
                 libraryMangaCount = libraryManga.size,

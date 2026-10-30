@@ -294,11 +294,10 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         }
         // SY <--
 
-        val isAuto = tags.contains(WORK_NAME_AUTO)
-        val restrictions = if (isAuto) {
-            libraryPreferences.autoUpdateMangaRestrictions().get()
-        } else {
+        val restrictions = if (target == Target.COVERS) {
             emptySet()
+        } else {
+            libraryPreferences.autoUpdateMangaRestrictions().get()
         }
         val skippedUpdates = mutableListOf<Pair<Manga, String?>>()
         val (_, fetchWindowUpperBound) = fetchInterval.getWindow(ZonedDateTime.now())
@@ -316,7 +315,11 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                         false
                     }
 
-                    MANGA_NON_COMPLETED in restrictions && it.manga.status.toInt() == SManga.COMPLETED -> {
+                    MANGA_NON_COMPLETED in restrictions && (
+                        it.manga.status.toInt() == SManga.COMPLETED ||
+                        it.manga.status.toInt() == SManga.PUBLISHING_FINISHED ||
+                        it.manga.status.toInt() == SManga.CANCELLED
+                    ) -> {
                         skippedUpdates.add(it.manga to context.stringResource(MR.strings.skipped_reason_completed))
                         false
                     }
