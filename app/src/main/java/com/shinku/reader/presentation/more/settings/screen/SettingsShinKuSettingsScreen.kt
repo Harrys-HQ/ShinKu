@@ -438,11 +438,6 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_live_translation),
                     subtitle = stringResource(MR.strings.pref_live_translation_summary),
                 ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = shinkuPreferences.autoTranslateChapterOnOpen(),
-                    title = "Auto Pre-Translate Chapters",
-                    subtitle = "Automatically batch-translate new chapters in background when opened",
-                ),
                 Preference.PreferenceItem.ListPreference(
                     preference = shinkuPreferences.translationSourceLanguage(),
                     title = "Translation Source Language",

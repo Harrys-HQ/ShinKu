@@ -566,15 +566,12 @@ class ReaderViewModel(
             val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
             val cachedTranslations = TranslationCache.getChapter(chapterId, targetLanguage)
             if (!cachedTranslations.isNullOrEmpty()) {
+                val shouldShow = shinkuPreferences.liveTranslation().get()
                 chapter.pages?.forEach { p ->
                     cachedTranslations[p.index]?.let { blocks ->
                         p.translationBlocks = blocks
-                        p.showTranslation = true
+                        p.showTranslation = shouldShow
                     }
-                }
-            } else if (shinkuPreferences.autoTranslateChapterOnOpen().get() && shinkuPreferences.liveTranslation().get()) {
-                viewModelScope.launchIO {
-                    startBatchChapterTranslation(chapter)
                 }
             }
         }
