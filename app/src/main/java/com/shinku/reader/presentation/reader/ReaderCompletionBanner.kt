@@ -8,6 +8,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -38,17 +39,32 @@ fun ReaderCompletionBanner(
     currentPage: Int,
     totalPages: Int,
     modifier: Modifier = Modifier,
+    doublePages: Boolean = false,
 ) {
-    var celebratedChapterId by remember { mutableStateOf<Long?>(null) }
+    var bannerTrigger by remember { mutableStateOf<Long?>(null) }
+    var celebratedChapterIds by remember { mutableStateOf(setOf<Long>()) }
     var visible by remember { mutableStateOf(false) }
 
-    val isLastPage = totalPages > 0 && currentPage >= totalPages
+    val isLastPage = totalPages > 0 && (
+        currentPage >= totalPages || (doublePages && currentPage >= totalPages - 1)
+    )
 
+    // Trigger celebration when reaching the last page of an uncelebrated chapter
     LaunchedEffect(chapterId, isLastPage) {
-        if (chapterId != null && isLastPage && celebratedChapterId != chapterId) {
-            celebratedChapterId = chapterId
-            visible = true
-            delay(3200L)
+        if (chapterId != null && isLastPage && !celebratedChapterIds.contains(chapterId)) {
+            celebratedChapterIds = celebratedChapterIds + chapterId
+            bannerTrigger = chapterId
+        }
+    }
+
+    // Auto-dismiss timeout: isolated to bannerTrigger so page flips and chapter transitions
+    // cannot cancel the timer and leave the banner permanently stuck on screen.
+    LaunchedEffect(bannerTrigger) {
+        val trigger = bannerTrigger ?: return@LaunchedEffect
+        visible = true
+        try {
+            delay(2800L)
+        } finally {
             visible = false
         }
     }
@@ -62,16 +78,18 @@ fun ReaderCompletionBanner(
             .padding(top = 16.dp),
     ) {
         Surface(
+            onClick = { visible = false },
             shape = SanctuaryShapes.pill,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
             border = BorderStroke(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
             ),
             shadowElevation = SanctuaryElevation.card,
+            modifier = Modifier.heightIn(min = 44.dp),
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {

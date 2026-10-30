@@ -402,6 +402,7 @@ class ReaderActivity : BaseActivity() {
                 chapterId = state.currentChapter?.chapter?.id,
                 currentPage = state.currentPage,
                 totalPages = state.totalPages,
+                doublePages = state.doublePages,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .zIndex(60f),

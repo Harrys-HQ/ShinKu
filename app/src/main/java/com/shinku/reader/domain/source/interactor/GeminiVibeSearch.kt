@@ -113,24 +113,39 @@ class GeminiVibeSearch(
         )
     }
 
+    fun cleanMangaTitle(title: String): String {
+        return title
+            .replace("\\[.*?]".toRegex(), "")
+            .replace("\\(.*?\\)".toRegex(), "")
+            .replace("\\{.*?\\}".toRegex(), "")
+            .replace("(?i)^(\\s*ch\\.?\\s*\\d+.*?-|chapter\\s*\\d+.*?-)", "")
+            .trim()
+            .ifBlank { title }
+    }
+
     suspend fun explainCharacterAndLoreCodex(
         text: String,
         mangaTitle: String,
         chapterName: String,
         apiKey: String,
         model: String,
+        synopsis: String? = null,
     ): String {
-        val prompt = """
-            You are a spoiler-safe manga/manhwa companion for the series "$mangaTitle" (currently reading "$chapterName").
-            Based on the dialogue/text from the current page below, provide a concise, bulleted "Who's Here & Lore Codex" covering:
-            1. Any character names, titles, or factions mentioned or implied in this scene and their role up to "$chapterName".
-            2. Any in-universe terminology, martial arts/magic systems, or plot callbacks referenced on this page.
-            
-            CRITICAL RULE: Strictly NO SPOILERS beyond "$chapterName". Keep it concise and easy to scan.
-            
-            Page Text:
-            "$text"
-        """.trimIndent()
+        val cleanTitle = cleanMangaTitle(mangaTitle)
+        val prompt = buildString {
+            appendLine("You are a spoiler-safe manga/manhwa companion for the series \"$cleanTitle\" (currently reading \"$chapterName\").")
+            if (!synopsis.isNullOrBlank()) {
+                appendLine("Series Premise / Synopsis: ${synopsis.trim().take(600)}")
+            }
+            appendLine("Based on the dialogue/text from the current page below, provide a concise, bulleted \"Who's Here & Lore Codex\" covering:")
+            appendLine("1. Any character names, titles, or factions mentioned or implied in this scene and their role up to \"$chapterName\".")
+            appendLine("2. Any in-universe terminology, martial arts/magic systems, or plot callbacks referenced on this page.")
+            appendLine()
+            appendLine("CRITICAL RULE: Strictly NO SPOILERS beyond \"$chapterName\". Do NOT confuse with other series. Keep it concise and easy to scan.")
+            appendLine()
+            appendLine("Page Text:")
+            appendLine("\"$text\"")
+        }
         return callGeminiForText(prompt, apiKey, model)
     }
 
@@ -323,19 +338,45 @@ class GeminiVibeSearch(
         title: String,
         chapterNames: List<String>,
         apiKey: String,
-        model: String
+        model: String,
+        synopsis: String? = null,
+        author: String? = null,
+        genres: List<String>? = null,
+        originalTitle: String? = null,
     ): String {
-        val cacheKey = "$title::${chapterNames.joinToString(",")}"
+        val cleanTitle = cleanMangaTitle(title)
+        val cacheKey = "${cleanTitle.trim()}::${chapterNames.joinToString(",")}::${author.orEmpty()}::${synopsis?.hashCode() ?: 0}"
         recapCache[cacheKey]?.let { return it }
 
-        val prompt = """
-            You are a manga story recapper. Based on the manga "$title", 
-            provide a short, engaging, and professional story recap/summary of the events up to or including these chapters:
-            ${chapterNames.joinToString(", ")}
-            
-            Keep the summary in English, spoilers allowed (as it is for someone who already read them but forgot), 
-            and keep it under 3 paragraphs. Focus on key plot points and character developments.
-        """.trimIndent()
+        val prompt = buildString {
+            appendLine("You are an expert manga and comic story recapper.")
+            appendLine("Series Title: \"$cleanTitle\"")
+            if (!originalTitle.isNullOrBlank() && originalTitle != cleanTitle && originalTitle != title) {
+                appendLine("Alternative / Original Title: \"$originalTitle\"")
+            }
+            if (!author.isNullOrBlank()) {
+                appendLine("Author / Creator: $author")
+            }
+            if (!genres.isNullOrEmpty()) {
+                appendLine("Genres: ${genres.joinToString(", ")}")
+            }
+            if (!synopsis.isNullOrBlank()) {
+                appendLine("Official Synopsis / Premise: ${synopsis.trim().take(1000)}")
+            }
+            appendLine()
+            appendLine("The reader is currently reading up to these chapters:")
+            appendLine(chapterNames.joinToString(", "))
+            appendLine()
+            appendLine("TASK:")
+            appendLine("Provide a concise, engaging, spoiler-safe story recap of the events in \"$cleanTitle\" up to the specified chapters.")
+            appendLine()
+            appendLine("CRITICAL RULES:")
+            appendLine("1. Recount the events OF THIS SPECIFIC SERIES ONLY, as identified by the title, author, and synopsis above.")
+            appendLine("2. Never substitute, confuse, or hallucinate a different series with a similar title or premise.")
+            appendLine("3. Keep the summary under 3 concise paragraphs in English.")
+            appendLine("4. Spoilers are allowed ONLY up to the specified chapters (do not spoil events after these chapters).")
+            appendLine("5. Focus on the main narrative progress, key characters, and major turning points.")
+        }
         
         val result = callGeminiForText(prompt, apiKey, model)
         if (!result.startsWith("Error:")) {

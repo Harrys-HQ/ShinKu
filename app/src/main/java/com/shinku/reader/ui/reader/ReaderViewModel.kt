@@ -2261,6 +2261,8 @@ class ReaderViewModel(
 
     fun onCharacterCodex() {
         val page = (state.value.dialog as? Dialog.PageActions)?.page ?: return
+        val currentChapter = state.value.currentChapter
+        val activeManga = currentChapter?.manga ?: manga
         performAiAction(page, "Who's Here? • Lore Codex") { text ->
             val apiKey = shinkuPreferences.geminiApiKey().get().trim()
             val model = shinkuPreferences.geminiModel().get()
@@ -2270,18 +2272,23 @@ class ReaderViewModel(
             } else {
                 geminiVibeSearch.explainCharacterAndLoreCodex(
                     text = text,
-                    mangaTitle = manga?.title.orEmpty(),
-                    chapterName = state.value.currentChapter?.chapter?.name.orEmpty(),
+                    mangaTitle = activeManga?.title.orEmpty(),
+                    chapterName = currentChapter?.chapter?.name.orEmpty(),
                     apiKey = apiKey,
                     model = model,
+                    synopsis = activeManga?.description,
                 )
             }
         }
     }
 
     fun onChapterRecap() {
-        val currentChapterName = state.value.currentChapter?.chapter?.name ?: "Current Chapter"
-        val mangaTitle = manga?.title ?: "Unknown Series"
+        val currentChapter = state.value.currentChapter
+        val currentChapterName = currentChapter?.chapter?.name ?: "Current Chapter"
+        val activeManga = currentChapter?.manga ?: manga
+        val mangaTitle = activeManga?.title ?: "Unknown Series"
+        val currentChapterId = currentChapter?.chapter?.id
+
         viewModelScope.launchIO {
             mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
             try {
@@ -2291,16 +2298,32 @@ class ReaderViewModel(
                 val recap = if (!activeEngine.isAvailable && apiKey.isBlank()) {
                     "Please configure your AI API Key in Settings > ShinKu AI & Engines to enable Story So Far Recaps."
                 } else {
-                    val readChapters = chapterList
-                        .filter { it.chapter.read || it.chapter.id == state.value.currentChapter?.chapter?.id }
+                    // Only take chapters strictly up to the chapter currently being read to prevent spoilers/skew
+                    val currentIndex = if (currentChapterId != null) {
+                        chapterList.indexOfFirst { it.chapter.id == currentChapterId }
+                    } else {
+                        -1
+                    }
+                    val chaptersUpToCurrent = if (currentIndex >= 0) {
+                        chapterList.take(currentIndex + 1)
+                    } else {
+                        chapterList
+                    }
+                    val readChapters = chaptersUpToCurrent
+                        .filter { it.chapter.read || it.chapter.id == currentChapterId }
                         .takeLast(8)
                         .map { it.chapter.name }
                         .ifEmpty { listOf(currentChapterName) }
+
                     geminiVibeSearch.getChapterRecap(
                         title = mangaTitle,
                         chapterNames = readChapters,
                         apiKey = apiKey,
                         model = model,
+                        synopsis = activeManga?.description,
+                        author = activeManga?.author,
+                        genres = activeManga?.genre,
+                        originalTitle = activeManga?.ogTitle,
                     )
                 }
                 mutableState.update { it.copy(dialog = Dialog.AiInsight("Story So Far • $currentChapterName", recap)) }

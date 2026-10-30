@@ -1869,10 +1869,14 @@ class MangaScreenModel(
             updateSuccessState { it.copy(isLoadingRecap = true, recapText = null) }
             try {
                 val recap = geminiVibeSearch.getChapterRecap(
-                    state.manga.title,
-                    lastReadChapters,
-                    apiKey,
-                    model
+                    title = state.manga.title,
+                    chapterNames = lastReadChapters,
+                    apiKey = apiKey,
+                    model = model,
+                    synopsis = state.manga.description,
+                    author = state.manga.author,
+                    genres = state.manga.genre,
+                    originalTitle = state.manga.ogTitle,
                 )
                 updateSuccessState { it.copy(isLoadingRecap = false, recapText = recap) }
             } catch (e: Exception) {
