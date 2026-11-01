@@ -48,7 +48,10 @@ In addition to all features from TachiyomiSY and Mihon, ShinKu introduces:
 *   **Floating Glass Navigation Dock:** Dynamic island squircle dock with true edge-to-edge transparent backing and optional auto-hide on scroll for complete reading immersion.
 *   **Sanctuary Jump-Back Deck:** Continue reading carousel at the top of your library that automatically collapses on scroll while keeping category tabs pinned and intact.
 *   **Vibe Search & "For You" (AI Discovery):** Search for manga using natural language or receive personalized recommendations based on your library activity, powered by Google Gemini AI.
-*   **AI Live Translation Engine:** On-the-fly multi-language page translation supporting on-device AICore / Gemini Nano, MLKit, and Google Gemini API.
+*   **Interactive Area OCR & In-Place Translation (BETA):** Long-press any page to freeze a 1:1 screen snapshot and crop custom speech balloons, background signs, or sound effects for instant in-place scanlation translation.
+*   **Whole-Chapter Batch Translation:** On-demand background translation of entire chapters with persistent disk caching, non-maximum suppression (NMS) bubble deduplication, and an unobtrusive progress pill.
+*   **Universal Tracker Read Progress Sync:** Automatically synchronizes chapter read status bidirectionally from external trackers (AniList, MyAnimeList, Kitsu, Shikimori, Bangumi, Kavita, Suwayomi, Comick) to your local library.
+*   **AI Live Translation Engine:** On-the-fly multi-language page translation supporting Google Gemini Cloud API, OpenAI-compatible endpoints (OpenRouter, DeepSeek, Groq), on-device AICore / Gemini Nano, and offline Google ML Kit.
 *   **Reading Journey Card:** A beautiful, interactive statistics card at the top of your "More" tab tracking your total chapters read, time patterns, and genre heatmaps.
 *   **Immersive Atmosphere:** Experience manga with **Atmospheric Audio** (genre-matching ambient sounds) and **Mood Lighting** (color temperature adjustments matching the manga's vibe).
 *   **Dynamic UI & Depth:** An immersive UI where colors shift dynamically to match the manga cover, now enhanced with **Backdrop Blurs** in the Library and Info screens.
