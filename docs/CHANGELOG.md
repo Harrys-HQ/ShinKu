@@ -23,6 +23,7 @@
 ### Fixed & Hardened
 - **Smart Library Update Optimization (Fixes #22)**: Enforced smart update frequency restrictions on manual updates to avoid unnecessary network traffic and rate-limiting; correctly factored in all finished manga statuses (Completed, Cancelled, Hiatus).
 - **UI UX Pro Max Resilience**: Hardened dialogs and modal sheets across reader and tracking against button squeezing, label truncation, and horizontal overflow across mobile, phablet, and tablet viewports.
+- **Upstream Security & WebKit Sync (Upstream Mihon)**: Updated Conscrypt to `2.8.0` for modern TLS 1.3 handshake stabilization and elevated AndroidX WebKit to `1.18.0` for enhanced WebView renderer and Cloudflare challenge compatibility.
  
 ## 2.7.15 "Extension ABI Modernization, Batch Translation & Upstream Sync" (2026-10-26)
 ### Fixed

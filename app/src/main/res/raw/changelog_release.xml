@@ -8,6 +8,7 @@
         <changelogtext>[b]Smart Library Update Optimization (Fixes #22)[/b]: Enforce smart update frequency restrictions on manual refreshes and correctly handle all finished manga statuses</changelogtext>
         <changelogtext>[b]Sanctuary Design &amp; Bento Stats Suite[/b]: Modern glassmorphic Sanctuary design system with rich reading analytics and Bento statistics</changelogtext>
         <changelogtext>[b]UI UX Pro Max Resilience[/b]: Hardened reader and settings dialogs against button squeezing, label truncation, and horizontal overflow across all mobile and tablet viewports</changelogtext>
+        <changelogtext>[b]Upstream Security &amp; WebKit Sync (Upstream Mihon)[/b]: Updated Conscrypt to 2.8.0 for modern TLS 1.3 handshake stabilization and elevated AndroidX WebKit to 1.18.0 for enhanced WebView renderer compatibility</changelogtext>
     </changelogversion>
     <changelogversion versionName="2.7.15" changeDate="October 26, 2026">
         <changelogtext>[b]Extension ABI &amp; Coroutines Modernization (Fixes #21)[/b]: Upgraded coroutines to 1.11.0 to support runBlockingK synthetic ABI helper and elevated minSdk to 26 for native java.time.Instant JVM compatibility with modern Keiyoushi extensions</changelogtext>
