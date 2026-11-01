@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.8.0" changeDate="November 1, 2026">
+        <changelogtext>[b]Interactive Area OCR &amp; In-Place Translation (BETA)[/b]: Select custom screen regions or specific speech bubbles/signs via a 1:1 frozen viewport snapshot and overlay translated text directly onto the manga page. [i]Note: Area OCR is currently in Beta and actively tested on a OnePlus Ace 5 (Android 15); coordinate scaling and viewport behavior may vary across other OEM devices and aspect ratios. Community feedback and issue reports are welcome![/i]</changelogtext>
+        <changelogtext>[b]Reader UI/UX Polish &amp; Anti-Collision Overhaul (Fixes #24)[/b]: Fully integrated translation controls into the reader bottom bar; removed rogue floating buttons that collided with the vertical seekbar and bottom navigation</changelogtext>
+        <changelogtext>[b]Non-Obstructive Background Translation[/b]: Chapter batch translation now runs in the background with a sleek top-center progress pill and is strictly restricted to explicit user triggers (never starts automatically on chapter open)</changelogtext>
+        <changelogtext>[b]Tracker Read Status Synchronization (Fixes #23)[/b]: Automatically sync chapter read progress from external trackers (AniList, MAL, Kitsu, etc.) down to local manga chapters</changelogtext>
+        <changelogtext>[b]Smart Library Update Optimization (Fixes #22)[/b]: Enforce smart update frequency restrictions on manual refreshes and correctly handle all finished manga statuses</changelogtext>
+        <changelogtext>[b]Sanctuary Design &amp; Bento Stats Suite[/b]: Modern glassmorphic Sanctuary design system with rich reading analytics and Bento statistics</changelogtext>
+        <changelogtext>[b]UI UX Pro Max Resilience[/b]: Hardened reader and settings dialogs against button squeezing, label truncation, and horizontal overflow across all mobile and tablet viewports</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.7.15" changeDate="October 26, 2026">
         <changelogtext>[b]Extension ABI &amp; Coroutines Modernization (Fixes #21)[/b]: Upgraded coroutines to 1.11.0 to support runBlockingK synthetic ABI helper and elevated minSdk to 26 for native java.time.Instant JVM compatibility with modern Keiyoushi extensions</changelogtext>
         <changelogtext>[b]Whole Chapter Batch Translation[/b]: Translate full chapters with intelligent background batching, persistent disk caching, non-maximum suppression (NMS) bubble de-duplication, and an interactive non-obstructive progress pill</changelogtext>

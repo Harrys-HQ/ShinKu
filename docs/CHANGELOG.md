@@ -1,5 +1,29 @@
 # ShinKu Changelog
  
+## 2.8.0 "Sanctuary Redesign, Interactive Area OCR (Beta) & Tracker Sync" (2026-11-01)
+### Features & AI Reader Innovation
+- **Interactive Area OCR & In-Place Translation (BETA)**:
+  - Select custom areas or targeted dialogue bubbles/signs on screen using an interactive Google Lens-style 1:1 frozen viewport snapshot with corner drag handles and precision bounding boxes.
+  - Render translated text in-place over comic panels with luminance-based background color classification (clean white/black paper matching, zero muddy gray boxes).
+  - Accurate coordinate normalization across horizontal Pager and vertical Webtoon modes.
+  - > [!IMPORTANT]
+  - > **Beta Testing Notice**: Area OCR is currently in active Beta and has been verified primarily on a OnePlus Ace 5 (Android 15). Display scaling, camera cutouts, or non-standard aspect ratios may behave differently across other OEM devices. Community feedback, edge-case testing, and issue reports are warmly welcomed!
+- **Reader UI/UX Polish & Anti-Collision Overhaul (Fixes #24)**:
+  - Eliminated rogue floating translation buttons that collided with the vertical seekbar and overlapped bottom navigation.
+  - Seamlessly integrated translation controls into the `ReaderBottomBar` alongside Chapters, Web, and Settings: single tap to toggle overlays on/off, long press for translation options.
+  - Sleek top-center pill badge for background chapter batch translation that never obstructs manga reading.
+  - Strict user-trigger mandate: batch chapter translation never starts automatically on chapter open.
+- **Universal Tracker Read Progress Sync (Fixes #23)**:
+  - Added bidirectional read status synchronization from external trackers (AniList, MyAnimeList, Kitsu, Shikimori, Bangumi, Kavita, Suwayomi, Comick) down to local manga chapters.
+  - Automatically marks chapters as read when tracker progress is ahead, preventing reading state desynchronization.
+- **Sanctuary Design System & Bento Stats Suite**:
+  - Full UI overhaul introducing the glassmorphic Sanctuary design system with subtle elevation, refined cards, and decluttered scanning.
+  - Interactive Bento stats suite delivering rich visual analytics of reading habits and library progress.
+
+### Fixed & Hardened
+- **Smart Library Update Optimization (Fixes #22)**: Enforced smart update frequency restrictions on manual updates to avoid unnecessary network traffic and rate-limiting; correctly factored in all finished manga statuses (Completed, Cancelled, Hiatus).
+- **UI UX Pro Max Resilience**: Hardened dialogs and modal sheets across reader and tracking against button squeezing, label truncation, and horizontal overflow across mobile, phablet, and tablet viewports.
+ 
 ## 2.7.15 "Extension ABI Modernization, Batch Translation & Upstream Sync" (2026-10-26)
 ### Fixed
 - **Extension ABI & Coroutines Modernization (Fixes #21)**: Resolved fatal `NoSuchMethodError: runBlockingK$default` and `toJavaInstant` exceptions caused by ABI desynchronization with modern Keiyoushi extensions by upgrading `kotlinx-coroutines` to `1.11.0`, raising `minSdk` to `26` (Android 8.0 Oreo) for native JVM `java.time.Instant` linking, and removing `,allowoptimization` in R8 proguard rules to preserve extension interface APIs.
