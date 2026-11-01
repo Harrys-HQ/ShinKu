@@ -60,8 +60,20 @@ features:
     <p style="margin-top: 8px; font-weight: 500;">Modern Discover Feed & Genre Cloud</p>
   </div>
   <div style="text-align: center;">
+    <img src="/screenshot-manga-details.jpg" alt="Title Details & Chapter List" style="border-radius: 12px; width: 100%; box-shadow: 0 4px 14px rgba(0,0,0,0.15);" />
+    <p style="margin-top: 8px; font-weight: 500;">Title Details & Modern Typography</p>
+  </div>
+  <div style="text-align: center;">
     <img src="/screenshot-journey-overview.jpg" alt="Reading Journey" style="border-radius: 12px; width: 100%; box-shadow: 0 4px 14px rgba(0,0,0,0.15);" />
     <p style="margin-top: 8px; font-weight: 500;">Reading Journey & Velocity Stats</p>
+  </div>
+  <div style="text-align: center;">
+    <img src="/screenshot-journey-velocity.jpg" alt="Reading Velocity Analytics" style="border-radius: 12px; width: 100%; box-shadow: 0 4px 14px rgba(0,0,0,0.15);" />
+    <p style="margin-top: 8px; font-weight: 500;">Velocity Breakdown & Reading Patterns</p>
+  </div>
+  <div style="text-align: center;">
+    <img src="/screenshot-more.jpg" alt="Sanctuary Settings & AI Control" style="border-radius: 12px; width: 100%; box-shadow: 0 4px 14px rgba(0,0,0,0.15);" />
+    <p style="margin-top: 8px; font-weight: 500;">Sanctuary Settings & AI Engine Hub</p>
   </div>
 </div>
 
