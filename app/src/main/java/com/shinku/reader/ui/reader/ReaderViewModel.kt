@@ -2296,34 +2296,26 @@ class ReaderViewModel(
                 return
             }
 
-        if (snapshot != null) {
+        if (snapshot != null && !ImageUtil.isBlackOrBlank(snapshot)) {
             mutableState.update { it.copy(dialog = Dialog.AreaOcr(page, snapshot)) }
             return
         }
 
-        if (page.status != Page.State.Ready) {
-            eventChannel.trySend(Event.ShowToast("Page is still loading..."))
-            return
+        if (snapshot != null) {
+            logcat(LogPriority.WARN) { "Area OCR received blank or black snapshot, falling back to page decoding" }
         }
 
-        val stream = page.stream ?: run {
-            val imageUrl = page.imageUrl
-            if (imageUrl != null && chapterCache.isImageInCache(imageUrl)) {
-                val fn = { chapterCache.getImageFile(imageUrl).inputStream() }
-                page.stream = fn
-                fn
-            } else {
-                null
-            }
-        } ?: run {
-            eventChannel.trySend(Event.ShowToast("Page image not available for OCR"))
-            return
-        }
-
+        val chapter = state.value.currentChapter
         viewModelScope.launchIO {
             mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
             try {
-                val bitmap = ImageDecoder.newInstance(stream())?.decode() ?: throw Exception("Failed to decode image")
+                val stream = getPageStream(page, chapter?.pageLoader)
+                    ?: throw Exception("Page image not available for OCR")
+                val bitmap = ImageDecoder.newInstance(stream())?.decode()
+                    ?: throw Exception("Failed to decode page image")
+                if (ImageUtil.isBlackOrBlank(bitmap)) {
+                    throw Exception("Decoded image content is blank")
+                }
                 mutableState.update { it.copy(dialog = Dialog.AreaOcr(page, bitmap)) }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)

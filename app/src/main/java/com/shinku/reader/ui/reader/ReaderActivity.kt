@@ -14,12 +14,16 @@ import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.PixelCopy
 import android.view.View
 import android.view.View.LAYER_TYPE_HARDWARE
 import android.view.WindowManager
 import android.widget.Toast
+import com.shinku.reader.core.common.util.system.ImageUtil
 import androidx.activity.enableEdgeToEdge
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -538,7 +542,13 @@ class ReaderActivity : BaseActivity() {
             is ReaderViewModel.Dialog.PageActions -> {
                 val dialog = state.dialog as ReaderViewModel.Dialog.PageActions
                 ReaderPageActionsDialog(
-                    onDismissRequest = onDismissRequest,
+                    onDismissRequest = {
+                        cachedViewerSnapshot?.let {
+                            if (!it.isRecycled) it.recycle()
+                        }
+                        cachedViewerSnapshot = null
+                        onDismissRequest()
+                    },
                     onSetAsCover = { viewModel.setAsCover(it) },
                     onShare = { copy, useExtraPage -> viewModel.shareImage(copy, useExtraPage) },
                     onSave = { viewModel.saveImage(it) },
@@ -548,7 +558,9 @@ class ReaderActivity : BaseActivity() {
                     onCharacterCodex = { viewModel.onCharacterCodex() },
                     onChapterRecap = { viewModel.onChapterRecap() },
                     onAreaOcr = {
-                        val snapshot = captureViewerSnapshot()
+                        val snapshot = cachedViewerSnapshot?.takeIf { !it.isRecycled && !ImageUtil.isBlackOrBlank(it) }
+                            ?: captureViewerSnapshotSoftware()
+                        cachedViewerSnapshot = null
                         viewModel.onAreaOcr(snapshot)
                     },
                     onTranslation = { viewModel.onTranslation() },
@@ -614,46 +626,84 @@ class ReaderActivity : BaseActivity() {
                     pageNumber = if (dialog.page.number > 0) dialog.page.number else state.currentPage.coerceAtLeast(1),
                     onDismissRequest = onDismissRequest,
                     onConfirmOverlay = { screenCropRect ->
-                        val containerLoc = IntArray(2)
-                        binding.viewerContainer.getLocationOnScreen(containerLoc)
-                        val absScreenRect = android.graphics.Rect(
-                            screenCropRect.left + containerLoc[0],
-                            screenCropRect.top + containerLoc[1],
-                            screenCropRect.right + containerLoc[0],
-                            screenCropRect.bottom + containerLoc[1],
-                        )
-                        val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(absScreenRect)
-                        val targetPage = mapped?.page ?: dialog.page
-                        val pageCropRect = mapped?.pageRect ?: screenCropRect
+                        val isViewportSnapshot = ::binding.isInitialized &&
+                            dialog.bitmap.width == binding.viewerContainer.width &&
+                            dialog.bitmap.height == binding.viewerContainer.height
+
+                        val targetPage: ReaderPage
+                        val pageCropRect: android.graphics.Rect
+                        val sWidth: Int
+                        val sHeight: Int
+
+                        if (isViewportSnapshot) {
+                            val containerLoc = IntArray(2)
+                            binding.viewerContainer.getLocationOnScreen(containerLoc)
+                            val absScreenRect = android.graphics.Rect(
+                                screenCropRect.left + containerLoc[0],
+                                screenCropRect.top + containerLoc[1],
+                                screenCropRect.right + containerLoc[0],
+                                screenCropRect.bottom + containerLoc[1],
+                            )
+                            val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(absScreenRect)
+                            targetPage = mapped?.page ?: dialog.page
+                            pageCropRect = mapped?.pageRect ?: screenCropRect
+                            sWidth = mapped?.sourceWidth ?: 0
+                            sHeight = mapped?.sourceHeight ?: 0
+                        } else {
+                            targetPage = dialog.page
+                            pageCropRect = screenCropRect
+                            sWidth = dialog.bitmap.width
+                            sHeight = dialog.bitmap.height
+                        }
+
                         viewModel.translateArea(
                             page = targetPage,
                             bitmap = dialog.bitmap,
                             cropRect = screenCropRect,
                             pageCropRect = pageCropRect,
-                            sourceWidth = mapped?.sourceWidth ?: 0,
-                            sourceHeight = mapped?.sourceHeight ?: 0,
+                            sourceWidth = sWidth,
+                            sourceHeight = sHeight,
                             asOverlay = true,
                         )
                     },
                     onConfirmInspect = { screenCropRect ->
-                        val containerLoc = IntArray(2)
-                        binding.viewerContainer.getLocationOnScreen(containerLoc)
-                        val absScreenRect = android.graphics.Rect(
-                            screenCropRect.left + containerLoc[0],
-                            screenCropRect.top + containerLoc[1],
-                            screenCropRect.right + containerLoc[0],
-                            screenCropRect.bottom + containerLoc[1],
-                        )
-                        val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(absScreenRect)
-                        val targetPage = mapped?.page ?: dialog.page
-                        val pageCropRect = mapped?.pageRect ?: screenCropRect
+                        val isViewportSnapshot = ::binding.isInitialized &&
+                            dialog.bitmap.width == binding.viewerContainer.width &&
+                            dialog.bitmap.height == binding.viewerContainer.height
+
+                        val targetPage: ReaderPage
+                        val pageCropRect: android.graphics.Rect
+                        val sWidth: Int
+                        val sHeight: Int
+
+                        if (isViewportSnapshot) {
+                            val containerLoc = IntArray(2)
+                            binding.viewerContainer.getLocationOnScreen(containerLoc)
+                            val absScreenRect = android.graphics.Rect(
+                                screenCropRect.left + containerLoc[0],
+                                screenCropRect.top + containerLoc[1],
+                                screenCropRect.right + containerLoc[0],
+                                screenCropRect.bottom + containerLoc[1],
+                            )
+                            val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(absScreenRect)
+                            targetPage = mapped?.page ?: dialog.page
+                            pageCropRect = mapped?.pageRect ?: screenCropRect
+                            sWidth = mapped?.sourceWidth ?: 0
+                            sHeight = mapped?.sourceHeight ?: 0
+                        } else {
+                            targetPage = dialog.page
+                            pageCropRect = screenCropRect
+                            sWidth = dialog.bitmap.width
+                            sHeight = dialog.bitmap.height
+                        }
+
                         viewModel.translateArea(
                             page = targetPage,
                             bitmap = dialog.bitmap,
                             cropRect = screenCropRect,
                             pageCropRect = pageCropRect,
-                            sourceWidth = mapped?.sourceWidth ?: 0,
-                            sourceHeight = mapped?.sourceHeight ?: 0,
+                            sourceWidth = sWidth,
+                            sourceHeight = sHeight,
                             asOverlay = false,
                         )
                     },
@@ -672,25 +722,44 @@ class ReaderActivity : BaseActivity() {
                     },
                     onApplyOverlay = dialog.cropRect?.let { cropRect ->
                         {
-                            val containerLoc = IntArray(2)
-                            binding.viewerContainer.getLocationOnScreen(containerLoc)
-                            val absCropRect = android.graphics.Rect(
-                                cropRect.left + containerLoc[0],
-                                cropRect.top + containerLoc[1],
-                                cropRect.right + containerLoc[0],
-                                cropRect.bottom + containerLoc[1],
-                            )
-                            val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(absCropRect)
-                            val targetPage = mapped?.page ?: dialog.page
-                            val pageCropRect = mapped?.pageRect ?: cropRect
+                            val isViewportSnapshot = ::binding.isInitialized &&
+                                dialog.bitmap.width == binding.viewerContainer.width &&
+                                dialog.bitmap.height == binding.viewerContainer.height
+
+                            val targetPage: ReaderPage
+                            val pageCropRect: android.graphics.Rect
+                            val sWidth: Int
+                            val sHeight: Int
+
+                            if (isViewportSnapshot) {
+                                val containerLoc = IntArray(2)
+                                binding.viewerContainer.getLocationOnScreen(containerLoc)
+                                val absCropRect = android.graphics.Rect(
+                                    cropRect.left + containerLoc[0],
+                                    cropRect.top + containerLoc[1],
+                                    cropRect.right + containerLoc[0],
+                                    cropRect.bottom + containerLoc[1],
+                                )
+                                val mapped = viewModel.state.value.viewer?.mapScreenRectToPage(absCropRect)
+                                targetPage = mapped?.page ?: dialog.page
+                                pageCropRect = mapped?.pageRect ?: cropRect
+                                sWidth = mapped?.sourceWidth ?: 0
+                                sHeight = mapped?.sourceHeight ?: 0
+                            } else {
+                                targetPage = dialog.page
+                                pageCropRect = cropRect
+                                sWidth = dialog.bitmap.width
+                                sHeight = dialog.bitmap.height
+                            }
+
                             viewModel.applyAreaTranslationAsOverlay(
                                 page = targetPage,
                                 bitmap = dialog.bitmap,
                                 cropRect = pageCropRect,
                                 originalText = dialog.originalText,
                                 translatedText = dialog.translatedText,
-                                sourceWidth = mapped?.sourceWidth ?: 0,
-                                sourceHeight = mapped?.sourceHeight ?: 0,
+                                sourceWidth = sWidth,
+                                sourceHeight = sHeight,
                             )
                         }
                     },
@@ -801,6 +870,8 @@ class ReaderActivity : BaseActivity() {
         config = null
         menuToggleToast?.cancel()
         readingModeToast?.cancel()
+        cachedViewerSnapshot?.let { if (!it.isRecycled) it.recycle() }
+        cachedViewerSnapshot = null
     }
 
     override fun onPause() {
@@ -1470,23 +1541,82 @@ class ReaderActivity : BaseActivity() {
         // SY <--
     }
 
-    fun captureViewerSnapshot(): android.graphics.Bitmap? {
+    private var cachedViewerSnapshot: android.graphics.Bitmap? = null
+
+    fun captureViewerSnapshotAsync(onComplete: (android.graphics.Bitmap?) -> Unit) {
+        if (!::binding.isInitialized) {
+            onComplete(null)
+            return
+        }
+        val view = binding.viewerContainer
+        val width = view.width
+        val height = view.height
+        if (width <= 0 || height <= 0) {
+            logcat(LogPriority.WARN) { "captureViewerSnapshotAsync: viewerContainer size is invalid (${width}x${height})" }
+            onComplete(null)
+            return
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val location = IntArray(2)
+                view.getLocationInWindow(location)
+                val windowWidth = window.decorView.width.coerceAtLeast(1)
+                val windowHeight = window.decorView.height.coerceAtLeast(1)
+                val safeLeft = location[0].coerceIn(0, windowWidth - 1)
+                val safeTop = location[1].coerceIn(0, windowHeight - 1)
+                val safeRight = (location[0] + width).coerceIn(safeLeft + 1, windowWidth)
+                val safeBottom = (location[1] + height).coerceIn(safeTop + 1, windowHeight)
+                val rect = android.graphics.Rect(safeLeft, safeTop, safeRight, safeBottom)
+
+                val bitmap = android.graphics.Bitmap.createBitmap(
+                    rect.width(),
+                    rect.height(),
+                    android.graphics.Bitmap.Config.ARGB_8888,
+                )
+                PixelCopy.request(
+                    window,
+                    rect,
+                    bitmap,
+                    { copyResult ->
+                        if (copyResult == PixelCopy.SUCCESS && !ImageUtil.isBlackOrBlank(bitmap)) {
+                            onComplete(bitmap)
+                        } else {
+                            if (!bitmap.isRecycled) bitmap.recycle()
+                            onComplete(captureViewerSnapshotSoftware())
+                        }
+                    },
+                    Handler(Looper.getMainLooper()),
+                )
+                return
+            } catch (e: Throwable) {
+                logcat(LogPriority.WARN, e) { "PixelCopy failed, attempting software fallback" }
+            }
+        }
+        onComplete(captureViewerSnapshotSoftware())
+    }
+
+    fun captureViewerSnapshotSoftware(): android.graphics.Bitmap? {
         try {
             if (!::binding.isInitialized) return null
             val view = binding.viewerContainer
             val width = view.width
             val height = view.height
             if (width <= 0 || height <= 0) {
-                logcat(LogPriority.WARN) { "captureViewerSnapshot: viewerContainer size is invalid (${width}x${height})" }
+                logcat(LogPriority.WARN) { "captureViewerSnapshotSoftware: viewerContainer size is invalid (${width}x${height})" }
                 return null
             }
 
             val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
             val canvas = android.graphics.Canvas(bitmap)
             view.draw(canvas)
+            if (ImageUtil.isBlackOrBlank(bitmap)) {
+                if (!bitmap.isRecycled) bitmap.recycle()
+                return null
+            }
             return bitmap
         } catch (e: Throwable) {
-            logcat(LogPriority.ERROR, e) { "Failed to capture viewer snapshot" }
+            logcat(LogPriority.ERROR, e) { "Failed to capture viewer snapshot via software canvas" }
             return null
         }
     }
@@ -1496,6 +1626,14 @@ class ReaderActivity : BaseActivity() {
      * actions to perform is shown.
      */
     fun onPageLongTap(page: ReaderPage, extraPage: ReaderPage? = null) {
+        cachedViewerSnapshot?.let {
+            if (!it.isRecycled) it.recycle()
+        }
+        cachedViewerSnapshot = null
+
+        captureViewerSnapshotAsync { snapshot ->
+            cachedViewerSnapshot = snapshot
+        }
         // SY -->
         viewModel.openPageDialog(page, extraPage)
         // SY <--

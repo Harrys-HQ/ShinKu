@@ -379,6 +379,43 @@ object ImageUtil {
     }
 
     /**
+     * Determines whether a [Bitmap] is effectively blank (e.g. completely transparent, unrendered,
+     * or uniform black) resulting from failed software canvas captures of hardware-accelerated layers.
+     */
+    fun isBlackOrBlank(bitmap: Bitmap): Boolean {
+        if (bitmap.width <= 0 || bitmap.height <= 0) return true
+        val stepX = (bitmap.width / 12).coerceAtLeast(1)
+        val stepY = (bitmap.height / 12).coerceAtLeast(1)
+        var firstColor: Int? = null
+
+        for (x in stepX until bitmap.width step stepX) {
+            for (y in stepY until bitmap.height step stepY) {
+                val pixel = try {
+                    bitmap.getPixel(x, y)
+                } catch (_: Throwable) {
+                    continue
+                }
+                val alpha = (pixel ushr 24) and 0xFF
+                if (alpha == 0) continue // transparent pixel
+
+                // Check for non-black pixel (allowing slight noise threshold e.g. RGB > 6)
+                val r = (pixel ushr 16) and 0xFF
+                val g = (pixel ushr 8) and 0xFF
+                val b = pixel and 0xFF
+                if (r > 6 || g > 6 || b > 6) {
+                    if (firstColor == null) {
+                        firstColor = pixel
+                    } else if (pixel != firstColor) {
+                        // Found differing visible pixels with contrast/color: not blank!
+                        return false
+                    }
+                }
+            }
+        }
+        return true
+    }
+
+    /**
      * Algorithm for determining what background to accompany a comic/manga page
      */
     fun chooseBackground(context: Context, imageSource: BufferedSource): Drawable {
