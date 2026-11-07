@@ -2,11 +2,22 @@ package com.shinku.reader.data.download
 
 import android.content.Context
 import com.hippo.unifile.UniFile
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.storage.extension
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.system.ImageUtil
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.data.download.model.Download
+import com.shinku.reader.domain.category.interactor.GetCategories
+import com.shinku.reader.domain.chapter.model.Chapter
+import com.shinku.reader.domain.download.service.DownloadPreferences
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.source.service.SourceManager
+import com.shinku.reader.exh.log.xLogE
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.util.storage.DiskUtil
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.Page
-import com.shinku.reader.util.storage.DiskUtil
-import com.shinku.reader.exh.log.xLogE
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -18,17 +29,6 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.storage.extension
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.core.common.util.system.ImageUtil
-import com.shinku.reader.core.common.util.system.logcat
-import com.shinku.reader.domain.category.interactor.GetCategories
-import com.shinku.reader.domain.chapter.model.Chapter
-import com.shinku.reader.domain.download.service.DownloadPreferences
-import com.shinku.reader.domain.manga.model.Manga
-import com.shinku.reader.domain.source.service.SourceManager
-import com.shinku.reader.i18n.MR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -68,7 +68,7 @@ class DownloadManager(
     fun downloaderStop(reason: String? = null) = downloader.stop(reason)
 
     val isDownloaderRunning
-        get() = DownloadJob.isRunningFlow(context)
+        get() = downloader.isRunningFlow
 
     /**
      * Tells the downloader to begin downloads.

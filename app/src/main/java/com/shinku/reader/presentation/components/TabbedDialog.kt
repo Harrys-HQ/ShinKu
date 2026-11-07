@@ -3,6 +3,7 @@ package com.shinku.reader.presentation.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,12 +11,16 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
@@ -33,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,6 +63,8 @@ fun TabbedDialog(
     modifier: Modifier = Modifier,
     tabOverflowMenuContent: (@Composable ColumnScope.(() -> Unit) -> Unit)? = null,
     pagerState: PagerState = rememberPagerState { tabTitles.size },
+    footer: @Composable () -> Unit = {},
+    header: @Composable () -> Unit = {},
     content: @Composable (Int) -> Unit,
 ) {
     AdaptiveSheet(
@@ -79,6 +87,8 @@ fun TabbedDialog(
                     .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)),
             )
 
+            header()
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -95,16 +105,22 @@ fun TabbedDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(4.dp),
+                            .padding(4.dp)
+                            .horizontalScroll(rememberScrollState())
+                            .selectableGroup(),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         tabTitles.fastForEachIndexed { index, tab ->
                             val isSelected = pagerState.currentPage == index
                             Surface(
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .heightIn(min = 48.dp)
                                     .clip(SanctuaryShapes.medium)
-                                    .clickable { scope.launch { pagerState.animateScrollToPage(index) } },
+                                    .selectable(
+                                        selected = isSelected,
+                                        role = Role.Tab,
+                                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                                    ),
                                 shape = SanctuaryShapes.medium,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                             ) {
@@ -114,9 +130,7 @@ fun TabbedDialog(
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                                    modifier = Modifier.padding(vertical = 12.dp, horizontal = 14.dp),
                                 )
                             }
                         }
@@ -127,11 +141,12 @@ fun TabbedDialog(
             }
 
             HorizontalPager(
-                modifier = Modifier.animateContentSize(),
+                modifier = Modifier.weight(1f, fill = false).animateContentSize(),
                 state = pagerState,
                 verticalAlignment = Alignment.Top,
                 pageContent = { page -> content(page) },
             )
+            footer()
         }
     }
 }

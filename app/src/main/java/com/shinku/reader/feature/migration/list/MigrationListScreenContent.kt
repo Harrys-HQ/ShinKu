@@ -28,10 +28,15 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,21 +50,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.R
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.feature.migration.list.models.MigratingManga
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.AppBarActions
-import com.shinku.reader.presentation.manga.components.MangaCover
-import com.shinku.reader.presentation.util.animateItemFastScroll
-import com.shinku.reader.presentation.util.formatChapterNumber
-import com.shinku.reader.presentation.util.rememberResourceBitmapPainter
-import com.shinku.reader.R
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import com.shinku.reader.feature.migration.list.models.MigratingManga
-import com.shinku.reader.domain.manga.model.Manga
-import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.Badge
 import com.shinku.reader.presentation.core.components.BadgeGroup
 import com.shinku.reader.presentation.core.components.FastScrollLazyColumn
@@ -67,7 +67,16 @@ import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.components.material.topSmallPaddingValues
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.util.plus
+import com.shinku.reader.presentation.manga.components.MangaCover
+import com.shinku.reader.presentation.util.animateItemFastScroll
+import com.shinku.reader.presentation.util.formatChapterNumber
+import com.shinku.reader.presentation.util.rememberResourceBitmapPainter
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun MigrationListScreenContent(
@@ -111,260 +120,166 @@ fun MigrationListScreenContent(
             )
         },
     ) { contentPadding ->
-        FastScrollLazyColumn(contentPadding = contentPadding + topSmallPaddingValues) {
-            items(items, key = { it.manga.id }) { item ->
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .animateItemFastScroll()
-                        .padding(
-                            start = MaterialTheme.padding.medium,
-                            end = MaterialTheme.padding.small,
-                        )
-                        .height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    MigrationListItem(
-                        modifier = Modifier
-                            .weight(1f)
-                            .align(Alignment.Top)
-                            .fillMaxHeight(),
-                        manga = item.manga,
-                        source = item.source,
-                        chapterCount = item.chapterCount,
-                        latestChapter = item.latestChapter,
-                        onClick = { onItemClick(item.manga) },
-                    )
-
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier.weight(0.2f),
-                    )
-
-                    val result by item.searchResult.collectAsState()
-                    MigrationListItemResult(
-                        modifier = Modifier
-                            .weight(1f)
-                            .align(Alignment.Top)
-                            .fillMaxHeight(),
-                        result = result,
-                        onItemClick = onItemClick,
-                    )
-
-                    MigrationListItemAction(
-                        modifier = Modifier.weight(0.2f),
-                        result = result,
-                        onSearchManually = { onSearchManually(item) },
-                        onSkip = { onSkip(item.manga.id) },
-                        onMigrate = { onMigrate(item.manga.id) },
-                        onCopy = { onCopy(item.manga.id) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MigrationListItem(
-    modifier: Modifier,
-    manga: Manga,
-    source: String,
-    chapterCount: Int,
-    latestChapter: Double?,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .widthIn(max = 150.dp)
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.small)
-            .clickable(onClick = onClick)
-            .padding(4.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(MangaCover.Book.ratio),
+        FastScrollLazyColumn(
+            contentPadding = contentPadding + topSmallPaddingValues,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            MangaCover.Book(
-                modifier = Modifier.fillMaxWidth(),
-                data = manga,
-            )
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            0f to Color.Transparent,
-                            1f to MaterialTheme.colorScheme.background,
-                        ),
-                    )
-                    .fillMaxHeight(0.4f)
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter),
-            )
-            Text(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .align(Alignment.BottomStart),
-                text = manga.title,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 2,
-                style = MaterialTheme.typography.labelMedium,
-            )
-            BadgeGroup(modifier = Modifier.padding(4.dp)) {
-                Badge(text = "$chapterCount")
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .padding(MaterialTheme.padding.extraSmall),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                text = source,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-                style = MaterialTheme.typography.titleSmall,
-            )
-            val formattedLatestChapters = remember(latestChapter) {
-                latestChapter?.let(::formatChapterNumber)
-            }
-            Text(
-                text = stringResource(
-                    MR.strings.migrationListScreen_latestChapterLabel,
-                    formattedLatestChapters ?: stringResource(MR.strings.migrationListScreen_unknownLatestChapter),
-                ),
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-}
-
-@Composable
-fun MigrationListItemResult(
-    modifier: Modifier,
-    result: MigratingManga.SearchResult,
-    onItemClick: (Manga) -> Unit,
-) {
-    Box(modifier.height(IntrinsicSize.Min)) {
-        when (result) {
-            MigratingManga.SearchResult.Searching -> {
-                Box(
-                    modifier = Modifier
-                        .widthIn(max = 150.dp)
-                        .fillMaxSize()
-                        .aspectRatio(MangaCover.Book.ratio),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-            MigratingManga.SearchResult.NotFound -> {
-                Column(
-                    Modifier
-                        .widthIn(max = 150.dp)
-                        .fillMaxSize()
-                        .padding(4.dp),
-                ) {
-                    Image(
-                        painter = rememberResourceBitmapPainter(id = R.drawable.cover_error),
-                        contentDescription = null,
+            if (items.isNotEmpty()) {
+                item(key = "migration-progress-card") {
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(MangaCover.Book.ratio)
-                            .clip(MaterialTheme.shapes.extraSmall),
-                        contentScale = ContentScale.Crop,
-                    )
-                    Text(
-                        text = stringResource(MR.strings.migrationListScreen_noMatchFoundText),
-                        modifier = Modifier.padding(MaterialTheme.padding.extraSmall),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
+                            .padding(horizontal = MaterialTheme.padding.medium),
+                        shape = SanctuaryShapes.deckCard,
+                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                        border = SanctuaryBrushes.subtleBorder(),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "$finishedCount of ${items.size} reviewed",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                )
+                                Text(
+                                    text = if (migrationComplete) "Ready to migrate" else "Searching matches…",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            LinearProgressIndicator(
+                                progress = { (finishedCount.toFloat() / items.size.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(SanctuaryShapes.pill),
+                            )
+                            Text(
+                                text = "Compare the current library entry on the left with the proposed match on the right.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
             }
-            is MigratingManga.SearchResult.Success -> {
-                MigrationListItem(
-                    modifier = Modifier.fillMaxSize(),
-                    manga = result.manga,
-                    source = result.source,
-                    chapterCount = result.chapterCount,
-                    latestChapter = result.latestChapter,
-                    onClick = { onItemClick(result.manga) },
-                )
-            }
-        }
-    }
-}
 
-@Composable
-private fun MigrationListItemAction(
-    modifier: Modifier,
-    result: MigratingManga.SearchResult,
-    onSearchManually: () -> Unit,
-    onSkip: () -> Unit,
-    onMigrate: () -> Unit,
-    onCopy: () -> Unit,
-) {
-    var menuExpanded by rememberSaveable { mutableStateOf(false) }
-    val closeMenu = { menuExpanded = false }
-    Box(modifier) {
-        when (result) {
-            MigratingManga.SearchResult.Searching -> {
-                IconButton(onClick = onSkip) {
-                    Icon(
-                        imageVector = Icons.Outlined.Close,
-                        contentDescription = null,
-                    )
-                }
-            }
-            MigratingManga.SearchResult.NotFound, is MigratingManga.SearchResult.Success -> {
-                IconButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.Outlined.MoreVert,
-                        contentDescription = null,
-                    )
-                }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = closeMenu,
-                    offset = DpOffset(8.dp, (-56).dp),
+            items(items, key = { it.manga.id }) { item ->
+                val result by item.searchResult.collectAsState()
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateItemFastScroll()
+                        .padding(horizontal = MaterialTheme.padding.medium),
+                    shape = SanctuaryShapes.deckCard,
+                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                    border = SanctuaryBrushes.subtleBorder(),
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(MR.strings.migrationListScreen_searchManuallyActionLabel)) },
-                        onClick = {
-                            closeMenu()
-                            onSearchManually()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(MR.strings.migrationListScreen_skipActionLabel)) },
-                        onClick = {
-                            closeMenu()
-                            onSkip()
-                        },
-                    )
-                    if (result is MigratingManga.SearchResult.Success) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(MR.strings.migrationListScreen_migrateNowActionLabel)) },
-                            onClick = {
-                                closeMenu()
-                                onMigrate()
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(MR.strings.migrationListScreen_copyNowActionLabel)) },
-                            onClick = {
-                                closeMenu()
-                                onCopy()
-                            },
-                        )
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = "Current",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                text = "New source (proposed)",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f),
+                            )
+                            MigrationListItemAction(
+                                modifier = Modifier,
+                                result = result,
+                                onSearchManually = { onSearchManually(item) },
+                                onSkip = { onSkip(item.manga.id) },
+                                onMigrate = { onMigrate(item.manga.id) },
+                                onCopy = { onCopy(item.manga.id) },
+                            )
+                        }
+
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Min),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            MigrationListItem(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .align(Alignment.Top)
+                                    .fillMaxHeight(),
+                                manga = item.manga,
+                                source = item.source,
+                                chapterCount = item.chapterCount,
+                                latestChapter = item.latestChapter,
+                                onClick = { onItemClick(item.manga) },
+                            )
+
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(0.18f),
+                            )
+
+                            MigrationListItemResult(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .align(Alignment.Top)
+                                    .fillMaxHeight(),
+                                result = result,
+                                onItemClick = onItemClick,
+                            )
+                        }
+
+                        if (result !is MigratingManga.SearchResult.Searching) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                if (result is MigratingManga.SearchResult.Success) {
+                                    FilledTonalButton(
+                                        onClick = { onMigrate(item.manga.id) },
+                                        shape = SanctuaryShapes.medium,
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        Text(stringResource(MR.strings.migrationListScreen_migrateNowActionLabel))
+                                    }
+                                } else {
+                                    FilledTonalButton(
+                                        onClick = { onSearchManually(item) },
+                                        shape = SanctuaryShapes.medium,
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        Text(stringResource(MR.strings.migrationListScreen_searchManuallyActionLabel))
+                                    }
+                                }
+                                OutlinedButton(
+                                    onClick = { onSkip(item.manga.id) },
+                                    shape = SanctuaryShapes.medium,
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Text(stringResource(MR.strings.migrationListScreen_skipActionLabel))
+                                }
+                            }
+                        }
                     }
                 }
             }

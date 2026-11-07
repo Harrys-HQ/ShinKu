@@ -1,5 +1,11 @@
 # ShinKu Development Protocols
 
+## Project Memory
+- Read `PROJECT_MEMORY.md` at the start of work on this repository. It contains the project map, compatibility constraints, and review context.
+- Consult `docs/project-review.md` for the prioritized optimization and UI/UX backlog. Findings are observations at the recorded commit, not proof that later code still has the same behavior.
+- Start with `git status --short` and changes since the memory's reviewed commit; inspect the files relevant to the task instead of repeating a whole-project audit.
+- Update memory when architecture, workflows, or confirmed findings materially change. Keep credentials and personal reading data out of memory. A review recommendation does not authorize its implementation or a release.
+
 ## 1. Build Protocol
 - **Fast & Secure Assembly**: Run `.\gradlew.bat assembleDevRelease --build-cache --parallel --quiet --console=plain`.
 - **Active Iteration**: Use fast incremental builds (`./gradlew compileDevDebugKotlin` or `./gradlew assembleDevDebug`).

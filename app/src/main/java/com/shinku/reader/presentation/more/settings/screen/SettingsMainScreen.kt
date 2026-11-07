@@ -1,14 +1,22 @@
 package com.shinku.reader.presentation.more.settings.screen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ChromeReaderMode
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.Explore
@@ -17,21 +25,29 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -42,6 +58,8 @@ import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.AppBarActions
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.more.components.CommandGroup
 import com.shinku.reader.presentation.more.components.CommandRowItem
@@ -155,9 +173,11 @@ object SettingsMainScreen : Screen() {
                         }
                     }
                 } else {
-                    val experienceGroup = visibleItems.take(3)
-                    val contentSyncGroup = visibleItems.drop(3).take(3)
-                    val systemGroup = visibleItems.drop(6)
+                    val shinkuItem = visibleItems.firstOrNull { it.screen is SettingsShinKuSettingsScreen }
+                    val standardItems = visibleItems.filterNot { it.screen is SettingsShinKuSettingsScreen }
+                    val experienceGroup = standardItems.take(3)
+                    val contentSyncGroup = standardItems.drop(3).take(3)
+                    val systemGroup = standardItems.drop(6)
 
                     LazyColumn(
                         state = state,
@@ -166,6 +186,104 @@ object SettingsMainScreen : Screen() {
                             bottom = contentPadding.calculateBottomPadding() + 24.dp,
                         ),
                     ) {
+                        item {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                                    .clip(SanctuaryShapes.pill)
+                                    .clickable { navigator.navigate(SettingsSearchScreen(), twoPane) },
+                                shape = SanctuaryShapes.pill,
+                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                                border = SanctuaryBrushes.subtleBorder(),
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Search,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Text(
+                                        text = stringResource(MR.strings.action_search),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+
+                        if (shinkuItem != null) {
+                            item {
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                                        .clip(SanctuaryShapes.hero)
+                                        .clickable { navigator.navigate(shinkuItem.screen, twoPane) },
+                                    shape = SanctuaryShapes.hero,
+                                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.compact),
+                                    border = SanctuaryBrushes.subtleBorder(),
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(18.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                    ) {
+                                        Surface(
+                                            shape = SanctuaryShapes.card,
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                            modifier = Modifier.size(46.dp),
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.AutoAwesome,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(24.dp),
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                )
+                                            }
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = stringResource(shinkuItem.titleRes),
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                            Text(
+                                                text = stringResource(shinkuItem.subtitleRes),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                        }
+                                        Surface(
+                                            shape = SanctuaryShapes.tag,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        ) {
+                                            Text(
+                                                text = "Open",
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onPrimary,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         if (experienceGroup.isNotEmpty()) {
                             item {
                                 CommandGroup(title = "Visuals & Reading Experience") {
@@ -227,6 +345,12 @@ object SettingsMainScreen : Screen() {
     )
 
     private val items = listOf(
+        Item(
+            titleRes = MR.strings.action_configure_features,
+            subtitleRes = MR.strings.shinku_hub_summary,
+            icon = Icons.Outlined.Settings,
+            screen = SettingsShinKuSettingsScreen,
+        ),
         Item(
             titleRes = MR.strings.pref_category_appearance,
             subtitleRes = MR.strings.pref_appearance_summary,

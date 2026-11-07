@@ -13,6 +13,7 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.WebtoonLayoutManager
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.data.download.DownloadManager
 import com.shinku.reader.ui.reader.ReaderActivity
 import com.shinku.reader.ui.reader.model.ChapterTransition
@@ -23,7 +24,6 @@ import com.shinku.reader.ui.reader.viewer.Viewer
 import com.shinku.reader.ui.reader.viewer.ViewerNavigation.NavigationRegion
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
-import com.shinku.reader.core.common.util.system.logcat
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
@@ -207,6 +207,11 @@ class WebtoonViewer(
     override fun destroy() {
         super.destroy()
         scope.cancel()
+        // Detach while the Activity is being destroyed so holders release native image
+        // resources now, rather than waiting for the whole view tree to be collected.
+        recycler.clearOnScrollListeners()
+        recycler.adapter = null
+        recycler.recycledViewPool.clear()
     }
 
     /**

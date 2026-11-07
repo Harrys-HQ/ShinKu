@@ -46,6 +46,13 @@ JOIN mangas_categories MC
 ON C._id = MC.category_id
 WHERE MC.manga_id = :mangaId;
 
+getLibraryCounts:
+SELECT C._id, count(DISTINCT M._id) AS title_count
+FROM categories C
+LEFT JOIN mangas_categories MC ON MC.category_id = C._id
+LEFT JOIN mangas M ON M._id = MC.manga_id AND M.favorite = 1
+GROUP BY C._id;
+
 insert:
 INSERT INTO categories(name, sort, flags, manga_order)
 VALUES (:name, :order, :flags, "");

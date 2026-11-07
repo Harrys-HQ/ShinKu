@@ -1,0 +1,40 @@
+﻿board,panel,percent,layout,styling,controls,states,evidence,remaining
+01,Discover,75,3,3,3,2,Source only; runtime comparison pending,Match shelf hierarchy/captions and toolbar treatment; capture the populated feed.
+01,Global search,60,2,2,3,3,Source only; runtime comparison pending,Recreate source result-card framing and search-field hierarchy.
+01,Source catalogue,75,3,3,3,3,Source only; runtime comparison pending,Align toolbar/tab/grid spacing and caption metadata; capture populated paging states.
+02,Sources,75,3,3,3,2,Source only; runtime comparison pending,Match search/language-chip placement and pinned-section composition.
+02,Extensions,60,2,2,3,3,Source only; runtime comparison pending,"Align row surfaces, warning placement and explicit action hierarchy."
+02,Repositories,55,2,2,3,2,Source only; runtime comparison pending,"Match repository heading, add action and URL-entry sheet composition."
+03,Find affected titles,50,1,2,3,3,Source + partial runtime capture,Current screen selects sources before titles; proposed title-centric review page is not recreated.
+03,Migration options,60,2,2,3,3,Source only; runtime comparison pending,"Match title/context header, grouped switches and review action layout."
+03,Review & progress,60,2,2,3,3,Source only; runtime comparison pending,Rework comparison and progress-card composition; capture actual review states.
+04,Updates,75,3,3,3,3,Source + partial runtime capture,Align chapter/status badge and download/selection action treatment.
+04,History,75,3,3,3,2,Source + partial runtime capture,Match search/header and compact card spacing; validate supported progress presentation.
+04,Downloads,75,3,3,3,3,Source only; runtime comparison pending,Align queue sections and button hierarchy; capture current final queue states.
+05,Library filters,95,4,3,4,4,Source + default / actual 1.6×-text runtime,Final visual acceptance on the owner’s phone/theme and broader theme/RTL/accessibility coverage. No known layout gap in the reviewed default and 1.6×-text fixtures.
+05,Categories,95,4,3,4,4,Source + default / actual 1.6×-text runtime,Final visual acceptance on the owner’s phone/theme and broader theme/RTL/accessibility coverage. No known layout gap in the reviewed default and 1.6×-text fixtures.
+05,Bulk selection,95,4,3,4,4,Source + default / actual 1.6×-text runtime,Final visual acceptance on the owner’s phone/theme and broader theme/RTL/accessibility coverage. No known layout gap in the reviewed default and 1.6×-text fixtures.
+06,Paged reader,55,2,2,3,2,Source only; runtime comparison pending,Recreate unified rounded lower control deck and verify it over actual pages.
+06,Webtoon reader,65,3,2,3,2,Source only; runtime comparison pending,Align floating controls and loading/error presentation over content.
+06,Chapters & pages,60,2,2,3,3,Source + partial runtime capture,Add Navigate header and compact current-chapter/grouped-row composition.
+07,Area selection,70,3,2,3,3,Source only; runtime comparison pending,"Align select-area instruction card, handle styling and bottom action composition."
+07,Inspect bubbles,45,1,2,3,2,Source only; runtime comparison pending,Current AlertDialog/list differs from preview-led bottom sheet and selected-bubble card.
+07,Chapter translation,60,2,2,3,3,Source only; runtime comparison pending,Convert expanded AlertDialog composition to approved grouped progress sheet.
+08,Display controls,40,1,1,3,3,Source + partial runtime capture,"Checkbox/chip form still differs from icon rows, swatches, preview cards, heading and primary Done button."
+08,Translation actions,60,2,2,3,3,Source + partial runtime capture,"Match grouped icon rows, sheet heading and destructive-action hierarchy."
+08,Page actions,50,1,2,3,3,Source + partial runtime capture,Current large tile/AI sheet differs from compact action-list and orientation composition.
+09,Welcome,40,1,1,3,3,Source only; runtime comparison pending,"Hero artwork, three benefit rows and dedicated welcome composition are absent."
+09,Storage & permissions,60,2,2,3,3,Source + partial runtime capture,"Match folder/notification cards, step header and action placement."
+09,Theme & finish,55,2,2,3,2,Source only; runtime comparison pending,Recreate theme-preview tiles and consolidated finish/optional-AI cards.
+10,Create backup,60,2,2,3,3,Source only; runtime comparison pending,"Match icon-led introduction, section rows and destination presentation."
+10,Restore preview,50,1,2,3,3,Source + partial runtime capture,No matching rich contents-summary/progress-card composition; rebuild preview layout.
+10,Sync settings,45,1,2,3,2,Source only; runtime comparison pending,Dedicated hero/scope/trigger/status layout is not recreated.
+11,Trackers,55,2,2,3,2,Source only; runtime comparison pending,"Match tracker intro, service-card and progress-sync hierarchy."
+11,Link a title,45,1,2,3,2,Source only; runtime comparison pending,No matching combined title-header/search/details two-step layout.
+11,Security & privacy,55,2,2,3,2,Source only; runtime comparison pending,"Match security intro, privacy grouping and icon-row hierarchy."
+12,Settings,55,2,2,3,2,Source only; runtime comparison pending,"Match per-destination icon cards, visible search field and root hierarchy."
+12,Appearance,55,2,2,3,2,Source only; runtime comparison pending,"Current preview is text-only, not the approved cover/resume card; align accent/control hierarchy."
+12,Library settings,55,2,2,3,2,Source only; runtime comparison pending,"Match icon hierarchy, display/badge sections and Advanced arrangement."
+13,Reader preferences,55,2,2,3,2,Source only; runtime comparison pending,Add approved intro and clearer Defaults/Navigation/Display visual hierarchy.
+13,Browse preferences,40,1,2,2,2,Source only; runtime comparison pending,Mockup's multi-section page and language-sheet entry composition are not recreated.
+13,Download preferences,60,2,2,3,3,Source only; runtime comparison pending,"Match manage-downloads intro, icon rows and storage/cleanup grouping."

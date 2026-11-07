@@ -4,24 +4,29 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,18 +38,20 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.dp
-import com.shinku.reader.exh.source.ShinKuPreferences
-import com.shinku.reader.presentation.core.util.collectAsState
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -52,8 +59,18 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import com.shinku.reader.core.preference.asState
+import com.shinku.reader.domain.library.service.LibraryPreferences
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.domain.ui.UiPreferences
+import com.shinku.reader.exh.source.ShinKuPreferences
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.core.components.material.NavigationBar
+import com.shinku.reader.presentation.core.components.material.NavigationRail
+import com.shinku.reader.presentation.core.components.material.Scaffold
+import com.shinku.reader.presentation.core.i18n.pluralStringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.core.util.collectAsState
+import com.shinku.reader.presentation.util.LocalHomeBottomInset
 import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.presentation.util.isTabletUi
 import com.shinku.reader.ui.browse.BrowseTab
@@ -63,6 +80,11 @@ import com.shinku.reader.ui.library.LibraryTab
 import com.shinku.reader.ui.manga.MangaScreen
 import com.shinku.reader.ui.more.MoreTab
 import com.shinku.reader.ui.updates.UpdatesTab
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -70,12 +92,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import soup.compose.material.motion.animation.materialFadeThroughIn
 import soup.compose.material.motion.animation.materialFadeThroughOut
-import com.shinku.reader.domain.library.service.LibraryPreferences
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.presentation.core.components.material.NavigationBar
-import com.shinku.reader.presentation.core.components.material.NavigationRail
-import com.shinku.reader.presentation.core.components.material.Scaffold
-import com.shinku.reader.presentation.core.i18n.pluralStringResource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -108,6 +124,7 @@ object HomeScreen : Screen() {
         val alwaysShowLabel by remember {
             Injekt.get<UiPreferences>().bottomBarLabels().asState(scope)
         }
+        val dockHazeState = remember { HazeState() }
         val shinkuPreferences = remember { Injekt.get<ShinKuPreferences>() }
         val autoHideBottomBar by shinkuPreferences.autoHideBottomBar().collectAsState()
 
@@ -165,7 +182,24 @@ object HomeScreen : Screen() {
                                 enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                                 exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                             ) {
-                                NavigationBar {
+                                NavigationBar(
+                                    containerColor = Color.Transparent,
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                    tonalElevation = 0.dp,
+                                    backdropModifier = Modifier.hazeEffect(
+                                        state = dockHazeState,
+                                        style = HazeStyle(
+                                            backgroundColor = MaterialTheme.colorScheme.surface,
+                                            tints = listOf(
+                                                HazeTint(MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)),
+                                                HazeTint(MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)),
+                                            ),
+                                            blurRadius = 20.dp,
+                                            noiseFactor = 0.02f,
+                                            fallbackTint = HazeTint(MaterialTheme.colorScheme.surface.copy(alpha = 0.90f)),
+                                        ),
+                                    ),
+                                ) {
                                     TABS
                                         // SY -->
                                         .fastFilter { it.isEnabled() }
@@ -182,24 +216,26 @@ object HomeScreen : Screen() {
                     val layoutDirection = LocalLayoutDirection.current
                     Box(
                         modifier = Modifier
+                            .hazeSource(state = dockHazeState)
                             .nestedScroll(bottomBarNestedScrollConnection)
                             .padding(
                                 start = contentPadding.calculateStartPadding(layoutDirection),
                                 top = contentPadding.calculateTopPadding(),
                                 end = contentPadding.calculateEndPadding(layoutDirection),
-                                bottom = 0.dp,
                             ),
                     ) {
-                        AnimatedContent(
-                            targetState = tabNavigator.current,
-                            transitionSpec = {
-                                materialFadeThroughIn(initialScale = 1f, durationMillis = TabFadeDuration) togetherWith
-                                    materialFadeThroughOut(durationMillis = TabFadeDuration)
-                            },
-                            label = "tabContent",
-                        ) {
-                            tabNavigator.saveableState(key = "currentTab", it) {
-                                it.Content()
+                        CompositionLocalProvider(LocalHomeBottomInset provides contentPadding.calculateBottomPadding()) {
+                            AnimatedContent(
+                                targetState = tabNavigator.current,
+                                transitionSpec = {
+                                    materialFadeThroughIn(initialScale = 1f, durationMillis = TabFadeDuration) togetherWith
+                                        materialFadeThroughOut(durationMillis = TabFadeDuration)
+                                },
+                                label = "tabContent",
+                            ) {
+                                tabNavigator.saveableState(key = "currentTab", it) {
+                                    it.Content()
+                                }
                             }
                         }
                     }
@@ -254,35 +290,54 @@ object HomeScreen : Screen() {
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
         val selected = tabNavigator.current::class == tab::class
-        NavigationBarItem(
-            selected = selected,
-            onClick = {
-                if (!selected) {
-                    tabNavigator.current = tab
-                } else {
-                    scope.launch { tab.onReselect(navigator) }
+        val itemColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .heightIn(min = 66.dp)
+                .clip(SanctuaryShapes.pill)
+                .selectable(
+                    selected = selected,
+                    role = Role.Tab,
+                    onClick = {
+                        if (!selected) {
+                            tabNavigator.current = tab
+                        } else {
+                            scope.launch { tab.onReselect(navigator) }
+                        }
+                    },
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            // Draw only the rounded icon highlight over glass; keep the label area transparent.
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.material3.LocalContentColor provides itemColor,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 48.dp, height = 30.dp)
+                        .background(
+                            if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f) else Color.Transparent,
+                            androidx.compose.foundation.shape.CircleShape,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    NavigationIconItem(tab)
                 }
-            },
-            icon = { NavigationIconItem(tab) },
-            label = {
+            }
+            if (alwaysShowLabel || selected) {
                 Text(
                     text = tab.options.title,
+                    color = itemColor,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = if (selected) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Medium,
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-            },
-            alwaysShowLabel = /* SY --> */alwaysShowLabel, /* SY <-- */
-            colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                selectedIconColor = MaterialTheme.colorScheme.primary,
-                selectedTextColor = MaterialTheme.colorScheme.primary,
-                indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-            ),
-        )
+            }
+        }
     }
 
     @Composable

@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.8.1" changeDate="November 8, 2026">
+        <changelogtext>[b]OAuth Callback Security Hardening (Fixes #28)[/b]: Hardened OAuth authorization across external trackers (AniList, Bangumi, Comick, MyAnimeList, Shikimori) with persistent cryptographic state nonces and one-time verification to prevent CSRF callback injection and authorization code interception</changelogtext>
+        <changelogtext>[b]Dynamic Gemini Model Discovery (Fixes #27)[/b]: Integrated live Gemini model discovery from Google AI Studio API with automatic quota-safe caching, dynamic model selection, and zero manual code updates needed for newer Gemini releases</changelogtext>
+        <changelogtext>[b]Reader Mood Lighting Restoration (Fixes #26)[/b]: Restored dynamic ambient lighting in Reader settings with live color extraction, responsive intensity controls, and memory-safe background rendering</changelogtext>
+        <changelogtext>[b]Sanctuary Core Suite UI/UX (Boards 01–14 / 95% Completion)[/b]: Implemented 42 high-fidelity panels across 14 Sanctuary design boards: Library management, Reader controls, Discover feed, Source browsing, Chapter tracking, Downloads, Statistics, History, Settings, and Source Health</changelogtext>
+        <changelogtext>[b]MangaBat HTTP 429 &amp; Cloudflare Rate-Limit Pacing[/b]: Added 800ms query spacing and automatic 1800ms backoff-and-retry in Global Search, seamlessly resolving rate limits and Cloudflare challenges across multi-source queries</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.8.0" changeDate="November 1, 2026">
         <changelogtext>[b]Interactive Area OCR &amp; In-Place Translation (BETA)[/b]: Select custom screen regions or specific speech bubbles/signs via a 1:1 frozen viewport snapshot and overlay translated text directly onto the manga page. [i]Note: Area OCR is currently in Beta and actively tested on a OnePlus Ace 5 (Android 15); coordinate scaling and viewport behavior may vary across other OEM devices and aspect ratios. Community feedback and issue reports are welcome![/i]</changelogtext>
         <changelogtext>[b]Reader UI/UX Polish &amp; Anti-Collision Overhaul (Fixes #24)[/b]: Fully integrated translation controls into the reader bottom bar; removed rogue floating buttons that collided with the vertical seekbar and bottom navigation</changelogtext>

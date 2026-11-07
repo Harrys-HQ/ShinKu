@@ -11,6 +11,8 @@ class GetManga(
     private val mangaRepository: MangaRepository,
 ) : MetadataSource.GetMangaId {
 
+    suspend fun await(ids: List<Long>): List<Manga> = mangaRepository.getMangaByIds(ids)
+
     suspend fun await(id: Long): Manga? {
         return try {
             mangaRepository.getMangaById(id)

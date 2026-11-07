@@ -16,6 +16,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.presentation.core.components.BaseSliderItem
+import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.more.settings.widget.EditTextPreferenceWidget
 import com.shinku.reader.presentation.more.settings.widget.InfoWidget
 import com.shinku.reader.presentation.more.settings.widget.ListPreferenceWidget
@@ -27,8 +29,6 @@ import com.shinku.reader.presentation.more.settings.widget.TextPreferenceWidget
 import com.shinku.reader.presentation.more.settings.widget.TitleFontSize
 import com.shinku.reader.presentation.more.settings.widget.TrackingPreferenceWidget
 import kotlinx.coroutines.launch
-import com.shinku.reader.presentation.core.components.BaseSliderItem
-import com.shinku.reader.presentation.core.util.collectAsState
 
 val LocalPreferenceHighlighted = compositionLocalOf(structuralEqualityPolicy()) { false }
 val LocalPreferenceMinHeight = compositionLocalOf(structuralEqualityPolicy()) { 56.dp }
@@ -157,6 +157,7 @@ internal fun PreferenceItem(
                     subtitle = item.subtitle,
                     icon = item.icon,
                     value = values,
+                    isSensitive = item.isSensitive,
                     onConfirm = {
                         val accepted = item.onValueChanged(it)
                         if (accepted) item.preference.set(it)

@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.shinku.reader.ui.library.LibraryItem
 import com.shinku.reader.domain.library.model.LibraryManga
 import com.shinku.reader.domain.manga.model.MangaCover
+import com.shinku.reader.ui.library.LibraryItem
 
 @Composable
 internal fun LibraryComfortableGrid(
@@ -36,6 +36,8 @@ internal fun LibraryComfortableGrid(
             MangaComfortableGridItem(
                 isSelected = manga.id in selection,
                 title = manga.title,
+                titleMaxLines = 3,
+                captionSurface = true,
                 coverData = MangaCover(
                     mangaId = manga.id,
                     sourceId = manga.source,

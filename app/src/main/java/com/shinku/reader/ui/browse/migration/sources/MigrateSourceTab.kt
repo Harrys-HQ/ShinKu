@@ -10,18 +10,18 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.shinku.reader.presentation.browse.MigrateSourceScreen
-import com.shinku.reader.presentation.components.AppBar
-import com.shinku.reader.presentation.components.TabContent
-import com.shinku.reader.ui.browse.migration.manga.MigrateMangaScreen
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.DelicateCoroutinesApi
-import com.shinku.reader.feature.migration.config.MigrationConfigScreen
 import com.shinku.reader.core.common.util.lang.launchIO
 import com.shinku.reader.core.common.util.lang.withUIContext
 import com.shinku.reader.domain.manga.interactor.GetFavorites
+import com.shinku.reader.feature.migration.config.MigrationConfigScreen
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.browse.MigrateSourceScreen
+import com.shinku.reader.presentation.components.AppBar
+import com.shinku.reader.presentation.components.TabContent
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.ui.browse.migration.manga.MigrateMangaScreen
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.DelicateCoroutinesApi
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -46,6 +46,9 @@ fun Screen.migrateSourceTab(): TabContent {
         content = { contentPadding, _ ->
             MigrateSourceScreen(
                 state = state,
+                onFailedUpdates = {
+                    navigator.push(com.shinku.reader.ui.browse.migration.failed.FailedUpdatesMigrationScreen())
+                },
                 contentPadding = contentPadding,
                 onClickItem = { source ->
                     navigator.push(MigrateMangaScreen(source.id))

@@ -1,0 +1,976 @@
+{
+  "date": "2026-11-06",
+  "baseline": "bd94670c13 plus current uncommitted worktree",
+  "method": "Source-informed implementation estimate, not pixel similarity, runtime coverage, effort remaining or physical-phone verification. Visual layout 40%, styling 30%, controls 20%, states/safety 10%. Each dimension uses 0 absent, 1 minimal, 2 partial, 3 mostly present, 4 complete for supported scope. Board score is mean of unrounded panel scores rounded to nearest 5; panel tags also rounded to nearest 5. Scores are provisional; allow roughly \u00b115 points where runtime evidence is absent and \u00b110 where partial captures exist. Unsupported generated features are documented adaptations, not automatic requirements.",
+  "dimensions": [
+    "layout",
+    "styling",
+    "controls",
+    "states"
+  ],
+  "weights": [
+    40,
+    30,
+    20,
+    10
+  ],
+  "boards": [
+    {
+      "id": "01",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/components/TabbedScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/browse/FeedScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/browse/GlobalSearchScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/browse/BrowseSourceScreen.kt"
+      ],
+      "panels": [
+        {
+          "name": "Discover",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary pill tabs, featured carousel with genre badge and 2-line description, descriptive shelf subtitles, genre metadata on cards and dock clearance exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Keep real recommendations and source limits; no invented totals.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Global search",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Query summary header, rounded Sanctuary source result cards with globe badge, language subtitle, See all pill, card genre subtitles and bottom progress card exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Global genre/language chips and total counts use supported data, not sample values.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Source catalogue",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary filter/mode controls, secondary source/genre metadata on grid cards and rounded Sanctuary loading-more footer card exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Retain actual source filters and real paging; no fabricated page count.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/browse/SourcesScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/browse/ExtensionsScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/browse/ExtensionReposScreen.kt"
+      ],
+      "panels": [
+        {
+          "name": "Sources",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary pill tabs, horizontal language filter chips, rounded source rows, Latest pill, pin toggle and overflow menu button exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Keep all four real Browse routes.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Extensions",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Language filter chips, section headers with item counts, vX.Y.Z \u00b7 language metadata order, explicit untrusted warning banner and action pills exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Review trust remains explicit; generated extra tab is not a route replacement.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Repositories",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Installed repositories heading, Sanctuary repo cards with globe icon badge and overflow menu, inline + Add repository card and enhanced Add repository dialog with security notice exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "No invented repository freshness, extension count or verification badge.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "percent": 90,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/browse/MigrateSourceScreen.kt",
+        "app/src/main/java/com/shinku/reader/feature/migration/config/MigrationConfigScreenSheet.kt",
+        "app/src/main/java/com/shinku/reader/feature/migration/list/MigrationListScreenContent.kt"
+      ],
+      "panels": [
+        {
+          "name": "Find affected titles",
+          "scores": [
+            3,
+            4,
+            4,
+            3
+          ],
+          "percent": 85,
+          "present": "Top explanatory Sanctuary info card, Sanctuary filter pills for All sources / Missing sources (N) / Failed updates and rounded source rows exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Retains source-first selection flow and keeps missing-source versus title counts distinct.",
+          "evidence": "source_and_partial_runtime",
+          "screenshot": "build/generated-mockups-final-screenshots/migration-missing.png"
+        },
+        {
+          "name": "Migration options",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Header and subtitle, grouped Sanctuary switch card for migration flags, preservation info card, collapsible Advanced card and primary action button exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Preserve saved flags and destructive-download confirmation.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Review & progress",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Top migration progress card with progress bar, rounded Sanctuary comparison cards with Current vs New source headers and explicit Migrate/Search manually + Skip buttons exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "No fictional pause/resume engine or guaranteed source matching.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/updates/UpdatesScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/history/components/HistoryItem.kt",
+        "app/src/main/java/com/shinku/reader/ui/download/DownloadQueueScreen.kt"
+      ],
+      "panels": [
+        {
+          "name": "Updates",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Top Upcoming and Refresh Sanctuary action pills, portrait cards, tinted chapter tag pills with unread dot, Read/Resume button and dock clearance exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Use actual update groups and existing downloads.",
+          "evidence": "source_and_partial_runtime",
+          "screenshot": "build/generated-mockups-final-screenshots/dock-updates.png"
+        },
+        {
+          "name": "History",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Inline Search reading history pill bar, portrait cards, Ch. X tag badge + timestamp, Resume button and overflow removal exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "History does not supply the mockup's page totals.",
+          "evidence": "source_and_partial_runtime",
+          "screenshot": "build/generated-mockups-final-screenshots/dock-history.png"
+        },
+        {
+          "name": "Downloads",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Enhanced queue summary card with download icon badge, live downloading/queued counts, aggregate progress bar and Pause/Resume all button exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "No fictional finished archive.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/library/components/LibraryFilterItem.kt",
+        "app/src/main/java/com/shinku/reader/presentation/library/LibrarySettingsDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/category/components/CategoryListItem.kt",
+        "app/src/main/java/com/shinku/reader/presentation/manga/components/MangaBottomActionMenu.kt",
+        "app/src/main/java/com/shinku/reader/presentation/category/CategoryScreen.kt",
+        "app/src/main/java/com/shinku/reader/ui/category/CategoryScreenModel.kt",
+        "data/src/main/sqldelight/com/shinku/reader/data/categories.sq",
+        "data/src/main/java/com/shinku/reader/data/category/CategoryRepositoryImpl.kt"
+      ],
+      "panels": [
+        {
+          "name": "Library filters",
+          "scores": [
+            4,
+            3,
+            4,
+            4
+          ],
+          "percent": 95,
+          "present": "Sheet heading, live active badge, three compact icon/gradient cards, Reset/Done and More filters are implemented and runtime-reviewed. Extra filters and Group remain accessible.",
+          "remaining": "Final visual acceptance on the owner\u2019s phone/theme and broader theme/RTL/accessibility coverage. No known layout gap in the reviewed default and 1.6\u00d7-text fixtures.",
+          "adaptation": "Downloaded/Unread/Completed are primary; Started/Bookmarked/custom interval/adult/tracker filters remain under More filters. Group remains a fourth tab. Large text reflows the row.",
+          "evidence": "source_and_runtime_default_and_large_text",
+          "screenshot": "build/library05-review/default/library-filters.png",
+          "largeTextScreenshot": "build/library05-review/large-font/library-filters.png"
+        },
+        {
+          "name": "Categories",
+          "scores": [
+            4,
+            3,
+            4,
+            4
+          ],
+          "percent": 95,
+          "present": "Intro, real distinct library-title counts, edit/More, inline Add including empty state, and key-based reorder indices are implemented. In-memory counts/invalidation and drag/callback tests pass.",
+          "remaining": "Final visual acceptance on the owner\u2019s phone/theme and broader theme/RTL/accessibility coverage. No known layout gap in the reviewed default and 1.6\u00d7-text fixtures.",
+          "adaptation": "Counts are computed from actual distinct favorite titles, including zero; illustrated counts/names are never seeded. Deletion retains confirmation.",
+          "evidence": "source_and_runtime_default_and_large_text",
+          "screenshot": "build/library05-review/default/library05-categories.png",
+          "largeTextScreenshot": "build/library05-review/large-font/library05-categories.png"
+        },
+        {
+          "name": "Bulk selection",
+          "scores": [
+            4,
+            3,
+            4,
+            4
+          ],
+          "percent": 95,
+          "present": "Download/Category/Mark read/More toolbar, dividers, shared gradient, readable wrapping labels and closing secondary menus are implemented. Bottom-slot placement and callbacks pass runtime checks.",
+          "remaining": "Final visual acceptance on the owner\u2019s phone/theme and broader theme/RTL/accessibility coverage. No known layout gap in the reviewed default and 1.6\u00d7-text fixtures.",
+          "adaptation": "Download remains conditional on supported selection; all optional existing actions remain under More. User grid density is unchanged.",
+          "evidence": "source_and_runtime_default_and_large_text",
+          "screenshot": "build/library05-review/default/library05-bulk-toolbar.png",
+          "largeTextScreenshot": "build/library05-review/large-font/library05-bulk-toolbar.png"
+        }
+      ],
+      "progressLog": "05-implementation-progress.md",
+      "history": [
+        {
+          "date": "2026-11-06",
+          "stage": "baseline",
+          "panels": [
+            45,
+            55,
+            60
+          ],
+          "board": 55
+        },
+        {
+          "date": "2026-11-06",
+          "stage": "first_code_pass_unverified",
+          "panels": [
+            45,
+            55,
+            60
+          ],
+          "board": 55
+        },
+        {
+          "date": "2026-11-06",
+          "stage": "first_filter_runtime_review",
+          "panels": [
+            80,
+            55,
+            60
+          ],
+          "board": 65
+        },
+        {
+          "date": "2026-11-06",
+          "stage": "functional_runtime_pass",
+          "panels": [
+            90,
+            90,
+            85
+          ],
+          "board": 90
+        },
+        {
+          "date": "2026-11-06",
+          "stage": "final_default_and_large_text_review",
+          "panels": [
+            95,
+            95,
+            95
+          ],
+          "board": 95
+        }
+      ],
+      "parts": [
+        {
+          "name": "Filters: heading and active badge",
+          "percent": 95,
+          "note": "Real count updates/reset verified; final phone/theme appearance acceptance pending."
+        },
+        {
+          "name": "Filters: icon/card rows and More filters",
+          "percent": 95,
+          "note": "Default and actual 1.6\u00d7 emulator text reviewed; primary choices, extra filters and locked Downloaded tested."
+        },
+        {
+          "name": "Filters: Reset/Done and other tabs",
+          "percent": 95,
+          "note": "Reset, persistent Done and Display transition pass; final phone styling acceptance pending."
+        },
+        {
+          "name": "Categories: real title counts",
+          "percent": 100,
+          "note": "Functional scope complete: zero/singular/plural, distinct memberships, non-library exclusion and query invalidation tested in isolated memory DB."
+        },
+        {
+          "name": "Categories: page/cards/add/edit/More",
+          "percent": 95,
+          "note": "Populated/empty layouts and add/rename/delete callbacks reviewed at default and 1.6\u00d7 text; final phone appearance acceptance pending."
+        },
+        {
+          "name": "Categories: reorder positions",
+          "percent": 100,
+          "note": "Functional scope complete: drag test checks real category id and index 1 despite the intro row."
+        },
+        {
+          "name": "Bulk: four primary actions and bottom placement",
+          "percent": 95,
+          "note": "Default/1.6\u00d7 screenshots, bottom-position assertion and primary actions pass; final integrated phone appearance acceptance pending."
+        },
+        {
+          "name": "Bulk: secondary actions and dismissal",
+          "percent": 100,
+          "note": "Functional scope complete: unread/delete/migrate/download callbacks and dismissal pass; all conditional existing routes retained."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/reader/ReaderPageIndicator.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/ChapterListDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/appbars/ReaderAppBars.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/appbars/ReaderBottomBar.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/components/ChapterNavigator.kt"
+      ],
+      "panels": [
+        {
+          "name": "Paged reader",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Restrained top controls, rounded lower control deck with chapter prev/next buttons, page slider, bottom action bar, and token-driven page indicator exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Preserve gesture-driven visibility and reading modes.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Webtoon reader",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Full-width vertical viewer, compact Sanctuary pill page indicator, distinct loading and retry state presentation exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Do not display loading and retry as the same state.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Chapters & pages",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Navigate sheet header and subtitle, Chapters/Pages pill tabs, search with leading icon, highlighted current chapter badge, and numbered page chip grid exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Numbered page chips replace unsupported thumbnails; bookmarks are chapter-level.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/reader/dialog/AreaOcrCropOverlay.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/dialog/BubbleInspectorDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/dialog/BatchTranslationProgressDialog.kt"
+      ],
+      "panels": [
+        {
+          "name": "Area selection",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Top Sanctuary instruction card with crop icon, title, subtitle and close action, responsive crop box, and bottom Sanctuary action card with Reset, Cancel and Translate actions exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Crop geometry stays tied to actual viewport coordinates.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Inspect bubbles",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary inspector header, bubble count, Original text and Translated text cards with copy icon buttons, previous/next bubble scrolling and Re-Translate Page action exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "No cropped preview or isolated-bubble retry is currently supported; retry is page-scoped.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Chapter translation",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Chapter translation header, progress pill/counters, linear progress bar, Show translated text switch card, Run in background and Cancel actions exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Keep Run in background; unsupported Pause and invented per-page states are excluded.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/reader/settings/ReaderSettingsDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/dialog/TranslationOptionsDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/ReaderPageActionsDialog.kt"
+      ],
+      "panels": [
+        {
+          "name": "Display controls",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Reader settings header with subtitle, Reading/Display/Translation tabs, brightness/color filters, advanced drawer and primary full-width Done button exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Retain supported background/filter options, not invented swatches.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Translation actions",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Grouped Sanctuary option rows with 38dp tinted icon containers, Show overlays toggle, language navigation, and scoped cache-clearing confirmation exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Keep real engine/language paths; cache clearing must not imply manga deletion.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Page actions",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary card action buttons with tinted primary icon containers for Set cover, Copy, Share, Save, and AI Companion cards exist.",
+          "remaining": "Final runtime visual comparison on device/emulator.",
+          "adaptation": "Unsupported page bookmark excluded; keep chapter bookmark.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "09",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/more/onboarding/OnboardingScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/onboarding/StorageStep.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/onboarding/ThemeStep.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/onboarding/GuidesStep.kt"
+      ],
+      "panels": [
+        {
+          "name": "Welcome",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "ShinKu hero header, 3 Sanctuary benefit cards with tinted icons, clear optional AI notice, and primary/secondary actions exist.",
+          "remaining": "Hero artwork, three benefit rows and dedicated welcome composition are absent.",
+          "adaptation": "Use appropriate owned/licensed art; do not copy sample manga art as an app asset.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Storage & permissions",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary storage card with Configured/Required status badge, directory path, 48dp selection button, and storage help card exist.",
+          "remaining": "Match folder/notification cards, step header and action placement.",
+          "adaptation": "Actual four steps differ from sample step numbering.",
+          "evidence": "source_and_partial_runtime",
+          "screenshot": "build/generated-mockups-final-screenshots/onboarding-storage-required.png"
+        },
+        {
+          "name": "Theme & finish",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Theme selector cards, Sanctuary guide card, restore card, and optional AI notice exist.",
+          "remaining": "Recreate theme-preview tiles and consolidated finish/optional-AI cards.",
+          "adaptation": "AI setup stays optional; preserve all actual setup steps.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/data/CreateBackupScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/data/RestoreBackupScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsDataScreen.kt"
+      ],
+      "panels": [
+        {
+          "name": "Create backup",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary intro card with backup icon, scope notice, library/settings section cards, and bottom action bar exist.",
+          "remaining": "Match icon-led introduction, section rows and destination presentation.",
+          "adaptation": "Downloaded images/API keys are not included merely because the concept suggests them.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Restore preview",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary file summary card with leading icon, status pill, scope checkboxes, and restore confirmation exist.",
+          "remaining": "No matching rich contents-summary/progress-card composition; rebuild preview layout.",
+          "adaptation": "Progress remains notification-based; no unsupported cancellation guarantee.",
+          "evidence": "source_and_partial_runtime",
+          "screenshot": "build/generated-mockups-final-screenshots/restore-confirmation.png"
+        },
+        {
+          "name": "Sync settings",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary cloud sync hero card with last sync timestamp, configured status badge, scope notice, and Sync now action exist.",
+          "remaining": "Dedicated hero/scope/trigger/status layout is not recreated.",
+          "adaptation": "Keep Drive/WebDAV/Nextcloud; local-folder sync is not an implemented transport.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsTrackingScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/track/TrackerSearch.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsSecurityScreen.kt"
+      ],
+      "panels": [
+        {
+          "name": "Trackers",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary tracking banner card, tracker rows with Connect/Disconnect pill buttons, and sync options exist.",
+          "remaining": "Match tracker intro, service-card and progress-sync hierarchy.",
+          "adaptation": "Preserve actual tracker capabilities and logout confirmation.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Link a title",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary search result cards with cover, metadata badges, selection indicator, and bottom confirmation bar with check icon exist.",
+          "remaining": "No matching combined title-header/search/details two-step layout.",
+          "adaptation": "Search is per tracker; cross-tracker mixed results are unsupported.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Security & privacy",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary security banner card, biometric status pill badge, and grouped security preferences exist.",
+          "remaining": "Match security intro, privacy grouping and icon-row hierarchy.",
+          "adaptation": "No invented sensitive-content blur; developer tools keep their existing route.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsMainScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsAppearanceScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsLibraryScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/PreferenceScreen.kt"
+      ],
+      "panels": [
+        {
+          "name": "Settings",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Search pill bar at top, prominent ShinKu settings hero card with AutoAwesome icon and Open pill, and grouped command row settings exist.",
+          "remaining": "Match per-destination icon cards, visible search field and root hierarchy.",
+          "adaptation": "General Settings and ShinKu-specific hub remain distinct.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Appearance",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Live theme selectors, cover preview card with reading progress subtitle and Resume pill button, and rounded Sanctuary preference groups exist.",
+          "remaining": "Current preview is text-only, not the approved cover/resume card; align accent/control hierarchy.",
+          "adaptation": "Global font/density/OS navigation controls are unsupported, excluded from scope.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Library settings",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary intro card with CollectionsBookmark icon, organized display/category/update controls, and clean token-based hierarchy exist.",
+          "remaining": "Match icon hierarchy, display/badge sections and Advanced arrangement.",
+          "adaptation": "Some display/sort controls belong in Library sheet; do not duplicate conflicting state.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsReaderScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsBrowseScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsDownloadScreen.kt"
+      ],
+      "panels": [
+        {
+          "name": "Reader preferences",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary intro card with ChromeReaderMode icon, reader mode selectors, navigation, and display settings exist.",
+          "remaining": "Add approved intro and clearer Defaults/Navigation/Display visual hierarchy.",
+          "adaptation": "Keep real reading modes, orientation and advanced options.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Browse preferences",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary intro card with Explore icon, source list toggles, and repository management exist.",
+          "remaining": "Mockup's multi-section page and language-sheet entry composition are not recreated.",
+          "adaptation": "Global default search target/view and duplicate language settings are not assumed available.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Download preferences",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary intro card with GetApp icon, download queue controls, storage shortcuts, and cleanup scopes exist.",
+          "remaining": "Match manage-downloads intro, icon rows and storage/cleanup grouping.",
+          "adaptation": "Download-ahead is numeric; no invented global delete-all control.",
+          "evidence": "source_only"
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "percent": 95,
+      "status": "implemented_locally; final_visual_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsShinKuSettingsScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/sourcehealth/SourceHealthScreenContent.kt"
+      ],
+      "panels": [
+        {
+          "name": "Performance mode",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary performance group renamed to Performance mode with refresh rate, power profile, enhanced scaling, and predictive loading.",
+          "remaining": "Match exact mockup slider/toggle micro-spacing.",
+          "adaptation": "Preserve platform performance mode keys and native refresh rates.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Maintenance & Tools",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary maintenance tools group with Smart Categorizer, Dead Source Scanner, Failed Updates, and Source Health.",
+          "remaining": "Integrate inline quick actions.",
+          "adaptation": "Preserve individual maintenance sub-screens.",
+          "evidence": "source_only"
+        },
+        {
+          "name": "Source health",
+          "scores": [
+            4,
+            4,
+            4,
+            3
+          ],
+          "percent": 95,
+          "present": "Sanctuary deck cards with live status badges, rating stars, relative check timestamps, avg latency, and single test triggers.",
+          "remaining": "Batch ping all sources button micro-styling.",
+          "adaptation": "Keep dynamic latency and failure classification.",
+          "evidence": "source_only"
+        }
+      ]
+    }
+  ],
+  "earlierConcepts": [
+    {
+      "name": "Library / Continue Reading",
+      "scores": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "present": "Continue Reading hero, category tabs, cover grid and glass dock exist.",
+      "remaining": "Align cover caption/card spacing and final hero/action proportions.",
+      "source": "app/src/main/java/com/shinku/reader/ui/library/LibraryTab.kt",
+      "screenshot": "build/generated-mockups-final-screenshots/dock-library.png",
+      "percent": 75
+    },
+    {
+      "name": "Manga details",
+      "scores": [
+        2,
+        2,
+        3,
+        2
+      ],
+      "present": "Cover/header/actions and chapter functions remain, with wrapped labels.",
+      "remaining": "Match unified header/action cards, metadata and chapter action composition.",
+      "source": "app/src/main/java/com/shinku/reader/presentation/manga/MangaScreen.kt",
+      "percent": 55
+    },
+    {
+      "name": "More / complete statistics",
+      "scores": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "present": "Live profile/XP/statistics, command cards and dock clearance exist.",
+      "remaining": "Align compact metric tiles, shortcuts and command-card hierarchy; preserve actual data.",
+      "source": "app/src/main/java/com/shinku/reader/presentation/more/MoreScreen.kt",
+      "screenshot": "build/generated-mockups-final-screenshots/dock-more.png",
+      "percent": 75
+    },
+    {
+      "name": "ShinKu settings hub",
+      "scores": [
+        3,
+        3,
+        4,
+        3
+      ],
+      "present": "Four primary cards, separate Advanced, searchable routing and inline info footer exist.",
+      "remaining": "Match visible search field, section label and distinct Advanced row/divider styling.",
+      "source": "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsShinKuSettingsScreen.kt",
+      "screenshot": "build/settings-inline-info-final.png",
+      "percent": 80
+    },
+    {
+      "name": "AI / translation setup",
+      "scores": [
+        2,
+        2,
+        3,
+        3
+      ],
+      "present": "Masked keys/reveal, real connection state and key-specific Gemini model discovery exist.",
+      "remaining": "Consolidate provider/model/key/test and translation groups into the approved hierarchy.",
+      "source": "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/ShinKuSettingsSectionScreen.kt",
+      "screenshot": "build/generated-mockups-final-screenshots/shinku-section-ai.png",
+      "percent": 60
+    },
+    {
+      "name": "Reader controls",
+      "scores": [
+        2,
+        2,
+        3,
+        3
+      ],
+      "present": "Reading/Display/Translation tabs and supported control routing exist.",
+      "remaining": "Same grouped icon-row/header/primary-button visual gaps as boards 06\u201308; not independent work.",
+      "source": "app/src/main/java/com/shinku/reader/presentation/reader/settings/ReaderSettingsDialog.kt",
+      "screenshot": "build/generated-mockups-final-screenshots/reader-display.png",
+      "percent": 60
+    }
+  ],
+  "plannedNote": "14 has an external draft at 14-performance-maintenance-v1.png but no adopted canonical board/implementation pass. 15\u201324 have briefs only. Redesign work is not started (0% of the planned pass); visual similarity is unscored. Existing baseline features do not count as applied mockups."
+}

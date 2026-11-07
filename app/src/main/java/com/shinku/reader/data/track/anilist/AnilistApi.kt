@@ -17,6 +17,7 @@ import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.interceptor.rateLimit
 import eu.kanade.tachiyomi.network.jsonMime
 import eu.kanade.tachiyomi.network.parseAs
+import com.shinku.reader.util.OAuthStateStore
 import com.shinku.reader.util.lang.htmlDecode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
@@ -467,6 +468,7 @@ class AnilistApi(val client: OkHttpClient, interceptor: AnilistInterceptor) {
         fun authUrl(): Uri = "${BASE_URL}oauth/authorize".toUri().buildUpon()
             .appendQueryParameter("client_id", CLIENT_ID)
             .appendQueryParameter("response_type", "token")
+            .appendQueryParameter("state", OAuthStateStore.generate("anilist-auth"))
             .build()
     }
 }

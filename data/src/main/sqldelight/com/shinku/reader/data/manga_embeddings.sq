@@ -32,3 +32,6 @@ VALUES (:mangaId, :embedding, :lastMetadataUpdate);
 deleteByMangaId:
 DELETE FROM manga_embeddings
 WHERE manga_id = :id;
+
+getVersions:
+SELECT manga_id, last_metadata_update FROM manga_embeddings;

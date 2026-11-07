@@ -1,8 +1,8 @@
 package com.shinku.reader.domain.category.repository
 
-import kotlinx.coroutines.flow.Flow
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.domain.category.model.CategoryUpdate
+import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
 
@@ -11,6 +11,8 @@ interface CategoryRepository {
     suspend fun getAll(): List<Category>
 
     fun getAllAsFlow(): Flow<List<Category>>
+
+    fun getLibraryCountsAsFlow(): Flow<Map<Long, Long>>
 
     suspend fun getCategoriesByMangaId(mangaId: Long): List<Category>
 

@@ -11,6 +11,7 @@ import com.shinku.reader.data.track.bangumi.dto.BGMUser
 import com.shinku.reader.data.track.bangumi.dto.Infobox
 import com.shinku.reader.data.track.model.TrackMangaMetadata
 import com.shinku.reader.data.track.model.TrackSearch
+import com.shinku.reader.util.OAuthStateStore
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.network.POST
@@ -213,6 +214,7 @@ class BangumiApi(
                 .appendQueryParameter("client_id", CLIENT_ID)
                 .appendQueryParameter("response_type", "code")
                 .appendQueryParameter("redirect_uri", REDIRECT_URL)
+                .appendQueryParameter("state", OAuthStateStore.generate("bangumi-auth"))
                 .build()
 
         fun refreshTokenRequest(token: String) = POST(

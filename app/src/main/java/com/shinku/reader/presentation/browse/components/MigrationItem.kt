@@ -25,14 +25,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shinku.reader.presentation.manga.components.MangaCover
-import com.shinku.reader.ui.browse.migration.advanced.process.MigratingManga
 import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.Badge
 import com.shinku.reader.presentation.core.components.BadgeGroup
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.manga.components.MangaCover
+import com.shinku.reader.ui.browse.migration.advanced.process.MigratingManga
 
 @Composable
 fun MigrationItem(
@@ -73,32 +73,22 @@ fun MigrationItem(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter),
             )
-            Text(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .align(Alignment.BottomStart),
-                text = manga.title.ifBlank { stringResource(MR.strings.unknown) },
-                fontSize = 12.sp,
-                lineHeight = 18.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    color = Color.White,
-                    shadow = Shadow(
-                        color = Color.Black,
-                        blurRadius = 4f,
-                    ),
-                ),
-            )
             BadgeGroup(modifier = Modifier.padding(4.dp)) {
                 Badge(text = "${chapterInfo.chapterCount}")
             }
         }
         Text(
+            text = manga.title.ifBlank { stringResource(MR.strings.unknown) },
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
             text = sourcesString,
             modifier = Modifier.padding(top = 4.dp, bottom = 1.dp, start = 8.dp),
             overflow = TextOverflow.Ellipsis,
-            maxLines = 1,
+            maxLines = 2,
             style = MaterialTheme.typography.titleSmall,
         )
 
@@ -111,7 +101,7 @@ fun MigrationItem(
             text = formattedLatestChapter,
             modifier = Modifier.padding(top = 1.dp, bottom = 4.dp, start = 8.dp),
             overflow = TextOverflow.Ellipsis,
-            maxLines = 1,
+            maxLines = 2,
             style = MaterialTheme.typography.bodyMedium,
         )
     }

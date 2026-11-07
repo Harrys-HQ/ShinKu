@@ -1,6 +1,7 @@
 package com.shinku.reader.presentation.browse
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.GetApp
@@ -29,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -36,36 +39,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.icerock.moko.resources.StringResource
+import com.shinku.reader.extension.model.Extension
+import com.shinku.reader.extension.model.InstallStep
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.browse.components.BaseBrowseItem
 import com.shinku.reader.presentation.browse.components.ExtensionIcon
 import com.shinku.reader.presentation.components.WarningBanner
-import com.shinku.reader.presentation.manga.components.DotSeparatorNoSpaceText
-import com.shinku.reader.presentation.more.settings.screen.browse.ExtensionReposScreen
-import com.shinku.reader.presentation.util.animateItemFastScroll
-import com.shinku.reader.presentation.util.rememberRequestPackageInstallsPermissionState
-import com.shinku.reader.extension.model.Extension
-import com.shinku.reader.extension.model.InstallStep
-import com.shinku.reader.ui.browse.extension.ExtensionUiModel
-import com.shinku.reader.ui.browse.extension.ExtensionsScreenModel
-import com.shinku.reader.util.system.LocaleHelper
-import com.shinku.reader.util.system.launchRequestPackageInstallsPermission
-import kotlinx.collections.immutable.persistentListOf
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.components.FastScrollLazyColumn
 import com.shinku.reader.presentation.core.components.material.PullRefresh
 import com.shinku.reader.presentation.core.components.material.padding
@@ -77,6 +67,16 @@ import com.shinku.reader.presentation.core.screens.LoadingScreen
 import com.shinku.reader.presentation.core.theme.header
 import com.shinku.reader.presentation.core.util.plus
 import com.shinku.reader.presentation.core.util.secondaryItemAlpha
+import com.shinku.reader.presentation.manga.components.DotSeparatorNoSpaceText
+import com.shinku.reader.presentation.more.settings.screen.browse.ExtensionReposScreen
+import com.shinku.reader.presentation.util.animateItemFastScroll
+import com.shinku.reader.presentation.util.rememberRequestPackageInstallsPermissionState
+import com.shinku.reader.ui.browse.extension.ExtensionUiModel
+import com.shinku.reader.ui.browse.extension.ExtensionsScreenModel
+import com.shinku.reader.util.system.LocaleHelper
+import com.shinku.reader.util.system.launchRequestPackageInstallsPermission
+import dev.icerock.moko.resources.StringResource
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ExtensionScreen(
@@ -157,6 +157,15 @@ private fun ExtensionContent(
     val context = LocalContext.current
     var trustState by remember { mutableStateOf<Extension.Untrusted?>(null) }
     val installGranted = rememberRequestPackageInstallsPermissionState(initialValue = true)
+    var selectedLang by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
+
+    val availableLanguages = remember(state.items) {
+        state.items.values
+            .flatten()
+            .mapNotNull { it.extension.lang }
+            .filter { it.isNotBlank() && it != "all" }
+            .distinct()
+    }
 
     FastScrollLazyColumn(
         contentPadding = contentPadding + topSmallPaddingValues,
@@ -172,7 +181,50 @@ private fun ExtensionContent(
             }
         }
 
-        state.items.forEach { (header, items) ->
+        if (availableLanguages.size > 1) {
+            item(key = "extensions-language-chips") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        ),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        item(key = "ext-lang-all") {
+                            ExtensionLanguageChip(
+                                label = stringResource(MR.strings.all),
+                                selected = selectedLang == null,
+                                onClick = { selectedLang = null },
+                            )
+                        }
+                        items(availableLanguages, key = { "ext-lang-$it" }) { lang ->
+                            ExtensionLanguageChip(
+                                label = LocaleHelper.getSourceDisplayName(lang, context),
+                                selected = selectedLang == lang,
+                                onClick = {
+                                    selectedLang = if (selectedLang == lang) null else lang
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        state.items.forEach { (header, rawItems) ->
+            val items = if (selectedLang == null) {
+                rawItems
+            } else {
+                rawItems.filter { it.extension.lang.equals(selectedLang, ignoreCase = true) || it.extension.lang == "all" }
+            }
+            if (items.isEmpty()) return@forEach
+
             item(
                 contentType = "header",
                 key = "extensionHeader-${header.hashCode()}",
@@ -196,6 +248,7 @@ private fun ExtensionContent(
                             }
                         ExtensionHeader(
                             textRes = header.textRes,
+                            count = items.size,
                             modifier = Modifier.animateItemFastScroll(),
                             action = action,
                         )
@@ -203,6 +256,7 @@ private fun ExtensionContent(
                     is ExtensionUiModel.Header.Text -> {
                         ExtensionHeader(
                             text = header.text,
+                            count = items.size,
                             modifier = Modifier.animateItemFastScroll(),
                         )
                     }
@@ -348,7 +402,7 @@ private fun ExtensionItemContent(
     ) {
         Text(
             text = extension.name,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.SemiBold,
@@ -361,23 +415,22 @@ private fun ExtensionItemContent(
         ) {
             ProvideTextStyle(value = MaterialTheme.typography.bodySmall) {
                 var hasAlreadyShownAnElement by remember { mutableStateOf(false) }
-                if (extension is Extension.Installed && extension.lang.isNotEmpty()) {
+                if (extension.versionName.isNotEmpty()) {
+                    hasAlreadyShownAnElement = true
+                    Text(
+                        text = "v${extension.versionName.removePrefix("v")}",
+                    )
+                }
+
+                if (!extension.lang.isNullOrEmpty()) {
+                    if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
                     hasAlreadyShownAnElement = true
                     Text(
                         text = LocaleHelper.getSourceDisplayName(extension.lang, LocalContext.current),
                     )
                 }
 
-                if (extension.versionName.isNotEmpty()) {
-                    if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
-                    hasAlreadyShownAnElement = true
-                    Text(
-                        text = extension.versionName,
-                    )
-                }
-
                 val warning = when {
-                    extension is Extension.Untrusted -> MR.strings.ext_untrusted
                     extension is Extension.Installed && extension.isObsolete -> MR.strings.ext_obsolete
                     // SY -->
                     extension is Extension.Installed && extension.isRedundant -> SYMR.strings.ext_redundant
@@ -391,7 +444,7 @@ private fun ExtensionItemContent(
                     Text(
                         text = stringResource(warning).uppercase(),
                         color = MaterialTheme.colorScheme.error,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -414,6 +467,16 @@ private fun ExtensionItemContent(
                     )
                 }
             }
+        }
+        if (extension is Extension.Untrusted) {
+            Text(
+                text = "⚠ This extension is from an unknown repository. Review the source before trusting.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
     }
 }
@@ -460,16 +523,6 @@ private fun ExtensionItemActions(
             installStep == InstallStep.Idle -> {
                 when (extension) {
                     is Extension.Installed -> {
-                        IconButton(
-                            onClick = { onClickItemSecondaryAction(extension) },
-                            modifier = Modifier.size(36.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Settings,
-                                contentDescription = stringResource(MR.strings.action_settings),
-                            )
-                        }
-
                         if (extension.hasUpdate) {
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
@@ -479,7 +532,7 @@ private fun ExtensionItemActions(
                                     .clickable { onClickItemAction(extension) },
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 ) {
@@ -499,11 +552,21 @@ private fun ExtensionItemActions(
                                 }
                             }
                         }
+
+                        IconButton(
+                            onClick = { onClickItemSecondaryAction(extension) },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = stringResource(MR.strings.action_settings),
+                            )
+                        }
                     }
                     is Extension.Untrusted -> {
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.errorContainer,
+                            color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable { onClickItemAction(extension) },
@@ -517,32 +580,19 @@ private fun ExtensionItemActions(
                                     imageVector = Icons.Outlined.VerifiedUser,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                 )
                                 Text(
                                     text = stringResource(MR.strings.ext_trust),
                                     style = MaterialTheme.typography.labelMedium.copy(
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     ),
                                 )
                             }
                         }
                     }
                     is Extension.Available -> {
-                        if (extension.sources.isNotEmpty()) {
-                            IconButton(
-                                onClick = { onClickItemSecondaryAction(extension) },
-                                modifier = Modifier.size(36.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Public,
-                                    contentDescription = stringResource(MR.strings.action_open_in_web_view),
-                                    modifier = Modifier.size(20.dp),
-                                )
-                            }
-                        }
-
                         Surface(
                             shape = RoundedCornerShape(10.dp),
                             color = MaterialTheme.colorScheme.primaryContainer,
@@ -551,7 +601,7 @@ private fun ExtensionItemActions(
                                 .clickable { onClickItemAction(extension) },
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
@@ -570,6 +620,19 @@ private fun ExtensionItemActions(
                                 )
                             }
                         }
+
+                        if (extension.sources.isNotEmpty()) {
+                            IconButton(
+                                onClick = { onClickItemSecondaryAction(extension) },
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Public,
+                                    contentDescription = stringResource(MR.strings.action_open_in_web_view),
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -580,11 +643,13 @@ private fun ExtensionItemActions(
 @Composable
 private fun ExtensionHeader(
     textRes: StringResource,
+    count: Int? = null,
     modifier: Modifier = Modifier,
     action: @Composable RowScope.() -> Unit = {},
 ) {
     ExtensionHeader(
         text = stringResource(textRes),
+        count = count,
         modifier = modifier,
         action = action,
     )
@@ -593,6 +658,7 @@ private fun ExtensionHeader(
 @Composable
 private fun ExtensionHeader(
     text: String,
+    count: Int? = null,
     modifier: Modifier = Modifier,
     action: @Composable RowScope.() -> Unit = {},
 ) {
@@ -602,22 +668,52 @@ private fun ExtensionHeader(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .padding(end = 8.dp)
-                .size(width = 3.dp, height = 14.dp)
-                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(1.5.dp)),
-        )
         Text(
-            text = text.uppercase(),
-            style = MaterialTheme.typography.labelMedium.copy(
+            text = if (count != null) "$text ($count)" else text,
+            style = MaterialTheme.typography.titleMedium.copy(
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurface,
             ),
             modifier = Modifier.weight(1f),
         )
         action()
+    }
+}
+
+@Composable
+private fun ExtensionLanguageChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        shape = com.shinku.reader.presentation.core.theme.SanctuaryShapes.pill,
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerLow
+        },
+        border = if (selected) {
+            androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+        } else {
+            com.shinku.reader.presentation.core.theme.SanctuaryBrushes.subtleBorder()
+        },
+        modifier = Modifier
+            .clip(com.shinku.reader.presentation.core.theme.SanctuaryShapes.pill)
+            .clickable(onClick = onClick),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            ),
+            color = if (selected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+        )
     }
 }
 

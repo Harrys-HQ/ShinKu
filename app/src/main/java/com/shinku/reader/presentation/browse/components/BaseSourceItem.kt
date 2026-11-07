@@ -9,10 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
-import com.shinku.reader.util.system.LocaleHelper
 import com.shinku.reader.domain.source.model.Source
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.util.secondaryItemAlpha
+import com.shinku.reader.util.system.LocaleHelper
 
 @Composable
 fun BaseSourceItem(
@@ -50,7 +50,7 @@ private val defaultContent: @Composable RowScope.(Source, String?) -> Unit = { s
     ) {
         Text(
             text = source.name,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodyMedium,
         )
@@ -58,7 +58,7 @@ private val defaultContent: @Composable RowScope.(Source, String?) -> Unit = { s
             Text(
                 modifier = Modifier.secondaryItemAlpha(),
                 text = sourceLangString,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodySmall,
             )

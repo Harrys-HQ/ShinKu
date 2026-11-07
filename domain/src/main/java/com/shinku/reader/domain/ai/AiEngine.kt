@@ -4,14 +4,7 @@ import com.shinku.reader.exh.source.ShinKuPreferences
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 sealed interface AiEngine {
     val id: String
@@ -32,60 +25,23 @@ class CloudGeminiEngine(
     override val isAvailable: Boolean
         get() = shinkuPreferences.geminiApiKey().get().isNotBlank()
 
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
 
     override suspend fun generateText(prompt: String): Result<String> = withContext(Dispatchers.IO) {
-        val apiKey = shinkuPreferences.geminiApiKey().get().trim()
-        if (apiKey.isBlank()) return@withContext Result.failure(IllegalStateException("API Key not set"))
-
-        val preferredModel = resolveModel(shinkuPreferences.geminiModel().get())
-        val modelsToTry = listOf(
-            preferredModel,
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-        ).distinct()
-
-        var lastError: Exception? = null
-        for (model in modelsToTry) {
-            try {
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
-                val bodyJson = """
-                    {
-                      "contents": [{
-                        "parts":[{"text": ${Json.encodeToString(prompt)}}]
-                      }]
-                    }
-                """.trimIndent()
-
-                val request = Request.Builder()
-                    .url(url)
-                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                    .build()
-
-                networkHelper.client.newCall(request).execute().use { response ->
-                    val responseBody = response.body.string()
-                    if (response.code in listOf(400, 404, 429, 500, 503)) {
-                        lastError = Exception("HTTP ${response.code}: $responseBody")
-                        return@use // Try next fallback model
-                    }
-                    if (!response.isSuccessful) {
-                        return@withContext Result.failure(Exception("HTTP ${response.code}: $responseBody"))
-                    }
-                    val result = json.parseToJsonElement(responseBody)
-                    val candidate = result.jsonObject["candidates"]?.jsonArray?.getOrNull(0)
-                    val text = candidate?.jsonObject?.get("content")?.jsonObject?.get("parts")?.jsonArray?.getOrNull(0)?.jsonObject?.get("text")?.jsonPrimitive?.content
-                    if (text != null) {
-                        return@withContext Result.success(text)
-                    } else {
-                        return@withContext Result.failure(Exception("Empty content from Gemini response"))
-                    }
-                }
-            } catch (e: Exception) {
-                lastError = e
-            }
+        try {
+            Result.success(
+                GeminiApi(networkHelper.client).generateText(
+                    prompt, shinkuPreferences.geminiApiKey().get(), shinkuPreferences.geminiModel().get(),
+                ).text,
+            )
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        Result.failure(lastError ?: Exception("Failed to generate text"))
     }
 
     override suspend fun generateTitles(prompt: String): Result<List<String>> = withContext(Dispatchers.IO) {
@@ -103,15 +59,6 @@ class CloudGeminiEngine(
             } catch (e: Exception) {
                 emptyList()
             }
-        }
-    }
-
-    private fun resolveModel(model: String): String {
-        val trimmed = model.trim()
-        return if (trimmed.isBlank() || trimmed.equals("auto", ignoreCase = true) || trimmed.startsWith("gemini-3.")) {
-            "gemini-2.5-flash"
-        } else {
-            trimmed
         }
     }
 }

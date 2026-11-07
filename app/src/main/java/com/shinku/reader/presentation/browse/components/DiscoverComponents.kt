@@ -169,6 +169,7 @@ fun DiscoverGenreCloud(
 @Composable
 fun DiscoverSectionHeader(
     title: String,
+    subtitle: String? = null,
     onSeeAllClick: (() -> Unit)? = null,
     onClearClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -178,27 +179,38 @@ fun DiscoverSectionHeader(
             .fillMaxWidth()
             .padding(
                 horizontal = MaterialTheme.padding.medium,
-                vertical = 6.dp,
+                vertical = 8.dp,
             ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.ExtraBold,
-            ),
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f, fill = false),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Column(modifier = Modifier.weight(1f, fill = false)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (onClearClick != null) {
                 IconButton(
                     onClick = onClearClick,
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Close,
@@ -219,7 +231,7 @@ fun DiscoverSectionHeader(
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = "See All",
+                        text = "See all",
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.Bold,
                         ),
@@ -335,9 +347,21 @@ private fun DiscoverMangaCard(
             style = MaterialTheme.typography.labelMedium.copy(
                 fontWeight = FontWeight.Bold,
             ),
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             color = MaterialTheme.colorScheme.onSurface,
         )
+
+        val genreSummary = currentManga.genre?.take(2)?.joinToString(" · ").orEmpty()
+        if (genreSummary.isNotBlank()) {
+            Text(
+                text = genreSummary,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
     }
 }

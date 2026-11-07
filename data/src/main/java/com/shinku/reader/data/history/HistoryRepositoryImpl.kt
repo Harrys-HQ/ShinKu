@@ -35,6 +35,9 @@ class HistoryRepositoryImpl(
         return handler.awaitOne { historyQueries.getReadDuration() }
     }
 
+    override suspend fun getReadingGenreDurations(): List<Triple<Long, List<String>?, Long>> =
+        handler.awaitList { historyQueries.getReadingGenreDurations { id, genres, duration -> Triple(id, genres, duration) } }
+
     override suspend fun getAllHistory(): List<History> {
         return handler.awaitList { historyQueries.getHistory(HistoryMapper::mapHistory) }
     }

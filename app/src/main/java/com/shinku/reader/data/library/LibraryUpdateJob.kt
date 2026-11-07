@@ -18,55 +18,20 @@ import androidx.work.WorkInfo
 import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.shinku.reader.domain.chapter.interactor.SyncChaptersWithSource
-import com.shinku.reader.domain.chapter.interactor.GetChaptersByMangaId
-import com.shinku.reader.domain.manga.interactor.UpdateManga
-import com.shinku.reader.domain.manga.model.copyFrom
-import com.shinku.reader.domain.manga.model.toSManga
-import com.shinku.reader.domain.source.service.SourcePreferences
-import com.shinku.reader.domain.sync.SyncPreferences
-import com.shinku.reader.domain.track.model.toDbTrack
-import com.shinku.reader.domain.track.model.toDomainTrack
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.preference.getAndSet
+import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.data.cache.CoverCache
 import com.shinku.reader.data.download.DownloadManager
 import com.shinku.reader.data.notification.Notifications
 import com.shinku.reader.data.sync.SyncDataJob
 import com.shinku.reader.data.track.TrackStatus
 import com.shinku.reader.data.track.TrackerManager
-import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
-import eu.kanade.tachiyomi.source.online.all.MergedSource
-import com.shinku.reader.util.prepUpdateCover
-import com.shinku.reader.util.storage.getUriCompat
-import com.shinku.reader.util.system.createFileInCacheDir
-import com.shinku.reader.util.system.isConnectedToVpn
-import com.shinku.reader.util.system.isConnectedToWifi
-import com.shinku.reader.util.system.isRunning
-import com.shinku.reader.util.system.setForegroundSafely
-import com.shinku.reader.util.system.workManager
-import com.shinku.reader.exh.log.xLogE
-import com.shinku.reader.exh.md.utils.FollowStatus
-import com.shinku.reader.exh.md.utils.MdUtil
-import com.shinku.reader.exh.source.LIBRARY_UPDATE_EXCLUDED_SOURCES
-import com.shinku.reader.exh.source.MERGED_SOURCE_ID
-import com.shinku.reader.exh.source.mangaDexSourceIds
-import com.shinku.reader.exh.util.nullIfBlank
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import logcat.LogPriority
-import com.shinku.reader.domain.chapter.interactor.FilterChaptersForDownload
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.preference.getAndSet
-import com.shinku.reader.core.common.util.lang.withIOContext
-import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.domain.category.model.Category
+import com.shinku.reader.domain.chapter.interactor.FilterChaptersForDownload
+import com.shinku.reader.domain.chapter.interactor.GetChaptersByMangaId
+import com.shinku.reader.domain.chapter.interactor.SyncChaptersWithSource
 import com.shinku.reader.domain.chapter.model.Chapter
 import com.shinku.reader.domain.chapter.model.NoChaptersException
 import com.shinku.reader.domain.library.model.GroupLibraryMode
@@ -88,16 +53,51 @@ import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.GetMergedMangaForDownloading
 import com.shinku.reader.domain.manga.interactor.InsertFlatMetadata
 import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
+import com.shinku.reader.domain.manga.interactor.UpdateManga
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.domain.manga.model.MangaUpdate
+import com.shinku.reader.domain.manga.model.copyFrom
 import com.shinku.reader.domain.manga.model.toMangaUpdate
+import com.shinku.reader.domain.manga.model.toSManga
 import com.shinku.reader.domain.source.interactor.GetSourceHealth
 import com.shinku.reader.domain.source.interactor.UpdateSourceHealth
 import com.shinku.reader.domain.source.model.SourceNotInstalledException
 import com.shinku.reader.domain.source.service.SourceManager
+import com.shinku.reader.domain.source.service.SourcePreferences
+import com.shinku.reader.domain.sync.SyncPreferences
 import com.shinku.reader.domain.track.interactor.GetTracks
 import com.shinku.reader.domain.track.interactor.InsertTrack
+import com.shinku.reader.domain.track.model.toDbTrack
+import com.shinku.reader.domain.track.model.toDomainTrack
+import com.shinku.reader.exh.log.xLogE
+import com.shinku.reader.exh.md.utils.FollowStatus
+import com.shinku.reader.exh.md.utils.MdUtil
+import com.shinku.reader.exh.source.LIBRARY_UPDATE_EXCLUDED_SOURCES
+import com.shinku.reader.exh.source.MERGED_SOURCE_ID
+import com.shinku.reader.exh.source.mangaDexSourceIds
+import com.shinku.reader.exh.util.nullIfBlank
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.util.prepUpdateCover
+import com.shinku.reader.util.storage.getUriCompat
+import com.shinku.reader.util.system.createFileInCacheDir
+import com.shinku.reader.util.system.isConnectedToVpn
+import com.shinku.reader.util.system.isConnectedToWifi
+import com.shinku.reader.util.system.isRunning
+import com.shinku.reader.util.system.setForegroundSafely
+import com.shinku.reader.util.system.workManager
+import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import eu.kanade.tachiyomi.source.online.all.MergedSource
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import logcat.LogPriority
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
@@ -317,9 +317,9 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
                     MANGA_NON_COMPLETED in restrictions && (
                         it.manga.status.toInt() == SManga.COMPLETED ||
-                        it.manga.status.toInt() == SManga.PUBLISHING_FINISHED ||
-                        it.manga.status.toInt() == SManga.CANCELLED
-                    ) -> {
+                            it.manga.status.toInt() == SManga.PUBLISHING_FINISHED ||
+                            it.manga.status.toInt() == SManga.CANCELLED
+                        ) -> {
                         skippedUpdates.add(it.manga to context.stringResource(MR.strings.skipped_reason_completed))
                         false
                     }
@@ -625,7 +625,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         val speed = libraryPreferences.libraryUpdateSpeed().get()
         val (maxConcurrentSources, maxMangaPerSource) = when (speed) {
             1 -> 10 to 2 // Boost
-            2 -> Int.MAX_VALUE to Int.MAX_VALUE // Extreme
+            2 -> 20 to 2 // Extreme: bounded 40 active manga; validate further on device
             else -> 5 to 1 // Standard (default)
         }
 
@@ -666,10 +666,14 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                         .copyFrom(networkManga)
                                                     try {
                                                         updateManga.await(updatedManga.toMangaUpdate())
+                                                    } catch (e: CancellationException) {
+                                                        throw e
                                                     } catch (_: Exception) {
                                                         logcat(LogPriority.ERROR) { "Manga doesn't exist anymore" }
                                                     }
-                                                } catch (e: Throwable) {
+                                                } catch (e: CancellationException) {
+                                                    throw e
+                                                } catch (e: Exception) {
                                                     // Ignore errors and continue
                                                     logcat(LogPriority.ERROR, e)
                                                 }

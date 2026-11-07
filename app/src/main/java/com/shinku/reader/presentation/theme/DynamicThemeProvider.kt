@@ -27,6 +27,8 @@ import com.shinku.reader.domain.ui.UiPreferences
 import com.shinku.reader.exh.source.ShinKuPreferences
 import com.shinku.reader.presentation.core.util.collectAsState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -116,7 +118,8 @@ fun SyncLibraryThemeEffect(manga: Manga?) {
             }.getOrNull()
         }
 
-        if (extractedColor != null && extractedColor != 0) {
+        currentCoroutineContext().ensureActive()
+        if (shinkuPreferences.dynamicLibraryTheme().get() && extractedColor != null && extractedColor != 0) {
             coverSeedColorCache.put(manga.id, extractedColor)
             if (shinkuPreferences.dynamicLibrarySeedColor().get() != extractedColor) {
                 shinkuPreferences.dynamicLibrarySeedColor().set(extractedColor)

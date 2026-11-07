@@ -6,31 +6,52 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.shinku.reader.presentation.components.AppBar
-import com.shinku.reader.presentation.components.WarningBanner
-import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.data.backup.create.BackupCreateJob
 import com.shinku.reader.data.backup.create.BackupCreator
 import com.shinku.reader.data.backup.create.BackupOptions
-import com.shinku.reader.util.system.DeviceUtil
-import com.shinku.reader.util.system.toast
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.flow.update
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.components.AppBar
+import com.shinku.reader.presentation.components.WarningBanner
 import com.shinku.reader.presentation.core.components.LabeledCheckbox
 import com.shinku.reader.presentation.core.components.LazyColumnWithAction
 import com.shinku.reader.presentation.core.components.SectionCard
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.util.Screen
+import com.shinku.reader.util.system.DeviceUtil
+import com.shinku.reader.util.system.toast
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.flow.update
 
 class CreateBackupScreen : Screen() {
 
@@ -66,7 +87,7 @@ class CreateBackupScreen : Screen() {
         ) { contentPadding ->
             LazyColumnWithAction(
                 contentPadding = contentPadding,
-                actionLabel = stringResource(MR.strings.action_create),
+                actionLabel = stringResource(MR.strings.pref_create_backup),
                 actionEnabled = state.options.canCreate(),
                 onClickAction = {
                     if (!BackupCreateJob.isManualJobRunning(context)) {
@@ -80,6 +101,52 @@ class CreateBackupScreen : Screen() {
                     }
                 },
             ) {
+                item {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        shape = SanctuaryShapes.deckCard,
+                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                        border = SanctuaryBrushes.subtleBorder(),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            Surface(
+                                shape = SanctuaryShapes.medium,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                modifier = Modifier.size(40.dp),
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Backup,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(MR.strings.pref_create_backup),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = stringResource(MR.strings.backup_scope_notice),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
                         WarningBanner(MR.strings.restore_miui_warning)

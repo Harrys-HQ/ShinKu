@@ -6,6 +6,8 @@ import com.shinku.reader.domain.manga.model.MergeMangaSettingsUpdate
 import com.shinku.reader.domain.manga.model.MergedMangaReference
 
 interface MangaMergeRepository {
+    suspend fun getMergedMangaByIds(ids: List<Long>): Map<Long, List<Manga>>
+
     suspend fun getMergedManga(): List<Manga>
 
     suspend fun subscribeMergedManga(): Flow<List<Manga>>

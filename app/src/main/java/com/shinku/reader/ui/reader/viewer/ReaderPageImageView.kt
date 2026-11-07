@@ -1,20 +1,19 @@
 package com.shinku.reader.ui.reader.viewer
 
 import android.content.Context
-import android.graphics.PointF
-import android.graphics.RectF
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.PointF
 import android.graphics.Rect
-import android.text.StaticLayout
-import android.text.TextPaint
-import android.text.Layout
-import android.os.Build
-import com.shinku.reader.ui.reader.model.ReaderPage
-import kotlin.math.max
+import android.graphics.RectF
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.os.Build
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -44,22 +43,23 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.EASE_IN_OUT
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.EASE_OUT_QUAD
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
 import com.github.chrisbanes.photoview.PhotoView
-import com.shinku.reader.domain.base.BasePreferences
+import com.shinku.reader.core.common.util.system.ImageUtil
 import com.shinku.reader.data.coil.TachiyomiImageDecoder
 import com.shinku.reader.data.coil.allowUpscaling
 import com.shinku.reader.data.coil.cropBorders
 import com.shinku.reader.data.coil.customDecoder
 import com.shinku.reader.data.coil.webtoonStrips
+import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.exh.source.ShinKuPreferences
-import android.graphics.BitmapFactory
+import com.shinku.reader.ui.reader.model.ReaderPage
 import com.shinku.reader.ui.reader.viewer.webtoon.WebtoonStripImageView
 import com.shinku.reader.ui.reader.viewer.webtoon.WebtoonSubsamplingImageView
 import com.shinku.reader.util.system.animatorDurationScale
 import com.shinku.reader.util.view.isVisibleOnScreen
 import okio.BufferedSource
-import com.shinku.reader.core.common.util.system.ImageUtil
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import kotlin.math.max
 
 /**
  * A wrapper view for showing page image.
@@ -161,6 +161,11 @@ open class ReaderPageImageView @JvmOverloads constructor(
         val isLiveTranslation = Injekt.get<ShinKuPreferences>().liveTranslation().get()
         val page = currentPage
         if (page != null) {
+            val language = Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()
+            if (page.translationLanguage != language) {
+                page.translationBlocks = null
+                page.showTranslation = false
+            }
             val isChapterShowing = page.chapter.pages?.any { it.showTranslation } == true
             val shouldShow = isLiveTranslation || isChapterShowing
             if (page.translationBlocks == null) {
@@ -168,9 +173,10 @@ open class ReaderPageImageView @JvmOverloads constructor(
                     val chapterId = page.chapter.chapter.id ?: 0L
                     if (chapterId > 0L) {
                         val targetLang = Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()
-                        val cached = com.shinku.reader.ui.reader.model.TranslationCache.get(chapterId, page.index, targetLang)
+                        val cached = com.shinku.reader.ui.reader.model.TranslationCache.getMemory(chapterId, page.index, targetLang)
                         if (cached != null) {
                             page.translationBlocks = cached
+                            page.translationLanguage = targetLang
                             page.showTranslation = shouldShow
                         }
                     }
@@ -287,7 +293,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
     fun moveToNextPanel(): Boolean {
         val view = pageView as? SubsamplingScaleImageView ?: return false
         if (panels.isEmpty()) return false
-        
+
         if (currentPanelIndex < panels.size - 1) {
             currentPanelIndex++
             animateToPanel(panels[currentPanelIndex])
@@ -319,14 +325,14 @@ open class ReaderPageImageView @JvmOverloads constructor(
 
     private fun animateToPanel(panel: RectF) {
         val view = pageView as? SubsamplingScaleImageView ?: return
-        
+
         // Calculate scale to fit panel
         val scaleX = width.toFloat() / panel.width()
         val scaleY = height.toFloat() / panel.height()
         val targetScale = minOf(scaleX, scaleY, view.maxScale)
-        
+
         val targetCenter = PointF(panel.centerX(), panel.centerY())
-        
+
         view.animateScaleAndCenter(targetScale, targetCenter)
             ?.withDuration(400)
             ?.withEasing(EASE_IN_OUT_QUAD)
@@ -339,7 +345,10 @@ open class ReaderPageImageView @JvmOverloads constructor(
         pageView?.let {
             when (it) {
                 is SubsamplingScaleImageView -> it.recycle()
-                is AppCompatImageView -> it.dispose()
+                is AppCompatImageView -> {
+                    it.dispose()
+                    it.setImageDrawable(null)
+                }
                 is WebtoonStripImageView -> it.recycle()
             }
             it.isVisible = false
@@ -692,14 +701,19 @@ open class ReaderPageImageView @JvmOverloads constructor(
 
     fun updateTranslationOverlay(targetPage: ReaderPage? = null) {
         val pageToUse = targetPage ?: this.currentPage ?: return
+        if (pageToUse.translationLanguage != Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()) {
+            pageToUse.translationBlocks = null
+            pageToUse.showTranslation = false
+        }
         if (pageToUse.translationBlocks == null) {
             try {
                 val chapterId = pageToUse.chapter.chapter.id ?: 0L
                 if (chapterId > 0L) {
                     val targetLang = Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()
-                    val cached = com.shinku.reader.ui.reader.model.TranslationCache.get(chapterId, pageToUse.index, targetLang)
+                    val cached = com.shinku.reader.ui.reader.model.TranslationCache.getMemory(chapterId, pageToUse.index, targetLang)
                     if (cached != null) {
                         pageToUse.translationBlocks = cached
+                        pageToUse.translationLanguage = targetLang
                         pageToUse.showTranslation = true
                     }
                 }

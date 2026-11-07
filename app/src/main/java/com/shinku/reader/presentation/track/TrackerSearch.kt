@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -17,9 +18,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.paddingFromBaseline
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.items
@@ -41,8 +44,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +66,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.capitalize
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,21 +74,24 @@ import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import com.shinku.reader.presentation.components.DropdownMenu
-import com.shinku.reader.presentation.manga.components.MangaCover
-import com.shinku.reader.presentation.theme.TachiyomiPreviewTheme
 import com.shinku.reader.data.track.model.TrackSearch
-import com.shinku.reader.util.system.openInBrowser
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.components.DropdownMenu
 import com.shinku.reader.presentation.core.components.ScrollbarLazyColumn
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.EmptyScreen
 import com.shinku.reader.presentation.core.screens.LoadingScreen
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.util.plus
 import com.shinku.reader.presentation.core.util.runOnEnterKeyPressed
 import com.shinku.reader.presentation.core.util.secondaryItemAlpha
+import com.shinku.reader.presentation.manga.components.MangaCover
+import com.shinku.reader.presentation.theme.TachiyomiPreviewTheme
+import com.shinku.reader.util.system.openInBrowser
 
 @Composable
 fun TrackerSearch(
@@ -166,29 +175,48 @@ fun TrackerSearch(
                 enter = fadeIn() + slideInVertically { it / 2 },
                 exit = slideOutVertically { it / 2 } + fadeOut(),
             ) {
-                Row(
-                    modifier = Modifier
-                        .padding(MaterialTheme.padding.small)
-                        .windowInsetsPadding(WindowInsets.navigationBars)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                    border = SanctuaryBrushes.subtleBorder(),
                 ) {
-                    Button(
-                        onClick = { onConfirmSelection(false) },
-                        modifier = Modifier.weight(1f),
-                        elevation = ButtonDefaults.elevatedButtonElevation(),
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 10.dp)
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(text = stringResource(MR.strings.action_track))
-                    }
-                    if (supportsPrivateTracking) {
                         Button(
-                            onClick = { onConfirmSelection(true) },
+                            onClick = { onConfirmSelection(false) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp),
+                            shape = SanctuaryShapes.medium,
                             elevation = ButtonDefaults.elevatedButtonElevation(),
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.VisibilityOff,
-                                contentDescription = stringResource(MR.strings.action_toggle_private_on),
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp).padding(end = 4.dp),
                             )
+                            Text(
+                                text = stringResource(MR.strings.action_track),
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        if (supportsPrivateTracking) {
+                            Button(
+                                onClick = { onConfirmSelection(true) },
+                                shape = SanctuaryShapes.medium,
+                                modifier = Modifier.heightIn(min = 48.dp),
+                                elevation = ButtonDefaults.elevatedButtonElevation(),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.VisibilityOff,
+                                    contentDescription = stringResource(MR.strings.action_toggle_private_on),
+                                )
+                            }
                         }
                     }
                 }
@@ -245,39 +273,42 @@ private fun SearchResultItem(
     val type = trackSearch.publishing_type.toLowerCase(Locale.current).capitalize(Locale.current)
     val status = trackSearch.publishing_status.toLowerCase(Locale.current).capitalize(Locale.current)
     val description = trackSearch.summary.trim()
-    val shape = RoundedCornerShape(16.dp)
-    val borderColor = if (selected) MaterialTheme.colorScheme.outline else Color.Transparent
+    val shape = SanctuaryShapes.deckCard
+    val border = if (selected) {
+        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+    } else {
+        SanctuaryBrushes.subtleBorder()
+    }
     var dropDownMenuExpanded by remember { mutableStateOf(false) }
-    Box(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .border(
-                width = 2.dp,
-                color = borderColor,
-                shape = shape,
-            )
             .combinedClickable(
                 onLongClick = { dropDownMenuExpanded = true },
                 onClick = {
                     focusManager.clearFocus()
                     onClick()
                 },
-            )
-            .padding(12.dp),
+            ),
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(
+            if (selected) SanctuaryElevation.card else SanctuaryElevation.subtle,
+        ),
+        border = border,
     ) {
-        if (selected) {
-            Icon(
-                imageVector = Icons.Filled.CheckCircle,
-                contentDescription = null,
-                modifier = Modifier.align(Alignment.TopEnd),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Column {
-            Row {
+        Box(modifier = Modifier.padding(12.dp)) {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Column {
+                Row {
                 MangaCover.Book(
                     data = trackSearch.cover_url,
                     modifier = Modifier.height(96.dp),
@@ -287,7 +318,7 @@ private fun SearchResultItem(
                     Text(
                         text = trackSearch.title,
                         modifier = Modifier.padding(end = 28.dp),
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleMedium,
                     )
@@ -352,6 +383,7 @@ private fun SearchResultItem(
             }
         }
     }
+}
 }
 
 @Composable

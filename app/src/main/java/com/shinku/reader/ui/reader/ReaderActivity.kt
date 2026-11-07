@@ -11,6 +11,7 @@ import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -23,42 +24,38 @@ import android.view.View
 import android.view.View.LAYER_TYPE_HARDWARE
 import android.view.WindowManager
 import android.widget.Toast
-import com.shinku.reader.core.common.util.system.ImageUtil
 import androidx.activity.enableEdgeToEdge
-import org.koin.androidx.viewmodel.ext.android.viewModel
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.surfaceColorAtElevation
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.zIndex
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Translate
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -69,8 +66,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.content.getSystemService
 import androidx.core.graphics.Insets
 import androidx.core.net.toUri
@@ -84,8 +83,30 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.hippo.unifile.UniFile
+import com.shinku.reader.R
+import com.shinku.reader.core.common.Constants
+import com.shinku.reader.core.common.i18n.pluralStringResource
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.lang.launchNonCancellable
+import com.shinku.reader.core.common.util.lang.withUIContext
+import com.shinku.reader.core.common.util.system.HapticGenerator
+import com.shinku.reader.core.common.util.system.ImageUtil
+import com.shinku.reader.core.common.util.system.logcat
+import com.shinku.reader.data.coil.TachiyomiImageDecoder
+import com.shinku.reader.data.notification.NotificationReceiver
+import com.shinku.reader.data.notification.Notifications
+import com.shinku.reader.databinding.ReaderActivityBinding
 import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.domain.manga.model.readingMode
+import com.shinku.reader.domain.source.service.SourceManager
+import com.shinku.reader.exh.source.isEhBasedSource
+import com.shinku.reader.exh.ui.ifSourcesLoaded
+import com.shinku.reader.exh.util.defaultReaderType
+import com.shinku.reader.exh.util.mangaType
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.reader.ChapterListDialog
 import com.shinku.reader.presentation.reader.DisplayRefreshHost
 import com.shinku.reader.presentation.reader.OrientationSelectDialog
@@ -98,13 +119,8 @@ import com.shinku.reader.presentation.reader.ReadingModeSelectDialog
 import com.shinku.reader.presentation.reader.appbars.NavBarType
 import com.shinku.reader.presentation.reader.appbars.ReaderAppBars
 import com.shinku.reader.presentation.reader.settings.ReaderSettingsDialog
-import com.shinku.reader.R
-import com.shinku.reader.data.coil.TachiyomiImageDecoder
-import com.shinku.reader.data.notification.NotificationReceiver
-import com.shinku.reader.data.notification.Notifications
-import com.shinku.reader.databinding.ReaderActivityBinding
-import eu.kanade.tachiyomi.source.model.Page
-import eu.kanade.tachiyomi.source.online.HttpSource
+import com.shinku.reader.presentation.theme.DynamicThemeProvider
+import com.shinku.reader.presentation.util.isTabletUi
 import com.shinku.reader.ui.base.activity.BaseActivity
 import com.shinku.reader.ui.main.MainActivity
 import com.shinku.reader.ui.reader.ReaderViewModel.SetAsCoverResult.AddToLibraryFirst
@@ -123,20 +139,15 @@ import com.shinku.reader.ui.reader.viewer.pager.PagerConfig
 import com.shinku.reader.ui.reader.viewer.pager.PagerViewer
 import com.shinku.reader.ui.reader.viewer.pager.VerticalPagerViewer
 import com.shinku.reader.ui.reader.viewer.webtoon.WebtoonViewer
-import com.shinku.reader.presentation.theme.DynamicThemeProvider
-import com.shinku.reader.presentation.util.isTabletUi
 import com.shinku.reader.ui.webview.WebViewActivity
-import android.graphics.drawable.ColorDrawable
 import com.shinku.reader.util.system.isNightMode
 import com.shinku.reader.util.system.openInBrowser
 import com.shinku.reader.util.system.setHighRefreshRate
 import com.shinku.reader.util.system.toShareIntent
 import com.shinku.reader.util.system.toast
 import com.shinku.reader.util.view.setComposeContent
-import com.shinku.reader.exh.source.isEhBasedSource
-import com.shinku.reader.exh.ui.ifSourcesLoaded
-import com.shinku.reader.exh.util.defaultReaderType
-import com.shinku.reader.exh.util.mangaType
+import eu.kanade.tachiyomi.source.model.Page
+import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
@@ -152,18 +163,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import com.shinku.reader.core.common.Constants
-import com.shinku.reader.core.common.i18n.pluralStringResource
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.core.common.util.lang.launchNonCancellable
-import com.shinku.reader.core.common.util.lang.withUIContext
-import com.shinku.reader.core.common.util.system.HapticGenerator
-import com.shinku.reader.core.common.util.system.logcat
-import com.shinku.reader.domain.source.service.SourceManager
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.util.collectAsState
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.ByteArrayOutputStream
@@ -429,7 +429,7 @@ class ReaderActivity : BaseActivity() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .alpha(if (zenMode && !state.menuVisible) 0f else 1f)
+                    .alpha(if (zenMode && !state.menuVisible) 0f else 1f),
             ) {
                 AppBars(
                     state = state,
@@ -512,6 +512,31 @@ class ReaderActivity : BaseActivity() {
                     onShowMenus = { setMenuVisibility(true) },
                     onHideMenus = { setMenuVisibility(false) },
                     screenModel = settingsScreenModel,
+                    translationContent = {
+                        val targetLang = remember { shinkuPreferences.translationTargetLanguage().get() }
+                        val chapterId = state.currentChapter?.chapter?.id ?: 0L
+                        val hasCached by androidx.compose.runtime.produceState(false, chapterId, targetLang) {
+                            value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
+                            }
+                        }
+                        val activePageBlocks = state.activePage?.translationBlocks?.size ?: 0
+                        com.shinku.reader.presentation.reader.dialog.TranslationOptionsContent(
+                            totalPages = state.totalPages,
+                            targetLanguage = targetLang,
+                            hasCachedTranslations = hasCached,
+                            isOverlayVisible = state.currentChapter?.pages?.any { it.showTranslation } == true,
+                            currentPageBlockCount = activePageBlocks,
+                            onDismissRequest = onDismissRequest,
+                            onToggleOverlay = { viewModel.toggleTranslation() },
+                            onTranslateCurrentPage = { viewModel.onTranslation() },
+                            onRetranslateCurrentPage = { viewModel.retranslateCurrentPage() },
+                            onInspectBubbles = { viewModel.openBubbleInspector() },
+                            onTranslateEntireChapter = { viewModel.startBatchChapterTranslation() },
+                            onChangeLanguages = { viewModel.openTranslationLanguageSelectDialog() },
+                            onClearTranslations = { viewModel.clearChapterTranslation(chapterId) },
+                        )
+                    },
                 )
             }
 
@@ -587,8 +612,10 @@ class ReaderActivity : BaseActivity() {
             is ReaderViewModel.Dialog.TranslationOptions -> {
                 val targetLang = remember { shinkuPreferences.translationTargetLanguage().get() }
                 val chapterId = state.currentChapter?.chapter?.id ?: 0L
-                val hasCached = remember(chapterId, targetLang) {
-                    com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
+                val hasCached by androidx.compose.runtime.produceState(false, chapterId, targetLang) {
+                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
+                    }
                 }
                 val activePageBlocks = state.activePage?.translationBlocks?.size ?: 0
                 com.shinku.reader.presentation.reader.dialog.TranslationOptionsDialog(
@@ -818,6 +845,9 @@ class ReaderActivity : BaseActivity() {
                         }.toImmutableList()
                     },
                     dateRelativeTime = state.dateRelativeTime,
+                    currentPage = state.currentPage,
+                    totalPages = state.totalPages,
+                    onClickPage = ::moveToPageIndex,
                 )
             }
             // SY -->
@@ -1552,7 +1582,7 @@ class ReaderActivity : BaseActivity() {
         val width = view.width
         val height = view.height
         if (width <= 0 || height <= 0) {
-            logcat(LogPriority.WARN) { "captureViewerSnapshotAsync: viewerContainer size is invalid (${width}x${height})" }
+            logcat(LogPriority.WARN) { "captureViewerSnapshotAsync: viewerContainer size is invalid (${width}x$height)" }
             onComplete(null)
             return
         }
@@ -1603,7 +1633,7 @@ class ReaderActivity : BaseActivity() {
             val width = view.width
             val height = view.height
             if (width <= 0 || height <= 0) {
-                logcat(LogPriority.WARN) { "captureViewerSnapshotSoftware: viewerContainer size is invalid (${width}x${height})" }
+                logcat(LogPriority.WARN) { "captureViewerSnapshotSoftware: viewerContainer size is invalid (${width}x$height)" }
                 return null
             }
 

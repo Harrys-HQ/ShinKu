@@ -1,0 +1,1298 @@
+{
+  "rapid": {
+    "scope": "real-source catalogue calls; excludes database mapping, images, AI, saved feeds and UI rendering",
+    "installedVersion": "2.8.0",
+    "eligibleSources": 7,
+    "sampledSources": 2,
+    "topCalls": 6,
+    "genreCalls": 6,
+    "runs": [
+      {
+        "mode": "old",
+        "page": 1,
+        "firstResponseMs": 738,
+        "topSourcesMs": 1472,
+        "allSourcesMs": 2181,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 12,
+        "failures": 0,
+        "returnedItems": 242,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 1
+      },
+      {
+        "mode": "new",
+        "page": 1,
+        "firstResponseMs": 262,
+        "topSourcesMs": 965,
+        "allSourcesMs": 1884,
+        "peakRequests": 4,
+        "peakPerSource": 2,
+        "successes": 9,
+        "failures": 3,
+        "returnedItems": 170,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          }
+        ],
+        "run": 2
+      },
+      {
+        "mode": "new",
+        "page": 2,
+        "firstResponseMs": 375,
+        "topSourcesMs": 963,
+        "allSourcesMs": 1801,
+        "peakRequests": 4,
+        "peakPerSource": 2,
+        "successes": 8,
+        "failures": 4,
+        "returnedItems": 144,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          }
+        ],
+        "run": 3
+      },
+      {
+        "mode": "old",
+        "page": 2,
+        "firstResponseMs": 144,
+        "topSourcesMs": 756,
+        "allSourcesMs": 1279,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 8,
+        "failures": 4,
+        "returnedItems": 144,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          }
+        ],
+        "run": 4
+      },
+      {
+        "mode": "new",
+        "page": 1,
+        "firstResponseMs": 166,
+        "topSourcesMs": 950,
+        "allSourcesMs": 1797,
+        "peakRequests": 4,
+        "peakPerSource": 2,
+        "successes": 12,
+        "failures": 0,
+        "returnedItems": 242,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 5
+      },
+      {
+        "mode": "old",
+        "page": 1,
+        "firstResponseMs": 219,
+        "topSourcesMs": 734,
+        "allSourcesMs": 1258,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 10,
+        "failures": 2,
+        "returnedItems": 194,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 6
+      },
+      {
+        "mode": "old",
+        "page": 2,
+        "firstResponseMs": 273,
+        "topSourcesMs": 755,
+        "allSourcesMs": 1256,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 8,
+        "failures": 4,
+        "returnedItems": 144,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          }
+        ],
+        "run": 7
+      },
+      {
+        "mode": "new",
+        "page": 2,
+        "firstResponseMs": 282,
+        "topSourcesMs": 972,
+        "allSourcesMs": 1883,
+        "peakRequests": 4,
+        "peakPerSource": 2,
+        "successes": 8,
+        "failures": 4,
+        "returnedItems": 144,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HttpException"
+          }
+        ],
+        "run": 8
+      }
+    ]
+  },
+  "spaced": {
+    "scope": "real-source catalogue calls; excludes database mapping, images, AI, saved feeds and UI rendering",
+    "installedVersion": "2.8.0",
+    "eligibleSources": 7,
+    "sampledSources": 2,
+    "topCalls": 6,
+    "genreCalls": 6,
+    "gapMs": 10000,
+    "runs": [
+      {
+        "mode": "old",
+        "page": 1,
+        "firstResponseMs": 454,
+        "topSourcesMs": 1158,
+        "allSourcesMs": 1679,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 12,
+        "failures": 0,
+        "returnedItems": 242,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 1
+      },
+      {
+        "mode": "new",
+        "page": 1,
+        "firstResponseMs": 272,
+        "topSourcesMs": 1667,
+        "allSourcesMs": 2547,
+        "peakRequests": 4,
+        "peakPerSource": 2,
+        "successes": 12,
+        "failures": 0,
+        "returnedItems": 242,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 2
+      },
+      {
+        "mode": "six_three",
+        "page": 1,
+        "firstResponseMs": 212,
+        "topSourcesMs": 792,
+        "allSourcesMs": 1307,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 12,
+        "failures": 0,
+        "returnedItems": 242,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 3
+      },
+      {
+        "mode": "new",
+        "page": 1,
+        "firstResponseMs": 278,
+        "topSourcesMs": 906,
+        "allSourcesMs": 1876,
+        "peakRequests": 4,
+        "peakPerSource": 2,
+        "successes": 11,
+        "failures": 1,
+        "returnedItems": 218,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HTTP_429"
+          }
+        ],
+        "run": 4
+      },
+      {
+        "mode": "six_three",
+        "page": 1,
+        "firstResponseMs": 251,
+        "topSourcesMs": 907,
+        "allSourcesMs": 1470,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 12,
+        "failures": 0,
+        "returnedItems": 242,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 5
+      },
+      {
+        "mode": "old",
+        "page": 1,
+        "firstResponseMs": 251,
+        "topSourcesMs": 1044,
+        "allSourcesMs": 1561,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 12,
+        "failures": 0,
+        "returnedItems": 242,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 6
+      },
+      {
+        "mode": "six_three",
+        "page": 1,
+        "firstResponseMs": 171,
+        "topSourcesMs": 722,
+        "allSourcesMs": 1316,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 12,
+        "failures": 0,
+        "returnedItems": 242,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 7
+      },
+      {
+        "mode": "old",
+        "page": 1,
+        "firstResponseMs": 175,
+        "topSourcesMs": 663,
+        "allSourcesMs": 1169,
+        "peakRequests": 6,
+        "peakPerSource": 3,
+        "successes": 12,
+        "failures": 0,
+        "returnedItems": 242,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          }
+        ],
+        "run": 8
+      },
+      {
+        "mode": "new",
+        "page": 1,
+        "firstResponseMs": 162,
+        "topSourcesMs": 1008,
+        "allSourcesMs": 2001,
+        "peakRequests": 4,
+        "peakPerSource": 2,
+        "successes": 10,
+        "failures": 2,
+        "returnedItems": 194,
+        "calls": [
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "popular",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "latest",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "behavior",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 24,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": 2,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HTTP_429"
+          },
+          {
+            "kind": "genre",
+            "count": 0,
+            "outcome": "ok"
+          },
+          {
+            "kind": "genre",
+            "count": -1,
+            "outcome": "HTTP_429"
+          }
+        ],
+        "run": 9
+      }
+    ]
+  }
+}

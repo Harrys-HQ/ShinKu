@@ -72,6 +72,7 @@ fun ExtensionReposScreen(
                 PaddingValues(horizontal = MaterialTheme.padding.medium),
             onOpenWebsite = onOpenWebsite,
             onClickDelete = onClickDelete,
+            onClickCreate = onClickCreate,
         )
     }
 }

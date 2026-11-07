@@ -1,12 +1,10 @@
 import com.shinku.reader.data.cache.ChapterTranslationCache
 import com.shinku.reader.data.cache.SerializedRect
 import com.shinku.reader.data.cache.SerializedTranslatedBlock
-import com.shinku.reader.ui.reader.model.TranslatedBlock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 
 class TranslationCacheTest {
@@ -28,28 +26,25 @@ class TranslationCacheTest {
         assertEquals(150, decoded.right)
         assertEquals(200, decoded.bottom)
 
-        val androidRect = decoded.toAndroidRect()
-        assertEquals(10, androidRect.left)
-        assertEquals(200, androidRect.bottom)
+        assertEquals(rect, decoded)
     }
 
     @Test
-    fun verifySerializedTranslatedBlockConversion() {
-        val originalBlock = TranslatedBlock(
+    fun verifySerializedTranslatedBlockRoundtrip() {
+        val originalBlock = SerializedTranslatedBlock(
             originalText = "こんにちは",
             translatedText = "Hello",
-            boundingBox = android.graphics.Rect(50, 60, 200, 180),
-            bubbleRect = android.graphics.Rect(40, 50, 220, 190),
+            boundingBox = SerializedRect(50, 60, 200, 180),
+            bubbleRect = SerializedRect(40, 50, 220, 190),
             sourceWidth = 1080,
             sourceHeight = 1920,
             bgColor = -1, // Color.WHITE
             textColor = -16777216, // Color.BLACK
         )
 
-        val serialized = SerializedTranslatedBlock.from(originalBlock)
-        val encoded = json.encodeToString(serialized)
+        val encoded = json.encodeToString(originalBlock)
         val decoded = json.decodeFromString<SerializedTranslatedBlock>(encoded)
-        val restoredBlock = decoded.toTranslatedBlock()
+        val restoredBlock = decoded
 
         assertEquals("こんにちは", restoredBlock.originalText)
         assertEquals("Hello", restoredBlock.translatedText)
@@ -58,13 +53,12 @@ class TranslationCacheTest {
         assertEquals(-1, restoredBlock.bgColor)
         assertEquals(-16777216, restoredBlock.textColor)
 
-        assertNotNull(restoredBlock.boundingBox)
         assertEquals(50, restoredBlock.boundingBox?.left)
         assertEquals(180, restoredBlock.boundingBox?.bottom)
 
-        assertNotNull(restoredBlock.bubbleRect)
         assertEquals(40, restoredBlock.bubbleRect?.left)
         assertEquals(190, restoredBlock.bubbleRect?.bottom)
+        assertEquals(originalBlock, restoredBlock)
     }
 
     @Test

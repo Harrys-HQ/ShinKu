@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,8 +37,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.domain.chapter.model.Chapter
 import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
 import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
@@ -113,15 +116,15 @@ private fun HeroJumpBackCardCompact(
             ) {
                 Box(
                     modifier = Modifier
-                        .width(60.dp)
-                        .height(86.dp)
-                        .clip(SanctuaryShapes.pill)
-                        .shadow(SanctuaryElevation.subtle, SanctuaryShapes.pill),
+                        .width(64.dp)
+                        .height(96.dp)
+                        .clip(SanctuaryShapes.medium)
+                        .shadow(SanctuaryElevation.subtle, SanctuaryShapes.medium),
                 ) {
                     MangaCover.Book(
                         data = manga,
                         contentDescription = manga.title,
-                        shape = SanctuaryShapes.pill,
+                        shape = SanctuaryShapes.medium,
                     )
                 }
 
@@ -137,7 +140,7 @@ private fun HeroJumpBackCardCompact(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         SanctuaryOverlineBadge(
-                            text = "JUMP BACK IN",
+                            text = stringResource(MR.strings.library_continue_reading),
                             compact = true,
                         )
 
@@ -169,10 +172,10 @@ private fun HeroJumpBackCardCompact(
 
                     Text(
                         text = manga.title,
-                        style = MaterialTheme.typography.bodyMedium.copy(
+                        style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,
                         ),
-                        maxLines = 1,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -180,26 +183,26 @@ private fun HeroJumpBackCardCompact(
                     Text(
                         text = formatChapterText(chapter),
                         style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     Spacer(modifier = Modifier.height(MaterialTheme.padding.small))
 
-                    Row(
+                    FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         FilledTonalButton(
                             onClick = onClickContinue,
-                            shape = SanctuaryShapes.pill,
+                            shape = SanctuaryShapes.medium,
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
                             ),
-                            modifier = Modifier.heightIn(min = 36.dp),
+                            modifier = Modifier.heightIn(min = 48.dp),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
@@ -208,7 +211,7 @@ private fun HeroJumpBackCardCompact(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Resume",
+                                text = stringResource(MR.strings.action_resume),
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = FontWeight.Bold,
                                 ),
@@ -217,15 +220,17 @@ private fun HeroJumpBackCardCompact(
 
                         OutlinedButton(
                             onClick = onClickDetails,
-                            shape = SanctuaryShapes.pill,
+                            shape = SanctuaryShapes.medium,
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                            modifier = Modifier.heightIn(min = 36.dp),
+                            modifier = Modifier.heightIn(min = 48.dp),
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.AutoStories,
-                                contentDescription = "Details",
+                                contentDescription = null,
                                 modifier = Modifier.size(15.dp),
                             )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(stringResource(MR.strings.library_open_details), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }

@@ -41,8 +41,8 @@ android {
 
         setProperty("archivesBaseName", "ShinKu")
 
-        versionCode = 143
-        versionName = "2.8.1-preview.1"
+        versionCode = 144
+        versionName = "2.8.1"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -82,16 +82,15 @@ android {
         }
         create("releaseTest") {
             applicationIdSuffix = ".rt"
-            // isMinifyEnabled = true
-            // isShrinkResources = true
+            isMinifyEnabled = true
+            isShrinkResources = true
             setProguardFiles(listOf(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"))
             matchingFallbacks.add("release")
         }
-        val enableMinify = project.findProperty("enableMinify")?.toString()?.toBoolean() ?: false
         named("release") {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = enableMinify
-            isShrinkResources = enableMinify
+            isMinifyEnabled = true
+            isShrinkResources = true
             setProguardFiles(listOf(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"))
 
             buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = true)}\"")
@@ -156,7 +155,7 @@ android {
 
     lint {
         abortOnError = true
-        checkReleaseBuilds = project.findProperty("lintVital")?.toString()?.toBoolean() ?: false
+        checkReleaseBuilds = true
     }
 }
 
@@ -189,6 +188,7 @@ dependencies {
     implementation(projects.sourceLocal)
     implementation(projects.data)
     implementation(projects.domain)
+    implementation(libs.haze)
     implementation(projects.presentationCore)
     implementation(projects.presentationWidget)
 
@@ -306,6 +306,8 @@ dependencies {
     // Tests
     testImplementation(libs.bundles.test)
     testRuntimeOnly(libs.junit.platform.launcher)
+    androidTestImplementation(libs.test.ext)
+    androidTestImplementation(libs.test.runner)
 
     // For detecting memory leaks; see https://square.github.io/leakcanary/
     // debugImplementation(libs.leakcanary.android)

@@ -1,0 +1,68 @@
+ShinKu inner-experience concept, generated 2026-11-03 using the built-in image_gen tool.
+Output: shinku-inner-experience-mockup-v1.png
+Reference: docs/design/shinku-phase1-mockup-v1.png
+Concept for review; no UI implementation or provider connection is implied.
+Transparent background: false.
+
+Generation prompt:
+
+Use case: ui-mockup.
+Create one polished high-resolution image presenting THREE INNER-SCREEN CONCEPTS for the ShinKu Android manga reader. Use the supplied design board as the visual style reference. This is a continuation of the Sanctuary direction the owner likes, not a new brand. Preserve the exact charcoal-black, muted lavender/periwinkle, soft violet-gray surfaces, warm-white text, slim line icons, gently rounded cards, thin borders, spacing rhythm and restrained depth of that reference.
+
+COMPOSITION:
+Landscape 3:2 design-review board, three large equal-size portrait Android screens side by side, straight-on with thin rounded frames. Make the interfaces large and the text exceptionally crisp and readable when zoomed. No perspective, hands, scenery or marketing art. Same dark neutral canvas as the reference. Top heading "ShinKu · Inner experience". Small subtitle "Concept — focused settings & reader controls". Labels BELOW the devices: "ShinKu settings", "AI & translation", "Reader controls". Small bottom captions respectively "Find the right setting", "Know what is configured", "Keep reading in focus". Each phone has consistent realistic Android status and gesture bars. These are hierarchical inner screens: NO home navigation dock on any of these three screens.
+
+LEFT PHONE / SHINKU SETTINGS HUB:
+Top app bar: back arrow and readable title "ShinKu settings".
+A clean search field "Search ShinKu settings" with search icon.
+Small understated label "PERSONALIZE YOUR EXPERIENCE".
+Four comfortable, generously padded rounded navigation cards, vertically stacked; each has a lavender-tinted icon tile on the left, a readable bold title, one or two lines of secondary text and a chevron on the right:
+1. "AI & translation" / "Providers, languages & overlays"
+2. "Reading & appearance" / "Themes, gestures & immersion"
+3. "Performance" / "Refresh rate, loading & power"
+4. "Maintenance" / "Source health, migration & storage"
+Keep every title and subtitle readable without ellipses; allow natural wrapping.
+Below a subtle divider, a quieter collapsed row "Advanced tools" with a down chevron, indicating less common settings are still available.
+A small low-emphasis footer "Changes save automatically".
+Purpose: replace an overwhelming long settings list with four clear paths while preserving search and access to advanced settings. Do not add duplicated quick toggles, a Save button, promotions or extra features.
+
+MIDDLE PHONE / AI & TRANSLATION SUBPAGE:
+Top bar back arrow and title "AI & translation".
+A small neutral introductory status card labeled "Cloud AI", with status pill "Not tested" and secondary copy "Check your provider connection". This is an illustrative unverified state: do NOT show Connected, an invented model capability result or successful server verification.
+Section heading "Provider".
+One rounded group of compact preference rows:
+"Provider" with value "Google Gemini" and dropdown chevron.
+"Model" with value "Automatic" and dropdown chevron.
+"API key" with a clearly MASKED placeholder of bullets and an eye icon. No actual or plausible credential string, no visible secret.
+A full-width outlined action "Test connection", comfortably sized.
+A small calm explanatory line "Cloud features use your selected provider."
+Section heading "Translation".
+A rounded group:
+"Translation engine" / value "Automatic" / chevron.
+"Source language" / value "Auto-detect" / chevron.
+"Target language" / value "English" / chevron.
+Then two spacious toggle rows, both OFF:
+"Live translation" / "Translate pages while reading"
+"Translate chapters on open" / "Start a full chapter automatically"
+Use full wrapping labels, not truncation.
+A final compact navigation row "Offline language packs" / "Download for offline translation" with download icon and chevron.
+All these rows fit the phone naturally; retain generous touch areas, clear separators and a small safe area above the gesture bar. No giant empty card, redundant hero, test latency, subscription price or invented provider availability. Do not add a save button.
+
+RIGHT PHONE / READER CONTROLS:
+An immersive manga reading view behind the controls. Top of the screen has a modest translucent reader bar, back arrow, "Chapter 111" and an overflow icon. The exposed upper portion shows a tasteful generic black-and-white manga panel as contextual sample artwork, with a clean page area; avoid dense or garbled dialogue text.
+A dark rounded-top bottom sheet occupies approximately the lower two-thirds of the display, sitting over a softly dimmed manga page. Keep enough of the page visible to communicate context.
+At top of the sheet: a short drag handle; title "Reader controls"; close X.
+A three-tab strip "Reading", "Display", "Translation", with Reading selected in lavender. All three tabs readable, equal weight.
+Within the Reading tab, use familiar compact rounded preference groups:
+"Reading mode" with value "Webtoon" and a dropdown chevron.
+"Rotation" with value "Follow device" and a dropdown chevron.
+"Tap zones" with secondary text "Preview gestures" and chevron.
+"Page preload" with value "5 pages" and a simple understated slider.
+"Keep screen on" with secondary text "While the reader is open" and an ON toggle.
+A quieter row "More reader settings" with chevron, retaining access to advanced existing settings.
+At the bottom of the sheet, small text "Changes apply immediately", followed by a clear full-width lavender "Done" button that dismisses the sheet. Keep the button and gesture bar in a dedicated safe area.
+Purpose: common reading controls stay reachable and the comic remains in context. Display contains visual adjustments and Translation contains existing page/chapter translation actions; do not show unrelated controls as if these are enabled in the selected Reading tab.
+
+GENERAL CONSTRAINTS:
+A faithful, plausible Android UI concept, grounded in existing ShinKu capabilities. Follow the reference typography and surfaces closely. Clear hierarchy, consistent leading icons, readable preference values, accessible-looking contrast and generous touch areas. No tiny illegible dense text, arbitrary color changes, clipped labels, horizontal overflow, home navigation inside subpages, pricing, paywalls, new AI chat feature or invented performance promises. This is a visual concept for review, not an actual running screenshot.
+

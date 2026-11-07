@@ -1,22 +1,22 @@
 package com.shinku.reader.domain.source.interactor
 
-import eu.kanade.tachiyomi.network.NetworkHelper
+import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.exh.source.ShinKuPreferences
+import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import com.shinku.reader.core.common.util.lang.withIOContext
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
 class GeminiVibeSearch(
     private val networkHelper: NetworkHelper,
 ) {
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
     private val shinkuPreferences: ShinKuPreferences = Injekt.get()
     private val aiEngineRegistry: com.shinku.reader.domain.ai.AiEngineRegistry = Injekt.get()
 
@@ -208,7 +208,7 @@ class GeminiVibeSearch(
             Input:
             $blocksJson
         """.trimIndent()
-        
+
         val resultText = callGeminiForText(prompt, apiKey, model)
         if (resultText.startsWith("Error:")) {
             throw Exception(resultText)
@@ -283,18 +283,18 @@ class GeminiVibeSearch(
             if (!shinkuPreferences.isAiConfigured() && apiKey.isBlank()) return@withIOContext null
             try {
                 val prompt = """
-                    You are a manga librarian. Based on the title "$title" and description "$currentDescription", 
+                    You are a manga librarian. Based on the title "$title" and description "$currentDescription",
                     provide an enriched version of the metadata.
-                    
+
                     Return ONLY a JSON object with:
                     1. "description": A high-quality, professional, and engaging summary in English.
                     2. "genres": A list of relevant genre tags (e.g., ["Action", "Psychological"]).
                     3. "tags": A list of specific content tags (e.g., ["Time Travel", "Gore", "Romance"]).
-                    
+
                     JSON format:
                     {"description": "...", "genres": ["...", "..."], "tags": ["...", "..."]}
                 """.trimIndent()
-                
+
                 val text = callGeminiForText(prompt, apiKey, model)
                 val start = text.indexOf("{")
                 val end = text.lastIndexOf("}") + 1
@@ -314,17 +314,17 @@ class GeminiVibeSearch(
         historyTitles: List<String>,
         topGenres: List<String>,
         apiKey: String,
-        model: String
+        model: String,
     ): List<String> {
         val prompt = """
             You are a manga discovery expert. Based on my recent reading history and favorite genres, suggest 10 real manga titles I might enjoy.
-            
+
             My recent titles: ${historyTitles.joinToString(", ")}
             My favorite genres: ${topGenres.joinToString(", ")}
-            
+
             Return ONLY a JSON array of strings containing the suggested titles.
         """.trimIndent()
-        
+
         return withIOContext {
             try {
                 callGemini(prompt, apiKey, model)
@@ -377,7 +377,7 @@ class GeminiVibeSearch(
             appendLine("4. Spoilers are allowed ONLY up to the specified chapters (do not spoil events after these chapters).")
             appendLine("5. Focus on the main narrative progress, key characters, and major turning points.")
         }
-        
+
         val result = callGeminiForText(prompt, apiKey, model)
         if (!result.startsWith("Error:")) {
             recapCache[cacheKey] = result
@@ -392,222 +392,60 @@ class GeminiVibeSearch(
         val tags: List<String> = emptyList(),
     )
 
-    suspend fun searchByImage(base64Image: String, apiKey: String, model: String): List<String> {
-        val resolvedModel = resolveModel(model)
-        val modelsToTry = listOf(
-            resolvedModel,
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-        ).distinct()
-        
-        val bodyJson = """
-            {
-              "contents": [{
-                "parts":[
-                  {"text": "Identify the manga in this image. Return ONLY a JSON array of up to 5 real manga titles that match this image or its style."},
-                  {"inline_data": {
-                    "mime_type":"image/jpeg",
-                    "data": "$base64Image"
-                  }}
-                ]
-              }]
-            }
-        """.trimIndent()
-
-        return withIOContext {
-            for (m in modelsToTry) {
-                try {
-                    val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$apiKey"
-                    val request = Request.Builder()
-                        .url(url)
-                        .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                        .build()
-
-                    networkHelper.client.newCall(request).execute().use { response ->
-                        if (response.code in listOf(429, 404, 503)) return@use
-                        if (!response.isSuccessful) return@withIOContext emptyList()
-                        val responseBody = response.body.string()
-                        val result = json.parseToJsonElement(responseBody)
-                        val text = result.jsonObject["candidates"]!!
-                            .jsonArray[0].jsonObject["content"]!!
-                            .jsonObject["parts"]!!
-                            .jsonArray[0].jsonObject["text"]!!
-                            .jsonPrimitive.content
-
-                        val start = text.indexOf("[")
-                        val end = text.lastIndexOf("]") + 1
-                        if (start != -1 && end > start) {
-                            val jsonArray = text.substring(start, end)
-                            return@withIOContext json.decodeFromString<List<String>>(jsonArray)
-                        } else {
-                            return@withIOContext emptyList()
-                        }
-                    }
-                } catch (_: Exception) {
-                }
-            }
+    suspend fun searchByImage(base64Image: String, apiKey: String, model: String): List<String> = withIOContext {
+        try {
+            val response = com.shinku.reader.domain.ai.GeminiApi(networkHelper.client).generateImageText(
+                "Identify the manga in this image. Return ONLY a JSON array of up to 5 real manga titles that match this image or its style.",
+                base64Image, apiKey, model,
+            )
+            parseTitles(response.text)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
             emptyList()
         }
     }
 
-    private suspend fun callGeminiForText(prompt: String, apiKey: String, model: String): String {
-        return withIOContext {
-            val activeEngine = aiEngineRegistry.getActiveEngine()
-            if (activeEngine.id == "openai_compatible" && activeEngine.isAvailable) {
-                val res = activeEngine.generateText(prompt)
-                if (res.isSuccess) {
-                    return@withIOContext res.getOrThrow()
-                } else if (apiKey.isBlank()) {
-                    return@withIOContext "Error: ${res.exceptionOrNull()?.message ?: "Unknown error"}"
-                }
-            }
-
-            val key = apiKey.trim()
-            if (key.isBlank()) return@withIOContext "API Key not set"
-
-            val preferredModel = resolveModel(model)
-            val modelsToTry = listOf(
-                preferredModel,
-                "gemini-2.5-flash",
-                "gemini-2.0-flash",
-                "gemini-1.5-flash",
-            ).distinct()
-
-            var lastError = "Unknown error"
-            for (m in modelsToTry) {
-                try {
-                    val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$key"
-                    val bodyJson = """
-                        {
-                          "contents": [{
-                            "parts":[{"text": ${Json.encodeToString(prompt)}}]
-                          }]
-                        }
-                    """.trimIndent()
-
-                    val request = Request.Builder()
-                        .url(url)
-                        .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                        .build()
-
-                    networkHelper.client.newCall(request).execute().use { response ->
-                        val responseBody = response.body.string()
-                        if (response.code in listOf(400, 404, 429, 500, 503)) {
-                            lastError = "HTTP ${response.code}: $responseBody"
-                            return@use
-                        }
-                        if (!response.isSuccessful) {
-                            return@withIOContext "Error: API returned HTTP ${response.code}. Response: $responseBody"
-                        }
-                        val result = json.parseToJsonElement(responseBody)
-                        val candidates = result.jsonObject["candidates"]?.jsonArray
-                        if (candidates.isNullOrEmpty()) {
-                            val promptFeedback = result.jsonObject["promptFeedback"]
-                            return@withIOContext "Error: No candidates returned. Prompt feedback: $promptFeedback"
-                        }
-                        val parts = candidates[0].jsonObject["content"]?.jsonObject["parts"]?.jsonArray
-                        if (parts.isNullOrEmpty()) {
-                            return@withIOContext "Error: Content parts are empty."
-                        }
-                        val text = parts[0].jsonObject["text"]?.jsonPrimitive?.content
-                        if (text != null) {
-                            return@withIOContext text
-                        } else {
-                            return@withIOContext "Error: Text content is null."
-                        }
-                    }
-                } catch (e: Exception) {
-                    lastError = e.message ?: "Unknown exception"
-                }
-            }
-            "Error: $lastError"
+    private suspend fun callGeminiForText(prompt: String, apiKey: String, model: String): String = withIOContext {
+        val activeEngine = aiEngineRegistry.getActiveEngine()
+        if (activeEngine.id == "openai_compatible" && activeEngine.isAvailable) {
+            val result = activeEngine.generateText(prompt)
+            if (result.isSuccess) return@withIOContext result.getOrThrow()
+            if (apiKey.isBlank()) return@withIOContext "Error: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+        }
+        try {
+            com.shinku.reader.domain.ai.GeminiApi(networkHelper.client).generateText(prompt, apiKey, model).text
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            "Error: ${e.message ?: "Gemini request failed"}"
         }
     }
 
     private fun callGemini(query: String, apiKey: String, model: String): List<String> {
-        val activeEngine = aiEngineRegistry.getActiveEngine()
-        if (activeEngine.id == "openai_compatible" && activeEngine.isAvailable) {
-            val prompt = """
-                You are a manga discovery expert. Based on the following user description, provide a list of up to 10 real manga titles that match the "vibe".
-                User Description: "$query"
-                Return ONLY a JSON array of strings containing the titles. No extra text.
-                Example: ["Title 1", "Title 2"]
-            """.trimIndent()
-            val res = kotlinx.coroutines.runBlocking { activeEngine.generateTitles(prompt) }
-            if (res.isSuccess && res.getOrThrow().isNotEmpty()) {
-                return res.getOrThrow()
-            }
-        }
-
-        val key = apiKey.trim()
-        if (key.isBlank()) return emptyList()
-
-        val preferredModel = resolveModel(model)
-        val modelsToTry = listOf(
-            preferredModel,
-            "gemini-2.5-flash",
-            "gemini-2.0-flash",
-            "gemini-1.5-flash",
-        ).distinct()
-
         val prompt = """
             You are a manga discovery expert. Based on the following user description, provide a list of up to 10 real manga titles that match the "vibe".
             User Description: "$query"
             Return ONLY a JSON array of strings containing the titles. No extra text.
             Example: ["Title 1", "Title 2"]
         """.trimIndent()
-
-        val bodyJson = """
-            {
-              "contents": [{
-                "parts":[{"text": ${Json.encodeToString(prompt)}}]
-              }]
-            }
-        """.trimIndent()
-
-        for (m in modelsToTry) {
-            try {
-                val url = "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$key"
-                val request = Request.Builder()
-                    .url(url)
-                    .post(bodyJson.toRequestBody("application/json".toMediaType()))
-                    .build()
-
-                networkHelper.client.newCall(request).execute().use { response ->
-                    if (response.code in listOf(400, 404, 429, 500, 503)) return@use
-                    if (!response.isSuccessful) throw Exception("API Error: ${response.code}")
-
-                    val responseBody = response.body.string()
-                    val result = json.parseToJsonElement(responseBody)
-                    val text = result.jsonObject["candidates"]!!
-                        .jsonArray[0].jsonObject["content"]!!
-                        .jsonObject["parts"]!!
-                        .jsonArray[0].jsonObject["text"]!!
-                        .jsonPrimitive.content
-
-                    // Extract titles from JSON array in the text
-                    val start = text.indexOf("[")
-                    val end = text.lastIndexOf("]") + 1
-                    if (start != -1 && end > start) {
-                        val jsonArray = text.substring(start, end)
-                        return json.decodeFromString<List<String>>(jsonArray)
-                    } else {
-                        return emptyList()
-                    }
-                }
-            } catch (_: Exception) {
-            }
+        val activeEngine = aiEngineRegistry.getActiveEngine()
+        if (activeEngine.id == "openai_compatible" && activeEngine.isAvailable) {
+            val result = kotlinx.coroutines.runBlocking { activeEngine.generateTitles(prompt) }
+            if (result.isSuccess && result.getOrThrow().isNotEmpty()) return result.getOrThrow()
         }
-        return emptyList()
+        return try {
+            parseTitles(com.shinku.reader.domain.ai.GeminiApi(networkHelper.client).generateText(prompt, apiKey, model).text)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
-    private fun resolveModel(model: String): String {
-        val trimmed = model.trim()
-        return if (trimmed.isBlank() || trimmed.equals("auto", ignoreCase = true) || trimmed.startsWith("gemini-3.")) {
-            "gemini-2.5-flash"
-        } else {
-            trimmed
-        }
+    private fun parseTitles(text: String): List<String> {
+        val start = text.indexOf('[')
+        val end = text.lastIndexOf(']') + 1
+        return if (start >= 0 && end > start) json.decodeFromString<List<String>>(text.substring(start, end)) else emptyList()
     }
 }

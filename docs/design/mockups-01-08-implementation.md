@@ -1,0 +1,60 @@
+# Mockups 01–08 implementation review
+
+**Board-05 follow-up — 2026-11-06:** the owner authorized completing Library organization. The previously listed filter/category/bulk gaps are now implemented and reviewed locally at default and actual 1.6× text. The provisional visual tag is **95% per panel**, with final phone/theme acceptance pending. See the [per-part progress log](mockups/05-implementation-progress.md); the Nov 4 validation record below is historical.
+
+**Completion correction — 2026-11-06:** the original record conflated code/functional coverage with full visual implementation. The initial audit confirmed board-05 gaps, subsequently addressed by the follow-up above. The blanket all-mockups-applied claim remains withdrawn. See the [visual audit](mockup-visual-audit.md).
+
+Date: 2026-11-04. The owner authorized applying all eight generated boards and investigating the rectangular marks between the bottom navigation icons and labels. This review covers the 24 numbered panels, including existing UI retained without full visual conversion. The earlier Manga details/More and settings-hub concept boards are separate from numbered boards 01–08.
+
+## Panel coverage
+
+| Board / panel | App implementation and capability adaptation |
+| --- | --- |
+| 01 Discover | Existing featured carousel, genre filters and shelves retained; section headings wrap, shelf captions wrap, and tab content uses the measured home-dock inset. Recommendation counts and source budgets are unchanged. |
+| 01 Global search | Existing source-grouped partial results and errors retained. Cover cards now have wider, three-line caption surfaces. No unsupported global genre/language filtering or invented totals. |
+| 01 Source catalogue | Comfortable Grid uses three-line caption surfaces. Existing display modes, paging, source filters and loading behavior remain. No fabricated page count or source metadata. |
+| 02 Sources | Existing Sanctuary rows, pin/latest actions and language filtering retained; names and language labels wrap. Browse uses scrollable tabs with all four actual routes. |
+| 02 Extensions | Names and warnings wrap; existing installed/available groups, update/install/cancel and explicit trust review retained. No automatic trust or changed security defaults. |
+| 02 Repositories | Rounded cards now show the configured repository URL below the name. Existing add, copy, website and confirmed removal flows remain. No invented freshness/count/verification fields. |
+| 03 Find affected titles | Migrate adds an actual missing-source filter with a source count and a direct Failed updates entry. Source selection and per-source title selection remain separate supported steps. |
+| 03 Migration options | Existing source selection and data flags retained; optional advanced settings collapse behind Advanced. Saved flags, destructive-download choice and confirmation behavior are unchanged. |
+| 03 Review / progress | Both migration interfaces put titles below covers with up to four lines, plus wrapped source/chapter metadata. Existing actual matching progress, manual search, skip, copy/migrate actions and confirmations remain; no fictional paused-review engine or guaranteed matching. |
+| 04 Updates | Prior daily-screen pass: portrait covers, wrapped title/chapter labels, reading progress and labeled reading action; measured dock clearance and existing selection/download behavior. |
+| 04 History | Prior daily-screen pass: wrapped titles, Resume, overflow-based removal, actual timestamps and dock clearance. The data model does not support the mockup's invented page totals. |
+| 04 Downloads | Prior pass plus queue correction: persistent state-aware header, actual engine running state, rounded rows, sort/drag/cancel/completion. Both sort menus dismiss. No fabricated finished group or aggregate percentage. See [queue verification](download-queue-verification.md). |
+| 05 Library filters | Follow-up implemented the sheet heading, real active badge, icon/gradient cards, selectable Any/Include/Exclude controls and Reset/Done. More filters retains extra controls; Group stays accessible. Actual 1.6× text reflows the cards. Provisional visual acceptance 95%. |
+| 05 Categories | Follow-up added real distinct library-title counts, intro, edit/More rows and inline Add including the empty state. Reorder uses category keys to avoid header/Add index errors. Isolated count/invalidation and drag tests pass. Provisional visual acceptance 95%. |
+| 05 Bulk selection | Follow-up uses Download/Category/Mark read/More with gradients/dividers and wrapping labels. Conditional download/actions, closing overflow and existing confirmations remain. Default/1.6× callbacks and bottom-placement checks pass. Provisional visual acceptance 95%. |
+| 06 Paged reader | Existing interaction-controlled reader bars, slider and chapter navigation retained. The page indicator gains a compact dark rounded surface and avoids duplicate spoken text. |
+| 06 Webtoon reader | Same compact page indicator; existing image loading, retry/error distinction, optional translation controls and full-width viewer behavior retained. No simultaneous loading/retry state was introduced from the image. |
+| 06 Chapters / pages | Searchable chapter list, explicit current-chapter label and current page progress, plus Pages tab using the existing viewer's page-index callback. Numbered page chips replace unsupported thumbnail loading. Chapter bookmark swipe remains; long press now uses that same supported action. No page bookmarks. |
+| 07 Area selection | Frozen viewport crop behavior retained. Clear Select an area heading, larger close/reset targets and wrapping bottom actions. Crop-coordinate calculations are unchanged. |
+| 07 Inspect bubbles | Explicit Original / Translation labels, larger copy target and previous/next scrolling through the actual ordered block list. Re-translate remains page-scoped, matching the existing API; no fabricated isolated-bubble retranslation or bitmap preview. |
+| 07 Chapter translation | Existing compact background progress pill and actual counters retained; expanded progress uses a labeled overlay switch. Existing Cancel and Run in background remain; no unsupported Pause control or fabricated pending-page results. |
+| 08 Display controls | Reader settings now use Reading / Display / Translation tabs. Display groups background, conditional custom brightness and color filtering, with other existing controls under Advanced. Done remains outside scrolling content. All existing preferences remain accessible. |
+| 08 Translation actions | The new Translation tab reuses the same real translation actions as the existing options dialog. Clearing saved chapter OCR/translation overlays now requires confirmation; wording distinguishes this cache from manga downloads and history. |
+| 08 Page actions | Save/share/copy/set-cover controls appear before AI tools, with wrapped labels and a Close action. Existing spread choices and cover-replacement confirmation remain. Unsupported page bookmarks were omitted; chapter bookmarks remain in navigation. |
+
+## Glass toolbar investigation
+
+The reported image shows rectangular-looking marks in the icon/label region. Source inspection found standard Material navigation items hosted inside a custom 66 dp glass dock. Replacing those items alone did not remove the horizontal strip: the emulator reproduced it across the label area. That result ruled out treating the item highlight alone as the fix.
+
+The phone dock now uses an explicit layout: a 48 × 30 dp capsule selected-icon highlight, transparent label area, 66 dp selectable tab target and clipped rounded interaction bounds. More importantly, the shared dock now applies Haze to an empty background sibling; icons and labels draw in a separate foreground sibling. The redundant second Surface shadow was removed, retaining one shaped outer shadow. Existing animated icons, badges, tab navigation, reselect actions, configurable labels and tablet rail are retained.
+
+Before/after Android 15 emulator screenshots show the label strip present before that layer/shadow correction and absent afterward. Glass remains visible over Library artwork. Private captures are under ignored `build/mockup-dock-review-final/` (before) and `build/mockup-dock-background-review/` (after); they can include existing AVD content and must not be published as fixture-only images. This isolates a working rendering correction, not a definitive GPU-driver diagnosis. The owner’s Android 17 phone still needs comparison. Haze’s [documented capture/effect pipeline](https://chrisbanes.me/posts/haze-1.0/) provides background on separating captured content and effect rendering; the implementation remains on the pinned 1.6.10 dependency.
+
+## Validation and installation
+
+Kotlin compilation and full dev JVM tests passed: 48 discovered, 47 passed, one existing skip, zero failures/errors (`build/mockups-1-8-tests-build.log`). Scoped formatting covered the changed Kotlin files, with subsequent focused passes for the final dock/test adjustments. Debug app/test assembly passed (`build/mockups-1-8-debug-final.log`, `build/mockup-dock-background-build.log`).
+
+The initial toolbar selector encountered the duplicate Library heading and non-clickable text leaves. Guarded native taps confirmed that Library reselect opens its existing filter sheet; the test now checks and closes that sheet before switching through all five tabs. The focused corrected toolbar test passed (`build/mockup-dock-background-test.log`). Screenshot review also identified a partially clipped current page in the Pages tab; viewport changes now reposition the actual current-page chip, and an Android assertion checks its visibility and one-based label to zero-based viewer index conversion.
+
+The final combined Android suite passed **10 tests, zero failures**, `OK (10 tests)`, in `build/mockups-1-8-android-passed.log`: six mockup-control tests, two queue tests and two geometry tests. Chapter-search automation selects the actual editable text action and lets the input/rendered state settle before checking filtered rows. Its synthetic screenshot confirms the query and matching chapter; assertions also verify the selected page callback index and visible current-page chip. Runtime sample `build/mockups-1-8-runtime.log` contained no fatal-exception/fatal-signal/OOM markers.
+
+The emulator used the existing Medium_Phone AVD, Android 15/API 35, with a temporary read-only overlay and no saved snapshot. It has been shut down and the temporary overlay discarded. UI fixtures exercised filter/reset, tabs/overlay state/cache confirmation, chapter search/page selection, page actions/cover confirmation and missing-source filtering/failed-update navigation. The home check could display existing AVD library/history content; it never opened a title or started reading, and screenshots/logs remain private under ignored build directories (`build/mockups-1-8-final-review/`). Queue tests used gated generated images/private debug cache. These checks do not validate live OCR/provider output, real source reliability, optimized runtime, all themes/font sizes, TalkBack or frame performance.
+
+The prescribed `assembleDevRelease --build-cache --parallel --quiet --console=plain` passed. All five optimized APK signatures verified. Build/signature logs: `build/mockups-1-8-release.log`, `build/mockups-1-8-signatures.log`; SHA-256, timestamps and version records: `build/mockups-1-8-checksums.json`.
+
+**Ready locally, not installed on the phone.** The final ADB check found no connected devices. Version remains 2.8.1-preview.1/143; this is a different artifact from the phone’s earlier daily-screen preview. Use the new checksum record when installing the ARM64 APK with `adb install -r`, then compare the glass toolbar on the affected Android 17 device.
+
+Phone display scale, streak/history, downloaded manga files, credentials and extension APIs are outside this UI change. No version bump, push, public release or issue closure is requested. Original phone font scale remains 1.0; no phone display settings are changed by this pass.

@@ -11,28 +11,53 @@ import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapNotNull
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.preference.CheckboxState
+import com.shinku.reader.core.common.preference.TriState
+import com.shinku.reader.core.common.util.lang.compareToWithCollator
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.lang.launchNonCancellable
+import com.shinku.reader.core.common.utils.mutate
 import com.shinku.reader.core.preference.PreferenceMutableState
 import com.shinku.reader.core.preference.asState
 import com.shinku.reader.core.util.fastFilterNot
-import com.shinku.reader.domain.base.BasePreferences
-import com.shinku.reader.domain.chapter.interactor.SetReadStatus
-import com.shinku.reader.domain.manga.interactor.UpdateManga
-import com.shinku.reader.domain.source.service.SourcePreferences
-import com.shinku.reader.domain.sync.SyncPreferences
-import com.shinku.reader.presentation.components.SEARCH_DEBOUNCE_MILLIS
-import com.shinku.reader.presentation.library.components.LibraryToolbarTitle
-import com.shinku.reader.presentation.manga.DownloadAction
 import com.shinku.reader.data.cache.CoverCache
 import com.shinku.reader.data.download.DownloadCache
 import com.shinku.reader.data.download.DownloadManager
 import com.shinku.reader.data.track.TrackStatus
 import com.shinku.reader.data.track.TrackerManager
-import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.online.HttpSource
-import eu.kanade.tachiyomi.source.online.all.MergedSource
-import com.shinku.reader.util.chapter.getNextUnread
-import com.shinku.reader.util.removeCovers
+import com.shinku.reader.domain.base.BasePreferences
+import com.shinku.reader.domain.category.interactor.GetCategories
+import com.shinku.reader.domain.category.interactor.SetMangaCategories
+import com.shinku.reader.domain.category.model.Category
+import com.shinku.reader.domain.chapter.interactor.GetChaptersByMangaId
+import com.shinku.reader.domain.chapter.interactor.GetMergedChaptersByMangaId
+import com.shinku.reader.domain.chapter.interactor.SetReadStatus
+import com.shinku.reader.domain.chapter.model.Chapter
+import com.shinku.reader.domain.history.interactor.GetNextChapters
+import com.shinku.reader.domain.library.model.LibraryDisplayMode
+import com.shinku.reader.domain.library.model.LibraryGroup
+import com.shinku.reader.domain.library.model.LibraryManga
+import com.shinku.reader.domain.library.model.LibrarySort
+import com.shinku.reader.domain.library.model.sort
+import com.shinku.reader.domain.library.service.LibraryPreferences
+import com.shinku.reader.domain.manga.interactor.GetIdsOfFavoriteMangaWithMetadata
+import com.shinku.reader.domain.manga.interactor.GetLibraryManga
+import com.shinku.reader.domain.manga.interactor.GetMergedMangaById
+import com.shinku.reader.domain.manga.interactor.GetSearchTags
+import com.shinku.reader.domain.manga.interactor.GetSearchTitles
+import com.shinku.reader.domain.manga.interactor.SetCustomMangaInfo
+import com.shinku.reader.domain.manga.interactor.UpdateManga
+import com.shinku.reader.domain.manga.model.CustomMangaInfo
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.manga.model.MangaUpdate
+import com.shinku.reader.domain.manga.model.applyFilter
+import com.shinku.reader.domain.source.service.SourceManager
+import com.shinku.reader.domain.source.service.SourcePreferences
+import com.shinku.reader.domain.sync.SyncPreferences
+import com.shinku.reader.domain.track.interactor.GetTracks
+import com.shinku.reader.domain.track.interactor.GetTracksPerManga
+import com.shinku.reader.domain.track.model.Track
 import com.shinku.reader.exh.favorites.FavoritesSyncHelper
 import com.shinku.reader.exh.md.utils.FollowStatus
 import com.shinku.reader.exh.md.utils.MdUtil
@@ -53,6 +78,19 @@ import com.shinku.reader.exh.source.nHentaiSourceIds
 import com.shinku.reader.exh.util.cancellable
 import com.shinku.reader.exh.util.isLewd
 import com.shinku.reader.exh.util.nullIfBlank
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.components.SEARCH_DEBOUNCE_MILLIS
+import com.shinku.reader.presentation.library.components.LibraryToolbarTitle
+import com.shinku.reader.presentation.manga.DownloadAction
+import com.shinku.reader.util.chapter.getNextUnread
+import com.shinku.reader.util.removeCovers
+import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.local.LocalSource
+import eu.kanade.tachiyomi.source.local.isLocal
+import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.source.online.all.MergedSource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -73,45 +111,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
-import kotlinx.coroutines.runBlocking
-import com.shinku.reader.core.common.utils.mutate
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.preference.CheckboxState
-import com.shinku.reader.core.common.preference.TriState
-import com.shinku.reader.core.common.util.lang.compareToWithCollator
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.core.common.util.lang.launchNonCancellable
-import com.shinku.reader.domain.category.interactor.GetCategories
-import com.shinku.reader.domain.category.interactor.SetMangaCategories
-import com.shinku.reader.domain.category.model.Category
-import com.shinku.reader.domain.chapter.interactor.GetChaptersByMangaId
-import com.shinku.reader.domain.chapter.interactor.GetMergedChaptersByMangaId
-import com.shinku.reader.domain.chapter.model.Chapter
-import com.shinku.reader.domain.history.interactor.GetNextChapters
-import com.shinku.reader.domain.library.model.LibraryDisplayMode
-import com.shinku.reader.domain.library.model.LibraryGroup
-import com.shinku.reader.domain.library.model.LibraryManga
-import com.shinku.reader.domain.library.model.LibrarySort
-import com.shinku.reader.domain.library.model.sort
-import com.shinku.reader.domain.library.service.LibraryPreferences
-import com.shinku.reader.domain.manga.interactor.GetIdsOfFavoriteMangaWithMetadata
-import com.shinku.reader.domain.manga.interactor.GetLibraryManga
-import com.shinku.reader.domain.manga.interactor.GetMergedMangaById
-import com.shinku.reader.domain.manga.interactor.GetSearchTags
-import com.shinku.reader.domain.manga.interactor.GetSearchTitles
-import com.shinku.reader.domain.manga.interactor.SetCustomMangaInfo
-import com.shinku.reader.domain.manga.model.CustomMangaInfo
-import com.shinku.reader.domain.manga.model.Manga
-import com.shinku.reader.domain.manga.model.MangaUpdate
-import com.shinku.reader.domain.manga.model.applyFilter
-import com.shinku.reader.domain.source.service.SourceManager
-import com.shinku.reader.domain.track.interactor.GetTracks
-import com.shinku.reader.domain.track.interactor.GetTracksPerManga
-import com.shinku.reader.domain.track.model.Track
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
-import eu.kanade.tachiyomi.source.local.LocalSource
-import eu.kanade.tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import kotlin.random.Random
@@ -170,11 +169,12 @@ class LibraryScreenModel(
                     } else {
                         getHistory.subscribeRecent(10).map { historyList ->
                             val distinctHistory = historyList.distinctBy { it.mangaId }.take(5)
+                            val mangas = getManga.await(distinctHistory.map { it.mangaId }).associateBy { it.id }
+                            val chapters = getChaptersByMangaId.awaitChapterIds(distinctHistory.map { it.chapterId }).associateBy { it.id }
                             distinctHistory.mapNotNull { hist ->
-                                val manga = getManga.await(hist.mangaId) ?: return@mapNotNull null
-                                val chapters = getChaptersByMangaId.await(hist.mangaId)
-                                val chapter = chapters.find { it.id == hist.chapterId }
-                                    ?: chapters.firstOrNull()
+                                val manga = mangas[hist.mangaId] ?: return@mapNotNull null
+                                val chapter = chapters[hist.chapterId]
+                                    ?: getChaptersByMangaId.await(hist.mangaId).firstOrNull()
                                     ?: return@mapNotNull null
                                 LastReadItem(manga, chapter)
                             }
@@ -281,6 +281,7 @@ class LibraryScreenModel(
                         .applyGrouping(
                             data.categories,
                             data.showSystemCategory,
+                            tracks = data.tracksMap,
                             // SY -->
                             groupType,
                             // SY <--
@@ -437,9 +438,9 @@ class LibraryScreenModel(
 
         val filterFnCompleted: (LibraryItem) -> Boolean = {
             applyFilter(filterCompleted) {
-            it.libraryManga.manga.status.toInt() == SManga.COMPLETED ||
-            it.libraryManga.manga.status.toInt() == SManga.PUBLISHING_FINISHED
-        }
+                it.libraryManga.manga.status.toInt() == SManga.COMPLETED ||
+                    it.libraryManga.manga.status.toInt() == SManga.PUBLISHING_FINISHED
+            }
         }
 
         val filterFnIntervalCustom: (LibraryItem) -> Boolean = {
@@ -505,6 +506,7 @@ class LibraryScreenModel(
     private fun List<LibraryItem>.applyGrouping(
         categories: List<Category>,
         showSystemCategory: Boolean,
+        tracks: Map<Long, List<Track>>,
         // SY -->
         groupType: Int,
         // <-- SY
@@ -552,6 +554,7 @@ class LibraryScreenModel(
             else -> {
                 return getGroupedMangaItems(
                     groupType = groupType,
+                    tracks = tracks,
                 )
             }
         }
@@ -734,15 +737,18 @@ class LibraryScreenModel(
             getLibraryItemPreferencesFlow(),
             downloadCache.changes,
         ) { libraryManga, preferences, _ ->
+            val merged = if (preferences.downloadBadge) {
+                getMergedMangaById.await(libraryManga.filter { it.manga.source == MERGED_SOURCE_ID }.map { it.manga.id })
+            } else {
+                emptyMap()
+            }
             libraryManga.map { manga ->
                 LibraryItem(
                     libraryManga = manga,
                     downloadCount = if (preferences.downloadBadge) {
                         // SY -->
                         if (manga.manga.source == MERGED_SOURCE_ID) {
-                            runBlocking {
-                                getMergedMangaById.await(manga.manga.id)
-                            }.sumOf { downloadManager.getDownloadCount(it) }.toLong()
+                            merged[manga.manga.id].orEmpty().sumOf { downloadManager.getDownloadCount(it) }.toLong()
                         } else {
                             downloadManager.getDownloadCount(manga.manga).toLong()
                         }
@@ -1168,15 +1174,16 @@ class LibraryScreenModel(
                             "src", "source" -> source?.name?.contains(tagValue, true) == true || (sourceIdString != null && sourceIdString == tagValue)
                             "src_id", "source_id" -> sourceIdString != null && (sourceIdString == tagValue || (tagValue == "local" && sourceIdString == LocalSource.ID.toString()))
                             "note", "notes" -> false // Placeholder if notes field isn't present on LibraryManga directly
-                            else -> searchTags != null &&
-                                searchTags.fastAny {
-                                    val tag = queryComponent.tag
-                                    (
-                                        it.namespace.equals(queryComponent.namespace, true) &&
-                                            tag?.run { it.name.contains(tag.asQuery(), true) } == true
-                                        ) ||
-                                        (tag == null && it.namespace.equals(queryComponent.namespace, true))
-                                }
+                            else ->
+                                searchTags != null &&
+                                    searchTags.fastAny {
+                                        val tag = queryComponent.tag
+                                        (
+                                            it.namespace.equals(queryComponent.namespace, true) &&
+                                                tag?.run { it.name.contains(tag.asQuery(), true) } == true
+                                            ) ||
+                                            (tag == null && it.namespace.equals(queryComponent.namespace, true))
+                                    }
                         }
                     }
 
@@ -1217,21 +1224,22 @@ class LibraryScreenModel(
                             "src", "source" -> source?.name?.contains(tagValue, true) != true && (sourceIdString == null || sourceIdString != tagValue)
                             "src_id", "source_id" -> sourceIdString == null || (sourceIdString != tagValue && !(tagValue == "local" && sourceIdString == LocalSource.ID.toString()))
                             "note", "notes" -> true
-                            else -> searchTags == null ||
-                                (queryComponent.namespace.isBlank() && searchedTag.isNullOrBlank()) ||
-                                searchTags.fastAll { mangaTag ->
-                                    if (queryComponent.namespace.isBlank() && !searchedTag.isNullOrBlank()) {
-                                        !mangaTag.name.contains(searchedTag, true)
-                                    } else if (searchedTag.isNullOrBlank()) {
-                                        mangaTag.namespace == null ||
-                                            !mangaTag.namespace.equals(queryComponent.namespace, true)
-                                    } else if (mangaTag.namespace.isNullOrBlank()) {
-                                        true
-                                    } else {
-                                        !mangaTag.name.contains(searchedTag, true) ||
-                                            !mangaTag.namespace.equals(queryComponent.namespace, true)
+                            else ->
+                                searchTags == null ||
+                                    (queryComponent.namespace.isBlank() && searchedTag.isNullOrBlank()) ||
+                                    searchTags.fastAll { mangaTag ->
+                                        if (queryComponent.namespace.isBlank() && !searchedTag.isNullOrBlank()) {
+                                            !mangaTag.name.contains(searchedTag, true)
+                                        } else if (searchedTag.isNullOrBlank()) {
+                                            mangaTag.namespace == null ||
+                                                !mangaTag.namespace.equals(queryComponent.namespace, true)
+                                        } else if (mangaTag.namespace.isNullOrBlank()) {
+                                            true
+                                        } else {
+                                            !mangaTag.name.contains(searchedTag, true) ||
+                                                !mangaTag.namespace.equals(queryComponent.namespace, true)
+                                        }
                                     }
-                                }
                         }
                     }
 
@@ -1401,11 +1409,11 @@ class LibraryScreenModel(
 
     private fun List<LibraryItem>.getGroupedMangaItems(
         groupType: Int,
+        tracks: Map<Long, List<Track>>,
     ): Map<Category, List</* LibraryItem */ Long>> {
         val context = preferences.context
         return when (groupType) {
             LibraryGroup.BY_TRACK_STATUS -> {
-                val tracks = runBlocking { getTracks.await() }.groupBy { it.mangaId }
                 groupBy { item ->
                     val status = tracks[item.libraryManga.manga.id]?.firstNotNullOfOrNull { track ->
                         TrackStatus.parseTrackerStatus(trackerManager, track.trackerId, track.status)

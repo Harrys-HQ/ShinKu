@@ -1,69 +1,67 @@
 package com.shinku.reader.presentation.more.settings.screen
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.text.HtmlCompat
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.shinku.reader.presentation.more.settings.Preference
-import eu.kanade.tachiyomi.network.NetworkHelper
-import com.shinku.reader.util.system.toast
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.core.common.util.lang.withUIContext
+import com.shinku.reader.core.security.SecurityPreferences
+import com.shinku.reader.data.category.SmartCategorizerJob
+import com.shinku.reader.domain.base.BasePreferences
+import com.shinku.reader.domain.library.service.LibraryPreferences
+import com.shinku.reader.domain.source.service.SourcePreferences
+import com.shinku.reader.domain.ui.UiPreferences
+import com.shinku.reader.domain.ui.model.ThemeMode
+import com.shinku.reader.domain.ui.model.setAppCompatDelegateThemeMode
+import com.shinku.reader.exh.debug.SettingsDebugScreen
+import com.shinku.reader.exh.pref.DelegateSourcePreferences
 import com.shinku.reader.exh.source.ShinKuPreferences
+import com.shinku.reader.exh.util.toAnnotatedString
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.core.i18n.pluralStringResource
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.util.collectAsState
+import com.shinku.reader.presentation.more.components.ReaderIdentityDialog
+import com.shinku.reader.presentation.more.settings.Preference
+import com.shinku.reader.presentation.more.settings.screen.appearance.AppLanguageScreen
+import com.shinku.reader.presentation.more.settings.widget.AppThemeModePreferenceWidget
+import com.shinku.reader.presentation.more.settings.widget.AppThemePreferenceWidget
+import com.shinku.reader.ui.browse.migration.dead.DeadSourceScannerScreen
+import com.shinku.reader.ui.browse.migration.failed.FailedUpdatesMigrationScreen
+import com.shinku.reader.ui.reader.setting.ReaderBottomButton
+import com.shinku.reader.ui.reader.setting.ReaderPreferences
+import com.shinku.reader.ui.reader.viewer.pager.PagerConfig
+import com.shinku.reader.ui.sourcehealth.SourceHealthScreen
+import com.shinku.reader.util.system.toast
+import eu.kanade.tachiyomi.network.NetworkHelper
+import eu.kanade.tachiyomi.source.AndroidSourceManager
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.util.lang.withIOContext
-import com.shinku.reader.core.common.util.lang.withUIContext
-import com.shinku.reader.domain.base.BasePreferences
-import com.shinku.reader.domain.library.service.LibraryPreferences
-import com.shinku.reader.domain.source.service.SourcePreferences
-import com.shinku.reader.ui.reader.setting.ReaderPreferences
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.i18n.stringResource
-import com.shinku.reader.data.category.SmartCategorizerJob
-import com.shinku.reader.presentation.more.components.ReaderIdentityDialog
-import com.shinku.reader.ui.browse.migration.dead.DeadSourceScannerScreen
-import com.shinku.reader.ui.browse.migration.failed.FailedUpdatesMigrationScreen
-import com.shinku.reader.ui.sourcehealth.SourceHealthScreen
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-
-import com.shinku.reader.core.security.SecurityPreferences
-import com.shinku.reader.domain.ui.UiPreferences
-import com.shinku.reader.domain.ui.model.ThemeMode
-import com.shinku.reader.domain.ui.model.setAppCompatDelegateThemeMode
-import com.shinku.reader.presentation.more.settings.screen.appearance.AppLanguageScreen
-import com.shinku.reader.presentation.more.settings.widget.AppThemeModePreferenceWidget
-import com.shinku.reader.presentation.more.settings.widget.AppThemePreferenceWidget
-import com.shinku.reader.exh.debug.SettingsDebugScreen
-import androidx.compose.runtime.getValue
-import com.shinku.reader.presentation.core.util.collectAsState
-import androidx.core.text.HtmlCompat
-import com.shinku.reader.exh.util.toAnnotatedString
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import com.shinku.reader.presentation.core.i18n.pluralStringResource
-
-import com.shinku.reader.ui.reader.setting.ReaderBottomButton
-import com.shinku.reader.ui.reader.viewer.pager.PagerConfig
-
-import com.shinku.reader.exh.pref.DelegateSourcePreferences
-import eu.kanade.tachiyomi.source.AndroidSourceManager
-import kotlinx.collections.immutable.toImmutableMap
-import kotlinx.collections.immutable.toImmutableList
 
 object SettingsShinKuSettingsScreen : SearchableSettings {
 
@@ -72,7 +70,40 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
     override fun getTitleRes() = MR.strings.action_configure_features
 
     @Composable
+    override fun androidx.compose.foundation.layout.RowScope.AppBarAction() {
+        val navigator = LocalNavigator.currentOrThrow
+        androidx.compose.material3.IconButton(onClick = { navigator.push(SettingsSearchScreen()) }) {
+            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Outlined.Search, stringResource(MR.strings.action_search))
+        }
+    }
+
+    @Composable
     override fun getPreferences(): List<Preference> {
+        val navigator = LocalNavigator.currentOrThrow
+        return ShinKuSettingsSection.entries.map { section ->
+            Preference.PreferenceItem.CustomPreference(title = stringResource(section.titleRes)) {
+                androidx.compose.material3.Surface(
+                    modifier = androidx.compose.ui.Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = com.shinku.reader.presentation.core.theme.SanctuaryShapes.card,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainerLow,
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        androidx.compose.material3.MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                    ),
+                ) {
+                    com.shinku.reader.presentation.more.components.CommandRowItem(
+                        title = stringResource(section.titleRes),
+                        subtitle = stringResource(section.summaryRes),
+                        icon = section.icon,
+                        onClick = { navigator.push(ShinKuSettingsSectionScreen(section)) },
+                    )
+                }
+            }
+        } + Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.settings_save_automatically))
+    }
+
+    @Composable
+    fun getSectionPreferences(section: ShinKuSettingsSection): List<Preference> {
         val shinkuPreferences = remember { Injekt.get<ShinKuPreferences>() }
         val libraryPreferences = remember { Injekt.get<LibraryPreferences>() }
         val basePreferences = remember { Injekt.get<BasePreferences>() }
@@ -82,27 +113,27 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         val securityPreferences = remember { Injekt.get<SecurityPreferences>() }
         val delegateSourcePreferences = remember { Injekt.get<DelegateSourcePreferences>() }
 
-        return listOf(
-            getMaintenanceToolsGroup(),
-            getGeminiGroup(shinkuPreferences),
-            getTranslationGroup(shinkuPreferences),
-            getPerformanceGroup(shinkuPreferences, basePreferences),
-            getImmersionGroup(shinkuPreferences, readerPreferences),
-            getReaderEnhancementsGroup(readerPreferences),
-            getNavigationGroup(uiPreferences, shinkuPreferences),
-            getInterfaceGroup(uiPreferences, shinkuPreferences),
-            getBrowsingGroup(sourcePreferences, uiPreferences),
-            getLibraryGroup(libraryPreferences, shinkuPreferences),
-            getSecurityDebugGroup(securityPreferences, sourcePreferences, delegateSourcePreferences),
-            getAdvancedFeaturesGroup(readerPreferences, sourcePreferences),
-        )
+        return when (section) {
+            ShinKuSettingsSection.AI -> listOf(getGeminiGroup(shinkuPreferences), getTranslationGroup(shinkuPreferences))
+            ShinKuSettingsSection.READING -> listOf(
+                getImmersionGroup(shinkuPreferences, readerPreferences),
+                getReaderEnhancementsGroup(readerPreferences),
+                getNavigationGroup(uiPreferences, shinkuPreferences),
+                getInterfaceGroup(uiPreferences, shinkuPreferences),
+                getBrowsingGroup(sourcePreferences, uiPreferences),
+                getLibraryGroup(libraryPreferences, shinkuPreferences),
+            )
+            ShinKuSettingsSection.PERFORMANCE -> listOf(getPerformanceGroup(shinkuPreferences, basePreferences))
+            ShinKuSettingsSection.MAINTENANCE -> listOf(getMaintenanceToolsGroup())
+            ShinKuSettingsSection.ADVANCED -> listOf(
+                getSecurityDebugGroup(securityPreferences, sourcePreferences, delegateSourcePreferences),
+                getAdvancedFeaturesGroup(readerPreferences, sourcePreferences),
+            )
+        }
     }
 
     @Composable
     private fun getMaintenanceToolsGroup(): Preference.PreferenceGroup {
-
-
-
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
         return Preference.PreferenceGroup(
@@ -135,10 +166,10 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
     @Composable
     private fun getPerformanceGroup(
         shinkuPreferences: ShinKuPreferences,
-        basePreferences: BasePreferences
+        basePreferences: BasePreferences,
     ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
-            title = "Performance & AI",
+            title = "Performance mode",
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = basePreferences.highRefreshRate(),
@@ -163,8 +194,8 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = shinkuPreferences.aiUpscaling(),
-                    title = stringResource(SYMR.strings.pref_ai_upscaling),
-                    subtitle = stringResource(SYMR.strings.pref_ai_upscaling_summary),
+                    title = "Enhanced scaling",
+                    subtitle = "Sharper upscaled pages; may be slower on older devices",
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = shinkuPreferences.predictiveLoading(),
@@ -184,6 +215,23 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
 
         val aiEngineProviderPref = shinkuPreferences.aiEngineProvider()
         val aiEngineProvider by aiEngineProviderPref.collectAsState()
+
+        val activeKeyPref = when (aiEngineProvider) {
+            "openrouter" -> shinkuPreferences.openRouterApiKey()
+            "deepseek", "groq", "openai", "custom" -> shinkuPreferences.openAiApiKey()
+            else -> shinkuPreferences.geminiApiKey()
+        }
+        val activeModelPref = when (aiEngineProvider) {
+            "openrouter" -> shinkuPreferences.openRouterModel()
+            "deepseek", "groq", "openai", "custom" -> shinkuPreferences.openAiModel()
+            else -> shinkuPreferences.geminiModel()
+        }
+        val activeKey by activeKeyPref.collectAsState()
+        val activeModel by activeModelPref.collectAsState()
+        val activeUrl by shinkuPreferences.openAiBaseUrl().collectAsState()
+        var testStatus by remember(aiEngineProvider, activeKey, activeModel, activeUrl) { mutableStateOf(MR.strings.connection_not_tested) }
+        var isTesting by remember(aiEngineProvider, activeKey, activeModel, activeUrl) { mutableStateOf(false) }
+        var testDetail by remember(aiEngineProvider, activeKey, activeModel, activeUrl) { mutableStateOf<String?>(null) }
 
         val items = buildList<Preference.PreferenceItem<out Any, out Any>> {
             add(
@@ -208,6 +256,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     add(
                         Preference.PreferenceItem.EditTextPreference(
                             preference = shinkuPreferences.openRouterApiKey(),
+                            isSensitive = true,
                             title = "OpenRouter API Key",
                             subtitle = "Enter your OpenRouter key (sk-or-v1-...) to access Claude, GPT, DeepSeek, etc.",
                         ),
@@ -236,6 +285,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     add(
                         Preference.PreferenceItem.EditTextPreference(
                             preference = shinkuPreferences.openAiApiKey(),
+                            isSensitive = true,
                             title = "DeepSeek API Key",
                             subtitle = "Enter your API key from platform.deepseek.com",
                         ),
@@ -257,6 +307,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     add(
                         Preference.PreferenceItem.EditTextPreference(
                             preference = shinkuPreferences.openAiApiKey(),
+                            isSensitive = true,
                             title = "Groq API Key",
                             subtitle = "Enter your API key from console.groq.com (Ultra-fast inference)",
                         ),
@@ -279,6 +330,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     add(
                         Preference.PreferenceItem.EditTextPreference(
                             preference = shinkuPreferences.openAiApiKey(),
+                            isSensitive = true,
                             title = "OpenAI API Key",
                             subtitle = "Enter your API key from platform.openai.com",
                         ),
@@ -307,6 +359,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     add(
                         Preference.PreferenceItem.EditTextPreference(
                             preference = shinkuPreferences.openAiApiKey(),
+                            isSensitive = true,
                             title = "API Key",
                             subtitle = "API key (optional for local Ollama)",
                         ),
@@ -324,34 +377,37 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     add(
                         Preference.PreferenceItem.EditTextPreference(
                             preference = shinkuPreferences.geminiApiKey(),
+                            isSensitive = true,
                             title = stringResource(MR.strings.pref_gemini_api_key),
                             subtitle = stringResource(MR.strings.pref_gemini_api_key_summary),
                         ),
                     )
-                    add(
-                        Preference.PreferenceItem.ListPreference(
-                            preference = shinkuPreferences.geminiModel(),
-                            title = stringResource(MR.strings.pref_gemini_model),
-                            subtitle = stringResource(MR.strings.pref_gemini_model_summary),
-                            entries = persistentMapOf(
-                                "auto" to "Auto (Recommended - Latest Fast Model)",
-                                "gemini-2.5-flash" to "Gemini 2.5 Flash (Fast & Best for Manga)",
-                                "gemini-2.0-flash" to "Gemini 2.0 Flash (Fast & Accurate)",
-                                "gemini-2.5-pro" to "Gemini 2.5 Pro (Deep Nuance & Quality)",
-                                "gemini-2.0-flash-lite" to "Gemini 2.0 Flash-Lite (Low Latency)",
-                                "gemini-1.5-flash" to "Gemini 1.5 Flash (Legacy)",
-                                "gemini-1.5-pro" to "Gemini 1.5 Pro (Legacy)",
-                            ),
+                    addAll(
+                        com.shinku.reader.presentation.more.settings.widget.geminiModelPreferences(
+                            modelPreference = shinkuPreferences.geminiModel(),
+                            apiKey = activeKey,
+                            autoLoad = LocalNavigator.current?.lastItem == ShinKuSettingsSectionScreen(ShinKuSettingsSection.AI),
+                            loadModels = { key, refresh ->
+                                withIOContext {
+                                    com.shinku.reader.domain.ai.GeminiApi(networkHelper.client).listTextModels(key, refresh)
+                                }
+                            },
                         ),
                     )
                 }
             }
 
+            add(Preference.PreferenceItem.InfoPreference(listOfNotNull(stringResource(testStatus), testDetail).joinToString("\n")))
             add(
                 Preference.PreferenceItem.TextPreference(
-                    title = "Test API Connection",
+                    title = stringResource(MR.strings.connection_test),
+                    enabled = !isTesting,
                     subtitle = "Sends a lightweight prompt to verify credentials and check roundtrip latency",
-                    onClick = {
+                    onClick = connectionTest@{
+                        if (isTesting) return@connectionTest
+                        isTesting = true
+                        testDetail = null
+                        testStatus = MR.strings.connection_testing
                         scope.launch {
                             try {
                                 val startTime = System.currentTimeMillis()
@@ -359,6 +415,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                                     val engine = aiEngineRegistry.getActiveEngine()
                                     val result = engine.generateText("Respond with 'OK'")
                                     val latency = System.currentTimeMillis() - startTime
+                                    testStatus = if (result.isSuccess) MR.strings.connection_succeeded else MR.strings.connection_failed
                                     if (result.isSuccess) {
                                         context.toast("Connected to $aiEngineProvider successfully! (${latency}ms)")
                                     } else {
@@ -368,22 +425,35 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                                 } else {
                                     val apiKey = shinkuPreferences.geminiApiKey().get().trim()
                                     if (apiKey.isBlank()) {
+                                        testStatus = MR.strings.connection_failed
+                                        testDetail = context.stringResource(MR.strings.gemini_catalog_key_needed)
                                         context.toast("API Key cannot be empty")
                                         return@launch
                                     }
-                                    val (isSuccess, detail) = testGeminiConnection(
+                                    val (isSuccess, rawDetail) = testGeminiConnection(
                                         networkHelper,
                                         apiKey,
                                         shinkuPreferences.geminiModel().get().trim(),
                                     )
+                                    val detail = rawDetail.replace(apiKey, "[redacted]").take(400)
+                                    testStatus = if (isSuccess) MR.strings.connection_succeeded else MR.strings.connection_failed
+                                    testDetail = detail
                                     if (isSuccess) {
                                         context.toast(detail)
                                     } else {
                                         context.toast(context.stringResource(MR.strings.api_key_test_failed, detail))
                                     }
                                 }
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e
                             } catch (e: Exception) {
+                                testStatus = MR.strings.connection_failed
+                                testDetail = (e.message ?: "Unknown error").let { message ->
+                                    if (activeKey.isNotBlank()) message.replace(activeKey.trim(), "[redacted]") else message
+                                }.take(400)
                                 context.toast(context.stringResource(MR.strings.api_key_test_failed, e.message ?: "Unknown error"))
+                            } finally {
+                                isTesting = false
                             }
                         }
                     },
@@ -402,33 +472,20 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         apiKey: String,
         rawModel: String,
     ): Pair<Boolean, String> = withIOContext {
-        val selectedModel = if (rawModel.isBlank() || rawModel.equals("auto", ignoreCase = true) || rawModel.startsWith("gemini-3.")) {
-            "gemini-2.5-flash"
-        } else {
-            rawModel
-        }
-        val modelDisplay = if (rawModel.equals("auto", ignoreCase = true) || rawModel.isBlank()) "Auto ($selectedModel)" else selectedModel
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$selectedModel:generateContent?key=$apiKey"
-        val bodyJson = """{"contents":[{"parts":[{"text":"Respond with 'OK'"}]}]}"""
-        val request = Request.Builder()
-            .url(url)
-            .post(bodyJson.toRequestBody("application/json".toMediaType()))
-            .build()
-
         val startTime = System.currentTimeMillis()
-        networkHelper.client.newCall(request).execute().use { response ->
-            val latency = System.currentTimeMillis() - startTime
-            if (response.isSuccessful) {
-                Pair(true, "$modelDisplay is active and working! (${latency}ms)")
-            } else {
-                val err = response.body.string()
-                Pair(false, "HTTP ${response.code} on $selectedModel: $err")
-            }
+        try {
+            val result = com.shinku.reader.domain.ai.GeminiApi(networkHelper.client).testConnection(apiKey, rawModel)
+            Pair(true, "${result.model} is active and working! (${System.currentTimeMillis() - startTime}ms)")
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Pair(false, e.message ?: "Gemini request failed")
         }
     }
 
     @Composable
     private fun getTranslationGroup(shinkuPreferences: ShinKuPreferences): Preference.PreferenceGroup {
+        val scope = rememberCoroutineScope()
         val context = LocalContext.current
         return Preference.PreferenceGroup(
             title = "AI Translation Settings",
@@ -485,8 +542,10 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     title = "Clear Translation Cache",
                     subtitle = "Purge cached overlay files to free up storage",
                     onClick = {
-                        com.shinku.reader.ui.reader.model.TranslationCache.clear()
-                        context.toast("Translation cache cleared")
+                        scope.launch {
+                            withContext(Dispatchers.IO) { com.shinku.reader.ui.reader.model.TranslationCache.clear() }
+                            context.toast("Translation cache cleared")
+                        }
                     },
                 ),
             ),
@@ -499,6 +558,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         readerPreferences: ReaderPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
+        val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
         val atmosphericAudioManager = remember { Injekt.get<com.shinku.reader.ui.reader.audio.AtmosphericAudioManager>() }
         val atmosphericAudioEnabled by shinkuPreferences.atmosphericAudio().collectAsState()
@@ -582,10 +642,10 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                         }
                     },
                 ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = shinkuPreferences.moodLighting(),
-                    title = "Mood Lighting",
-                    subtitle = "Dynamic background colors that match the current page's artwork.",
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.reader_mood_lighting),
+                    subtitle = stringResource(MR.strings.reader_mood_lighting_summary),
+                    onClick = { navigator.push(SettingsColorEffectsScreen) },
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = shinkuPreferences.backdropBlur(),
@@ -715,13 +775,14 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         libraryPreferences: LibraryPreferences,
         shinkuPreferences: ShinKuPreferences,
     ): Preference.PreferenceGroup {
+        val navigator = LocalNavigator.currentOrThrow
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.label_library),
             preferenceItems = persistentListOf(
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = shinkuPreferences.dynamicLibraryTheme(),
-                    title = "Dynamic Library Sanctuary Theme",
-                    subtitle = "Automatically adapt the app's accent and surface palette to your active Library manga cover.",
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.cover_based_app_theme),
+                    subtitle = stringResource(MR.strings.cover_based_app_theme_summary),
+                    onClick = { navigator.push(SettingsColorEffectsScreen) },
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = shinkuPreferences.showHeroJumpBack(),
@@ -843,7 +904,7 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
     private fun getSecurityDebugGroup(
         securityPreferences: SecurityPreferences,
         sourcePreferences: SourcePreferences,
-        delegateSourcePreferences: DelegateSourcePreferences
+        delegateSourcePreferences: DelegateSourcePreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
@@ -955,13 +1016,14 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     onValueChanged = { !it }, // Invert since true means Jpeg in source prefs
                 ),
                 Preference.PreferenceItem.TextPreference(
-                   title = "Migrate legacy downloads",
-                   subtitle = "Mass migrate your old downloads to the current internal structure",
-                   onClick = {
-                       com.shinku.reader.data.download.DownloadMigrationJob.startNow(context)
-                       context.toast("Migration started in background")
-                   },
-                ),            ),
+                    title = "Migrate legacy downloads",
+                    subtitle = "Mass migrate your old downloads to the current internal structure",
+                    onClick = {
+                        com.shinku.reader.data.download.DownloadMigrationJob.startNow(context)
+                        context.toast("Migration started in background")
+                    },
+                ),
+            ),
         )
     }
 }

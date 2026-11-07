@@ -18,6 +18,7 @@ import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.POST
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.parseAs
+import com.shinku.reader.util.OAuthStateStore
 import com.shinku.reader.util.PkceUtil
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -292,6 +293,7 @@ class MyAnimeListApi(
             .appendQueryParameter("client_id", CLIENT_ID)
             .appendQueryParameter("code_challenge", getPkceChallengeCode())
             .appendQueryParameter("response_type", "code")
+            .appendQueryParameter("state", OAuthStateStore.generate("myanimelist-auth"))
             .build()
 
         fun mangaUrl(id: Long): Uri = "$BASE_API_URL/manga".toUri().buildUpon()

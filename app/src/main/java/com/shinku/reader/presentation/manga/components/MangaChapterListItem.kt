@@ -37,13 +37,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.data.download.model.Download
-import me.saket.swipe.SwipeableActionsBox
 import com.shinku.reader.domain.library.service.LibraryPreferences
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.material.DISABLED_ALPHA
 import com.shinku.reader.presentation.core.components.material.SECONDARY_ALPHA
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.util.selectedBackground
+import me.saket.swipe.SwipeableActionsBox
 
 @Composable
 fun MangaChapterListItem(
@@ -132,7 +132,7 @@ fun MangaChapterListItem(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         onTextLayout = { textHeight = it.size.height },
                         color = LocalContentColor.current.copy(alpha = if (read) DISABLED_ALPHA else 1f),
@@ -149,7 +149,7 @@ fun MangaChapterListItem(
                         if (date != null) {
                             Text(
                                 text = date,
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             if (readProgress != null ||
@@ -162,7 +162,7 @@ fun MangaChapterListItem(
                         if (readProgress != null) {
                             Text(
                                 text = readProgress,
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                                 color = LocalContentColor.current.copy(alpha = DISABLED_ALPHA),
                             )
@@ -172,7 +172,7 @@ fun MangaChapterListItem(
                         if (sourceName != null) {
                             Text(
                                 text = sourceName,
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             if (scanlator != null) DotSeparatorText()
@@ -181,7 +181,7 @@ fun MangaChapterListItem(
                         if (scanlator != null) {
                             Text(
                                 text = scanlator,
-                                maxLines = 1,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }

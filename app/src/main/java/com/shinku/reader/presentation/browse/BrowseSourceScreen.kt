@@ -156,6 +156,7 @@ fun BrowseSourceContent(
                 contentPadding = contentPadding,
                 onMangaClick = onMangaClick,
                 onMangaLongClick = onMangaLongClick,
+                source = source,
             )
         }
         LibraryDisplayMode.List -> {

@@ -3,21 +3,21 @@ package com.shinku.reader.ui.library
 import androidx.compose.runtime.getValue
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import com.shinku.reader.core.preference.asState
-import com.shinku.reader.domain.base.BasePreferences
-import com.shinku.reader.data.track.TrackerManager
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
 import com.shinku.reader.core.common.preference.Preference
 import com.shinku.reader.core.common.preference.TriState
 import com.shinku.reader.core.common.preference.getAndSet
 import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.preference.asState
+import com.shinku.reader.data.track.TrackerManager
+import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.domain.category.interactor.SetDisplayMode
 import com.shinku.reader.domain.category.interactor.SetSortModeForCategory
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.domain.library.model.LibraryDisplayMode
 import com.shinku.reader.domain.library.model.LibrarySort
 import com.shinku.reader.domain.library.service.LibraryPreferences
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import kotlin.time.Duration.Companion.seconds
@@ -44,6 +44,16 @@ class LibrarySettingsScreenModel(
     fun toggleFilter(preference: (LibraryPreferences) -> Preference<TriState>) {
         preference(libraryPreferences).getAndSet {
             it.next()
+        }
+    }
+
+    fun resetFilters() {
+        with(libraryPreferences) {
+            listOf(
+                filterDownloaded(), filterUnread(), filterStarted(), filterBookmarked(),
+                filterCompleted(), filterIntervalCustom(), filterLewd(),
+            ).forEach { it.set(TriState.DISABLED) }
+            trackersFlow.value.forEach { filterTracking(it.id.toInt()).set(TriState.DISABLED) }
         }
     }
 

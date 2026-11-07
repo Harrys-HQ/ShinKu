@@ -10,6 +10,8 @@ class GetMergedMangaById(
     private val mangaMergeRepository: MangaMergeRepository,
 ) {
 
+    suspend fun await(ids: List<Long>): Map<Long, List<Manga>> = mangaMergeRepository.getMergedMangaByIds(ids)
+
     suspend fun await(id: Long): List<Manga> {
         return try {
             mangaMergeRepository.getMergedMangaById(id)

@@ -8,6 +8,7 @@ import com.shinku.reader.domain.history.model.SanctuaryXpEngine
 import com.shinku.reader.domain.history.repository.HistoryRepository
 import com.shinku.reader.domain.manga.repository.MangaRepository
 import com.shinku.reader.domain.chapter.repository.ChapterRepository
+import uy.kohesive.injekt.api.get
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -18,6 +19,18 @@ class GetReadingStats(
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
 ) {
+
+    /** Fresh on each refresh, without loading chapters, manga descriptions, or the full stats report. */
+    suspend fun awaitBestGenres(): List<String> {
+        val customInfo = uy.kohesive.injekt.Injekt.get<com.shinku.reader.domain.manga.interactor.GetCustomMangaInfo>()
+        val durations = linkedMapOf<String, Long>()
+        historyRepository.getReadingGenreDurations().forEach { (id, genres, duration) ->
+            (customInfo.get(id)?.genre ?: genres).orEmpty().forEach { genre ->
+                durations[genre] = (durations[genre] ?: 0L) + duration
+            }
+        }
+        return durations.entries.sortedByDescending { it.value }.take(10).map { it.key }
+    }
 
     suspend fun await(
         libraryMangaCount: Int = 0,

@@ -13,6 +13,7 @@ import com.shinku.reader.data.track.comick.dto.ComickUser
 import com.shinku.reader.data.track.model.TrackMangaMetadata
 import com.shinku.reader.data.track.model.TrackSearch
 import com.shinku.reader.domain.track.model.Track as DomainTrack
+import com.shinku.reader.util.OAuthStateStore
 import com.shinku.reader.util.PkceUtil
 import eu.kanade.tachiyomi.network.DELETE
 import eu.kanade.tachiyomi.network.GET
@@ -299,7 +300,7 @@ class ComickApi(
         }
     }
 
-    fun verifyOAuthState(state: String): Boolean = state == oauthStateParam
+    fun verifyOAuthState(state: String): Boolean = OAuthStateStore.verify("comick-auth", state)
 
     companion object {
         private const val CLIENT_ID = "SGrUojDvbgqfhSCQbwfCjUPIccYMJdBH"
@@ -313,7 +314,6 @@ class ComickApi(
         private const val RESOURCE_URL = "$API_BASE_URL/integrations/v1"
 
         private var codeVerifier: String = ""
-        private var oauthStateParam: String = ""
 
         fun authUrl(): Uri = "$OAUTH_URL/authorize".toUri().buildUpon()
             .appendQueryParameter("response_type", "code")
@@ -321,7 +321,7 @@ class ComickApi(
             .appendQueryParameter("redirect_uri", REDIRECT_URI)
             .appendQueryParameter("scope", SCOPES)
             .appendQueryParameter("resource", RESOURCE_URL)
-            .appendQueryParameter("state", getOAuthStateParam())
+            .appendQueryParameter("state", OAuthStateStore.generate("comick-auth"))
             .appendQueryParameter("code_challenge", getPkceS256ChallengeCode())
             .appendQueryParameter("code_challenge_method", "S256")
             .build()
@@ -339,16 +339,6 @@ class ComickApi(
                 jsonMime.toString(),
             ),
         )
-
-        private fun getOAuthStateParam(): String {
-            val bytes = ByteArray(16)
-            SecureRandom().nextBytes(bytes)
-            oauthStateParam = Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(bytes)
-
-            return oauthStateParam
-        }
 
         private fun getPkceS256ChallengeCode(): String {
             val codes = PkceUtil.generateS256Codes()

@@ -1,5 +1,12 @@
 package com.shinku.reader.presentation.library.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -14,32 +21,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
-import com.shinku.reader.core.preference.PreferenceMutableState
-import com.shinku.reader.ui.library.LibraryItem
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.collections.immutable.ImmutableList
-import com.shinku.reader.domain.category.model.Category
-import com.shinku.reader.domain.library.model.LibraryDisplayMode
-import com.shinku.reader.domain.library.model.LibraryManga
-import com.shinku.reader.presentation.core.components.material.PullRefresh
-import kotlin.time.Duration.Companion.seconds
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import com.shinku.reader.presentation.core.util.collectAsState
+import androidx.compose.ui.platform.LocalLayoutDirection
+import com.shinku.reader.core.preference.PreferenceMutableState
+import com.shinku.reader.domain.category.model.Category
+import com.shinku.reader.domain.library.model.LibraryDisplayMode
+import com.shinku.reader.domain.library.model.LibraryManga
 import com.shinku.reader.exh.source.ShinKuPreferences
+import com.shinku.reader.presentation.core.components.material.PullRefresh
+import com.shinku.reader.presentation.core.util.collectAsState
+import com.shinku.reader.presentation.util.LocalHomeBottomInset
+import com.shinku.reader.ui.library.LibraryItem
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun LibraryContent(
@@ -154,7 +155,7 @@ fun LibraryContent(
         ) {
             LibraryPager(
                 state = pagerState,
-                contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
+                contentPadding = PaddingValues(bottom = maxOf(contentPadding.calculateBottomPadding(), LocalHomeBottomInset.current)),
                 hasActiveFilters = hasActiveFilters,
                 selection = selection,
                 searchQuery = searchQuery,

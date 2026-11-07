@@ -1,11 +1,10 @@
 package com.shinku.reader.presentation.updates
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.FlipToBack
@@ -21,25 +20,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import com.shinku.reader.data.download.model.Download
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.AppBarActions
-import com.shinku.reader.presentation.manga.components.ChapterDownloadAction
-import com.shinku.reader.presentation.manga.components.MangaBottomActionMenu
-import com.shinku.reader.data.download.model.Download
-import com.shinku.reader.ui.updates.UpdatesItem
-import com.shinku.reader.ui.updates.UpdatesScreenModel
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.FastScrollLazyColumn
 import com.shinku.reader.presentation.core.components.material.PullRefresh
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.EmptyScreen
 import com.shinku.reader.presentation.core.screens.LoadingScreen
+import com.shinku.reader.presentation.manga.components.ChapterDownloadAction
+import com.shinku.reader.presentation.manga.components.MangaBottomActionMenu
+import com.shinku.reader.presentation.util.LocalHomeBottomInset
+import com.shinku.reader.ui.updates.UpdatesItem
+import com.shinku.reader.ui.updates.UpdatesScreenModel
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import kotlin.time.Duration.Companion.seconds
 
@@ -115,17 +116,23 @@ fun UpdateScreen(
                     enabled = !state.selectionMode,
                     indicatorPadding = contentPadding,
                 ) {
-                    val dockBottomPadding = if (!com.shinku.reader.presentation.util.isTabletUi()) 84.dp else 0.dp
                     val listContentPadding = androidx.compose.foundation.layout.PaddingValues(
                         start = contentPadding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
                         top = contentPadding.calculateTopPadding(),
                         end = contentPadding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-                        bottom = contentPadding.calculateBottomPadding() + dockBottomPadding,
+                        bottom = maxOf(
+                            contentPadding.calculateBottomPadding(),
+                            if (state.selectionMode) 0.dp else LocalHomeBottomInset.current,
+                        ) + 8.dp,
                     )
                     FastScrollLazyColumn(
                         contentPadding = listContentPadding,
                     ) {
-                        updatesLastUpdatedItem(lastUpdated)
+                        updatesLastUpdatedItem(
+                            lastUpdated = lastUpdated,
+                            onCalendarClicked = onCalendarClicked,
+                            onUpdateLibrary = { onUpdateLibrary() },
+                        )
 
                         updatesUiItems(
                             uiModels = state.getUiModel(),

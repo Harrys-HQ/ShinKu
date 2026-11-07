@@ -14,21 +14,21 @@ import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.vectorResource
-import com.shinku.reader.presentation.more.components.ReadingJourneyCard
-import com.shinku.reader.presentation.more.settings.widget.SwitchPreferenceWidget
-import com.shinku.reader.presentation.more.settings.widget.TextPreferenceWidget
+import androidx.compose.ui.unit.dp
 import com.shinku.reader.R
-import com.shinku.reader.ui.more.DownloadQueueState
 import com.shinku.reader.core.common.Constants
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.ScrollbarLazyColumn
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.i18n.pluralStringResource
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.more.components.ReadingJourneyCard
+import com.shinku.reader.presentation.more.settings.widget.SwitchPreferenceWidget
+import com.shinku.reader.presentation.more.settings.widget.TextPreferenceWidget
+import com.shinku.reader.ui.more.DownloadQueueState
 
 @Composable
 fun MoreScreen(
@@ -76,7 +76,7 @@ fun MoreScreen(
         ScrollbarLazyColumn(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
                 top = contentPadding.calculateTopPadding() + 8.dp,
-                bottom = contentPadding.calculateBottomPadding() + 124.dp,
+                bottom = maxOf(contentPadding.calculateBottomPadding(), com.shinku.reader.presentation.util.LocalHomeBottomInset.current) + 16.dp,
             ),
         ) {
             // 1. Reading Identity & Stats Header

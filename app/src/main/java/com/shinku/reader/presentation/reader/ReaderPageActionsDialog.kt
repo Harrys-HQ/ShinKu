@@ -18,8 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.AutoAwesomeMotion
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.CropFree
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.CropFree
 import androidx.compose.material.icons.outlined.HistoryEdu
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Photo
@@ -54,7 +54,10 @@ import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.components.AdaptiveSheet
 import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import androidx.compose.material3.surfaceColorAtElevation
 
 @Composable
 fun ReaderPageActionsDialog(
@@ -84,99 +87,6 @@ fun ReaderPageActionsDialog(
                 .padding(horizontal = 20.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = "ShinKu Intelligence",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                SanctuaryOverlineBadge(
-                    text = "AI COMPANION",
-                    compact = true,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                AiToolRow(
-                    title = "Who's Here? (Spoiler-Safe Codex)",
-                    subtitle = "Characters, factions & lore up to this chapter",
-                    icon = Icons.Outlined.MenuBook,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    onClick = {
-                        onCharacterCodex()
-                        onDismissRequest()
-                    },
-                )
-                AiToolRow(
-                    title = "Story So Far (Chapter Recap)",
-                    subtitle = "Spoiler-safe plot summary up to this chapter",
-                    icon = Icons.Outlined.HistoryEdu,
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f),
-                    contentColor = MaterialTheme.colorScheme.tertiary,
-                    onClick = {
-                        onChapterRecap()
-                        onDismissRequest()
-                    },
-                )
-                AiToolRow(
-                    title = stringResource(MR.strings.action_interactive_footnotes),
-                    subtitle = "Explain cultural nuance, wordplay & idioms",
-                    icon = Icons.Outlined.AutoAwesome,
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
-                    contentColor = MaterialTheme.colorScheme.secondary,
-                    onClick = {
-                        onFootnotes()
-                        onDismissRequest()
-                    },
-                )
-                AiToolRow(
-                    title = "Area OCR & Translate",
-                    subtitle = "Select a speech bubble or panel to translate",
-                    icon = Icons.Outlined.CropFree,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    onClick = {
-                        onAreaOcr()
-                    },
-                )
-                AiToolRow(
-                    title = stringResource(MR.strings.action_live_translation),
-                    subtitle = "Real-time manga bubble overlay & OCR",
-                    icon = Icons.Outlined.Translate,
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f),
-                    contentColor = MaterialTheme.colorScheme.tertiary,
-                    onClick = {
-                        onTranslation()
-                        onDismissRequest()
-                    },
-                )
-                AiToolRow(
-                    title = "Pre-Translate Chapter",
-                    subtitle = "Batch OCR & translate all pages in background",
-                    icon = Icons.Outlined.AutoAwesomeMotion,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    onClick = {
-                        onBatchTranslation()
-                        onDismissRequest()
-                    },
-                )
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-            Spacer(modifier = Modifier.height(12.dp))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -293,6 +203,102 @@ fun ReaderPageActionsDialog(
                     },
                 )
             }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = "ShinKu Intelligence",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                SanctuaryOverlineBadge(
+                    text = "AI COMPANION",
+                    compact = true,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AiToolRow(
+                    title = "Who's Here? (Spoiler-Safe Codex)",
+                    subtitle = "Characters, factions & lore up to this chapter",
+                    icon = Icons.Outlined.MenuBook,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    onClick = {
+                        onCharacterCodex()
+                        onDismissRequest()
+                    },
+                )
+                AiToolRow(
+                    title = "Story So Far (Chapter Recap)",
+                    subtitle = "Spoiler-safe plot summary up to this chapter",
+                    icon = Icons.Outlined.HistoryEdu,
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f),
+                    contentColor = MaterialTheme.colorScheme.tertiary,
+                    onClick = {
+                        onChapterRecap()
+                        onDismissRequest()
+                    },
+                )
+                AiToolRow(
+                    title = stringResource(MR.strings.action_interactive_footnotes),
+                    subtitle = "Explain cultural nuance, wordplay & idioms",
+                    icon = Icons.Outlined.AutoAwesome,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+                    contentColor = MaterialTheme.colorScheme.secondary,
+                    onClick = {
+                        onFootnotes()
+                        onDismissRequest()
+                    },
+                )
+                AiToolRow(
+                    title = "Area OCR & Translate",
+                    subtitle = "Select a speech bubble or panel to translate",
+                    icon = Icons.Outlined.CropFree,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    onClick = {
+                        onAreaOcr()
+                    },
+                )
+                AiToolRow(
+                    title = stringResource(MR.strings.action_live_translation),
+                    subtitle = "Real-time manga bubble overlay & OCR",
+                    icon = Icons.Outlined.Translate,
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.35f),
+                    contentColor = MaterialTheme.colorScheme.tertiary,
+                    onClick = {
+                        onTranslation()
+                        onDismissRequest()
+                    },
+                )
+                AiToolRow(
+                    title = "Pre-Translate Chapter",
+                    subtitle = "Batch OCR & translate all pages in background",
+                    icon = Icons.Outlined.AutoAwesomeMotion,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    onClick = {
+                        onBatchTranslation()
+                        onDismissRequest()
+                    },
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            TextButton(onClick = onDismissRequest, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(MR.strings.action_close))
+            }
         }
     }
 
@@ -376,32 +382,33 @@ private fun PageActionButton(
 ) {
     Column(
         modifier = modifier
-            .clip(SanctuaryShapes.medium)
+            .clip(SanctuaryShapes.deckCard)
             .clickable(onClick = onClick)
             .padding(vertical = 8.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Surface(
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(52.dp),
             shape = SanctuaryShapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+            border = SanctuaryBrushes.subtleBorder(),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
                     modifier = Modifier.size(22.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
         Text(
             text = title,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
     }
@@ -458,14 +465,14 @@ private fun AiToolRow(
                     text = title,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
             }

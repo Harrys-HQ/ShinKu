@@ -11,6 +11,9 @@ class AiRepositoryImpl(
     private val handler: DatabaseHandler,
 ) : AiRepository {
 
+    override suspend fun getEmbeddingVersions(): Map<Long, Long> =
+        handler.awaitList { manga_embeddingsQueries.getVersions { id, version -> id to version } }.toMap()
+
     override suspend fun getEmbedding(mangaId: Long): MangaEmbedding? {
         return handler.await {
             manga_embeddingsQueries.getEmbeddingByMangaId(mangaId) { id, bytes, lastUpdate ->

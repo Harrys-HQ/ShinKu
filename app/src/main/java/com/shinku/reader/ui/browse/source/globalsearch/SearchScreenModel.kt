@@ -215,10 +215,24 @@ abstract class SearchScreenModel(
                 async {
                     try {
                         val allResults = mutableListOf<Manga>()
-                        for (q in finalQueries) {
+                        for ((index, q) in finalQueries.withIndex()) {
                             ensureActive()
+                            if (index > 0) {
+                                kotlinx.coroutines.delay(800)
+                            }
                             val page = withContext(coroutineDispatcher) {
-                                source.getSearchManga(1, q, source.getFilterList())
+                                try {
+                                    source.getSearchManga(1, q, source.getFilterList())
+                                } catch (e: Exception) {
+                                    val is429 = (e is eu.kanade.tachiyomi.network.HttpException && e.code == 429) ||
+                                        e.message?.contains("429") == true
+                                    if (is429) {
+                                        kotlinx.coroutines.delay(1800)
+                                        source.getSearchManga(1, q, source.getFilterList())
+                                    } else {
+                                        throw e
+                                    }
+                                }
                             }
                             val titles = page.mangas
                                 .map { it.toDomainManga(source.id) }

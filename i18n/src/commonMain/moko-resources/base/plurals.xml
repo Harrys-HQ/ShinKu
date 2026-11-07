@@ -109,4 +109,8 @@
         <item quantity="one">An entry was skipped</item>
         <item quantity="other">%1$d entries were skipped</item>
     </plurals>
+    <plurals name="category_titles">
+        <item quantity="one">%1$d title</item>
+        <item quantity="other">%1$d titles</item>
+    </plurals>
 </resources>

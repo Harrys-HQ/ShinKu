@@ -1,5 +1,19 @@
 package com.shinku.reader.presentation.more.settings.screen
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.GetApp
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
@@ -8,20 +22,29 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import com.shinku.reader.domain.category.interactor.GetCategories
+import com.shinku.reader.domain.category.model.Category
+import com.shinku.reader.domain.download.service.DownloadPreferences
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.category.visualName
+import com.shinku.reader.presentation.core.i18n.pluralStringResource
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.more.settings.Preference
 import com.shinku.reader.presentation.more.settings.widget.TriStateListDialog
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
-import com.shinku.reader.domain.category.interactor.GetCategories
-import com.shinku.reader.domain.category.model.Category
-import com.shinku.reader.domain.download.service.DownloadPreferences
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.presentation.core.i18n.pluralStringResource
-import com.shinku.reader.presentation.core.i18n.stringResource
-import com.shinku.reader.presentation.core.util.collectAsState
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -40,39 +63,98 @@ object SettingsDownloadScreen : SearchableSettings {
         val parallelSourceLimit by downloadPreferences.parallelSourceLimit().collectAsState()
         val parallelPageLimit by downloadPreferences.parallelPageLimit().collectAsState()
         val downloadThreadsPerPage by downloadPreferences.downloadThreadsPerPage().collectAsState()
+        val navigator = LocalNavigator.currentOrThrow
         return listOf(
-            Preference.PreferenceItem.SwitchPreference(
-                preference = downloadPreferences.downloadOnlyOverWifi(),
-                title = stringResource(MR.strings.connected_to_wifi),
+            Preference.PreferenceItem.CustomPreference(
+                title = stringResource(MR.strings.pref_category_downloads),
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    shape = SanctuaryShapes.deckCard,
+                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                    border = SanctuaryBrushes.subtleBorder(),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        Surface(
+                            shape = SanctuaryShapes.medium,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                            modifier = Modifier.size(42.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.GetApp,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(22.dp),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(MR.strings.pref_category_downloads),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text(
+                                text = stringResource(MR.strings.pref_downloads_summary),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            },
+            Preference.PreferenceItem.TextPreference(
+                title = stringResource(MR.strings.label_data_storage),
+                subtitle = stringResource(MR.strings.download_storage_settings_summary),
+                onClick = { navigator.push(SettingsDataScreen) },
             ),
-            Preference.PreferenceItem.SwitchPreference(
-                preference = downloadPreferences.saveChaptersAsCBZ(),
-                title = stringResource(MR.strings.save_chapter_as_cbz),
-            ),
-            Preference.PreferenceItem.SwitchPreference(
-                preference = downloadPreferences.splitTallImages(),
-                title = stringResource(MR.strings.split_tall_images),
-                subtitle = stringResource(MR.strings.split_tall_images_summary),
-            ),
-            Preference.PreferenceItem.SliderPreference(
-                value = parallelSourceLimit,
-                valueRange = 1..10,
-                title = stringResource(MR.strings.pref_download_concurrent_sources),
-                onValueChanged = { downloadPreferences.parallelSourceLimit().set(it) },
-            ),
-            Preference.PreferenceItem.SliderPreference(
-                value = parallelPageLimit,
-                valueRange = 1..15,
-                title = stringResource(MR.strings.pref_download_concurrent_pages),
-                subtitle = stringResource(MR.strings.pref_download_concurrent_pages_summary),
-                onValueChanged = { downloadPreferences.parallelPageLimit().set(it) },
-            ),
-            Preference.PreferenceItem.SliderPreference(
-                value = downloadThreadsPerPage,
-                valueRange = 1..8,
-                title = "Download threads per page",
-                subtitle = "Number of parallel connections for a single image",
-                onValueChanged = { downloadPreferences.downloadThreadsPerPage().set(it) },
+            Preference.PreferenceGroup(
+                title = stringResource(MR.strings.pref_category_downloads),
+                preferenceItems = persistentListOf(
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = downloadPreferences.downloadOnlyOverWifi(),
+                        title = stringResource(MR.strings.connected_to_wifi),
+                    ),
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = downloadPreferences.saveChaptersAsCBZ(),
+                        title = stringResource(MR.strings.save_chapter_as_cbz),
+                    ),
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = downloadPreferences.splitTallImages(),
+                        title = stringResource(MR.strings.split_tall_images),
+                        subtitle = stringResource(MR.strings.split_tall_images_summary),
+                    ),
+                    Preference.PreferenceItem.SliderPreference(
+                        value = parallelSourceLimit,
+                        valueRange = 1..10,
+                        title = stringResource(MR.strings.pref_download_concurrent_sources),
+                        onValueChanged = { downloadPreferences.parallelSourceLimit().set(it) },
+                    ),
+                    Preference.PreferenceItem.SliderPreference(
+                        value = parallelPageLimit,
+                        valueRange = 1..15,
+                        title = stringResource(MR.strings.pref_download_concurrent_pages),
+                        subtitle = stringResource(MR.strings.pref_download_concurrent_pages_summary),
+                        onValueChanged = { downloadPreferences.parallelPageLimit().set(it) },
+                    ),
+                    Preference.PreferenceItem.SliderPreference(
+                        value = downloadThreadsPerPage,
+                        valueRange = 1..8,
+                        title = "Download threads per page",
+                        subtitle = "Number of parallel connections for a single image",
+                        onValueChanged = { downloadPreferences.downloadThreadsPerPage().set(it) },
+                    ),
+                ),
             ),
             getDeleteChaptersGroup(
                 downloadPreferences = downloadPreferences,

@@ -26,6 +26,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -86,8 +87,8 @@ class SuggestedTitlesScreen(
             }
         }
 
-        LaunchedEffect(shouldLoadMore) {
-            if (shouldLoadMore && !state.isLoadingMore && state.hasMore) {
+        LaunchedEffect(shouldLoadMore, state.mangas.size) {
+            if (shouldLoadMore && !state.isLoadingMore && state.hasMore && !state.hasError) {
                 screenModel.loadNextPage()
             }
         }
@@ -121,7 +122,7 @@ class SuggestedTitlesScreen(
                 )
             },
         ) { paddingValues ->
-            if (state.mangas.isEmpty()) {
+            if (state.mangas.isEmpty() && !state.isLoadingMore && !state.hasMore) {
                 EmptyScreen(MR.strings.no_results_found)
             } else {
                 LazyVerticalGrid(
@@ -142,6 +143,14 @@ class SuggestedTitlesScreen(
                             manga = manga,
                             onClick = { navigator.push(MangaScreen(manga.id, true)) },
                         )
+                    }
+
+                    if (!state.isLoadingMore && state.hasMore) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            TextButton(onClick = screenModel::loadNextPage, modifier = Modifier.fillMaxWidth()) {
+                                Text(if (state.hasError) "Some sources could not load. Tap to retry" else "Load more titles")
+                            }
+                        }
                     }
 
                     if (state.isLoadingMore) {

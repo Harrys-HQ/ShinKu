@@ -1,7 +1,6 @@
 package com.shinku.reader.presentation.core.components.material
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -28,11 +27,12 @@ import androidx.compose.ui.unit.dp
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 
 /**
- * Floating Sanctuary Island Manga Dock with Bottom Scroll Fade Scrim
+ * Floating Sanctuary dock with an optional backdrop effect and crisp foreground controls.
  */
 @Composable
 fun NavigationBar(
     modifier: Modifier = Modifier,
+    backdropModifier: Modifier = Modifier,
     containerColor: Color = NavigationBarDefaults.containerColor,
     contentColor: Color = MaterialTheme.colorScheme.contentColorFor(containerColor),
     tonalElevation: Dp = NavigationBarDefaults.Elevation,
@@ -46,47 +46,45 @@ fun NavigationBar(
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f),
         ),
     )
-    val bg = MaterialTheme.colorScheme.background
-    val bottomScrim = Brush.verticalGradient(
-        0.0f to Color.Transparent,
-        0.35f to bg.copy(alpha = 0.86f),
-        1.0f to bg,
-    )
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(bottomScrim)
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 8.dp),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Surface(
             shape = islandShape,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
+            color = containerColor,
             contentColor = contentColor,
-            tonalElevation = 6.dp,
-            shadowElevation = 14.dp,
+            tonalElevation = tonalElevation,
+            shadowElevation = 0.dp,
             border = BorderStroke(1.2.dp, borderGradient),
             modifier = Modifier
                 .widthIn(max = 440.dp)
                 .fillMaxWidth()
                 .shadow(
-                    elevation = 16.dp,
+                    elevation = 6.dp,
                     shape = islandShape,
                     spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f),
-                    ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                ),
+                    ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                )
+                .clip(islandShape),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(66.dp)
-                    .clip(islandShape)
-                    .selectableGroup(),
-                verticalAlignment = Alignment.CenterVertically,
-                content = content,
-            )
+            Box {
+                // Keep backdrop rendering separate from the icon/text drawing layer.
+                Box(modifier = Modifier.matchParentSize().then(backdropModifier))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(66.dp)
+                        .clip(islandShape)
+                        .selectableGroup(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = content,
+                )
+            }
         }
     }
 }

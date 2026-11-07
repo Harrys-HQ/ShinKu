@@ -1,38 +1,56 @@
 package com.shinku.reader.presentation.history
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.unit.dp
+import com.shinku.reader.domain.history.model.HistoryWithRelations
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.AppBarActions
 import com.shinku.reader.presentation.components.AppBarTitle
 import com.shinku.reader.presentation.components.SearchToolbar
 import com.shinku.reader.presentation.components.relativeDateText
+import com.shinku.reader.presentation.core.components.FastScrollLazyColumn
+import com.shinku.reader.presentation.core.components.ListGroupHeader
+import com.shinku.reader.presentation.core.components.material.Scaffold
+import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.screens.EmptyScreen
+import com.shinku.reader.presentation.core.screens.LoadingScreen
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.history.components.HistoryItem
 import com.shinku.reader.presentation.theme.TachiyomiPreviewTheme
+import com.shinku.reader.presentation.util.LocalHomeBottomInset
 import com.shinku.reader.presentation.util.animateItemFastScroll
 import com.shinku.reader.ui.history.HistoryScreenModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import com.shinku.reader.domain.history.model.HistoryWithRelations
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.presentation.core.components.FastScrollLazyColumn
-import com.shinku.reader.presentation.core.components.ListGroupHeader
-import com.shinku.reader.presentation.core.components.material.Scaffold
-import com.shinku.reader.presentation.core.i18n.stringResource
-import com.shinku.reader.presentation.core.screens.EmptyScreen
-import com.shinku.reader.presentation.core.screens.LoadingScreen
 import java.time.LocalDate
 
 @Composable
@@ -86,6 +104,8 @@ fun HistoryScreen(
                 HistoryScreenContent(
                     history = it,
                     contentPadding = contentPadding,
+                    searchQuery = state.searchQuery,
+                    onActivateSearch = { onSearchQueryChange("") },
                     onClickCover = { history -> onClickCover(history.mangaId) },
                     onClickResume = { history -> onClickResume(history.mangaId, history.chapterId) },
                     onClickDelete = { item -> onDialogChange(HistoryScreenModel.Dialog.Delete(item)) },
@@ -100,21 +120,56 @@ fun HistoryScreen(
 private fun HistoryScreenContent(
     history: ImmutableList<HistoryUiModel>,
     contentPadding: PaddingValues,
+    searchQuery: String?,
+    onActivateSearch: () -> Unit,
     onClickCover: (HistoryWithRelations) -> Unit,
     onClickResume: (HistoryWithRelations) -> Unit,
     onClickDelete: (HistoryWithRelations) -> Unit,
     onClickFavorite: (HistoryWithRelations) -> Unit,
 ) {
-    val dockBottomPadding = if (!com.shinku.reader.presentation.util.isTabletUi()) 84.dp else 0.dp
     val listContentPadding = androidx.compose.foundation.layout.PaddingValues(
         start = contentPadding.calculateStartPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
         top = contentPadding.calculateTopPadding(),
         end = contentPadding.calculateEndPadding(androidx.compose.ui.platform.LocalLayoutDirection.current),
-        bottom = contentPadding.calculateBottomPadding() + dockBottomPadding,
+        bottom = maxOf(contentPadding.calculateBottomPadding(), LocalHomeBottomInset.current) + 8.dp,
     )
     FastScrollLazyColumn(
         contentPadding = listContentPadding,
     ) {
+        if (searchQuery == null) {
+            item(key = "history-inline-search") {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = MaterialTheme.padding.medium, vertical = 6.dp)
+                        .clip(SanctuaryShapes.medium)
+                        .clickable(onClick = onActivateSearch),
+                    shape = SanctuaryShapes.medium,
+                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                    border = SanctuaryBrushes.subtleBorder(),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            text = "Search reading history",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
         items(
             items = history,
             key = { "history-${it.hashCode()}" },

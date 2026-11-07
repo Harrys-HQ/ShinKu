@@ -9,7 +9,9 @@ import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -19,8 +21,10 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -35,13 +39,16 @@ import androidx.core.net.toUri
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.shinku.reader.presentation.util.rememberRequestPackageInstallsPermissionState
 import com.shinku.reader.core.security.PrivacyPreferences
-import com.shinku.reader.util.system.launchRequestPackageInstallsPermission
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.core.util.secondaryItemAlpha
+import com.shinku.reader.presentation.util.rememberRequestPackageInstallsPermissionState
+import com.shinku.reader.util.system.launchRequestPackageInstallsPermission
 import uy.kohesive.injekt.injectLazy
 
 internal class PermissionStep : OnboardingStep {
@@ -79,7 +86,10 @@ internal class PermissionStep : OnboardingStep {
             }
         }
 
-        Column {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             PermissionCheckbox(
                 title = stringResource(MR.strings.onboarding_permission_install_apps),
                 subtitle = stringResource(MR.strings.onboarding_permission_install_apps_description),
@@ -115,11 +125,6 @@ internal class PermissionStep : OnboardingStep {
                     }
                     context.startActivity(intent)
                 },
-            )
-
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
 
             val crashlyticsPref = privacyPreferences.crashlytics()
@@ -164,28 +169,35 @@ internal class PermissionStep : OnboardingStep {
         modifier: Modifier = Modifier,
         onButtonClick: () -> Unit,
     ) {
-        ListItem(
-            modifier = modifier,
-            headlineContent = { Text(text = title) },
-            supportingContent = { Text(text = subtitle) },
-            trailingContent = {
-                OutlinedButton(
-                    enabled = !granted,
-                    onClick = onButtonClick,
-                ) {
-                    if (granted) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    } else {
-                        Text(stringResource(MR.strings.onboarding_permission_action_grant))
+        Surface(
+            modifier = modifier.fillMaxWidth(),
+            shape = SanctuaryShapes.deckCard,
+            color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+            border = SanctuaryBrushes.subtleBorder(),
+        ) {
+            ListItem(
+                headlineContent = { Text(text = title) },
+                supportingContent = { Text(text = subtitle) },
+                trailingContent = {
+                    OutlinedButton(
+                        shape = SanctuaryShapes.medium,
+                        enabled = !granted,
+                        onClick = onButtonClick,
+                    ) {
+                        if (granted) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        } else {
+                            Text(stringResource(MR.strings.onboarding_permission_action_grant))
+                        }
                     }
-                }
-            },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        )
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            )
+        }
     }
 
     @Composable
@@ -196,17 +208,23 @@ internal class PermissionStep : OnboardingStep {
         modifier: Modifier = Modifier,
         onToggleChange: (Boolean) -> Unit,
     ) {
-        ListItem(
-            modifier = modifier,
-            headlineContent = { Text(text = title) },
-            supportingContent = { Text(text = subtitle) },
-            trailingContent = {
-                Switch(
-                    checked = granted,
-                    onCheckedChange = onToggleChange,
-                )
-            },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        )
+        Surface(
+            modifier = modifier.fillMaxWidth(),
+            shape = SanctuaryShapes.deckCard,
+            color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+            border = SanctuaryBrushes.subtleBorder(),
+        ) {
+            ListItem(
+                headlineContent = { Text(text = title) },
+                supportingContent = { Text(text = subtitle) },
+                trailingContent = {
+                    Switch(
+                        checked = granted,
+                        onCheckedChange = onToggleChange,
+                    )
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            )
+        }
     }
 }

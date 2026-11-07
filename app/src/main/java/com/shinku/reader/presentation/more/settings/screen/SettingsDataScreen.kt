@@ -7,6 +7,8 @@ import android.net.Uri
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -15,18 +17,23 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MultiChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
@@ -40,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -47,7 +56,32 @@ import com.google.zxing.client.android.Intents
 import com.hippo.unifile.UniFile
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.storage.displayablePath
+import com.shinku.reader.core.common.util.lang.launchNonCancellable
+import com.shinku.reader.core.common.util.lang.withUIContext
+import com.shinku.reader.core.common.util.system.logcat
+import com.shinku.reader.data.backup.create.BackupCreateJob
+import com.shinku.reader.data.backup.restore.BackupRestoreJob
+import com.shinku.reader.data.cache.ChapterCache
+import com.shinku.reader.data.cache.PagePreviewCache
+import com.shinku.reader.data.export.LibraryExporter
+import com.shinku.reader.data.export.LibraryExporter.ExportOptions
+import com.shinku.reader.data.sync.SyncDataJob
+import com.shinku.reader.data.sync.SyncManager
+import com.shinku.reader.domain.backup.service.BackupPreferences
+import com.shinku.reader.domain.library.service.LibraryPreferences
+import com.shinku.reader.domain.manga.interactor.GetFavorites
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.storage.service.StoragePreferences
 import com.shinku.reader.domain.sync.SyncPreferences
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.more.settings.Preference
 import com.shinku.reader.presentation.more.settings.screen.data.CreateBackupScreen
 import com.shinku.reader.presentation.more.settings.screen.data.RestoreBackupScreen
@@ -59,14 +93,6 @@ import com.shinku.reader.presentation.more.settings.widget.EditTextPreferenceWid
 import com.shinku.reader.presentation.more.settings.widget.PrefsHorizontalPadding
 import com.shinku.reader.presentation.more.settings.widget.TrailingWidgetBuffer
 import com.shinku.reader.presentation.util.relativeTimeSpanString
-import com.shinku.reader.data.backup.create.BackupCreateJob
-import com.shinku.reader.data.backup.restore.BackupRestoreJob
-import com.shinku.reader.data.cache.ChapterCache
-import com.shinku.reader.data.cache.PagePreviewCache
-import com.shinku.reader.data.export.LibraryExporter
-import com.shinku.reader.data.export.LibraryExporter.ExportOptions
-import com.shinku.reader.data.sync.SyncDataJob
-import com.shinku.reader.data.sync.SyncManager
 import com.shinku.reader.util.system.DeviceUtil
 import com.shinku.reader.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
@@ -74,20 +100,6 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.storage.displayablePath
-import com.shinku.reader.core.common.util.lang.launchNonCancellable
-import com.shinku.reader.core.common.util.lang.withUIContext
-import com.shinku.reader.core.common.util.system.logcat
-import com.shinku.reader.domain.backup.service.BackupPreferences
-import com.shinku.reader.domain.library.service.LibraryPreferences
-import com.shinku.reader.domain.manga.interactor.GetFavorites
-import com.shinku.reader.domain.manga.model.Manga
-import com.shinku.reader.domain.storage.service.StoragePreferences
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.i18n.stringResource
-import com.shinku.reader.presentation.core.util.collectAsState
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -581,6 +593,7 @@ object SettingsDataScreen : SearchableSettings {
             Preference.PreferenceItem.EditTextPreference(
                 title = stringResource(SYMR.strings.pref_webdav_password),
                 preference = syncPreferences.webdavPassword(),
+                isSensitive = true,
             ),
         )
     }
@@ -593,12 +606,99 @@ object SettingsDataScreen : SearchableSettings {
     @Composable
     private fun getSyncNowPref(): Preference.PreferenceGroup {
         val context = LocalContext.current
+        val syncPreferences = remember { Injekt.get<SyncPreferences>() }
+        val lastSync by syncPreferences.lastSyncTimestamp().collectAsState()
+        val service by syncPreferences.syncService().collectAsState()
+        val driveUri by syncPreferences.googleDriveSyncUri().collectAsState()
+        val webdavUrl by syncPreferences.webdavUrl().collectAsState()
+        val configured = when (SyncManager.SyncService.fromInt(service)) {
+            SyncManager.SyncService.GOOGLE_DRIVE -> driveUri.isNotBlank()
+            SyncManager.SyncService.WEBDAV, SyncManager.SyncService.NEXTCLOUD -> webdavUrl.isNotBlank()
+            SyncManager.SyncService.NONE -> false
+        }
+        val lastSyncText = if (lastSync > 0L) java.text.DateFormat.getDateTimeInstance().format(java.util.Date(lastSync)) else stringResource(MR.strings.sync_not_yet)
         return Preference.PreferenceGroup(
             title = stringResource(SYMR.strings.pref_sync_now_group_title),
             preferenceItems = persistentListOf(
+                Preference.PreferenceItem.CustomPreference(
+                    title = stringResource(SYMR.strings.pref_sync_service),
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        shape = SanctuaryShapes.deckCard,
+                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                        border = SanctuaryBrushes.subtleBorder(),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Surface(
+                                    shape = SanctuaryShapes.medium,
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                    modifier = Modifier.size(42.dp),
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.CloudSync,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(22.dp),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(SYMR.strings.pref_sync_service),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        text = stringResource(MR.strings.sync_last_status, lastSyncText),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Surface(
+                                    shape = SanctuaryShapes.tag,
+                                    color = if (configured) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    },
+                                ) {
+                                    Text(
+                                        text = if (configured) "Configured" else "Not configured",
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (configured) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                    )
+                                }
+                            }
+                            Text(
+                                text = stringResource(MR.strings.sync_scope_notice),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                },
                 getSyncOptionsPref(),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(SYMR.strings.pref_sync_now),
+                    enabled = configured,
                     subtitle = stringResource(SYMR.strings.pref_sync_now_subtitle),
                     onClick = {
                         if (!SyncDataJob.isRunning(context)) {

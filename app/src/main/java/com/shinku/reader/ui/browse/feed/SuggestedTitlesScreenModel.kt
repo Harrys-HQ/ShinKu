@@ -2,7 +2,7 @@ package com.shinku.reader.ui.browse.feed
 
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.manga.model.Manga
@@ -15,22 +15,25 @@ import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.launch
 import logcat.LogPriority
-import com.shinku.reader.core.common.util.system.logcat
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import java.util.concurrent.atomic.AtomicBoolean
 
 @androidx.compose.runtime.Immutable
 data class SuggestedTitlesScreenState(
     val mangas: ImmutableList<Manga> = persistentListOf(),
     val isLoadingMore: Boolean = false,
     val hasMore: Boolean = true,
+    val hasError: Boolean = false,
 )
 
 class SuggestedTitlesScreenModel(
@@ -45,38 +48,27 @@ class SuggestedTitlesScreenModel(
     private val sourceHealthRepository: SourceHealthRepository = Injekt.get(),
     private val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
     private val getManga: GetManga = Injekt.get(),
+    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : StateScreenModel<SuggestedTitlesScreenState>(
     SuggestedTitlesScreenState(
         mangas = initialMangas.distinctBy { it.id }.toImmutableList(),
         hasMore = mode == "genre" || mode == "for_you",
     ),
 ) {
-    private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(4)
-    private var currentPage = if (initialMangas.isEmpty() && initialMangaIds.isEmpty()) 0 else 1
-    private val loadedIds = mutableSetOf<Long>().apply {
-        addAll(initialMangas.map { it.id })
-    }
+    private val loading = AtomicBoolean(false)
+    private val cursors = mutableMapOf<Long, SourcePageCursor>()
 
     init {
         if (initialMangas.isEmpty()) {
-            if (initialMangaIds.isNotEmpty()) {
-                screenModelScope.launchIO {
-                    val restoredMangas = initialMangaIds.mapNotNull { id ->
-                        getManga.await(id)
-                    }
-                    if (restoredMangas.isNotEmpty()) {
-                        currentPage = 1
-                        loadedIds.addAll(restoredMangas.map { it.id })
-                        mutableState.update { state ->
-                            state.copy(mangas = restoredMangas.distinctBy { it.id }.toImmutableList())
-                        }
-                    } else if (mode == "genre" || mode == "for_you") {
-                        currentPage = 0
-                        loadNextPage()
-                    }
+            loading.set(true)
+            screenModelScope.launch(coroutineDispatcher) {
+                try {
+                    val restored = initialMangaIds.mapNotNull { getManga.await(it) }
+                    mutableState.updateIfActive { it.copy(mangas = restored.distinctBy { it.id }.toImmutableList()) }
+                } finally {
+                    loading.set(false)
                 }
-            } else if (mode == "genre" || mode == "for_you") {
-                loadNextPage()
+                if (state.value.mangas.isEmpty()) loadNextPage()
             }
         }
     }
@@ -109,7 +101,7 @@ class SuggestedTitlesScreenModel(
         val candidates = filtered.ifEmpty { allSources }
         if (candidates.size <= 1) return candidates
 
-        val healthMap = runCatching {
+        val healthMap = runCatchingCancellable {
             sourceHealthRepository.subscribeAll().first().associateBy { it.sourceId }
         }.getOrDefault(emptyMap())
 
@@ -125,97 +117,68 @@ class SuggestedTitlesScreenModel(
     }
 
     fun loadNextPage() {
-        if (state.value.isLoadingMore || !state.value.hasMore) return
-
-        mutableState.update { it.copy(isLoadingMore = true) }
-        val nextPage = currentPage + 1
-
-        screenModelScope.launchIO {
+        if (!state.value.hasMore || !loading.compareAndSet(false, true)) return
+        mutableState.update { it.copy(isLoadingMore = true, hasError = false) }
+        screenModelScope.launch(coroutineDispatcher) {
             try {
-                val sources = getEligibleSources()
-                if (sources.isEmpty()) {
-                    mutableState.update { it.copy(isLoadingMore = false, hasMore = false) }
-                    return@launchIO
+                val sources = getEligibleSources().let { eligible ->
+                    when (mode) {
+                        "genre" -> eligible.filter { query.isNotBlank() && GenreFilterHelper.buildGenreFilterList(it, query) != null }.take(3)
+                        "for_you" -> eligible.filter { it.supportsLatest }.take(2)
+                        else -> emptyList()
+                    }
                 }
-
-                val newResults: List<Manga> = when (mode) {
-                    "genre" -> {
-                        if (query.isBlank()) {
-                            emptyList()
+                var failed = false
+                // Advance through duplicate-only pages without treating them as end-of-results.
+                // Bound automatic work; the footer can continue if three pages contain only duplicates.
+                repeat(3) {
+                    val pending = sources.filter { cursors.getOrPut(it.id) { SourcePageCursor() }.hasMore }
+                    val results = pending.map { source ->
+                        async(coroutineDispatcher) {
+                            val cursor = cursors.getValue(source.id)
+                            val result = runCatchingCancellable {
+                                sharedFeedRequests.request(source.id) {
+                                    when (mode) {
+                                        "genre" -> source.getSearchManga(cursor.nextPage, "", GenreFilterHelper.buildGenreFilterList(source, query)!!)
+                                        else -> source.getLatestUpdates(cursor.nextPage)
+                                    }
+                                } ?: error("Source timed out")
+                            }
+                            source to result
+                        }
+                    }.awaitAll()
+                    var added = false
+                    results.forEach { (source, result) ->
+                        val page = result.getOrNull()
+                        if (page == null) {
+                            failed = true
                         } else {
-                            val supportingSources = sources.mapNotNull { source ->
-                                val filterList = GenreFilterHelper.buildGenreFilterList(source, query)
-                                if (filterList != null) source to filterList else null
-                            }.take(3)
-
-                            supportingSources.map { (source, filterList) ->
-                                async(coroutineDispatcher) {
-                                    withTimeoutOrNull(8_000L) {
-                                        try {
-                                            source.getSearchManga(nextPage, "", filterList).mangas.map {
-                                                it.toDomainManga(source.id)
-                                            }
-                                        } catch (e: Throwable) {
-                                            emptyList()
-                                        }
-                                    } ?: emptyList()
-                                }
-                            }.awaitAll().flatten()
+                            // Only commit a cursor once local conversion has succeeded too.
+                            val converted = networkToLocalManga(page.mangas.map { it.toDomainManga(source.id) })
+                                .filter { mode != "genre" || GenreFilterHelper.matchesGenre(it, query) }
+                            val before = state.value.mangas.size
+                            mutableState.updateIfActive { state ->
+                                state.copy(mangas = (state.mangas + converted).distinctBy { it.id }.toImmutableList())
+                            }
+                            cursors.getValue(source.id).accept(page.hasNextPage)
+                            added = added || state.value.mangas.size > before
                         }
                     }
-                    "for_you" -> {
-                        val latestSources = sources.filter { it.supportsLatest }.take(2).ifEmpty { sources.take(2) }
-                        latestSources.map { source ->
-                            async(coroutineDispatcher) {
-                                withTimeoutOrNull(8_000L) {
-                                    try {
-                                        source.getLatestUpdates(nextPage).mangas.map {
-                                            it.toDomainManga(source.id)
-                                        }
-                                    } catch (e: Throwable) {
-                                        emptyList()
-                                    }
-                                } ?: emptyList()
-                            }
-                        }.awaitAll().flatten()
-                    }
-                    else -> emptyList()
-                }
-
-                val localMangas = if (newResults.isNotEmpty()) {
-                    val converted = networkToLocalManga(newResults)
-                    if (mode == "genre" && query.isNotBlank()) {
-                        converted.filter { GenreFilterHelper.matchesGenre(it, query) }
-                    } else {
-                        converted
-                    }
-                } else {
-                    emptyList()
-                }
-
-                val uniqueNewMangas = localMangas.filter { it.id !in loadedIds }
-
-                if (uniqueNewMangas.isNotEmpty()) {
-                    currentPage = nextPage
-                    loadedIds.addAll(uniqueNewMangas.map { it.id })
-                    mutableState.update {
-                        it.copy(
-                            mangas = (it.mangas + uniqueNewMangas).distinctBy { manga -> manga.id }.toImmutableList(),
-                            isLoadingMore = false,
-                            hasMore = true,
-                        )
-                    }
-                } else {
-                    mutableState.update {
-                        it.copy(
-                            isLoadingMore = false,
-                            hasMore = false,
-                        )
+                    if (added || failed || pending.isEmpty() || cursors.values.none { it.hasMore }) {
+                        mutableState.updateIfActive {
+                            it.copy(isLoadingMore = false, hasMore = sources.any { source -> cursors[source.id]?.hasMore != false }, hasError = failed)
+                        }
+                        return@launch
                     }
                 }
-            } catch (e: Throwable) {
+                mutableState.updateIfActive { it.copy(isLoadingMore = false, hasMore = true) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
-                mutableState.update { it.copy(isLoadingMore = false) }
+                mutableState.updateIfActive { it.copy(isLoadingMore = false, hasError = true) }
+            } finally {
+                loading.set(false)
             }
         }
     }

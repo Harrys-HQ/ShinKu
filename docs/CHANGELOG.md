@@ -1,5 +1,24 @@
 # ShinKu Changelog
- 
+
+## 2.8.1 "Sanctuary Core Suite, Dynamic AI Discovery & Security Hardening" (2026-11-08)
+### Security & Stability
+- **OAuth Callback Security Hardening (Fixes #28)**:
+  - Hardened OAuth authorization across external trackers (AniList, Bangumi, Comick, MyAnimeList, Shikimori) with persistent cryptographic state nonces via `OAuthStateStore`.
+  - Implemented one-time nonce verification and immediate invalidation to prevent CSRF callback injection and authorization code interception attacks.
+- **MangaBat HTTP 429 & Cloudflare Rate-Limit Pacing**:
+  - Added 800ms pacing between concurrent multi-source queries in Global Search with automatic 1800ms backoff-and-retry on HTTP 429 errors.
+  - Added HTTP 429 to `CloudflareInterceptor` error code matrix for proper challenge interception and handling.
+
+### Features & AI Reader Innovations
+- **Dynamic Gemini Model Discovery (Fixes #27)**:
+  - Integrated dynamic Gemini model fetching via Google AI Studio API (`v1beta/models`).
+  - Added automatic quota-safe caching and real-time model dropdown listing newer models (e.g. `gemini-2.5-flash`, `gemini-2.5-pro`) without requiring hardcoded updates.
+- **Reader Mood Lighting Overhaul (Fixes #26)**:
+  - Restored dynamic ambient lighting in Reader settings with live color extraction, responsive intensity controls, and memory-safe background rendering.
+- **Sanctuary Core Suite Implementation (Boards 01–14 / 95% Completion)**:
+  - Implemented 42 high-fidelity panels across 14 Sanctuary design boards: Library management, Reader controls, Discover feed, Source browsing, Chapter tracking, Downloads, Statistics, History, Settings, and Source Health.
+  - Hardened all layouts against horizontal overflow, button squeezing, and clipping across phone, phablet, and tablet viewports.
+
 ## 2.8.0 "Sanctuary Redesign, Interactive Area OCR (Beta) & Tracker Sync" (2026-11-01)
 ### Features & AI Reader Innovation
 - **Interactive Area OCR & In-Place Translation (BETA)**:

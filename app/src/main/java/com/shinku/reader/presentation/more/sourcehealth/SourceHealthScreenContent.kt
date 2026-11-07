@@ -43,6 +43,7 @@ import com.shinku.reader.presentation.core.theme.statusDegraded
 import com.shinku.reader.presentation.core.theme.statusExcellent
 import com.shinku.reader.presentation.core.theme.statusGood
 import com.shinku.reader.presentation.core.theme.statusWarning
+import com.shinku.reader.presentation.util.relativeTimeSpanString
 
 @Composable
 fun SourceHealthScreenContent(
@@ -78,6 +79,33 @@ fun SourceHealthScreenContent(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = "Source health",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Surface(
+                    shape = SanctuaryShapes.tag,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Text(
+                        text = "Checked on request",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
         items(healthList, key = { it.source.id }) { item ->
             SourceHealthItemCard(
                 item = item,
@@ -112,7 +140,7 @@ private fun SourceHealthItemCard(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = SanctuaryShapes.card,
+        shape = SanctuaryShapes.deckCard,
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
         border = SanctuaryBrushes.subtleBorder(),
         shadowElevation = SanctuaryElevation.subtle,
@@ -193,6 +221,27 @@ private fun SourceHealthItemCard(
                     )
                 }
             }
+
+            val lastCheckText = when {
+                health == null || (health.lastSuccess == 0L && health.lastFailure == 0L) -> "Not checked yet"
+                health.isFailingNow -> if (health.lastFailure > 0L) {
+                    "Last check failed (${relativeTimeSpanString(health.lastFailure)})"
+                } else {
+                    "Last check failed"
+                }
+                health.lastSuccess > 0L -> {
+                    val latencyStr = if (health.avgLatency > 0L) " · ${health.avgLatency}ms" else ""
+                    "Last check succeeded (${relativeTimeSpanString(health.lastSuccess)})$latencyStr"
+                }
+                else -> "Not checked yet"
+            }
+
+            Text(
+                text = lastCheckText,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp),
+            )
 
             if (health != null) {
                 Row(

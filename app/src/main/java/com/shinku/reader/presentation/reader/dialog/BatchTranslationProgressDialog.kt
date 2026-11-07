@@ -2,16 +2,22 @@ package com.shinku.reader.presentation.reader.dialog
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesomeMotion
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
@@ -61,22 +67,30 @@ fun BatchTranslationProgressDialog(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_shinku_logo),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(SanctuaryShapes.tag),
-                )
-                Column {
-                    SanctuaryOverlineBadge(
-                        text = "BATCH TRANSLATION",
-                        compact = true,
+                Surface(
+                    shape = SanctuaryShapes.medium,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                    modifier = Modifier.size(38.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Outlined.AutoAwesomeMotion,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Chapter translation",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Translating Chapter",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        text = "Translating into ${targetLanguage.uppercase()}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -89,7 +103,7 @@ fun BatchTranslationProgressDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Surface(
-                    shape = SanctuaryShapes.medium,
+                    shape = SanctuaryShapes.deckCard,
                     color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
                     border = SanctuaryBrushes.subtleBorder(),
                     modifier = Modifier.fillMaxWidth(),
@@ -135,7 +149,7 @@ fun BatchTranslationProgressDialog(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = "$translatedCount pages translated",
+                                text = "$translatedCount pages completed",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -148,30 +162,42 @@ fun BatchTranslationProgressDialog(
                     }
                 }
 
-                Row(
+                Surface(
+                    shape = SanctuaryShapes.deckCard,
+                    color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                    border = SanctuaryBrushes.subtleBorder(),
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = if (isOverlayVisible) "Overlays: Active" else "Overlays: Hidden",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isOverlayVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    TextButton(onClick = onToggleOverlay) {
-                        Text(
-                            text = if (isOverlayVisible) "Hide Overlays" else "Show Overlays",
-                            maxLines = 1,
-                            softWrap = false,
-                        )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Show translated text",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = if (isOverlayVisible) "Overlays visible on manga pages" else "Overlays hidden",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(checked = isOverlayVisible, onCheckedChange = { onToggleOverlay() })
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onRunInBackground) {
-                Text("Run in Background", fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+            Button(
+                onClick = onRunInBackground,
+                shape = SanctuaryShapes.medium,
+            ) {
+                Text("Run in background", fontWeight = FontWeight.SemiBold, maxLines = 1)
             }
         },
         dismissButton = {

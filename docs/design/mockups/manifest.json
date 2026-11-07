@@ -1,0 +1,757 @@
+{
+  "tool": "built-in image_gen",
+  "date": "2026-11-03",
+  "status": "13 canonical numbered mockups audited; board 05 implemented locally at 95% provisional visual acceptance, other recorded tags unchanged",
+  "basePrompt": "Use case: ui-mockup. Create ONE high-resolution Sanctuary design-review board for the existing ShinKu Android manga reader. This is an image concept, not implementation. The TWO references establish the visual direction: charcoal-black background, muted lavender/periwinkle accents, warm-white text, restrained violet-gray cards with subtle thin borders, rounded corners, consistent line icons, readable Android typography and generous touch areas. Preserve the exact app spelling ShinKu. Do not introduce crimson, a new logo, subscriptions, chat assistants, fabricated provider results, credentials, or new backend functionality.\nLayout: landscape 3:2 board with THREE large equal portrait Android screens, straight-on thin rounded device frames, modest gutters and a quiet dark canvas. Screen content must dominate the image and remain legible when zoomed. Small board heading at top; a compact name under each screen. Unless explicitly overridden below, use three phones. Use familiar manga artwork consistent with the references where covers are relevant. Avoid dense tiny text: show representative rows and use scroll affordances for additional content. Wrap long labels. Inner pages have a back arrow and NO home navigation dock. Only actual home tabs have the familiar five-item dock (Library, Updates, History, Browse, More), selected appropriately. Always reserve space so docks, primary actions and gesture bars do not hide content. Show truthful illustrative states, no invented performance guarantees or completed remote actions. Match both reference boards closely.",
+  "referenceImages": [
+    "../shinku-phase1-mockup-v1.png",
+    "../shinku-inner-experience-mockup-v1.png"
+  ],
+  "boards": [
+    {
+      "id": "01",
+      "slug": "discovery",
+      "title": "Discovery & search",
+      "panels": [
+        {
+          "name": "Discover",
+          "brief": "Home Browse feed. Compact featured manga card, full two-line title, search action, genre chips. Horizontal shelves 'For you' and 'Recently updated', readable cover captions and 'See all'. Small explanation 'Based on your reading genres'. Tabs Feed, Sources, Extensions, Migrate remain fully readable via a scrollable tab strip. Browse selected in dock. Preserve shelf size and source controls.",
+          "implementationPercent": 75
+        },
+        {
+          "name": "Global search",
+          "brief": "Back arrow, large search field containing 'fantasy', clear icon, source/language filter chips. Group results by source with source heading and See all, two or three covers per row, complete short titles. A small inline 'Searching another sourceÃ¢â‚¬Â¦' row shows partial progress without blocking available results. No home dock.",
+          "implementationPercent": 60
+        },
+        {
+          "name": "Source catalogue",
+          "brief": "Back arrow, source title 'Manga source', search and filter icons; Popular and Latest tabs; three-column manga grid with legible multi-line captions, source and language context, and bottom-safe pagination loading. No brand-new recommendation engine or extra functionality.",
+          "implementationPercent": 75
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "01-discovery-v1.png",
+      "note": "Preserve genre filters and full-title access; generated counts and truncated captions require review.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 70,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "02",
+      "slug": "sources",
+      "title": "Sources, extensions & repositories",
+      "panels": [
+        {
+          "name": "Sources",
+          "brief": "Home Browse Sources tab selected. Search field, language chips, Pinned section and All sources section. Rounded source rows with icon, name, language, pin action and overflow. A latest-updates shortcut is secondary. All Sources/Extensions tab labels readable, Browse dock selected.",
+          "implementationPercent": 75
+        },
+        {
+          "name": "Extensions",
+          "brief": "Home Browse Extensions tab. Installed and Available groups, search/language filter, version metadata, explicit Update or Install action per row. Show one untrusted extension with a neutral warning and 'Review trust' action, not a blanket install or automatic trust. Browse dock selected.",
+          "implementationPercent": 60
+        },
+        {
+          "name": "Repositories",
+          "brief": "Nested Extension repositories page. Two repository cards with illustrative domain labels 'Repository A' and 'Repository B', update metadata, overflow and readable add action. Add-repository bottom sheet with URL field, neutral 'Review repository' action, Cancel. Do not show invented verification badges or plausible access tokens.",
+          "implementationPercent": 55
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "02-sources-v1.png",
+      "note": "Preserve Feed / Sources / Extensions / Migrate routes; the generated Latest updates tab must not replace an existing route.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 60,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "03",
+      "slug": "migration",
+      "title": "Source migration",
+      "panels": [
+        {
+          "name": "Find affected titles",
+          "brief": "Nested Migration page with segmented 'Missing sources' and 'Failed updates', counts, explanation, selectable affected manga rows and source names. Primary 'Review migration'. Do not silently move titles or delete progress.",
+          "implementationPercent": 50
+        },
+        {
+          "name": "Migration options",
+          "brief": "Readable configuration page. Source selection, switches for chapters, categories and tracking references, short explanation that reading progress is preserved when matched. Explicit review button. Keep advanced choices collapsed and labels wrapped.",
+          "implementationPercent": 60
+        },
+        {
+          "name": "Review & progress",
+          "brief": "Comparison of existing and proposed manga source with two small covers, title and source context. Actions 'Choose match' and 'Skip'. Show a compact progress card '3 of 8 reviewed', paused state and 'Continue'. No automatic-success claims or destructive default selections.",
+          "implementationPercent": 60
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "03-migration-v1.png",
+      "note": "Sample source names and matching claims are illustrative; show only data supported by actual sources.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 55,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "04",
+      "slug": "daily",
+      "title": "Updates, history & downloads",
+      "panels": [
+        {
+          "name": "Updates",
+          "brief": "Home Updates tab with Today and Yesterday sections, manga thumbnail, full title, new chapter label and small download/read actions. Optional Upcoming chip leads to schedule. Clear refresh indicator and selection action, Updates selected in safe floating dock.",
+          "implementationPercent": 75
+        },
+        {
+          "name": "History",
+          "brief": "Home History tab with search, day-grouped last-read entries, chapter/page progress and Resume action. Compact cover art and full title. Overflow exposes removal rather than a prominent destructive button. History selected in dock.",
+          "implementationPercent": 75
+        },
+        {
+          "name": "Downloads",
+          "brief": "Nested Downloads queue. A compact aggregate progress header, one downloading chapter with progress and pause, queued rows, one failed row with Retry, and finished row. Clear 'Pause all' / 'Resume all' state, no conflicting buttons. No dock. Do not invent speeds; show progress percentages only.",
+          "implementationPercent": 75
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "04-daily-v1.png",
+      "note": "Rendered 2026-11-04. Downloads shows Pause all and Resume all as active together; implement only the action appropriate to queue state. Sample counts/progress are illustrative.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "earlier_pass_installed_latest_pending",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 75,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "05",
+      "slug": "library-tools",
+      "title": "Library organization",
+      "panels": [
+        {
+          "name": "Library filters",
+          "brief": "Library behind a rounded bottom sheet. Tabs Filter, Sort, Display. Filter selected, tri-state rows with clear Include/Exclude/Any chips for unread/downloaded/completed, active filter count, Reset and Done. Selection states distinguishable beyond color. Underlying dock dimmed, not duplicated inside sheet.",
+          "implementationPercent": 95
+        },
+        {
+          "name": "Categories",
+          "brief": "Nested Categories page. Category rows Reading, Queue, Finished with drag handles, counts and edit controls. A small Add category dialog has Name, Cancel and Add. Long names wrap and remain accessible. No fake automatic categorization or deletion.",
+          "implementationPercent": 95
+        },
+        {
+          "name": "Bulk selection",
+          "brief": "Library grid in selection mode, clear top bar '3 selected', select all and close. Selected cover outlines and checkmarks; fixed bottom action area with Download, Category, Mark read, More. Hide home navigation while selecting and keep the final grid row reachable.",
+          "implementationPercent": 95
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "05-library-tools-v1.png",
+      "note": "Rendered 2026-11-04. Filter badge says 3 active but only two rows have non-Any selections. Tri-state controls need checkmarks or text beyond color. Dialog and bulk-selection layouts are representative; verify safe final-row scrolling.",
+      "implementationStatus": "implemented_pending_visual_acceptance",
+      "phoneInstallationStatus": "latest_build_pending",
+      "visualStatus": "runtime_reviewed_default_and_large_text; final_acceptance_pending",
+      "visualReviewNote": "Known board-05 implementation gaps addressed. See 05-implementation-progress.md for per-part percentages, checkpoints and remaining phone/theme acceptance.",
+      "implementationPercent": 95,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "progressLog": "05-implementation-progress.md"
+    },
+    {
+      "id": "06",
+      "slug": "reading",
+      "title": "Reading & chapter navigation",
+      "panels": [
+        {
+          "name": "Paged reader",
+          "brief": "Full-screen manga page with restrained top controls shown: back, Chapter 111, overflow. Bottom controls show 12 / 24, page slider, previous/next chapter actions and settings. Artwork remains dominant; controls only on user interaction. No home dock or unrelated cards.",
+          "implementationPercent": 55
+        },
+        {
+          "name": "Webtoon reader",
+          "brief": "Vertically continuous manga panels with generous full-width artwork, a small page indicator 12 / 24 and a discreet translation visibility control. A small readable loading strip between pages 'Loading next pageÃ¢â‚¬Â¦' with Retry for one failed image. Keep navigation out of the artwork.",
+          "implementationPercent": 65
+        },
+        {
+          "name": "Chapters & pages",
+          "brief": "Reader context behind a bottom sheet titled 'Navigate'. Tabs Chapters and Pages, Chapters selected. Search, clearly marked current chapter, read/download status and bookmarks. A modest page-thumbnail strip represents Pages navigation. Complete rows and bottom-safe close action.",
+          "implementationPercent": 60
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "06-reading-v1.png",
+      "note": "Rendered 2026-11-04. Webtoon loading row also shows Retry; separate loading and failure states. Generated chapter bookmark controls require capability verification; do not introduce unsupported actions.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 60,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "07",
+      "slug": "translation",
+      "title": "Translation in the reader",
+      "panels": [
+        {
+          "name": "Area selection",
+          "brief": "Manga page in area-OCR selection mode. Frozen page context, obvious crop handles around one speech balloon, short instruction 'Select an area', Cancel and Translate actions in a reserved bottom bar. No fabricated translated text until an action completes.",
+          "implementationPercent": 70
+        },
+        {
+          "name": "Inspect bubbles",
+          "brief": "Reader bubble-inspector sheet. Small selected-bubble preview, labels Original and Translation, short sample text, Copy and Re-translate controls. Previous/next bubble affordances and a visible close action. Respect reading order and preserve the visible manga context.",
+          "implementationPercent": 45
+        },
+        {
+          "name": "Chapter translation",
+          "brief": "Reader page behind a compact progress pill 'Translating 8 of 24 pages'. Expanded progress sheet includes translated/pending rows, Pause or Cancel, 'Show translated text' switch and accessible status text. Translation overlays fit inside speech balloons and can be hidden. Never obscure all artwork with a giant opaque panel.",
+          "implementationPercent": 60
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "07-translation-v1.png",
+      "note": "Rendered 2026-11-04. Translation text, counts and completion states are illustrative. Verify existing pause/cancel support and chapter scope before implementing controls; avoid treating generated state labels as confirmed behavior.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 55,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "08",
+      "slug": "reader-options",
+      "title": "Reader settings & page actions",
+      "panels": [
+        {
+          "name": "Display controls",
+          "brief": "Reader settings bottom sheet, tabs Reading, Display, Translation with Display selected. Brightness slider and System brightness switch, background selection, color-filter controls and a collapsed advanced section. Compact preview remains above sheet. Done safely inset from gesture bar.",
+          "implementationPercent": 40
+        },
+        {
+          "name": "Translation actions",
+          "brief": "Reader controls sheet with Translation selected. Clearly separated 'Translate this page', 'Translate chapter', 'Show overlays' toggle, language settings and inspection access. Cache clearing is a quiet secondary/destructive action with confirmation, not the primary button. No pricing or provider secrets.",
+          "implementationPercent": 60
+        },
+        {
+          "name": "Page actions",
+          "brief": "Long-press menu over a manga page. Readable rows Save image, Share image, Set as cover, Bookmark page, Select area to translate. Close and accessible labels; separate destructive or replacing actions. A small orientation-choice modal illustrates the same radio-list dialog pattern.",
+          "implementationPercent": 50
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "08-reader-options-v1.png",
+      "note": "Rendered 2026-11-04. Brightness slider appears enabled while system brightness is on; align enabled states. Cache wording incorrectly says downloaded translation data and scopes removal to a title; use actual saved-cache semantics. Verify page bookmark/orientation actions against existing capabilities.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 50,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "09",
+      "slug": "onboarding",
+      "title": "Getting started",
+      "panels": [
+        {
+          "name": "Welcome",
+          "brief": "Simple ShinKu welcome screen using existing visual identity, concise promise 'Your manga, your way'. Primary 'Set up ShinKu', secondary 'Restore a backup'. No sign-up wall, premium offer or mandatory AI configuration.",
+          "implementationPercent": 40
+        },
+        {
+          "name": "Storage & permissions",
+          "brief": "Step 2 of 4. Storage folder row with Choose folder. Brief explanation for notifications, a contextual Enable notifications action and 'Not now'. Explain requests before invoking Android system dialogs. Next enabled only for required storage requirements, no broad permission grant button.",
+          "implementationPercent": 60
+        },
+        {
+          "name": "Theme & finish",
+          "brief": "Theme step with System, Light, Dark samples, selected Dark, readable color preview, optional theme controls. Step 4 finish summary with Browse sources and Restore backup as next actions. AI setup clearly optional; reading available without credentials.",
+          "implementationPercent": 55
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "09-onboarding-v1.png",
+      "note": "Rendered 2026-11-05 with built-in image_gen and the two approved references. Review Next-button gating: no selected storage folder is shown, so its enabled appearance is illustrative. Theme/finish combines two steps; verify actual onboarding flow. AI setup remains optional.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "generationMethod": "built-in image_gen",
+      "generationDate": "2026-11-05",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 50,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "10",
+      "slug": "backup-sync",
+      "title": "Backups, restore & sync",
+      "panels": [
+        {
+          "name": "Create backup",
+          "brief": "Nested Backup page with clear sections Library and Settings, selectable categories/chapters/history options matching app capabilities, destination row and 'Create backup'. Small note 'API keys are excluded'. No password fields or invented backup encryption.",
+          "implementationPercent": 60
+        },
+        {
+          "name": "Restore preview",
+          "brief": "Backup file selected, readable library/settings summary, scope choices, progress-preservation explanation and explicit Restore button. A progress state is visible as a small modal card, cancel availability represented only before irreversible work starts. No automatic success claim.",
+          "implementationPercent": 50
+        },
+        {
+          "name": "Sync settings",
+          "brief": "Existing storage-based Sync settings. Folder selection, sync scope rows, on-start/after-reading trigger choices and clear last-sync status 'Not synced yet'. Primary 'Sync now' only when configured. No invented cloud account backend, conflict-merging wizard, or Dropbox functionality.",
+          "implementationPercent": 45
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "10-backup-sync-v1.png",
+      "note": "Rendered 2026-11-05. Review required: Chapters wording implies downloaded image files are backed up/synced; use actual metadata/progress scope. Restore counts/time and progress-preservation promise are illustrative. Cancel during active restore must not be implemented unless safely supported; require explicit confirmation before starting. Folder paths are examples, not Android storage APIs.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "generationMethod": "built-in image_gen",
+      "generationDate": "2026-11-05",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 50,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "11",
+      "slug": "tracking-security",
+      "title": "Tracking & privacy",
+      "panels": [
+        {
+          "name": "Trackers",
+          "brief": "Nested Tracking settings. Familiar AniList, MyAnimeList, Kitsu tracker rows, explicit Not connected or Connected sample states, connect controls. Note progress-sync choices and a quiet Manage entry point. Do not display actual account names or invented credentials.",
+          "implementationPercent": 55
+        },
+        {
+          "name": "Link a title",
+          "brief": "Tracker search/match flow for a sample manga. Search field, result rows with cover and title, choose match, then reading-status and chapter-progress controls. Explicit Link confirmation. Clear Cancel/back navigation and source-versus-tracker distinction.",
+          "implementationPercent": 45
+        },
+        {
+          "name": "Security & privacy",
+          "brief": "Nested Security preferences with App lock switch, biometric availability status, lock timing, hide-content options and Incognito explanation. Sensitive toggles clearly labeled; developer tools lower priority. Do not show fabricated guarantees that all network traffic is private.",
+          "implementationPercent": 55
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "11-tracking-security-v1.png",
+      "note": "Rendered 2026-11-05. Connected status, biometric availability, chapter progress and matches are illustrative. Tracker search should be scoped to the selected service rather than merging providers into one result list unless supported. Verify sync toggles and hide-content behavior. Incognito wording must not imply stopping library updates; describe only actual history/tracking behavior. Source: Local library is illustrative, not real source metadata.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "generationMethod": "built-in image_gen",
+      "generationDate": "2026-11-05",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 50,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "12",
+      "slug": "general-settings",
+      "title": "Core settings & appearance",
+      "panels": [
+        {
+          "name": "Settings",
+          "brief": "General Settings root. Search and grouped links Appearance, Library, Reader, Downloads, Browse, Tracking, Data and storage, Security, Advanced, About. Consistent compact rows, icons and chevrons, no home dock. Keep ShinKu-specific hub clearly linked without duplicate controls.",
+          "implementationPercent": 55
+        },
+        {
+          "name": "Appearance",
+          "brief": "Theme selection System/Light/Dark, accent swatches in the approved palette, font/display preview, navigation-label and motion preferences where supported. A live miniature preview card makes choices clear. Save automatically, no oversized explanatory hero.",
+          "implementationPercent": 55
+        },
+        {
+          "name": "Library settings",
+          "brief": "Grouped preferences for library display, badges, categories, update schedule and library-update speed. Readable descriptions and collapsible advanced update options. No renamed preference keys, forced defaults, or change in suggestion counts.",
+          "implementationPercent": 55
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "12-general-settings-v1.png",
+      "note": "Rendered 2026-11-05. General Settings root is mislabeled ShinKu settings and needs a separate ShinKu hub entry. Font, density, page layout, navigation style and scheduling controls are illustrative; verify actual preference capabilities and preserve OS settings/defaults. Preview values are samples.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "generationMethod": "built-in image_gen",
+      "generationDate": "2026-11-05",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 55,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "13",
+      "slug": "core-preferences",
+      "title": "Reader, browse & download preferences",
+      "panels": [
+        {
+          "name": "Reader preferences",
+          "brief": "Full reader-settings page with sections Defaults, Navigation, Display. Reading mode, orientation, page transitions, tap zones, advanced color settings. Use concise summaries and navigation to detailed forms; retain access to inherited options.",
+          "implementationPercent": 55
+        },
+        {
+          "name": "Browse preferences",
+          "brief": "Source language preferences, enabled-source filtering, default search/browse choices and extension security entry points. Multiselect language sheet uses checkboxes with search. Preserve configurable sources and adult-content settings as existing options rather than adding censorship or new policies.",
+          "implementationPercent": 40
+        },
+        {
+          "name": "Download preferences",
+          "brief": "Storage destination, Wi-Fi-only preference, download-ahead and removal settings, clear cache versus downloaded-files distinction. Destructive removal settings require clear scope and confirmation. Readable sublabels, no claimed free-storage amount or invented speed.",
+          "implementationPercent": 60
+        }
+      ],
+      "status": "generated_needs_review",
+      "file": "13-core-preferences-v1.png",
+      "note": "Rendered 2026-11-05. Language count matches the two selected example rows. Default search target, page transitions, extension-security grouping and download-ahead switch are illustrative; retain actual supported controls, values and inherited adult-content preferences. Clear-cache versus manga-file removal must match the real storage scopes; the all-downloads deletion confirmation is a design example, not an authorized deletion or new maintenance capability.",
+      "implementationStatus": "partially_implemented",
+      "phoneInstallationStatus": "latest_build_pending",
+      "generationMethod": "built-in image_gen",
+      "generationDate": "2026-11-05",
+      "visualStatus": "source_audited_partial_runtime; known_visual_gaps",
+      "implementationPercent": 50,
+      "percentageKind": "provisional_supported_scope_estimate",
+      "visualReviewNote": "See implementation-audit.json and ../mockup-visual-audit.md for panel scores, source evidence, remaining work and adaptations."
+    },
+    {
+      "id": "14",
+      "slug": "maintenance",
+      "title": "Performance & maintenance",
+      "panels": [
+        {
+          "name": "Performance",
+          "brief": "ShinKu Performance page. Mode Standard, Low power, E-Ink choices; high-refresh-rate preference, predictive loading and enhanced scaling controls. Explain tradeoffs briefly without FPS guarantees. Use 'Enhanced scaling' rather than falsely claiming a neural model."
+        },
+        {
+          "name": "Maintenance & source health",
+          "brief": "Source-health overview with illustrative healthy/unavailable/unknown states and retry/check actions. Links Smart categorizer, Missing sources, Failed updates and Storage cleanup. Clearly distinguish a diagnosis from an untested state. No unsupported real-time source SLA."
+        },
+        {
+          "name": "Advanced tools",
+          "brief": "Developer-oriented settings grouped below a warning-neutral explanatory line. Debug info, worker status, logs, migration tools and database maintenance. A diagnostic details sheet contains generic version/runtime fields. Never display signing credentials, API keys, user titles or raw private logs."
+        }
+      ],
+      "status": "blocked_image_usage_limit",
+      "file": "14-maintenance-v1.png",
+      "note": "Generation attempted 2026-11-05; tool returned usage_limit_reached and produced no image. Resume at this board after the tool-estimated reset.",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored",
+      "externalDraftFile": "14-performance-maintenance-v1.png",
+      "visualReviewNote": "External draft exists; canonical target not adopted and no board-14 redesign pass applied."
+    },
+    {
+      "id": "15",
+      "slug": "journey",
+      "title": "Reading journey & identity",
+      "panels": [
+        {
+          "name": "Journey overview",
+          "brief": "Reading statistics with compact profile, clearly formatted chapter/time/streak values, date-range control and a simple readable reading-activity chart. Use illustrative values rather than claiming current telemetry. Cards have consistent hierarchy and complete numbers."
+        },
+        {
+          "name": "Genres & patterns",
+          "brief": "Analytics page with readable genre bars and time-of-day reading chart, clear axis labels and text summaries as alternatives to color. No social ranking or invented source data; small genre labels and values fit within screen."
+        },
+        {
+          "name": "Milestones & profile",
+          "brief": "Milestones grid with readable earned/locked badges. Profile edit sheet for display name/avatar and a compact share-card preview showing only opted-in statistics. Share is an explicit action, not automatic publication. Keep progress and badge information legible."
+        }
+      ],
+      "status": "prompt_ready",
+      "file": "15-journey-v1.png",
+      "note": "",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    },
+    {
+      "id": "16",
+      "slug": "empty-loading",
+      "title": "Empty, loading & offline states",
+      "panels": [
+        {
+          "name": "Empty library",
+          "brief": "Library home empty state, calm existing icon, heading 'Your library starts here', one clear 'Browse sources' action and secondary Restore backup. Keep Library selected in dock; no fabricated manga cards or mandatory AI setup."
+        },
+        {
+          "name": "Partial loading",
+          "brief": "Discover feed with skeleton cards in one shelf and already-loaded content in another. Inline message 'One source is unavailable' with Retry and Source details, avoiding an app-blocking full-screen error. Compact refresh indicator; Browse dock remains usable."
+        },
+        {
+          "name": "Offline & no results",
+          "brief": "Search page with Offline banner, available cached manga cards and explicit 'Showing saved results'. Separate compact no-results card 'No matching titles' and Clear filters action in a small inset state example. No false promise of uncached online access."
+        }
+      ],
+      "status": "prompt_ready",
+      "file": "16-empty-loading-v1.png",
+      "note": "",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    },
+    {
+      "id": "17",
+      "slug": "dialogs-auth",
+      "title": "Dialogs, permissions & authentication",
+      "panels": [
+        {
+          "name": "Confirm an action",
+          "brief": "Dimmed Library with a carefully scoped 'Remove 3 titles?' confirmation. Explain library removal separately from deleting downloaded files, unchecked optional download deletion, Cancel and clearly labeled Remove. Large readable targets and no destructive action by default."
+        },
+        {
+          "name": "App lock",
+          "brief": "ShinKu app-lock screen with a modest app mark, 'Unlock ShinKu', biometric action and supported device-credential fallback. Separate small contextual Android permission prompt example for notifications. Do not invent an app PIN system or expose reading content while locked."
+        },
+        {
+          "name": "Website sign-in",
+          "brief": "Nested WebView frame for tracker/source authentication, visible domain placeholder 'Service website', back/close and open-in-browser actions. Clear 'Complete sign-in on the website' or 'Source verification required' status. No fake successful login, copied third-party branding, credential autofill or protection-bypass claims."
+        }
+      ],
+      "status": "prompt_ready",
+      "file": "17-dialogs-auth-v1.png",
+      "note": "",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    },
+    {
+      "id": "18",
+      "slug": "recovery",
+      "title": "Recovery, diagnostics & release information",
+      "panels": [
+        {
+          "name": "Restore issue",
+          "brief": "Backup restore failure screen with specific sample 'This file could not be read', useful Choose another file and View details actions. Preserve existing-library wording without promising rollback that does not exist. Show progress/error grouping and a safe back action."
+        },
+        {
+          "name": "Crash recovery",
+          "brief": "Calm error-recovery screen, 'ShinKu stopped unexpectedly', Restart app, Copy diagnostics and a quieter sharing action. Warn that diagnostics should be reviewed before sharing. No fake technical stack trace, secret values or unsupported automatic repair."
+        },
+        {
+          "name": "About & changes",
+          "brief": "About ShinKu with app icon style, version '2.8.1-preview.1', links release notes, open-source licenses and privacy. A readable What's new sheet shows short version-grouped entries and Close; links use familiar navigation rather than adding new accounts."
+        }
+      ],
+      "status": "prompt_ready",
+      "file": "18-recovery-v1.png",
+      "note": "",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    },
+    {
+      "id": "19",
+      "slug": "adaptive",
+      "title": "Tablet & landscape layouts",
+      "panels": [
+        {
+          "name": "Tablet library",
+          "brief": "OVERRIDE layout: this board contains TWO landscape/tablet frames stacked on the LEFT and ONE portrait phone on the RIGHT. The upper tablet is a Library page with left navigation rail, wide search/header, compact resume card, category tabs and a six-column cover grid. Use available width without stretching cards or changing reading data."
+        },
+        {
+          "name": "Landscape reader",
+          "brief": "Lower LEFT landscape frame: an immersive single-page reader with sensible page margins, minimal top/bottom controls and a compact side settings panel instead of a bottom sheet swallowing the page. Display/Translation remain accessible; no phone home dock in reader."
+        },
+        {
+          "name": "Large-text phone",
+          "brief": "RIGHT portrait phone: the approved Library concept at visibly increased text size. Resume title wraps; category chips scroll; cover captions have space, navigation labels remain legible and all actions clear the safe area. Do not simply shrink fonts to force the original layout."
+        }
+      ],
+      "status": "prompt_ready",
+      "file": "19-adaptive-v1.png",
+      "note": "",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    },
+    {
+      "id": "20",
+      "slug": "accessible-themes",
+      "title": "Light, high-contrast & E-Ink",
+      "panels": [
+        {
+          "name": "Light theme",
+          "brief": "Approved ShinKu Library rendered in a calm light theme: warm off-white base, pale lavender cards, dark readable text, dark icons and a lavender selected navigation item. Same information hierarchy, full titles and three-column grid. Not a new brand."
+        },
+        {
+          "name": "Accessible controls",
+          "brief": "Reader control sheet with enlarged text and more spacious rows, clear selected-state checkmarks, labels beside icons, readable contrast and focus outlines illustrating keyboard/screen-reader focus. Do not print meaningless screen-reader overlays or claim certified accessibility."
+        },
+        {
+          "name": "E-Ink profile",
+          "brief": "ShinKu library in a static grayscale E-Ink-friendly mode, crisp black/white boundaries, no blur or gradients, clear selection marks and optional compact list layout. A small Performance preferences sheet shows E-Ink selected. No refresh-animation demonstration or battery/FPS promises."
+        }
+      ],
+      "status": "prompt_ready",
+      "file": "20-accessible-themes-v1.png",
+      "note": "",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    },
+    {
+      "id": "21",
+      "slug": "special-integrations",
+      "title": "Specialist source integrations",
+      "panels": [
+        {
+          "name": "MangaDex follows",
+          "brief": "MangaDex follows screen with Reading, Planned, Completed filters, readable cover list, source sync status 'Not checked yet' and refresh action. Authentication entry is explicit. Do not display private account information or fabricate synced success."
+        },
+        {
+          "name": "Source integration settings",
+          "brief": "E-Hentai/ExHentai configuration presented as a structured advanced integration page: account status Not connected, language/content preferences and safe navigation to website login. Preserve existing capability scope; use generic neutral thumbnails, no explicit artwork or credentials."
+        },
+        {
+          "name": "Metadata editor",
+          "brief": "Editable manga metadata screen with cover preview, title, author, artist, genre chips and description fields. Clearly separate source metadata from local overrides, explicit Save/Cancel where editing requires confirmation. Long text wraps and source-provided values are recognizable."
+        }
+      ],
+      "status": "prompt_ready",
+      "file": "21-special-integrations-v1.png",
+      "note": "",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    },
+    {
+      "id": "22",
+      "slug": "extension-merged",
+      "title": "Extension details & merged manga",
+      "panels": [
+        {
+          "name": "Extension details",
+          "brief": "Installed extension detail page with generic name, version/language, source list, preferences entry, update and quiet uninstall action. Trust state must be explicit and reviewable. No invented trusted certificate or automatic update guarantee."
+        },
+        {
+          "name": "Source preferences",
+          "brief": "Source-specific preference screen using Sanctuary rows while retaining extension-provided content, language/select fields, switches and a password field masked by bullets. The example contains no actual endpoint secrets. Links to website/authentication follow the shared WebView pattern."
+        },
+        {
+          "name": "Merged manga & notes",
+          "brief": "Merged manga configuration: component title/source rows, chapter priority/reordering and settings links. A small Notes edit sheet shows a multiline local note, Cancel and Save. Keep merge controls separate from irreversible source deletion and preserve reading progress."
+        }
+      ],
+      "status": "prompt_ready",
+      "file": "22-extension-merged-v1.png",
+      "note": "",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    },
+    {
+      "id": "23",
+      "slug": "special-workflows",
+      "title": "Batch tools & advanced organization",
+      "panels": [
+        {
+          "name": "Batch add",
+          "brief": "Existing batch-add workflow. Multiline manga/URL input, concise accepted-format help, validation summary and Review titles action. Show readable per-item pending/invalid states in preview, then explicit Add selected. No external import system or unsupported file format."
+        },
+        {
+          "name": "Smart search",
+          "brief": "Existing Smart search / title-matching interface. Original manga summary, editable search text, candidate results grouped by source, Match and Skip actions. Label suggestions as candidates, never guaranteed exact matches; no fake AI confidence percentage."
+        },
+        {
+          "name": "Advanced categories",
+          "brief": "Source-category management with readable named groups and reorder handles. A tag-sort preferences sheet with clear ordered rows, and a small biometric-timing setting entry represent existing advanced organization options using shared patterns. No loss of inherited settings."
+        }
+      ],
+      "status": "prompt_ready",
+      "file": "23-special-workflows-v1.png",
+      "note": "",
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    },
+    {
+      "id": "24",
+      "slug": "widgets-system",
+      "title": "Widgets & system surfaces",
+      "file": "24-widgets-system-v1.png",
+      "status": "prompt_ready",
+      "note": "Respect Android/OEM-controlled layouts and supported widget sizes.",
+      "panels": [
+        {
+          "name": "Updates widget",
+          "brief": "Home-screen updates-grid widget with consistent manga covers, identity and supported controls."
+        },
+        {
+          "name": "Widget size variants",
+          "brief": "Compact cover-screen/lock-screen and larger home-screen widget previews with loading/empty states."
+        },
+        {
+          "name": "Notifications & shortcuts",
+          "brief": "Platform download/update notifications and existing launcher shortcuts, preserving Android system behavior."
+        }
+      ],
+      "implementationStatus": "not_started",
+      "phoneInstallationStatus": "not_implemented",
+      "visualStatus": "not_implemented",
+      "implementationPercent": 0,
+      "percentageKind": "planned_redesign_work_not_started; visual_match_unscored"
+    }
+  ],
+  "lastGenerationDate": "2026-11-05",
+  "nextBoard": "14",
+  "previousQuotaResetEpoch": 1793833823,
+  "previousQuotaResetLocal": "2026-11-05 07:10:23 Asia/Shanghai (tool estimate)",
+  "imageGenerationAvailableAsOf": "2026-11-05 09:43 Asia/Shanghai; successful generation confirms availability",
+  "implementationReview": "../generated-mockups-completion.md",
+  "checklist": "checklist.md",
+  "imageGenerationStatus": "usage_limit_reached",
+  "quotaResetEpoch": 1793929535,
+  "quotaResetLocal": "2026-11-06 09:45:35 Asia/Shanghai (tool estimate)",
+  "limitWindowMinutes": 1440,
+  "lastGenerationAttempt": {
+    "board": "14",
+    "date": "2026-11-05",
+    "result": "usage_limit_reached",
+    "imageProduced": false
+  },
+  "lastImplementationDate": "2026-11-06",
+  "validation": {
+    "jvmDiscovered": 68,
+    "jvmPassed": 67,
+    "jvmSkipped": 1,
+    "androidPassed": 22,
+    "signaturesVerified": 5,
+    "artifactRecord": "build/library05-checksums.json",
+    "phoneInstalled": null,
+    "largeTextRepeatedPassed": 3
+  },
+  "lastValidationDate": "2026-11-06",
+  "visualAuditDate": "2026-11-06",
+  "visualAuditReview": "../mockup-visual-audit.md",
+  "implementationAudit": "implementation-audit.json"
+}

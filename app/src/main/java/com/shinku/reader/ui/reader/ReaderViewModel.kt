@@ -1,6 +1,7 @@
 package com.shinku.reader.ui.reader
 
 import android.app.Application
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.annotation.ColorInt
 import androidx.annotation.IntRange
@@ -8,18 +9,19 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shinku.reader.domain.base.BasePreferences
-import com.shinku.reader.domain.chapter.interactor.SetReadStatus
-import com.shinku.reader.domain.chapter.model.toDbChapter
-import com.shinku.reader.domain.manga.interactor.SetMangaViewerFlags
-import com.shinku.reader.domain.manga.model.readerOrientation
-import com.shinku.reader.domain.manga.model.readingMode
-import com.shinku.reader.domain.manga.model.toSManga
-import com.shinku.reader.domain.source.interactor.GetIncognitoState
-import com.shinku.reader.domain.sync.SyncPreferences
-import com.shinku.reader.domain.track.interactor.SyncTrack
-import com.shinku.reader.domain.track.service.TrackPreferences
-import com.shinku.reader.domain.ui.UiPreferences
+import androidx.palette.graphics.Palette
+import coil3.asDrawable
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import com.shinku.reader.core.common.preference.toggle
+import com.shinku.reader.core.common.storage.UniFileTempFileManager
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.lang.launchNonCancellable
+import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.core.common.util.lang.withUIContext
+import com.shinku.reader.core.common.util.system.ImageUtil
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.data.database.models.toDomainChapter
 import com.shinku.reader.data.download.DownloadManager
 import com.shinku.reader.data.download.DownloadProvider
@@ -28,19 +30,42 @@ import com.shinku.reader.data.saver.Image
 import com.shinku.reader.data.saver.ImageSaver
 import com.shinku.reader.data.saver.Location
 import com.shinku.reader.data.sync.SyncDataJob
-import eu.kanade.tachiyomi.source.model.Page
-import android.graphics.Bitmap
-import eu.kanade.tachiyomi.source.online.HttpSource
-import eu.kanade.tachiyomi.source.online.MetadataSource
-import eu.kanade.tachiyomi.source.online.all.MergedSource
-import coil3.asDrawable
-import coil3.imageLoader
-import coil3.request.ImageRequest
-import coil3.request.SuccessResult
-import androidx.palette.graphics.Palette
-import com.shinku.reader.util.system.getBitmapOrNull
+import com.shinku.reader.domain.base.BasePreferences
+import com.shinku.reader.domain.chapter.interactor.GetChaptersByMangaId
+import com.shinku.reader.domain.chapter.interactor.GetMergedChaptersByMangaId
+import com.shinku.reader.domain.chapter.interactor.SetReadStatus
+import com.shinku.reader.domain.chapter.interactor.UpdateChapter
+import com.shinku.reader.domain.chapter.model.Chapter
+import com.shinku.reader.domain.chapter.model.ChapterUpdate
+import com.shinku.reader.domain.chapter.model.toDbChapter
+import com.shinku.reader.domain.chapter.service.getChapterSort
+import com.shinku.reader.domain.download.service.DownloadPreferences
+import com.shinku.reader.domain.history.interactor.GetNextChapters
+import com.shinku.reader.domain.history.interactor.UpsertHistory
+import com.shinku.reader.domain.history.model.HistoryUpdate
+import com.shinku.reader.domain.library.service.LibraryPreferences
+import com.shinku.reader.domain.manga.interactor.GetFlatMetadataById
+import com.shinku.reader.domain.manga.interactor.GetManga
+import com.shinku.reader.domain.manga.interactor.GetMergedMangaById
+import com.shinku.reader.domain.manga.interactor.GetMergedReferencesById
+import com.shinku.reader.domain.manga.interactor.SetMangaViewerFlags
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.manga.model.readerOrientation
+import com.shinku.reader.domain.manga.model.readingMode
+import com.shinku.reader.domain.manga.model.toSManga
+import com.shinku.reader.domain.source.interactor.GetIncognitoState
+import com.shinku.reader.domain.source.service.SourceManager
+import com.shinku.reader.domain.sync.SyncPreferences
+import com.shinku.reader.domain.track.interactor.SyncTrack
+import com.shinku.reader.domain.track.service.TrackPreferences
+import com.shinku.reader.domain.ui.UiPreferences
+import com.shinku.reader.exh.metadata.metadata.RaisedSearchMetadata
+import com.shinku.reader.exh.source.MERGED_SOURCE_ID
+import com.shinku.reader.exh.source.getMainSource
+import com.shinku.reader.exh.source.isEhBasedManga
+import com.shinku.reader.exh.util.defaultReaderType
+import com.shinku.reader.exh.util.mangaType
 import com.shinku.reader.i18n.sy.SYMR
-import dev.icerock.moko.resources.StringResource
 import com.shinku.reader.ui.reader.chapter.ReaderChapterItem
 import com.shinku.reader.ui.reader.loader.ChapterLoader
 import com.shinku.reader.ui.reader.loader.DownloadPageLoader
@@ -66,19 +91,19 @@ import com.shinku.reader.util.storage.DiskUtil
 import com.shinku.reader.util.storage.DiskUtil.MAX_FILE_NAME_BYTES
 import com.shinku.reader.util.storage.cacheImageDir
 import com.shinku.reader.util.system.activeNetworkState
-import com.shinku.reader.exh.metadata.metadata.RaisedSearchMetadata
-import com.shinku.reader.exh.source.MERGED_SOURCE_ID
-import com.shinku.reader.exh.source.getMainSource
-import com.shinku.reader.exh.source.isEhBasedManga
-import com.shinku.reader.exh.util.defaultReaderType
-import com.shinku.reader.exh.util.mangaType
+import com.shinku.reader.util.system.getBitmapOrNull
+import dev.icerock.moko.resources.StringResource
+import eu.kanade.tachiyomi.source.local.isLocal
+import eu.kanade.tachiyomi.source.model.Page
+import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.source.online.MetadataSource
+import eu.kanade.tachiyomi.source.online.all.MergedSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -91,35 +116,11 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
-import com.shinku.reader.core.common.preference.toggle
-import com.shinku.reader.core.common.storage.UniFileTempFileManager
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.core.common.util.lang.launchNonCancellable
-import com.shinku.reader.core.common.util.lang.withIOContext
-import com.shinku.reader.core.common.util.lang.withUIContext
-import com.shinku.reader.core.common.util.system.ImageUtil
-import com.shinku.reader.core.common.util.system.logcat
 import tachiyomi.decoder.ImageDecoder
-import com.shinku.reader.domain.chapter.interactor.GetChaptersByMangaId
-import com.shinku.reader.domain.chapter.interactor.GetMergedChaptersByMangaId
-import com.shinku.reader.domain.chapter.interactor.UpdateChapter
-import com.shinku.reader.domain.chapter.model.Chapter
-import com.shinku.reader.domain.chapter.model.ChapterUpdate
-import com.shinku.reader.domain.chapter.service.getChapterSort
-import com.shinku.reader.domain.download.service.DownloadPreferences
-import com.shinku.reader.domain.history.interactor.GetNextChapters
-import com.shinku.reader.domain.history.interactor.UpsertHistory
-import com.shinku.reader.domain.history.model.HistoryUpdate
-import com.shinku.reader.domain.library.service.LibraryPreferences
-import com.shinku.reader.domain.manga.interactor.GetFlatMetadataById
-import com.shinku.reader.domain.manga.interactor.GetManga
-import com.shinku.reader.domain.manga.interactor.GetMergedMangaById
-import com.shinku.reader.domain.manga.interactor.GetMergedReferencesById
-import com.shinku.reader.domain.manga.model.Manga
-import com.shinku.reader.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.Instant
@@ -570,6 +571,7 @@ class ReaderViewModel(
                 chapter.pages?.forEach { p ->
                     cachedTranslations[p.index]?.let { blocks ->
                         p.translationBlocks = blocks
+                        p.translationLanguage = targetLanguage
                         p.showTranslation = shouldShow
                     }
                 }
@@ -778,7 +780,7 @@ class ReaderViewModel(
         val now = System.currentTimeMillis()
         val duration = now - lastPageChangeTime
         lastPageChangeTime = now
-        
+
         // Filter out durations that are too short (< 500ms) or too long (> 2 mins)
         if (duration in 500..120_000) {
             pageTurnTimes.add(duration)
@@ -1294,6 +1296,7 @@ class ReaderViewModel(
 
     fun changeTranslationLanguage(lang: String) {
         shinkuPreferences.translationTargetLanguage().set(lang)
+        resetTranslationOverlays()
         closeDialog()
     }
 
@@ -1303,6 +1306,23 @@ class ReaderViewModel(
 
     fun changeTranslationTargetLanguage(lang: String) {
         shinkuPreferences.translationTargetLanguage().set(lang)
+        resetTranslationOverlays()
+    }
+
+    private fun resetTranslationOverlays() {
+        manualPageTranslationJob?.cancel()
+        autoPageTranslationJob?.cancel()
+        if (batchTranslationJob?.isActive == true) cancelBatchChapterTranslation()
+        state.value.viewerChapters?.let { chapters ->
+            listOfNotNull(chapters.currChapter, chapters.prevChapter, chapters.nextChapter).forEach { chapter ->
+                chapter.pages?.forEach { page ->
+                    page.translationBlocks = null
+                    page.translationLanguage = null
+                    page.showTranslation = false
+                }
+            }
+        }
+        eventChannel.trySend(Event.UpdateAllTranslations)
     }
 
     fun closeDialog() {
@@ -1505,47 +1525,52 @@ class ReaderViewModel(
 
     // SY -->
     fun toggleTranslation() {
-        val chapter = state.value.currentChapter ?: return
-        val pages = chapter.pages ?: return
-        val chapterId = chapter.chapter.id ?: 0L
-        val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
+        viewModelScope.launchIO {
+            val chapter = state.value.currentChapter ?: return@launchIO
+            val pages = chapter.pages ?: return@launchIO
+            val chapterId = chapter.chapter.id ?: 0L
+            val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
 
-        val isCurrentlyShowing = pages.any { it.showTranslation }
+            val isCurrentlyShowing = pages.any { it.showTranslation }
 
-        if (isCurrentlyShowing) {
-            // Master Disable: Hide overlay across ALL pages in the chapter
-            pages.forEach { it.showTranslation = false }
-            shinkuPreferences.liveTranslation().set(false)
-            eventChannel.trySend(Event.UpdateAllTranslations)
-            eventChannel.trySend(Event.ShowToast("Translation overlay hidden"))
-        } else {
-            // Master Enable: Show overlay across ALL translated pages in the chapter
-            shinkuPreferences.liveTranslation().set(true)
-            var hasAnyTranslation = false
-
-            pages.forEach { p ->
-                val cached = p.translationBlocks ?: if (chapterId > 0L) {
-                    TranslationCache.get(chapterId, p.index, targetLanguage)
-                } else null
-
-                if (cached != null) {
-                    p.translationBlocks = cached
-                    p.showTranslation = true
-                    hasAnyTranslation = true
-                }
-            }
-
-            if (hasAnyTranslation) {
+            if (isCurrentlyShowing) {
+                // Master Disable: Hide overlay across ALL pages in the chapter
+                pages.forEach { it.showTranslation = false }
+                shinkuPreferences.liveTranslation().set(false)
                 eventChannel.trySend(Event.UpdateAllTranslations)
-                eventChannel.trySend(Event.ShowToast("Translation overlay restored"))
+                eventChannel.trySend(Event.ShowToast("Translation overlay hidden"))
             } else {
-                // If not yet translated, translate the current active page immediately
-                onTranslation()
+                // Master Enable: Show overlay across ALL translated pages in the chapter
+                shinkuPreferences.liveTranslation().set(true)
+                var hasAnyTranslation = false
+
+                pages.forEach { p ->
+                    val cached = p.translationBlocks.takeIf { p.translationLanguage == targetLanguage } ?: if (chapterId > 0L) {
+                        TranslationCache.get(chapterId, p.index, targetLanguage)
+                    } else {
+                        null
+                    }
+
+                    if (cached != null) {
+                        p.translationBlocks = cached
+                        p.translationLanguage = targetLanguage
+                        p.showTranslation = true
+                        hasAnyTranslation = true
+                    }
+                }
+
+                if (hasAnyTranslation) {
+                    eventChannel.trySend(Event.UpdateAllTranslations)
+                    eventChannel.trySend(Event.ShowToast("Translation overlay restored"))
+                } else {
+                    // If not yet translated, translate the current active page immediately
+                    onTranslation()
+                }
             }
         }
     }
 
-    fun onTranslation() {
+    fun onTranslation(forceRefresh: Boolean = false) {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
             ?: state.value.activePage
             ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.pager.PagerViewer)?.currentPage as? ReaderPage
@@ -1574,8 +1599,13 @@ class ReaderViewModel(
             return
         }
 
+        val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
+        if (page.translationLanguage != targetLanguage) {
+            page.translationBlocks = null
+            page.showTranslation = false
+        }
         // Toggle off if already showing
-        if (page.showTranslation) {
+        if (!forceRefresh && page.showTranslation) {
             page.showTranslation = false
             eventChannel.trySend(Event.TranslationOverlayReady(page))
             eventChannel.trySend(Event.ShowToast("Translation overlay hidden"))
@@ -1583,7 +1613,7 @@ class ReaderViewModel(
         }
 
         // If already translated in memory on page, just show it!
-        if (page.translationBlocks != null) {
+        if (!forceRefresh && page.translationBlocks != null) {
             shinkuPreferences.liveTranslation().set(true)
             page.showTranslation = true
             eventChannel.trySend(Event.TranslationOverlayReady(page))
@@ -1591,23 +1621,35 @@ class ReaderViewModel(
             return
         }
 
-        val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
         val chapterId = page.chapter.chapter.id ?: 0L
 
-        // Fast check in LRU TranslationCache
-        val cached = TranslationCache.get(chapterId, page.index, targetLanguage)
-        if (cached != null) {
-            shinkuPreferences.liveTranslation().set(true)
-            page.translationBlocks = cached
-            page.showTranslation = true
-            eventChannel.trySend(Event.TranslationOverlayReady(page))
-            eventChannel.trySend(Event.ShowToast("Translation overlay restored from cache"))
-            return
+        val previousJobs = listOfNotNull(manualPageTranslationJob, autoPageTranslationJob, batchTranslationJob)
+        manualPageTranslationJob?.cancel()
+        if (forceRefresh) {
+            autoPageTranslationJob?.cancel()
+            if (batchTranslationJob?.isActive == true) cancelBatchChapterTranslation()
         }
-
-        viewModelScope.launchIO {
+        manualPageTranslationJob = viewModelScope.launchIO {
             mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
             try {
+                if (forceRefresh) {
+                    previousJobs.forEach { it.join() }
+                    TranslationCache.removePage(chapterId, page.index, targetLanguage)
+                    page.translationBlocks = null
+                    page.showTranslation = false
+                    eventChannel.send(Event.TranslationOverlayReady(page))
+                } else {
+                    val cached = TranslationCache.get(chapterId, page.index, targetLanguage)
+                    if (cached != null) {
+                        shinkuPreferences.liveTranslation().set(true)
+                        page.translationBlocks = cached
+                        page.translationLanguage = targetLanguage
+                        page.showTranslation = true
+                        mutableState.update { it.copy(dialog = null) }
+                        eventChannel.send(Event.TranslationOverlayReady(page))
+                        return@launchIO
+                    }
+                }
                 val bitmap = ImageDecoder.newInstance(stream())?.decode() ?: throw Exception("Failed to decode image")
                 val apiKey = shinkuPreferences.geminiApiKey().get().trim()
                 val model = shinkuPreferences.geminiModel().get()
@@ -1623,6 +1665,7 @@ class ReaderViewModel(
                     model = model,
                 )
 
+                kotlinx.coroutines.currentCoroutineContext().ensureActive()
                 if (translatedBlocks.isEmpty()) {
                     mutableState.update { it.copy(dialog = Dialog.AiInsight("Translation", "No text detected on page.")) }
                     return@launchIO
@@ -1630,12 +1673,15 @@ class ReaderViewModel(
 
                 shinkuPreferences.liveTranslation().set(true)
                 page.translationBlocks = translatedBlocks
+                page.translationLanguage = targetLanguage
                 page.showTranslation = true
                 TranslationCache.put(chapterId, page.index, targetLanguage, translatedBlocks)
 
                 mutableState.update { it.copy(dialog = null) } // Close loading dialog
                 eventChannel.send(Event.TranslationOverlayReady(page))
                 eventChannel.send(Event.ShowToast("Live Translation active (${translatedBlocks.size} blocks)"))
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
                 mutableState.update { it.copy(dialog = Dialog.AiInsight("Translation Error", e.message ?: "Unknown error")) }
@@ -1754,12 +1800,13 @@ class ReaderViewModel(
         return result
     }
 
+    private var manualPageTranslationJob: Job? = null
     private var batchTranslationJob: Job? = null
     private var autoPageTranslationJob: Job? = null
 
     private fun triggerAutoLiveTranslation(page: ReaderPage, chapter: ReaderChapter) {
         val chapterId = chapter.chapter.id ?: return
-        if (chapterId <= 0L) return
+        if (chapterId <= 0L || manualPageTranslationJob?.isActive == true) return
 
         val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
         val sourceLanguage = shinkuPreferences.translationSourceLanguage().get()
@@ -1776,7 +1823,7 @@ class ReaderViewModel(
             for (targetPage in pagesToTranslate) {
                 if (!isActive || !shinkuPreferences.liveTranslation().get()) break
 
-                if (targetPage.translationBlocks != null) {
+                if (targetPage.translationBlocks != null && targetPage.translationLanguage == targetLanguage) {
                     if (!targetPage.showTranslation) {
                         targetPage.showTranslation = true
                         eventChannel.trySend(Event.TranslationOverlayReady(targetPage))
@@ -1787,6 +1834,7 @@ class ReaderViewModel(
                 val cached = TranslationCache.get(chapterId, targetPage.index, targetLanguage)
                 if (cached != null) {
                     targetPage.translationBlocks = cached
+                    targetPage.translationLanguage = targetLanguage
                     targetPage.showTranslation = true
                     eventChannel.trySend(Event.TranslationOverlayReady(targetPage))
                     continue
@@ -1803,7 +1851,9 @@ class ReaderViewModel(
                         apiKey = apiKey,
                         model = model,
                     )
+                    kotlinx.coroutines.currentCoroutineContext().ensureActive()
                     targetPage.translationBlocks = blocks
+                    targetPage.translationLanguage = targetLanguage
                     targetPage.showTranslation = shinkuPreferences.liveTranslation().get()
                     TranslationCache.put(chapterId, targetPage.index, targetLanguage, blocks)
                     eventChannel.trySend(Event.TranslationOverlayReady(targetPage))
@@ -1905,6 +1955,7 @@ class ReaderViewModel(
                 val cached = TranslationCache.get(chapterId, page.index, targetLanguage)
                 if (cached != null) {
                     page.translationBlocks = cached
+                    page.translationLanguage = targetLanguage
                     page.showTranslation = isOverlayActive
                     chapterTranslations[page.index] = cached
                     if (cached.isNotEmpty()) translatedCount++
@@ -1929,7 +1980,9 @@ class ReaderViewModel(
                             apiKey = apiKey,
                             model = model,
                         )
+                        kotlinx.coroutines.currentCoroutineContext().ensureActive()
                         page.translationBlocks = blocks
+                        page.translationLanguage = targetLanguage
                         page.showTranslation = shinkuPreferences.liveTranslation().get()
                         chapterTranslations[page.index] = blocks
                         if (blocks.isNotEmpty()) {
@@ -1938,6 +1991,8 @@ class ReaderViewModel(
                         TranslationCache.put(chapterId, page.index, targetLanguage, blocks)
                         eventChannel.send(Event.TranslationOverlayReady(page))
                     }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     logcat(LogPriority.WARN, e) { "Batch translation error on page ${page.number}: ${e.message}" }
                 }
@@ -1945,10 +2000,6 @@ class ReaderViewModel(
                 if (translationEngine != "mlkit") {
                     kotlinx.coroutines.delay(180)
                 }
-            }
-
-            if (chapterTranslations.isNotEmpty()) {
-                TranslationCache.saveChapter(chapterId, targetLanguage, chapterTranslations)
             }
 
             mutableState.update {
@@ -1987,16 +2038,18 @@ class ReaderViewModel(
     }
 
     fun clearChapterTranslation(chapterId: Long) {
-        TranslationCache.clearChapter(chapterId)
-        val chapter = state.value.currentChapter
-        if (chapter != null && chapter.chapter.id == chapterId) {
-            chapter.pages?.forEach {
-                it.translationBlocks = null
-                it.showTranslation = false
+        viewModelScope.launchIO {
+            TranslationCache.clearChapter(chapterId)
+            val chapter = state.value.currentChapter
+            if (chapter != null && chapter.chapter.id == chapterId) {
+                chapter.pages?.forEach {
+                    it.translationBlocks = null
+                    it.showTranslation = false
+                }
+                eventChannel.trySend(Event.UpdateAllTranslations)
             }
-            eventChannel.trySend(Event.UpdateAllTranslations)
+            eventChannel.trySend(Event.ShowToast("Chapter translation cleared"))
         }
-        eventChannel.trySend(Event.ShowToast("Chapter translation cleared"))
     }
 
     fun openTranslationOptions() {
@@ -2007,26 +2060,7 @@ class ReaderViewModel(
         mutableState.update { it.copy(dialog = Dialog.BubbleInspector) }
     }
 
-    fun retranslateCurrentPage() {
-        val page = (state.value.dialog as? Dialog.PageActions)?.page
-            ?: state.value.activePage
-            ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.pager.PagerViewer)?.currentPage as? ReaderPage
-            ?: (state.value.viewer as? com.shinku.reader.ui.reader.viewer.webtoon.WebtoonViewer)?.currentPage as? ReaderPage
-            ?: run {
-                eventChannel.trySend(Event.ShowToast("No active page selected"))
-                return
-            }
-
-        val chapterId = page.chapter.chapter.id ?: 0L
-        val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
-        if (chapterId > 0L) {
-            TranslationCache.removePage(chapterId, page.index, targetLanguage)
-        }
-        page.translationBlocks = null
-        page.showTranslation = false
-        eventChannel.trySend(Event.TranslationOverlayReady(page))
-        onTranslation()
-    }
+    fun retranslateCurrentPage() = onTranslation(forceRefresh = true)
 
     private suspend fun getPageStream(page: ReaderPage, loader: com.shinku.reader.ui.reader.loader.PageLoader?): (() -> java.io.InputStream)? {
         page.stream?.let { return it }
@@ -2054,7 +2088,9 @@ class ReaderViewModel(
                 val fn = { chapterCache.getImageFile(url).inputStream() }
                 page.stream = fn
                 fn
-            } else null
+            } else {
+                null
+            }
         }
     }
 
@@ -2380,10 +2416,15 @@ class ReaderViewModel(
                     val iArea = (iRight - iLeft) * (iBottom - iTop)
                     val minArea = minOf(r.width() * r.height(), safeRect.width() * safeRect.height())
                     minArea > 0 && (iArea.toFloat() / minArea.toFloat()) > 0.40f
-                } else false
-            } else false
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
         }
         currentBlocks.add(newBlock)
+        page.translationLanguage = shinkuPreferences.translationTargetLanguage().get()
         page.translationBlocks = currentBlocks
         page.showTranslation = true
         shinkuPreferences.liveTranslation().set(true)
@@ -2391,7 +2432,9 @@ class ReaderViewModel(
         val chapterId = page.chapter.chapter.id ?: 0L
         val targetLanguage = shinkuPreferences.translationTargetLanguage().get()
         if (chapterId > 0L) {
-            TranslationCache.put(chapterId, page.index, targetLanguage, currentBlocks)
+            viewModelScope.launchIO {
+                TranslationCache.put(chapterId, page.index, targetLanguage, currentBlocks)
+            }
         }
 
         mutableState.update { it.copy(dialog = null) }
@@ -2565,7 +2608,7 @@ class ReaderViewModel(
 
     fun onPageReady(page: ReaderPage) {
         if (!readerPreferences.guidedView().get()) return
-        
+
         val stream = page.stream ?: return
         viewModelScope.launchIO {
             try {
@@ -2583,7 +2626,7 @@ class ReaderViewModel(
     private fun performAiAction(page: ReaderPage, title: String, action: suspend (String) -> String) {
         if (page.status != Page.State.Ready) return
         val stream = page.stream ?: return
-        
+
         viewModelScope.launchIO {
             mutableState.update { it.copy(dialog = Dialog.AiProcessing) }
             try {

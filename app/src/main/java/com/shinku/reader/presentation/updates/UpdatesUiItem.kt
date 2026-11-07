@@ -1,13 +1,17 @@
 package com.shinku.reader.presentation.updates
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -17,6 +21,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Circle
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +43,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,7 +62,6 @@ import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.manga.components.ChapterDownloadAction
 import com.shinku.reader.presentation.manga.components.ChapterDownloadIndicator
-import com.shinku.reader.presentation.manga.components.DotSeparatorText
 import com.shinku.reader.presentation.manga.components.MangaCover
 import com.shinku.reader.presentation.util.animateItemFastScroll
 import com.shinku.reader.presentation.util.relativeTimeSpanString
@@ -59,13 +69,79 @@ import com.shinku.reader.ui.updates.UpdatesItem
 
 internal fun LazyListScope.updatesLastUpdatedItem(
     lastUpdated: Long,
+    onCalendarClicked: (() -> Unit)? = null,
+    onUpdateLibrary: (() -> Unit)? = null,
 ) {
     item(key = "updates-lastUpdated") {
-        Box(
+        Column(
             modifier = Modifier
                 .animateItem(fadeInSpec = null, fadeOutSpec = null)
+                .fillMaxWidth()
                 .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            if (onCalendarClicked != null || onUpdateLibrary != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (onCalendarClicked != null) {
+                        Surface(
+                            modifier = Modifier
+                                .clip(SanctuaryShapes.medium)
+                                .clickable(onClick = onCalendarClicked),
+                            shape = SanctuaryShapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                            border = SanctuaryBrushes.subtleBorder(),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CalendarMonth,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Text(
+                                    text = stringResource(MR.strings.action_view_upcoming),
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                )
+                            }
+                        }
+                    }
+                    if (onUpdateLibrary != null) {
+                        Surface(
+                            modifier = Modifier
+                                .clip(SanctuaryShapes.medium)
+                                .clickable(onClick = onUpdateLibrary),
+                            shape = SanctuaryShapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                            border = SanctuaryBrushes.subtleBorder(),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Refresh,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                                Text(
+                                    text = stringResource(MR.strings.action_webview_refresh),
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             Text(
                 text = stringResource(MR.strings.updates_last_update_info, relativeTimeSpanString(lastUpdated)),
                 style = MaterialTheme.typography.bodySmall,
@@ -115,6 +191,7 @@ internal fun LazyListScope.updatesUiItems(
                     modifier = Modifier.animateItemFastScroll(),
                     update = updatesItem.update,
                     selected = updatesItem.selected,
+                    selectionMode = selectionMode,
                     readProgress = updatesItem.update.lastPageRead
                         .takeIf {
                             /* SY --> */(
@@ -154,6 +231,7 @@ internal fun LazyListScope.updatesUiItems(
 private fun UpdatesUiItem(
     update: UpdatesWithRelations,
     selected: Boolean,
+    selectionMode: Boolean,
     readProgress: String?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -188,6 +266,7 @@ private fun UpdatesUiItem(
         Row(
             modifier = Modifier
                 .clip(shape)
+                .semantics { this.selected = selected }
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = {
@@ -198,11 +277,13 @@ private fun UpdatesUiItem(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            MangaCover.Square(
+            MangaCover.Book(
                 modifier = Modifier
-                    .size(50.dp)
-                    .clip(SanctuaryShapes.pill),
+                    .width(64.dp)
+                    .height(96.dp)
+                    .clip(SanctuaryShapes.medium),
                 data = update.coverData,
+                contentDescription = update.mangaTitle,
                 onClick = onClickCover,
             )
 
@@ -213,7 +294,7 @@ private fun UpdatesUiItem(
             ) {
                 Text(
                     text = update.mangaTitle,
-                    maxLines = 1,
+                    maxLines = 3,
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                     ),
@@ -222,20 +303,10 @@ private fun UpdatesUiItem(
                 )
 
                 Row(
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.padding(top = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     var textHeight by remember { mutableIntStateOf(0) }
-                    if (!update.read) {
-                        Icon(
-                            imageVector = Icons.Filled.Circle,
-                            contentDescription = stringResource(MR.strings.unread),
-                            modifier = Modifier
-                                .height(8.dp)
-                                .padding(end = 4.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
                     if (update.bookmark) {
                         Icon(
                             imageVector = Icons.Filled.Bookmark,
@@ -244,38 +315,89 @@ private fun UpdatesUiItem(
                                 .sizeIn(maxHeight = with(LocalDensity.current) { textHeight.toDp() - 2.dp }),
                             tint = MaterialTheme.colorScheme.primary,
                         )
-                        Spacer(modifier = Modifier.width(2.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
+                    Surface(
+                        shape = SanctuaryShapes.tag,
+                        color = if (!update.read) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle)
+                        },
+                        modifier = Modifier.weight(weight = 1f, fill = false),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (!update.read) {
+                                Icon(
+                                    imageVector = Icons.Filled.Circle,
+                                    contentDescription = stringResource(MR.strings.unread),
+                                    modifier = Modifier
+                                        .height(7.dp)
+                                        .padding(end = 5.dp),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            Text(
+                                text = update.chapterName,
+                                maxLines = 2,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = if (!update.read) FontWeight.SemiBold else FontWeight.Normal,
+                                ),
+                                color = if (!update.read) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    LocalContentColor.current.copy(alpha = textAlpha)
+                                },
+                                overflow = TextOverflow.Ellipsis,
+                                onTextLayout = { textHeight = it.size.height },
+                            )
+                        }
+                    }
+                }
+                if (readProgress != null) {
                     Text(
-                        text = update.chapterName,
-                        maxLines = 1,
+                        text = readProgress,
                         style = MaterialTheme.typography.bodySmall,
-                        color = LocalContentColor.current.copy(alpha = textAlpha),
-                        overflow = TextOverflow.Ellipsis,
-                        onTextLayout = { textHeight = it.size.height },
-                        modifier = Modifier
-                            .weight(weight = 1f, fill = false),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp),
                     )
-                    if (readProgress != null) {
-                        DotSeparatorText()
-                        Text(
-                            text = readProgress,
-                            maxLines = 1,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = LocalContentColor.current.copy(alpha = DISABLED_ALPHA),
-                            overflow = TextOverflow.Ellipsis,
+                }
+                if (!selectionMode) {
+                    FlowRow(
+                        modifier = Modifier.padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FilledTonalButton(
+                            onClick = onClick,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            shape = SanctuaryShapes.medium,
+                        ) {
+                            Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text(
+                                stringResource(
+                                    if (readProgress != null) MR.strings.action_resume else MR.strings.action_read_chapter,
+                                ),
+                                modifier = Modifier.padding(start = 6.dp),
+                            )
+                        }
+                        ChapterDownloadIndicator(
+                            enabled = onDownloadChapter != null,
+                            downloadStateProvider = downloadStateProvider,
+                            downloadProgressProvider = downloadProgressProvider,
+                            onClick = { onDownloadChapter?.invoke(it) },
                         )
                     }
                 }
             }
 
-            ChapterDownloadIndicator(
-                enabled = onDownloadChapter != null,
-                modifier = Modifier.padding(start = 4.dp),
-                downloadStateProvider = downloadStateProvider,
-                downloadProgressProvider = downloadProgressProvider,
-                onClick = { onDownloadChapter?.invoke(it) },
-            )
+            if (selectionMode) {
+                Checkbox(checked = selected, onCheckedChange = { onClick() })
+            }
         }
     }
 }

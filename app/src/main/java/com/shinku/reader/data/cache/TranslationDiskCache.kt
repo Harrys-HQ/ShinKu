@@ -12,6 +12,8 @@ import logcat.LogPriority
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 @Serializable
 data class SerializedRect(
@@ -73,8 +75,7 @@ data class ChapterTranslationCache(
     val pages: Map<Int, List<SerializedTranslatedBlock>>,
 )
 
-object TranslationDiskCache {
-    private val context: Context by lazy { Injekt.get() }
+internal class TranslationPageStore(private val directory: File) {
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -82,7 +83,7 @@ object TranslationDiskCache {
     }
 
     private val cacheDir: File
-        get() = File(context.cacheDir, "chapter_translations").apply {
+        get() = directory.apply {
             if (!exists()) mkdirs()
         }
 
@@ -94,17 +95,25 @@ object TranslationDiskCache {
     fun hasChapterTranslation(chapterId: Long, targetLanguage: String): Boolean {
         if (chapterId <= 0L) return false
         val file = getFile(chapterId, targetLanguage)
-        return file.exists() && file.length() > 0
+        return file.exists() || pageDirectory(chapterId, targetLanguage).listFiles()?.any { it.extension == "json" } == true
     }
 
+    @Synchronized
     fun getChapter(chapterId: Long, targetLanguage: String): Map<Int, List<TranslatedBlock>>? {
         if (chapterId <= 0L) return null
         val file = getFile(chapterId, targetLanguage)
-        if (!file.exists()) return null
+        val pageDir = pageDirectory(chapterId, targetLanguage)
+        if (!file.exists() && !pageDir.exists()) return null
         return try {
-            val content = file.readText()
-            val parsed = json.decodeFromString<ChapterTranslationCache>(content)
-            parsed.pages.mapValues { (_, blocks) ->
+            migrateLegacy(chapterId, targetLanguage)
+            pageDir.listFiles().orEmpty().mapNotNull { page ->
+                val index = page.nameWithoutExtension.toIntOrNull()
+                if (page.extension != "json" || index == null) {
+                    null
+                } else {
+                    readPage(page)?.let { index to it }
+                }
+            }.toMap().mapValues { (_, blocks) ->
                 blocks.map { it.toTranslatedBlock() }
             }
         } catch (e: Exception) {
@@ -115,25 +124,24 @@ object TranslationDiskCache {
         }
     }
 
+    @Synchronized
     fun getPage(chapterId: Long, pageIndex: Int, targetLanguage: String): List<TranslatedBlock>? {
-        return getChapter(chapterId, targetLanguage)?.get(pageIndex)
+        if (chapterId <= 0L) return null
+        return try {
+            migrateLegacy(chapterId, targetLanguage)
+            readPage(File(pageDirectory(chapterId, targetLanguage), "$pageIndex.json"))?.map { it.toTranslatedBlock() }
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to read page translation" }
+            null
+        }
     }
 
+    @Synchronized
     fun saveChapter(chapterId: Long, targetLanguage: String, pages: Map<Int, List<TranslatedBlock>>) {
         if (chapterId <= 0L || pages.isEmpty()) return
         try {
-            val file = getFile(chapterId, targetLanguage)
-            val serializedPages = pages.mapValues { (_, blocks) ->
-                blocks.map { SerializedTranslatedBlock.from(it) }
-            }
-            val model = ChapterTranslationCache(
-                chapterId = chapterId,
-                targetLanguage = targetLanguage,
-                timestamp = System.currentTimeMillis(),
-                pages = serializedPages,
-            )
-            val content = json.encodeToString(model)
-            file.writeText(content)
+            migrateLegacy(chapterId, targetLanguage)
+            pages.forEach { (index, blocks) -> putPage(chapterId, index, targetLanguage, blocks) }
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) {
                 "Failed to write chapter translation for $chapterId ($targetLanguage)"
@@ -141,12 +149,12 @@ object TranslationDiskCache {
         }
     }
 
+    @Synchronized
     fun putPage(chapterId: Long, pageIndex: Int, targetLanguage: String, blocks: List<TranslatedBlock>) {
         if (chapterId <= 0L) return
         try {
-            val current = getChapter(chapterId, targetLanguage)?.toMutableMap() ?: mutableMapOf()
-            current[pageIndex] = blocks
-            saveChapter(chapterId, targetLanguage, current)
+            migrateLegacy(chapterId, targetLanguage)
+            writePage(File(pageDirectory(chapterId, targetLanguage), "$pageIndex.json"), blocks.map { SerializedTranslatedBlock.from(it) })
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) {
                 "Failed to update page $pageIndex translation for $chapterId"
@@ -154,11 +162,61 @@ object TranslationDiskCache {
         }
     }
 
+    @Synchronized
+    fun removePage(chapterId: Long, pageIndex: Int, targetLanguage: String) {
+        if (chapterId <= 0L) return
+        migrateLegacy(chapterId, targetLanguage)
+        val page = File(pageDirectory(chapterId, targetLanguage), "$pageIndex.json")
+        check(!page.exists() || page.delete()) { "Could not invalidate saved translation" }
+    }
+
+    private fun pageDirectory(chapterId: Long, language: String) = File(getFile(chapterId, language).path + ".pages")
+
+    private fun readPage(file: File): List<SerializedTranslatedBlock>? = try {
+        if (file.exists()) json.decodeFromString<List<SerializedTranslatedBlock>>(file.readText()) else null
+    } catch (e: Exception) {
+        logcat(LogPriority.WARN, e) { "Ignoring corrupt translation page" }
+        null
+    }
+
+    private fun writePage(file: File, blocks: List<SerializedTranslatedBlock>) {
+        check(file.parentFile!!.isDirectory || file.parentFile!!.mkdirs())
+        val temporary = File(file.path + ".tmp")
+        try {
+            temporary.outputStream().use { output ->
+                output.write(json.encodeToString(blocks).toByteArray(Charsets.UTF_8))
+                output.fd.sync()
+            }
+            Files.move(temporary.toPath(), file.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        } finally {
+            temporary.delete()
+        }
+    }
+
+    // Keep the old chapter until every page is durable; interrupted migration can be retried.
+    private fun migrateLegacy(chapterId: Long, language: String) {
+        val legacy = getFile(chapterId, language)
+        if (!legacy.exists()) return
+        val parsed = try {
+            json.decodeFromString<ChapterTranslationCache>(legacy.readText())
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Ignoring corrupt legacy translation" }
+            check(legacy.delete())
+            return
+        }
+        parsed.pages.forEach { (index, blocks) ->
+            val page = File(pageDirectory(chapterId, language), "$index.json")
+            if (!page.exists()) writePage(page, blocks)
+        }
+        check(legacy.delete()) { "Could not finish translation cache migration" }
+    }
+
+    @Synchronized
     fun clearChapter(chapterId: Long) {
         if (chapterId <= 0L) return
         try {
             val prefix = "${chapterId}_"
-            cacheDir.listFiles { file -> file.name.startsWith(prefix) }?.forEach { it.delete() }
+            cacheDir.listFiles { file -> file.name.startsWith(prefix) }?.forEach { it.deleteRecursively() }
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) {
                 "Failed to delete chapter translations for $chapterId"
@@ -166,6 +224,7 @@ object TranslationDiskCache {
         }
     }
 
+    @Synchronized
     fun clearAll() {
         try {
             cacheDir.deleteRecursively()
@@ -183,4 +242,18 @@ object TranslationDiskCache {
             0L
         }
     }
+}
+
+object TranslationDiskCache {
+    private val store by lazy { TranslationPageStore(File(Injekt.get<Context>().cacheDir, "chapter_translations")) }
+
+    fun getPage(chapterId: Long, pageIndex: Int, language: String) = store.getPage(chapterId, pageIndex, language)
+    fun getChapter(chapterId: Long, language: String) = store.getChapter(chapterId, language)
+    fun putPage(chapterId: Long, pageIndex: Int, language: String, blocks: List<TranslatedBlock>) = store.putPage(chapterId, pageIndex, language, blocks)
+    fun saveChapter(chapterId: Long, language: String, pages: Map<Int, List<TranslatedBlock>>) = store.saveChapter(chapterId, language, pages)
+    fun removePage(chapterId: Long, pageIndex: Int, language: String) = store.removePage(chapterId, pageIndex, language)
+    fun hasChapterTranslation(chapterId: Long, language: String) = store.hasChapterTranslation(chapterId, language)
+    fun clearChapter(chapterId: Long) = store.clearChapter(chapterId)
+    fun clearAll() = store.clearAll()
+    fun getDiskUsageBytes() = store.getDiskUsageBytes()
 }

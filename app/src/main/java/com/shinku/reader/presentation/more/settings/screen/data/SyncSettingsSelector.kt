@@ -1,29 +1,33 @@
 package com.shinku.reader.presentation.more.settings.screen.data
 
 import android.content.Context
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.shinku.reader.domain.sync.SyncPreferences
-import com.shinku.reader.domain.sync.models.SyncSettings
-import com.shinku.reader.presentation.components.AppBar
-import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.data.backup.create.BackupOptions
 import com.shinku.reader.data.sync.SyncDataJob
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.flow.update
+import com.shinku.reader.domain.sync.SyncPreferences
+import com.shinku.reader.domain.sync.models.SyncSettings
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.core.components.LabeledCheckbox
 import com.shinku.reader.presentation.core.components.LazyColumnWithAction
 import com.shinku.reader.presentation.core.components.SectionCard
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.util.Screen
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.flow.update
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -51,6 +55,7 @@ class SyncSettingsSelector : Screen() {
                     navigator.pop()
                 },
             ) {
+                item { Text(stringResource(MR.strings.sync_scope_notice), modifier = Modifier.padding(16.dp)) }
                 item {
                     SectionCard(MR.strings.label_library) {
                         Options(BackupOptions.libraryOptions, state, model)

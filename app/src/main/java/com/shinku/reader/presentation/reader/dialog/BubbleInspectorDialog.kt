@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Refresh
@@ -26,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,12 +38,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
 import com.shinku.reader.R
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.ui.reader.model.TranslatedBlock
 import com.shinku.reader.util.system.toast
+import kotlinx.coroutines.launch
 
 @Composable
 fun BubbleInspectorDialog(
@@ -50,6 +56,8 @@ fun BubbleInspectorDialog(
     onDismissRequest: () -> Unit,
     onRetranslatePage: () -> Unit,
 ) {
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     AlertDialog(
@@ -62,22 +70,31 @@ fun BubbleInspectorDialog(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ic_shinku_logo),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(SanctuaryShapes.tag),
-                )
-                Column {
-                    SanctuaryOverlineBadge(
-                        text = "BILINGUAL TRANSCRIPT • PAGE $pageNumber",
-                        compact = true,
+                Surface(
+                    shape = SanctuaryShapes.medium,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                    modifier = Modifier.size(38.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_shinku_logo),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(SanctuaryShapes.tag),
+                        )
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Inspect bubbles",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "Bubble Inspector (${blocks.size})",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        text = "Page $pageNumber · ${blocks.size} detected · ${targetLanguage.uppercase()}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -91,6 +108,7 @@ fun BubbleInspectorDialog(
                 )
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(max = 420.dp),
@@ -124,7 +142,7 @@ fun BubbleInspectorDialog(
                                             clipboard?.setPrimaryClip(ClipData.newPlainText("ShinKu Bubble", clipText))
                                             context.toast("Copied original & translated text")
                                         },
-                                        modifier = Modifier.size(32.dp),
+                                        modifier = Modifier.size(48.dp),
                                     ) {
                                         Icon(
                                             imageVector = Icons.Outlined.ContentCopy,
@@ -137,6 +155,7 @@ fun BubbleInspectorDialog(
 
                                 Spacer(modifier = Modifier.height(6.dp))
 
+                                Text(stringResource(MR.strings.translation_original), style = MaterialTheme.typography.labelMedium)
                                 Text(
                                     text = block.originalText,
                                     style = MaterialTheme.typography.bodySmall,
@@ -145,6 +164,7 @@ fun BubbleInspectorDialog(
 
                                 Spacer(modifier = Modifier.height(4.dp))
 
+                                Text(stringResource(MR.strings.translation_result), style = MaterialTheme.typography.labelMedium)
                                 Text(
                                     text = block.translatedText,
                                     style = MaterialTheme.typography.bodyMedium,
@@ -174,8 +194,20 @@ fun BubbleInspectorDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text("Close", fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+            Column {
+                if (blocks.size > 1) {
+                    Row {
+                        TextButton(
+                            enabled = listState.firstVisibleItemIndex > 0,
+                            onClick = { scope.launch { listState.animateScrollToItem((listState.firstVisibleItemIndex - 1).coerceAtLeast(0)) } },
+                        ) { Text(stringResource(MR.strings.reader_previous_bubble)) }
+                        TextButton(
+                            enabled = listState.firstVisibleItemIndex < blocks.lastIndex,
+                            onClick = { scope.launch { listState.animateScrollToItem((listState.firstVisibleItemIndex + 1).coerceAtMost(blocks.lastIndex)) } },
+                        ) { Text(stringResource(MR.strings.reader_next_bubble)) }
+                    }
+                }
+                TextButton(onClick = onDismissRequest) { Text(stringResource(MR.strings.action_close)) }
             }
         },
     )

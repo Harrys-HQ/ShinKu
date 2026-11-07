@@ -69,7 +69,7 @@ internal fun BasePreferenceWidget(
                     modifier = Modifier.padding(horizontal = PrefsHorizontalPadding),
                     text = title,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 2,
+                    maxLines = 3,
                     style = MaterialTheme.typography.titleLarge,
                     fontSize = TitleFontSize,
                 )

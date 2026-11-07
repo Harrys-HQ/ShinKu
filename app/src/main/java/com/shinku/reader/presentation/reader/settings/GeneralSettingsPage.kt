@@ -7,9 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import com.shinku.reader.ui.reader.setting.ReaderPreferences
-import com.shinku.reader.ui.reader.setting.ReaderSettingsScreenModel
-import com.shinku.reader.util.system.hasDisplayCutout
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.components.CheckboxItem
@@ -18,6 +15,9 @@ import com.shinku.reader.presentation.core.components.SliderItem
 import com.shinku.reader.presentation.core.i18n.pluralStringResource
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.util.collectAsState
+import com.shinku.reader.ui.reader.setting.ReaderPreferences
+import com.shinku.reader.ui.reader.setting.ReaderSettingsScreenModel
+import com.shinku.reader.util.system.hasDisplayCutout
 
 private val themes = listOf(
     MR.strings.black_background to 1,
@@ -34,8 +34,6 @@ private val flashColors = listOf(
 
 @Composable
 internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
-    val readerTheme by screenModel.preferences.readerTheme().collectAsState()
-
     val flashPageState by screenModel.preferences.flashOnPageChange().collectAsState()
 
     val flashMillisPref = screenModel.preferences.flashDurationMillis()
@@ -46,16 +44,6 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
 
     val flashColorPref = screenModel.preferences.flashColor()
     val flashColor by flashColorPref.collectAsState()
-
-    SettingsChipRow(MR.strings.pref_reader_theme) {
-        themes.map { (labelRes, value) ->
-            FilterChip(
-                selected = readerTheme == value,
-                onClick = { screenModel.preferences.readerTheme().set(value) },
-                label = { Text(stringResource(labelRes)) },
-            )
-        }
-    }
 
     CheckboxItem(
         label = stringResource(MR.strings.pref_show_page_number),
@@ -206,4 +194,18 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
         }
     }
     // SY <--
+}
+
+@Composable
+internal fun ColumnScope.ReaderThemeSettings(screenModel: ReaderSettingsScreenModel) {
+    val readerTheme by screenModel.preferences.readerTheme().collectAsState()
+    SettingsChipRow(MR.strings.pref_reader_theme) {
+        themes.map { (labelRes, value) ->
+            FilterChip(
+                selected = readerTheme == value,
+                onClick = { screenModel.preferences.readerTheme().set(value) },
+                label = { Text(stringResource(labelRes)) },
+            )
+        }
+    }
 }

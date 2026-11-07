@@ -8,6 +8,8 @@ import com.shinku.reader.domain.manga.model.MangaWithChapterCount
 
 interface MangaRepository {
 
+    suspend fun getMangaByIds(ids: List<Long>): List<Manga>
+
     suspend fun getMangaById(id: Long): Manga
 
     suspend fun getMangaByIdAsFlow(id: Long): Flow<Manga>

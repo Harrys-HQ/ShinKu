@@ -1,6 +1,8 @@
 package com.shinku.reader.ui.reader.model
 
 import eu.kanade.tachiyomi.source.model.Page
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import java.io.InputStream
 
 open class ReaderPage(
@@ -27,6 +29,7 @@ open class ReaderPage(
         }
 
     // Translation Overlay Data
+    var translationLanguage: String? = null
     var translationBlocks: List<TranslatedBlock>? = null
     var showTranslation: Boolean = false
 }
@@ -45,6 +48,10 @@ data class TranslatedBlock(
 object TranslationCache {
     private val memCache = android.util.LruCache<String, List<TranslatedBlock>>(128)
 
+    fun getMemory(chapterId: Long, pageIndex: Int, targetLanguage: String): List<TranslatedBlock>? =
+        memCache.get("${chapterId}_${pageIndex}_$targetLanguage")
+
+    @Synchronized
     fun get(chapterId: Long, pageIndex: Int, targetLanguage: String): List<TranslatedBlock>? {
         val key = "${chapterId}_${pageIndex}_$targetLanguage"
         memCache.get(key)?.let { return it }
@@ -58,17 +65,24 @@ object TranslationCache {
         return null
     }
 
-    fun put(chapterId: Long, pageIndex: Int, targetLanguage: String, blocks: List<TranslatedBlock>) {
-        val key = "${chapterId}_${pageIndex}_$targetLanguage"
-        memCache.put(key, blocks)
-        com.shinku.reader.data.cache.TranslationDiskCache.putPage(chapterId, pageIndex, targetLanguage, blocks)
+    suspend fun put(chapterId: Long, pageIndex: Int, targetLanguage: String, blocks: List<TranslatedBlock>) {
+        val context = currentCoroutineContext()
+        synchronized(this) {
+            context.ensureActive()
+            val key = "${chapterId}_${pageIndex}_$targetLanguage"
+            memCache.put(key, blocks)
+            com.shinku.reader.data.cache.TranslationDiskCache.putPage(chapterId, pageIndex, targetLanguage, blocks)
+        }
     }
 
+    @Synchronized
     fun removePage(chapterId: Long, pageIndex: Int, targetLanguage: String) {
         val key = "${chapterId}_${pageIndex}_$targetLanguage"
+        com.shinku.reader.data.cache.TranslationDiskCache.removePage(chapterId, pageIndex, targetLanguage)
         memCache.remove(key)
     }
 
+    @Synchronized
     fun getChapter(chapterId: Long, targetLanguage: String): Map<Int, List<TranslatedBlock>>? {
         val diskChapter = com.shinku.reader.data.cache.TranslationDiskCache.getChapter(chapterId, targetLanguage)
         diskChapter?.forEach { (index, blocks) ->
@@ -77,6 +91,7 @@ object TranslationCache {
         return diskChapter
     }
 
+    @Synchronized
     fun saveChapter(chapterId: Long, targetLanguage: String, pages: Map<Int, List<TranslatedBlock>>) {
         pages.forEach { (index, blocks) ->
             memCache.put("${chapterId}_${index}_$targetLanguage", blocks)
@@ -88,11 +103,13 @@ object TranslationCache {
         return com.shinku.reader.data.cache.TranslationDiskCache.hasChapterTranslation(chapterId, targetLanguage)
     }
 
+    @Synchronized
     fun clearChapter(chapterId: Long) {
         com.shinku.reader.data.cache.TranslationDiskCache.clearChapter(chapterId)
         memCache.evictAll()
     }
 
+    @Synchronized
     fun clear() {
         memCache.evictAll()
         com.shinku.reader.data.cache.TranslationDiskCache.clearAll()

@@ -1,11 +1,12 @@
 package com.shinku.reader.data.category
 
-import kotlinx.coroutines.flow.Flow
 import com.shinku.reader.data.Database
 import com.shinku.reader.data.DatabaseHandler
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.domain.category.model.CategoryUpdate
 import com.shinku.reader.domain.category.repository.CategoryRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class CategoryRepositoryImpl(
     private val handler: DatabaseHandler,
@@ -21,6 +22,11 @@ class CategoryRepositoryImpl(
 
     override fun getAllAsFlow(): Flow<List<Category>> {
         return handler.subscribeToList { categoriesQueries.getCategories(CategoryMapper::mapCategory) }
+    }
+
+    override fun getLibraryCountsAsFlow(): Flow<Map<Long, Long>> {
+        return handler.subscribeToList { categoriesQueries.getLibraryCounts { id, count -> id to count } }
+            .map { it.toMap() }
     }
 
     override suspend fun getCategoriesByMangaId(mangaId: Long): List<Category> {

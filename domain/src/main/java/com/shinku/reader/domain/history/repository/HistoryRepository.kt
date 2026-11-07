@@ -15,6 +15,8 @@ interface HistoryRepository {
 
     suspend fun getTotalReadDuration(): Long
 
+    suspend fun getReadingGenreDurations(): List<Triple<Long, List<String>?, Long>>
+
     suspend fun getAllHistory(): List<History>
 
     suspend fun getHistoryByMangaId(mangaId: Long): List<History>

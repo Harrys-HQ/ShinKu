@@ -20,6 +20,9 @@ class MangaRepositoryImpl(
     private val handler: DatabaseHandler,
 ) : MangaRepository {
 
+    override suspend fun getMangaByIds(ids: List<Long>): List<Manga> =
+        ids.distinct().chunked(900).flatMap { chunk -> handler.awaitList { mangasQueries.getMangaByIds(chunk, MangaMapper::mapManga) } }
+
     override suspend fun getMangaById(id: Long): Manga {
         return handler.awaitOne { mangasQueries.getMangaById(id, MangaMapper::mapManga) }
     }

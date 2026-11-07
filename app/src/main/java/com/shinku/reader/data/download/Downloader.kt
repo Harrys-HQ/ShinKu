@@ -2,25 +2,44 @@ package com.shinku.reader.data.download
 
 import android.content.Context
 import com.hippo.unifile.UniFile
-import com.shinku.reader.domain.chapter.model.toSChapter
-import com.shinku.reader.domain.manga.model.getComicInfo
-import com.shinku.reader.domain.manga.model.toSManga
-import com.shinku.reader.domain.source.service.SourcePreferences
+import com.shinku.reader.core.common.archive.ZipWriter
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.storage.extension
+import com.shinku.reader.core.common.storage.openFileDescriptor
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.lang.launchNow
+import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.core.common.util.system.ImageUtil
+import com.shinku.reader.core.common.util.system.logcat
+import com.shinku.reader.core.metadata.comicinfo.COMIC_INFO_FILE
+import com.shinku.reader.core.metadata.comicinfo.ComicInfo
 import com.shinku.reader.data.cache.ChapterCache
 import com.shinku.reader.data.download.model.Download
 import com.shinku.reader.data.library.LibraryUpdateNotifier
 import com.shinku.reader.data.notification.NotificationHandler
-import eu.kanade.tachiyomi.source.UnmeteredSource
-import eu.kanade.tachiyomi.source.model.Page
-import eu.kanade.tachiyomi.source.model.SChapter
-import eu.kanade.tachiyomi.source.online.HttpSource
+import com.shinku.reader.domain.category.interactor.GetCategories
+import com.shinku.reader.domain.chapter.model.Chapter
+import com.shinku.reader.domain.chapter.model.toSChapter
+import com.shinku.reader.domain.download.service.DownloadPreferences
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.manga.model.getComicInfo
+import com.shinku.reader.domain.manga.model.toSManga
+import com.shinku.reader.domain.source.service.SourceManager
+import com.shinku.reader.domain.source.service.SourcePreferences
+import com.shinku.reader.domain.track.interactor.GetTracks
+import com.shinku.reader.exh.source.isEhBasedSource
+import com.shinku.reader.exh.util.DataSaver
+import com.shinku.reader.exh.util.DataSaver.Companion.getImage
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.util.storage.CbzCrypto
 import com.shinku.reader.util.storage.DiskUtil
 import com.shinku.reader.util.storage.DiskUtil.NOMEDIA_FILE
 import com.shinku.reader.util.storage.saveTo
-import com.shinku.reader.exh.source.isEhBasedSource
-import com.shinku.reader.exh.util.DataSaver
-import com.shinku.reader.exh.util.DataSaver.Companion.getImage
+import eu.kanade.tachiyomi.network.awaitSuccess
+import eu.kanade.tachiyomi.source.UnmeteredSource
+import eu.kanade.tachiyomi.source.model.Page
+import eu.kanade.tachiyomi.source.model.SChapter
+import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -28,6 +47,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asFlow
@@ -46,34 +66,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
-import com.shinku.reader.core.common.archive.ZipWriter
 import nl.adaptivity.xmlutil.serialization.XML
-import okhttp3.Response
 import okhttp3.Request
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.storage.openFileDescriptor
-import eu.kanade.tachiyomi.network.awaitSuccess
-import kotlinx.coroutines.awaitAll
-import java.io.FileOutputStream
-import java.nio.channels.FileChannel
-import com.shinku.reader.core.common.storage.extension
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.core.common.util.lang.launchNow
-import com.shinku.reader.core.common.util.lang.withIOContext
-import com.shinku.reader.core.common.util.system.ImageUtil
-import com.shinku.reader.core.common.util.system.logcat
-import com.shinku.reader.core.metadata.comicinfo.COMIC_INFO_FILE
-import com.shinku.reader.core.metadata.comicinfo.ComicInfo
-import com.shinku.reader.domain.category.interactor.GetCategories
-import com.shinku.reader.domain.chapter.model.Chapter
-import com.shinku.reader.domain.download.service.DownloadPreferences
-import com.shinku.reader.domain.manga.model.Manga
-import com.shinku.reader.domain.source.service.SourceManager
-import com.shinku.reader.domain.track.interactor.GetTracks
-import com.shinku.reader.i18n.MR
+import okhttp3.Response
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
+import java.io.FileOutputStream
+import java.nio.channels.FileChannel
 import java.util.Locale
 
 /**
@@ -115,13 +115,14 @@ class Downloader(
     private val notifier by lazy { DownloadNotifier(context) }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var downloaderJob: Job? = null
+    private val runState = DownloadRunState()
+    val isRunningFlow = runState.isRunning
 
     /**
      * Whether the downloader is running.
      */
     val isRunning: Boolean
-        get() = downloaderJob?.isActive ?: false
+        get() = isRunningFlow.value
 
     /**
      * Whether the downloader is paused
@@ -209,7 +210,7 @@ class Downloader(
     private fun launchDownloaderJob() {
         if (isRunning) return
 
-        downloaderJob = scope.launch {
+        runState.launch(scope) {
             val activeDownloadsFlow = combine(
                 queueState,
                 downloadPreferences.parallelSourceLimit().changes(),
@@ -278,8 +279,7 @@ class Downloader(
      * Destroys the downloader subscriptions.
      */
     private fun cancelDownloaderJob() {
-        downloaderJob?.cancel()
-        downloaderJob = null
+        runState.cancel()
     }
 
     /**
@@ -793,7 +793,7 @@ class Downloader(
                                             startByte = chunk.startByte,
                                             endByte = chunk.endByte,
                                             bytesDownloaded = totalChunkDownloaded,
-                                            isComplete = if (totalChunkDownloaded >= (chunk.endByte - chunk.startByte + 1)) 1L else 0L
+                                            isComplete = if (totalChunkDownloaded >= (chunk.endByte - chunk.startByte + 1)) 1L else 0L,
                                         )
                                     }
                                 }
@@ -809,7 +809,7 @@ class Downloader(
                                     startByte = chunk.startByte,
                                     endByte = chunk.endByte,
                                     bytesDownloaded = finalChunkDownloaded,
-                                    isComplete = 1L
+                                    isComplete = 1L,
                                 )
                             }
                         }

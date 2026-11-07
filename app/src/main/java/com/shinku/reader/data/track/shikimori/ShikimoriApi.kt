@@ -11,6 +11,7 @@ import com.shinku.reader.data.track.shikimori.dto.SMMetadata
 import com.shinku.reader.data.track.shikimori.dto.SMOAuth
 import com.shinku.reader.data.track.shikimori.dto.SMUser
 import com.shinku.reader.data.track.shikimori.dto.SMUserListEntry
+import com.shinku.reader.util.OAuthStateStore
 import eu.kanade.tachiyomi.network.DELETE
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.POST
@@ -229,6 +230,7 @@ class ShikimoriApi(
             .appendQueryParameter("client_id", CLIENT_ID)
             .appendQueryParameter("redirect_uri", REDIRECT_URL)
             .appendQueryParameter("response_type", "code")
+            .appendQueryParameter("state", OAuthStateStore.generate("shikimori-auth"))
             .build()
 
         fun refreshTokenRequest(token: String) = POST(

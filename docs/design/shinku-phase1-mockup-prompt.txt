@@ -1,0 +1,42 @@
+ShinKu Phase 1 mockup, generated 2026-11-03 using the built-in image_gen tool.
+Concept for review, not an implemented screen or approved specification.
+Output: shinku-phase1-mockup-v1.png
+Reference images: .github/readme-images/screenshot-library.jpg, screenshot-manga-details.jpg, screenshot-more.jpg.
+Transparent background: false.
+
+Generation prompt:
+
+Use case: ui-mockup.
+Create one high-resolution, exceptionally clear design-review image showing THREE proposed Android screens for the existing ShinKu manga reader, side by side. This is a realistic UI concept preview for the owner, based closely on the supplied screenshots, showing a modest usability refinement rather than a new visual identity. The references are visual references, not images to paste unchanged.
+
+Reference 1 is the existing Library. Reference 2 is the existing manga-details screen. Reference 3 is the existing More/profile screen. Retain their charcoal-black backgrounds, muted lavender/periwinkle accent, warm-white text, restrained violet-tinted surfaces, thin subtle borders, rounded cards, familiar line icons, manga artwork, and Sanctuary visual identity. Do not invent a new logo or switch the app to crimson. Preserve the actual app name spelling "ShinKu".
+
+COMPOSITION:
+A polished landscape review board, about 3:2 aspect ratio, as high resolution as possible. Three LARGE straight-on portrait Android screen mockups, equal size, minimal thin rounded device borders, generous even gutters. No perspective, hands, desk, photography or laptop. The screens should occupy nearly the entire board so the UI text is readable when zoomed. Subdued neutral dark background outside the screens. Small header above: "ShinKu · Sanctuary refinement". Smaller subtitle: "Phase 1 concept — readability & spacing". Screen labels outside the devices: "Library", "Manga details", "More". No fake screenshots of code. Crisp typography with sensible Android mobile sizes, visible status and gesture bars. Prioritize readable exact words over ornamental details.
+
+LEFT / LIBRARY:
+Preserve familiar header "ShinKu" with search, filter and overflow controls.
+A compact rounded "CONTINUE READING" card, small reference manga cover on the left; full title wrapping naturally to TWO lines: "The Regressed Mercenary’s Machinations". No ellipsis in this title. Subtitle: "Chapter 111 · Page 2". Clear "Resume" filled lavender button and "Details" secondary button.
+Below, horizontally scrollable category pills "Library", "Reading", "Queue", "Finished" with Library selected. Show a modest clipped edge of the next pill to signal horizontal scrolling.
+Preserve a THREE-COLUMN manga-cover grid, six covers in two rows. Use the reference artwork/look and titles such as "Emperor of Solo Play", "The Regressed Mercenary’s Machinations", "The Return of the Disaster-Class Hero", "The Dark Swordsman", "Martial God Regressed", "Necromancer’s Evolution". Put titles in clear dark caption areas BELOW the artwork, wrapping over up to three lines with enough space, rather than text competing with busy cover art. Small unread-count badges stay on covers. Attractive art, not placeholder blocks.
+The floating rounded navigation dock has five evenly spaced labeled items "Library", "Updates", "History", "Browse", "More"; Library selected. All labels fit. The last visible grid row is COMPLETELY ABOVE the dock, with a clearly reserved bottom safe area. No grid text hidden underneath navigation.
+
+CENTER / MANGA DETAILS:
+Keep the existing cover artwork and lavender-tinted header treatment, made quieter and more compact. Top bar back arrow, simple "Manga details" title, download and overflow icons.
+Cover left, full manga title right, naturally wrapped without ellipses: "The Regressed Mercenary’s Machinations". Smaller metadata "Gold Haeng", "Daewon", "Ongoing · Asura Scans".
+A compact action strip with understandable readable labels "In library", "Tracker", "Website". A separate subtle schedule line "Next update: unavailable" replaces vague "Soon"; do not invent a release date.
+Brief synopsis with a visible "Read more" text control. Readable genre chips "Manhwa", "Action", "Fantasy".
+Two clearly readable secondary actions, stacked full-width if needed: "Find similar vibes" and "Recommendations". Neither label truncated.
+Section heading "Chapters" with "112" count badge. Clean chapter rows "Chapter 111", "Chapter 110", "Chapter 109", "Chapter 108", with small dates/progress and download icons. Row labels and trailing actions all visible.
+Bottom full-width lavender primary action "Resume · Chapter 111", inset comfortably above the gesture bar in its OWN reserved bottom action area. The chapter list ends ABOVE this action area. The button must not obscure any chapter row. Do not add the home navigation dock to the details screen.
+
+RIGHT / MORE:
+Header "More".
+Retain the profile and reading-journey identity but make the card shorter and easier to scan. An understated profile avatar, display name "HarrysHQ", small rank label "MYTHIC SOVEREIGN", level "82", and a slim XP progress bar.
+Three neatly spaced statistic cells with labels and exact full values: "19,415" / "Chapters"; "623h 05m" / "Time read"; "28 days" / "Streak". The time value MUST be fully readable, never "623h 5..." or cropped. Use smaller appropriate type if necessary.
+A compact 2-by-2 utility grid: "Downloaded only" with an OFF toggle and "Show offline titles"; "Incognito" with an OFF toggle and "Reading history saved"; "Downloads" with "Queue idle"; "Storage" with "Manage space". Cards are more compact than the reference and all copy fits.
+Below, clean rounded command rows: "ShinKu settings" with subtitle "AI, appearance & performance"; "Settings" with subtitle "Reader, library & downloads"; and "Backups" with subtitle "Protect your library". Use familiar existing icon language and clear chevrons.
+Same five-item floating navigation dock, More selected. Every visible utility/settings row is fully clear of the dock, with a safe gap.
+
+Below the screens, three small understated captions aligned to each screen: "Readable titles", "Clear actions", "Complete statistics".
+Constraints: preserve the existing app’s look and realistic functionality. No additional AI features, invented premium plans, chat assistant, social feed, ads, charts or unrelated branding. Do not create an exaggerated redesign. This is a precise reviewable visual of the agreed first usability pass.

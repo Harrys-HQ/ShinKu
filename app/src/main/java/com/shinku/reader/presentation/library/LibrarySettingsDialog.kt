@@ -3,32 +3,35 @@ package com.shinku.reader.presentation.library
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.CheckCircleOutline
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import dev.icerock.moko.resources.StringResource
-import com.shinku.reader.presentation.components.TabbedDialog
-import com.shinku.reader.presentation.components.TabbedDialogPaddings
 import com.shinku.reader.R
-import com.shinku.reader.ui.library.LibrarySettingsScreenModel
-import com.shinku.reader.util.system.isDevFlavor
-import com.shinku.reader.util.system.isPreviewBuildType
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.flow.map
 import com.shinku.reader.core.common.preference.TriState
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.domain.library.model.LibraryDisplayMode
@@ -38,6 +41,8 @@ import com.shinku.reader.domain.library.model.sort
 import com.shinku.reader.domain.library.service.LibraryPreferences
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.components.TabbedDialog
+import com.shinku.reader.presentation.components.TabbedDialogPaddings
 import com.shinku.reader.presentation.core.components.BaseSortItem
 import com.shinku.reader.presentation.core.components.CheckboxItem
 import com.shinku.reader.presentation.core.components.HeadingItem
@@ -45,9 +50,16 @@ import com.shinku.reader.presentation.core.components.IconItem
 import com.shinku.reader.presentation.core.components.SettingsChipRow
 import com.shinku.reader.presentation.core.components.SliderItem
 import com.shinku.reader.presentation.core.components.SortItem
-import com.shinku.reader.presentation.core.components.TriStateItem
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.util.collectAsState
+import com.shinku.reader.presentation.library.components.LibraryFilterItem
+import com.shinku.reader.ui.library.LibrarySettingsScreenModel
+import com.shinku.reader.util.system.isDevFlavor
+import com.shinku.reader.util.system.isPreviewBuildType
+import dev.icerock.moko.resources.StringResource
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun LibrarySettingsDialog(
@@ -58,8 +70,68 @@ fun LibrarySettingsDialog(
     hasCategories: Boolean,
     // SY <--
 ) {
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState { 4 }
+    val downloadedOnly by screenModel.preferences.downloadedOnly().collectAsState()
+    val trackers by screenModel.trackersFlow.collectAsState()
+    val downloaded by screenModel.libraryPreferences.filterDownloaded().collectAsState()
+    val otherFilters = with(screenModel.libraryPreferences) {
+        listOf(filterUnread(), filterStarted(), filterBookmarked(), filterCompleted(), filterIntervalCustom(), filterLewd()) +
+            trackers.map { filterTracking(it.id.toInt()) }
+    }
+    val activeFilters = otherFilters.count { it.collectAsState().value != TriState.DISABLED } +
+        if (downloadedOnly || downloaded != TriState.DISABLED) 1 else 0
     TabbedDialog(
+        pagerState = pagerState,
         onDismissRequest = onDismissRequest,
+        header = {
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    stringResource(MR.strings.library_filters),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                androidx.compose.material3.Surface(
+                    shape = com.shinku.reader.presentation.core.theme.SanctuaryShapes.pill,
+                    color = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Text(
+                        stringResource(MR.strings.library_filters_active, activeFilters),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
+            }
+        },
+        footer = {
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+            ) {
+                if (pagerState.currentPage == 0) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = screenModel::resetFilters,
+                        modifier = Modifier.weight(1f),
+                        shape = com.shinku.reader.presentation.core.theme.SanctuaryShapes.medium,
+                    ) {
+                        Icon(Icons.Outlined.RestartAlt, contentDescription = null)
+                        Text(stringResource(MR.strings.action_reset), modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+                androidx.compose.material3.Button(
+                    onClick = onDismissRequest,
+                    modifier = Modifier.weight(1f),
+                    shape = com.shinku.reader.presentation.core.theme.SanctuaryShapes.medium,
+                ) {
+                    Icon(Icons.Outlined.Check, contentDescription = null)
+                    Text(stringResource(MR.strings.action_done), modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+        },
         tabTitles = persistentListOf(
             stringResource(MR.strings.action_filter),
             stringResource(MR.strings.action_sort),
@@ -102,41 +174,58 @@ private fun ColumnScope.FilterPage(
 ) {
     val filterDownloaded by screenModel.libraryPreferences.filterDownloaded().collectAsState()
     val downloadedOnly by screenModel.preferences.downloadedOnly().collectAsState()
-    val autoUpdateMangaRestrictions by screenModel.libraryPreferences.autoUpdateMangaRestrictions().collectAsState()
 
-    TriStateItem(
+    LibraryFilterItem(
         label = stringResource(MR.strings.label_downloaded),
+        icon = Icons.Outlined.Download,
         state = if (downloadedOnly) {
             TriState.ENABLED_IS
         } else {
             filterDownloaded
         },
         enabled = !downloadedOnly,
-        onClick = { screenModel.toggleFilter(LibraryPreferences::filterDownloaded) },
+        onClick = { screenModel.libraryPreferences.filterDownloaded().set(it) },
     )
     val filterUnread by screenModel.libraryPreferences.filterUnread().collectAsState()
-    TriStateItem(
+    LibraryFilterItem(
         label = stringResource(MR.strings.action_filter_unread),
+        icon = Icons.Outlined.MenuBook,
         state = filterUnread,
-        onClick = { screenModel.toggleFilter(LibraryPreferences::filterUnread) },
-    )
-    val filterStarted by screenModel.libraryPreferences.filterStarted().collectAsState()
-    TriStateItem(
-        label = stringResource(MR.strings.label_started),
-        state = filterStarted,
-        onClick = { screenModel.toggleFilter(LibraryPreferences::filterStarted) },
-    )
-    val filterBookmarked by screenModel.libraryPreferences.filterBookmarked().collectAsState()
-    TriStateItem(
-        label = stringResource(MR.strings.action_filter_bookmarked),
-        state = filterBookmarked,
-        onClick = { screenModel.toggleFilter(LibraryPreferences::filterBookmarked) },
+        onClick = { screenModel.libraryPreferences.filterUnread().set(it) },
     )
     val filterCompleted by screenModel.libraryPreferences.filterCompleted().collectAsState()
-    TriStateItem(
+    LibraryFilterItem(
         label = stringResource(MR.strings.completed),
+        icon = Icons.Outlined.CheckCircleOutline,
         state = filterCompleted,
-        onClick = { screenModel.toggleFilter(LibraryPreferences::filterCompleted) },
+        onClick = { screenModel.libraryPreferences.filterCompleted().set(it) },
+    )
+    var expanded by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.material3.TextButton(
+        onClick = { expanded = !expanded },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    ) {
+        Text(stringResource(MR.strings.library_more_filters), modifier = Modifier.weight(1f))
+        Icon(if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, contentDescription = null)
+    }
+    if (expanded) AdditionalFilters(screenModel)
+}
+
+@Composable
+private fun ColumnScope.AdditionalFilters(screenModel: LibrarySettingsScreenModel) {
+    val autoUpdateMangaRestrictions by screenModel.libraryPreferences.autoUpdateMangaRestrictions().collectAsState()
+    val filterStarted by screenModel.libraryPreferences.filterStarted().collectAsState()
+    LibraryFilterItem(
+        label = stringResource(MR.strings.label_started),
+        state = filterStarted,
+        onClick = { screenModel.libraryPreferences.filterStarted().set(it) },
+    )
+    val filterBookmarked by screenModel.libraryPreferences.filterBookmarked().collectAsState()
+    LibraryFilterItem(
+        label = stringResource(MR.strings.action_filter_bookmarked),
+        icon = Icons.Outlined.BookmarkBorder,
+        state = filterBookmarked,
+        onClick = { screenModel.libraryPreferences.filterBookmarked().set(it) },
     )
     // TODO: re-enable when custom intervals are ready for stable
     if (
@@ -144,18 +233,18 @@ private fun ColumnScope.FilterPage(
         LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in autoUpdateMangaRestrictions
     ) {
         val filterIntervalCustom by screenModel.libraryPreferences.filterIntervalCustom().collectAsState()
-        TriStateItem(
+        LibraryFilterItem(
             label = stringResource(MR.strings.action_filter_interval_custom),
             state = filterIntervalCustom,
-            onClick = { screenModel.toggleFilter(LibraryPreferences::filterIntervalCustom) },
+            onClick = { screenModel.libraryPreferences.filterIntervalCustom().set(it) },
         )
     }
     // SY -->
     val filterLewd by screenModel.libraryPreferences.filterLewd().collectAsState()
-    TriStateItem(
+    LibraryFilterItem(
         label = stringResource(SYMR.strings.lewd),
         state = filterLewd,
-        onClick = { screenModel.toggleFilter(LibraryPreferences::filterLewd) },
+        onClick = { screenModel.libraryPreferences.filterLewd().set(it) },
     )
     // SY <--
 
@@ -167,20 +256,20 @@ private fun ColumnScope.FilterPage(
         1 -> {
             val service = trackers[0]
             val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt()).collectAsState()
-            TriStateItem(
+            LibraryFilterItem(
                 label = stringResource(MR.strings.action_filter_tracked),
                 state = filterTracker,
-                onClick = { screenModel.toggleTracker(service.id.toInt()) },
+                onClick = { screenModel.libraryPreferences.filterTracking(service.id.toInt()).set(it) },
             )
         }
         else -> {
             HeadingItem(MR.strings.action_filter_tracked)
             trackers.map { service ->
                 val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt()).collectAsState()
-                TriStateItem(
+                LibraryFilterItem(
                     label = service.name,
                     state = filterTracker,
-                    onClick = { screenModel.toggleTracker(service.id.toInt()) },
+                    onClick = { screenModel.libraryPreferences.filterTracking(service.id.toInt()).set(it) },
                 )
             }
         }

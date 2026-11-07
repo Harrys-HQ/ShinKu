@@ -5,10 +5,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.shinku.reader.data.track.Tracker
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableMap
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.i18n.stringResource
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
 import com.shinku.reader.core.common.preference.Preference as PreferenceData
 
 sealed class Preference {
@@ -135,6 +135,7 @@ sealed class Preference {
             override val title: String,
             override val subtitle: String? = "%s",
             override val enabled: Boolean = true,
+            val isSensitive: Boolean = false,
             override val onValueChanged: suspend (value: String) -> Boolean = { true },
         ) : PreferenceItem<String, Boolean>() {
             override val icon: ImageVector? = null

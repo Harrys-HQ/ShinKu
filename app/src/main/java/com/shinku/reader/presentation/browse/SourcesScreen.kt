@@ -1,64 +1,73 @@
 package com.shinku.reader.presentation.browse
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import com.shinku.reader.presentation.core.util.secondaryItemAlpha
-import com.shinku.reader.presentation.browse.components.BaseSourceItem
-import com.shinku.reader.ui.browse.source.SourcesScreenModel
-import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreenModel.Listing
-import com.shinku.reader.util.system.LocaleHelper
-import kotlinx.collections.immutable.ImmutableList
+import androidx.compose.ui.unit.dp
 import com.shinku.reader.domain.source.model.Pin
 import com.shinku.reader.domain.source.model.Source
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.browse.components.BaseSourceItem
 import com.shinku.reader.presentation.core.components.LabeledCheckbox
 import com.shinku.reader.presentation.core.components.ListGroupHeader
 import com.shinku.reader.presentation.core.components.ScrollbarLazyColumn
-import com.shinku.reader.presentation.core.components.material.SECONDARY_ALPHA
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.components.material.topSmallPaddingValues
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.EmptyScreen
 import com.shinku.reader.presentation.core.screens.LoadingScreen
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
-import com.shinku.reader.presentation.core.theme.header
 import com.shinku.reader.presentation.core.theme.statusExcellent
 import com.shinku.reader.presentation.core.theme.statusWarning
 import com.shinku.reader.presentation.core.util.plus
+import com.shinku.reader.presentation.core.util.secondaryItemAlpha
+import com.shinku.reader.ui.browse.source.SourcesScreenModel
+import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreenModel.Listing
+import com.shinku.reader.util.system.LocaleHelper
 import eu.kanade.tachiyomi.source.local.isLocal
+import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun SourcesScreen(
@@ -75,11 +84,72 @@ fun SourcesScreen(
             modifier = Modifier.padding(contentPadding),
         )
         else -> {
+            val context = LocalContext.current
+            var selectedLang by rememberSaveable { mutableStateOf<String?>(null) }
+            val availableLanguages = remember(state.items) {
+                state.items
+                    .filterIsInstance<SourceUiModel.Item>()
+                    .map { it.source.lang }
+                    .filter { it.isNotBlank() && it != "other" }
+                    .distinct()
+            }
+            val filteredItems = remember(state.items, selectedLang) {
+                if (selectedLang == null) {
+                    state.items
+                } else {
+                    buildList {
+                        var pendingHeader: SourceUiModel.Header? = null
+                        for (model in state.items) {
+                            when (model) {
+                                is SourceUiModel.Header -> pendingHeader = model
+                                is SourceUiModel.Item -> {
+                                    if (model.source.lang.equals(selectedLang, ignoreCase = true)) {
+                                        if (pendingHeader != null) {
+                                            add(pendingHeader)
+                                            pendingHeader = null
+                                        }
+                                        add(model)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ScrollbarLazyColumn(
                 contentPadding = contentPadding + topSmallPaddingValues,
             ) {
+                if (availableLanguages.size > 1) {
+                    item(key = "sources-language-chips") {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            SourceLanguageChip(
+                                label = stringResource(MR.strings.all),
+                                selected = selectedLang == null,
+                                onClick = { selectedLang = null },
+                            )
+                            availableLanguages.forEach { lang ->
+                                SourceLanguageChip(
+                                    label = LocaleHelper.getSourceDisplayName(lang, context),
+                                    selected = selectedLang == lang,
+                                    onClick = {
+                                        selectedLang = if (selectedLang == lang) null else lang
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+
                 items(
-                    items = state.items,
+                    items = filteredItems,
                     contentType = {
                         when (it) {
                             is SourceUiModel.Header -> "header"
@@ -119,6 +189,43 @@ fun SourcesScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SourceLanguageChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        shape = SanctuaryShapes.pill,
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle)
+        },
+        border = if (selected) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+        } else {
+            SanctuaryBrushes.subtleBorder()
+        },
+        modifier = Modifier
+            .clip(SanctuaryShapes.pill)
+            .clickable(onClick = onClick),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            ),
+            color = if (selected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+        )
     }
 }
 
@@ -171,7 +278,7 @@ private fun SourceItem(
                 ) {
                     Text(
                         text = source.name,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
@@ -199,7 +306,7 @@ private fun SourceItem(
                     Text(
                         modifier = Modifier.secondaryItemAlpha(),
                         text = sourceLangString,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodySmall,
                     )
@@ -234,6 +341,17 @@ private fun SourceItem(
                 )
             }
             // SY <--
+            IconButton(
+                onClick = { onLongClickItem(source) },
+                modifier = Modifier.size(40.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.MoreVert,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    contentDescription = stringResource(MR.strings.action_menu_overflow_description),
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         },
     )
 }

@@ -175,11 +175,31 @@ private fun FeaturedCard(
             if (currentManga.favorite) {
                 Box(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
+                        .align(Alignment.TopStart)
                         .padding(MaterialTheme.padding.medium),
                 ) {
                     InLibraryBadge(enabled = true)
                 }
+            }
+
+            val topGenre = currentManga.genre?.firstOrNull()?.uppercase() ?: "FEATURED"
+            Surface(
+                shape = SanctuaryShapes.pill,
+                color = Color.Black.copy(alpha = 0.55f),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.65f),
+                ),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(MaterialTheme.padding.medium),
+            ) {
+                Text(
+                    text = topGenre,
+                    style = MaterialTheme.typography.overlineBadgeSmall,
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                )
             }
 
             Column(
@@ -187,35 +207,6 @@ private fun FeaturedCard(
                     .align(Alignment.BottomStart)
                     .padding(if (isTablet) 22.dp else 18.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Surface(
-                        shape = SanctuaryShapes.tag,
-                        color = MaterialTheme.colorScheme.primary,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(12.dp),
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "FEATURED",
-                                style = MaterialTheme.typography.overlineBadgeSmall,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-
                 Text(
                     text = currentManga.title,
                     style = if (isTablet) {
@@ -228,13 +219,20 @@ private fun FeaturedCard(
                     overflow = TextOverflow.Ellipsis,
                 )
 
-                if (!currentManga.author.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
+                val summaryText = currentManga.description
+                    ?.lineSequence()
+                    ?.firstOrNull { it.isNotBlank() }
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: currentManga.author?.trim().orEmpty()
+
+                if (summaryText.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = currentManga.author!!,
+                        text = summaryText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.78f),
-                        maxLines = 1,
+                        color = Color.White.copy(alpha = 0.84f),
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }

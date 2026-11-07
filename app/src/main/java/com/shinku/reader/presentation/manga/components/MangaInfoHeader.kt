@@ -457,7 +457,7 @@ private fun ColumnScope.MangaContentInfo(
                     else -> stringResource(MR.strings.unknown)
                 },
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
+                maxLines = 3,
             )
             DotSeparatorText()
             if (isStubSource) {
@@ -479,7 +479,7 @@ private fun ColumnScope.MangaContentInfo(
                     )
                 },
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
+                maxLines = 3,
             )
         }
     }
@@ -524,7 +524,7 @@ private fun RowScope.MangaActionButton(
                     fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
                 ),
                 textAlign = TextAlign.Center,
-                maxLines = 1,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
         }

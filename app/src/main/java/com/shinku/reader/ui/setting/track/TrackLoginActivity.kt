@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.data.track.comick.ComickMissingScopesException
+import com.shinku.reader.util.OAuthStateStore
 import com.shinku.reader.util.system.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,26 +30,22 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
 
         lifecycleScope.launch {
             when (uri.host) {
-                "anilist-auth" -> handleAniList(data["access_token"])
+                "anilist-auth" -> handleAniList(data["access_token"], data["state"])
                 "comick-auth" -> handleComick(data["code"], data["state"])
-                "bangumi-auth" -> handleBangumi(data["code"])
-                "myanimelist-auth" -> handleMyAnimeList(data["code"])
-                "shikimori-auth" -> handleShikimori(data["code"])
+                "bangumi-auth" -> handleBangumi(data["code"], data["state"])
+                "myanimelist-auth" -> handleMyAnimeList(data["code"], data["state"])
+                "shikimori-auth" -> handleShikimori(data["code"], data["state"])
             }
             returnToSettings()
         }
     }
 
     private suspend fun handleComick(code: String?, state: String?) {
-        if (state == null) {
-            logcat(LogPriority.WARN) { "Did not receive state parameter from Comick OAuth" }
+        if (state == null || !trackerManager.comick.verifyOAuthState(state)) {
+            logcat(LogPriority.WARN) { "Received invalid or missing OAuth state back from Comick" }
             return
         }
         if (code != null) {
-            if (!trackerManager.comick.verifyOAuthState(state)) {
-                logcat(LogPriority.WARN) { "Received wrong OAuth state back from Comick" }
-                return
-            }
             try {
                 trackerManager.comick.login(code)
             } catch (e: ComickMissingScopesException) {
@@ -62,7 +59,11 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
         }
     }
 
-    private suspend fun handleAniList(accessToken: String?) {
+    private suspend fun handleAniList(accessToken: String?, state: String?) {
+        if (state == null || !OAuthStateStore.verify("anilist-auth", state)) {
+            logcat(LogPriority.WARN) { "Received invalid or missing OAuth state back from AniList" }
+            return
+        }
         if (accessToken != null) {
             trackerManager.aniList.login(accessToken)
         } else {
@@ -70,7 +71,11 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
         }
     }
 
-    private suspend fun handleBangumi(code: String?) {
+    private suspend fun handleBangumi(code: String?, state: String?) {
+        if (state == null || !OAuthStateStore.verify("bangumi-auth", state)) {
+            logcat(LogPriority.WARN) { "Received invalid or missing OAuth state back from Bangumi" }
+            return
+        }
         if (code != null) {
             trackerManager.bangumi.login(code)
         } else {
@@ -78,7 +83,11 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
         }
     }
 
-    private suspend fun handleMyAnimeList(code: String?) {
+    private suspend fun handleMyAnimeList(code: String?, state: String?) {
+        if (state == null || !OAuthStateStore.verify("myanimelist-auth", state)) {
+            logcat(LogPriority.WARN) { "Received invalid or missing OAuth state back from MyAnimeList" }
+            return
+        }
         if (code != null) {
             trackerManager.myAnimeList.login(code)
         } else {
@@ -86,7 +95,11 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
         }
     }
 
-    private suspend fun handleShikimori(code: String?) {
+    private suspend fun handleShikimori(code: String?, state: String?) {
+        if (state == null || !OAuthStateStore.verify("shikimori-auth", state)) {
+            logcat(LogPriority.WARN) { "Received invalid or missing OAuth state back from Shikimori" }
+            return
+        }
         if (code != null) {
             trackerManager.shikimori.login(code)
         } else {

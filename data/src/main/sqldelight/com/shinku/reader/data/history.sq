@@ -75,3 +75,11 @@ FROM history;
 
 getHistory:
 SELECT * FROM history;
+
+getReadingGenreDurations:
+SELECT CASE WHEN M.favorite = 1 THEN M._id ELSE -1 END AS customization_id, M.genre, coalesce(sum(H.time_read), 0) AS duration
+FROM history H
+JOIN chapters C ON C._id = H.chapter_id
+JOIN mangas M ON M._id = C.manga_id
+GROUP BY M._id
+ORDER BY min(H._id);

@@ -3,14 +3,6 @@ package com.shinku.reader.ui.category
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import dev.icerock.moko.resources.StringResource
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import com.shinku.reader.domain.category.interactor.CreateCategoryWithName
 import com.shinku.reader.domain.category.interactor.DeleteCategory
 import com.shinku.reader.domain.category.interactor.GetCategories
@@ -18,6 +10,18 @@ import com.shinku.reader.domain.category.interactor.RenameCategory
 import com.shinku.reader.domain.category.interactor.ReorderCategory
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.i18n.MR
+import dev.icerock.moko.resources.StringResource
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -34,13 +38,15 @@ class CategoryScreenModel(
 
     init {
         screenModelScope.launch {
-            getCategories.subscribe()
-                .collectLatest { categories ->
-                    mutableState.update {
+            combine(getCategories.subscribe(), getCategories.subscribeLibraryCounts()) { categories, counts -> categories to counts }
+                .collectLatest { (categories, counts) ->
+                    mutableState.update { previous ->
                         CategoryScreenState.Success(
                             categories = categories
                                 .filterNot(Category::isSystemCategory)
                                 .toImmutableList(),
+                            titleCounts = counts.toImmutableMap(),
+                            dialog = (previous as? CategoryScreenState.Success)?.dialog,
                         )
                     }
                 }
@@ -122,6 +128,7 @@ sealed interface CategoryScreenState {
     data class Success(
         val categories: ImmutableList<Category>,
         val dialog: CategoryDialog? = null,
+        val titleCounts: ImmutableMap<Long, Long> = persistentMapOf(),
     ) : CategoryScreenState {
 
         val isEmpty: Boolean

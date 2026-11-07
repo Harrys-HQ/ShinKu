@@ -134,6 +134,7 @@ fun FeedScreen(
                             val hasGenreManga = !state.selectedGenreManga.isNullOrEmpty()
                             DiscoverSectionHeader(
                                 title = "Top ${state.selectedGenre} Titles",
+                                subtitle = "Filtered across active sources",
                                 onSeeAllClick = if (hasGenreManga) {
                                     {
                                         onSeeAllTitles(
@@ -187,6 +188,7 @@ fun FeedScreen(
                         item {
                             DiscoverSectionHeader(
                                 title = "Titles For You",
+                                subtitle = "Based on your reading genres",
                                 onSeeAllClick = {
                                     onSeeAllTitles("Titles For You", state.forYouManga, "for_you", "")
                                 },
@@ -204,6 +206,7 @@ fun FeedScreen(
                         item {
                             DiscoverSectionHeader(
                                 title = "AI Sanctuary Picks",
+                                subtitle = "Personalized recommendations from your library",
                                 onSeeAllClick = {
                                     onSeeAllTitles(
                                         "AI Sanctuary Picks",
@@ -227,6 +230,7 @@ fun FeedScreen(
                             item(key = "genre_$genreTitle") {
                                 DiscoverSectionHeader(
                                     title = "$genreTitle Highlights",
+                                    subtitle = "New chapters and popular picks in $genreTitle",
                                     onSeeAllClick = {
                                         onSeeAllTitles("$genreTitle Highlights", mangas, "genre", genreTitle)
                                     },

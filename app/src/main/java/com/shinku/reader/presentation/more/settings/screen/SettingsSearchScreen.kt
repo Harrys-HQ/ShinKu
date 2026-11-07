@@ -47,14 +47,14 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.shinku.reader.presentation.components.UpIcon
-import com.shinku.reader.presentation.more.settings.Preference
-import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.components.UpIcon
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.EmptyScreen
 import com.shinku.reader.presentation.core.util.runOnEnterKeyPressed
+import com.shinku.reader.presentation.more.settings.Preference
+import com.shinku.reader.presentation.util.Screen
 import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 
 class SettingsSearchScreen : Screen() {
@@ -238,14 +238,14 @@ private fun SearchResult(
                             Text(
                                 text = item.title,
                                 overflow = TextOverflow.Ellipsis,
-                                maxLines = 1,
+                                maxLines = 3,
                                 fontWeight = FontWeight.Normal,
                                 style = MaterialTheme.typography.titleMedium,
                             )
                             Text(
                                 text = item.breadcrumbs,
                                 modifier = Modifier.paddingFromBaseline(top = 16.dp),
-                                maxLines = 1,
+                                maxLines = 3,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodySmall,
                             )
@@ -287,6 +287,7 @@ private fun getLocalizedBreadcrumb(path: String, node: String?, isLtr: Boolean):
 
 private val settingScreens = listOf(
     SettingsAppearanceScreen,
+    SettingsColorEffectsScreen,
     SettingsLibraryScreen,
     SettingsReaderScreen,
     SettingsDownloadScreen,
@@ -299,7 +300,7 @@ private val settingScreens = listOf(
     SettingsMangadexScreen,
     // SY <--
     SettingsAdvancedScreen,
-)
+) + ShinKuSettingsSection.entries.map(::ShinKuSettingsSectionScreen)
 
 private data class SettingsData(
     val title: String,

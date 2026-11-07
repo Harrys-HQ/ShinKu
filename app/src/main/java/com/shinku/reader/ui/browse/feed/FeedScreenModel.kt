@@ -37,22 +37,24 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
 import uy.kohesive.injekt.Injekt
@@ -87,8 +89,11 @@ open class FeedScreenModel(
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
 
-    // Bounded parallelism prevents Cloudflare 429 rate-limiting across extensions
-    private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(4)
+    private val coroutineDispatcher = Dispatchers.IO
+    private val sourceRequests = sharedFeedRequests
+    private val refreshRequest = LatestFeedRequest(screenModelScope)
+    private val genreRequest = LatestFeedRequest(screenModelScope)
+    private val savedFeedRefresh = MutableStateFlow(0L)
     var pushed: Boolean = false
     var isInitialized: Boolean = false
         private set
@@ -106,7 +111,8 @@ open class FeedScreenModel(
 
         getFeedSavedSearchGlobal.subscribe()
             .distinctUntilChanged()
-            .onEach {
+            .combine(savedFeedRefresh) { feeds, _ -> feeds }
+            .mapLatest {
                 sourceManager.isInitialized.first { it }
                 val items = getSourcesToGetFeed(it).map { (feed, savedSearch) ->
                     createCatalogueSearchItem(
@@ -116,7 +122,7 @@ open class FeedScreenModel(
                         results = null,
                     )
                 }
-                mutableState.update { state ->
+                mutableState.updateIfActive { state ->
                     state.copy(
                         items = items.toImmutableList(),
                     )
@@ -125,7 +131,7 @@ open class FeedScreenModel(
             }
             .catch {
                 _events.send(Event.FailedFetchingSources)
-                mutableState.update { state ->
+                mutableState.updateIfActive { state ->
                     state.copy(items = state.items ?: persistentListOf(), isInitialLoadDone = true)
                 }
             }
@@ -159,13 +165,15 @@ open class FeedScreenModel(
                 val recommendedManga = coroutineScope {
                     titles.take(8).map { title ->
                         async(coroutineDispatcher) {
-                            withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                            sourceRequests.request(primarySource.id) {
                                 try {
                                     primarySource.getSearchManga(1, title, FilterList())
                                         .mangas
                                         .firstOrNull()
                                         ?.toDomainManga(primarySource.id)
-                                } catch (e: Throwable) {
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
                                     null
                                 }
                             }
@@ -176,10 +184,12 @@ open class FeedScreenModel(
                 if (recommendedManga.isNotEmpty()) {
                     val localManga = networkToLocalManga(recommendedManga)
                         .sortedBy { it.id in libraryIds }
-                    mutableState.update { it.copy(recommendations = localManga.toImmutableList()) }
+                    mutableState.updateIfActive { it.copy(recommendations = localManga.toImmutableList()) }
                 }
             }
-        } catch (e: Throwable) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
         }
     }
@@ -235,7 +245,7 @@ open class FeedScreenModel(
         if (candidates.size <= 1) return candidates
 
         // Prioritize healthy, low-latency sources so broken/Cloudflare-blocked extensions don't stall Discover
-        val healthMap = runCatching {
+        val healthMap = runCatchingCancellable {
             sourceHealthRepository.subscribeAll().first().associateBy { it.sourceId }
         }.getOrDefault(emptyMap())
 
@@ -270,125 +280,93 @@ open class FeedScreenModel(
                 val latestPage = (1..2).random()
 
                 coroutineScope {
-                    // 1. Popular manga for Featured Hero Carousel (max 2 healthy sources)
-                    val popularDeferred = sources.take(2).map { source ->
-                        async(coroutineDispatcher) {
-                            withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
-                                try {
-                                    source.getPopularManga(popularPage).mangas.take(8).map { it.toDomainManga(source.id) }
-                                } catch (e: Throwable) {
-                                    emptyList()
-                                }
-                            }.orEmpty()
-                        }
-                    }
+                    val publishMutex = kotlinx.coroutines.sync.Mutex()
+                    val popular = Array(sources.take(2).size) { emptyList<DomainManga>() }
+                    val latestSources = sources.filter { it.supportsLatest }.take(2)
+                    val latest = Array(latestSources.size) { emptyList<DomainManga>() }
+                    val behaviorSources = if (topUserGenre.isNullOrBlank()) emptyList() else sources.take(2)
+                    val behavior = Array(behaviorSources.size) { emptyList<DomainManga>() }
 
-                    // 2. Latest releases across up to 2 sources supporting latest
-                    val latestSources = sources.filter { it.supportsLatest }.take(2).ifEmpty { sources.take(2) }
-                    val latestDeferred = latestSources.map { source ->
-                        async(coroutineDispatcher) {
-                            withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
-                                try {
-                                    source.getLatestUpdates(latestPage).mangas.take(8).map { it.toDomainManga(source.id) }
-                                } catch (e: Throwable) {
-                                    emptyList()
-                                }
-                            }.orEmpty()
-                        }
-                    }
-
-                    // 3. Personalized top-genre suggestions across up to 2 sources
-                    val behaviorDeferred = if (!topUserGenre.isNullOrBlank()) {
-                        sources.take(2).map { source ->
-                            async(coroutineDispatcher) {
-                                withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
-                                    try {
-                                        val filterList = GenreFilterHelper.buildGenreFilterList(source, topUserGenre)
-                                        if (filterList != null) {
-                                            source.getSearchManga(1, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
-                                        } else {
-                                            emptyList()
-                                        }
-                                    } catch (e: Throwable) {
-                                        emptyList()
-                                    }
-                                }.orEmpty()
+                    suspend fun publish(bucket: Array<List<DomainManga>>, index: Int, result: List<DomainManga>) {
+                        val local = if (result.isEmpty()) emptyList() else networkToLocalManga(result)
+                        publishMutex.lock()
+                        try {
+                            bucket[index] = if (bucket === behavior && !topUserGenre.isNullOrBlank()) {
+                                local.filter { GenreFilterHelper.matchesGenre(it, topUserGenre) }
+                            } else {
+                                local
                             }
+                            val localPopular = popular.flatMap { it }
+                            val localLatest = latest.flatMap { it }
+                            val localBehavior = behavior.flatMap { it }
+                            if (localPopular.isEmpty() && localLatest.isEmpty() && localBehavior.isEmpty()) return
+                            val featured = localPopular.ifEmpty { localLatest }.take(5)
+                            val featuredIds = featured.map { it.id }.toSet()
+                            val pool = buildList {
+                                repeat(maxOf(localBehavior.size, localLatest.size, localPopular.size)) { i ->
+                                    localBehavior.getOrNull(i)?.let(::add)
+                                    localLatest.getOrNull(i)?.let(::add)
+                                    localPopular.getOrNull(i)?.let(::add)
+                                }
+                            }
+                            val forYou = pool.filterNot { it.id in featuredIds }.distinctBy { it.id }
+                                .sortedBy { it.id in libraryIds }.take(15)
+                            mutableState.updateIfActive {
+                                it.copy(
+                                    featuredManga = featured.ifEmpty { it.featuredManga }.toImmutableList(),
+                                    forYouManga = forYou.toImmutableList(),
+                                )
+                            }
+                        } finally {
+                            publishMutex.unlock()
                         }
-                    } else {
-                        emptyList()
                     }
-
-                    val popularResults = popularDeferred.awaitAll().flatten()
-                    val latestResults = latestDeferred.awaitAll().flatten()
-                    val behaviorResults = behaviorDeferred.awaitAll().flatten()
-
-                    val localPopular = if (popularResults.isNotEmpty()) {
-                        networkToLocalManga(popularResults).shuffled()
-                    } else {
-                        emptyList()
-                    }
-
-                    val localLatest = if (latestResults.isNotEmpty()) {
-                        networkToLocalManga(latestResults)
-                    } else {
-                        emptyList()
-                    }
-
-                    val localBehavior = if (behaviorResults.isNotEmpty()) {
-                        val mangas = networkToLocalManga(behaviorResults)
-                        if (!topUserGenre.isNullOrBlank()) {
-                            mangas.filter { GenreFilterHelper.matchesGenre(it, topUserGenre) }.shuffled()
-                        } else {
-                            mangas.shuffled()
+                    val jobs = sources.take(2).mapIndexed { index, source ->
+                        async(coroutineDispatcher) {
+                            val result = runCatchingCancellable {
+                                sourceRequests.request(source.id) { source.getPopularManga(popularPage).mangas }
+                            }.getOrNull().orEmpty().take(8).map { it.toDomainManga(source.id) }
+                            publish(popular, index, result)
                         }
-                    } else {
-                        emptyList()
-                    }
-
-                    if (localPopular.isNotEmpty() || localLatest.isNotEmpty() || localBehavior.isNotEmpty()) {
-                        val featured = localPopular.ifEmpty { localLatest }.take(5)
-                        val featuredIds = featured.map { it.id }.toSet()
-
-                        val forYouPool = mutableListOf<DomainManga>()
-                        val maxBlend = maxOf(localBehavior.size, localLatest.size, localPopular.size)
-                        for (i in 0 until maxBlend) {
-                            if (i < localBehavior.size) forYouPool.add(localBehavior[i])
-                            if (i < localLatest.size) forYouPool.add(localLatest[i])
-                            if (i < localPopular.size) forYouPool.add(localPopular[i])
+                    } + latestSources.mapIndexed { index, source ->
+                        async(coroutineDispatcher) {
+                            val result = runCatchingCancellable {
+                                sourceRequests.request(source.id) { source.getLatestUpdates(latestPage).mangas }
+                            }.getOrNull().orEmpty().take(8).map { it.toDomainManga(source.id) }
+                            publish(latest, index, result)
                         }
-
-                        // Prioritize fresh discoveries not already in the user's Library
-                        val forYou = forYouPool
-                            .filterNot { it.id in featuredIds }
-                            .distinctBy { it.id }
-                            .sortedBy { it.id in libraryIds }
-                            .take(15)
-
-                        mutableState.update {
-                            it.copy(
-                                featuredManga = featured.toImmutableList(),
-                                forYouManga = forYou.toImmutableList(),
-                            )
+                    } + behaviorSources.mapIndexed { index, source ->
+                        async(coroutineDispatcher) {
+                            val result = runCatchingCancellable {
+                                val filters = GenreFilterHelper.buildGenreFilterList(source, requireNotNull(topUserGenre))
+                                if (filters == null) {
+                                    emptyList()
+                                } else {
+                                    sourceRequests.request(source.id) { source.getSearchManga(1, "", filters).mangas }.orEmpty()
+                                }
+                            }.getOrDefault(emptyList()).take(8).map { it.toDomainManga(source.id) }
+                            publish(behavior, index, result)
                         }
-                    } else if (state.value.featuredManga.isEmpty()) {
-                        fallbackToLibraryFeatured(libraryManga)
                     }
+                    jobs.awaitAll()
+                    if (state.value.featuredManga.isEmpty()) fallbackToLibraryFeatured(libraryManga)
                 }
             } else if (state.value.featuredManga.isEmpty()) {
                 fallbackToLibraryFeatured(libraryManga)
             }
-        } catch (e: Throwable) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
             if (state.value.featuredManga.isEmpty()) {
                 fallbackToLibraryFeatured(libraryManga)
             }
         } finally {
-            mutableState.update { it.copy(isInitialLoadDone = true) }
+            mutableState.updateIfActive { it.copy(isInitialLoadDone = true) }
         }
     }
 
-    private fun fallbackToLibraryFeatured(libraryManga: List<DomainManga>) {
+    private suspend fun fallbackToLibraryFeatured(libraryManga: List<DomainManga>) {
         if (libraryManga.isEmpty()) return
         val featured = libraryManga.shuffled().take(5)
         val forYou = if (libraryManga.size > 5) libraryManga.filter { it !in featured }.take(10) else libraryManga
@@ -403,7 +381,7 @@ open class FeedScreenModel(
             }
         }
 
-        mutableState.update {
+        mutableState.updateIfActive {
             it.copy(
                 featuredManga = featured.toImmutableList(),
                 forYouManga = forYou.toImmutableList(),
@@ -443,10 +421,12 @@ open class FeedScreenModel(
                         val genrePage = (1..2).random()
                         val genreResults = supportingSources.map { (source, filterList) ->
                             async(coroutineDispatcher) {
-                                withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                                sourceRequests.request(source.id) {
                                     try {
                                         source.getSearchManga(genrePage, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
-                                    } catch (e: Throwable) {
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (e: Exception) {
                                         emptyList()
                                     }
                                 }.orEmpty()
@@ -472,7 +452,9 @@ open class FeedScreenModel(
                         } else {
                             null
                         }
-                    } catch (e: Throwable) {
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
                         logcat(LogPriority.ERROR, e)
                         null
                     }
@@ -481,20 +463,21 @@ open class FeedScreenModel(
         }
 
         if (results.isNotEmpty()) {
-            mutableState.update {
+            mutableState.updateIfActive {
                 it.copy(genreSections = results.toMap().toImmutableMap())
             }
         }
     }
 
     fun selectGenre(genre: String) {
+        genreRequest.cancel()
         if (genre.isBlank() || state.value.selectedGenre.equals(genre, ignoreCase = true)) {
             mutableState.update { it.copy(selectedGenre = null, selectedGenreManga = null, isLoadingGenre = false) }
             return
         }
 
         mutableState.update { it.copy(selectedGenre = genre, isLoadingGenre = true) }
-        screenModelScope.launchIO {
+        genreRequest.launch {
             try {
                 val sources = getFilteredCatalogueSources()
                 if (sources.isNotEmpty()) {
@@ -506,10 +489,12 @@ open class FeedScreenModel(
                     val genreResults = coroutineScope {
                         supportingSources.map { (source, filterList) ->
                             async(coroutineDispatcher) {
-                                withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                                sourceRequests.request(source.id) {
                                     try {
                                         source.getSearchManga(1, "", filterList).mangas.take(10).map { it.toDomainManga(source.id) }
-                                    } catch (e: Throwable) {
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (e: Exception) {
                                         emptyList()
                                     }
                                 }.orEmpty()
@@ -524,30 +509,35 @@ open class FeedScreenModel(
                     }
 
                     val finalGenreManga = localGenreManga.ifEmpty {
-                        runCatching {
+                        runCatchingCancellable {
                             getLibraryManga.await().map { it.manga }.filter { manga ->
                                 manga.genre.orEmpty().any { it.contains(genre, ignoreCase = true) }
                             }
                         }.getOrDefault(emptyList())
                     }
-                    mutableState.update { it.copy(selectedGenreManga = finalGenreManga.toImmutableList(), isLoadingGenre = false) }
+                    mutableState.updateIfActive { it.copy(selectedGenreManga = finalGenreManga.toImmutableList(), isLoadingGenre = false) }
                 } else {
-                    val offlineManga = runCatching {
+                    val offlineManga = runCatchingCancellable {
                         getLibraryManga.await().map { it.manga }.filter { manga ->
                             manga.genre.orEmpty().any { it.contains(genre, ignoreCase = true) }
                         }
                     }.getOrDefault(emptyList())
-                    mutableState.update { it.copy(selectedGenreManga = offlineManga.toImmutableList(), isLoadingGenre = false) }
+                    mutableState.updateIfActive { it.copy(selectedGenreManga = offlineManga.toImmutableList(), isLoadingGenre = false) }
                 }
-            } catch (e: Throwable) {
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
-                mutableState.update { it.copy(selectedGenreManga = persistentListOf(), isLoadingGenre = false) }
+                mutableState.updateIfActive { it.copy(selectedGenreManga = persistentListOf(), isLoadingGenre = false) }
             }
         }
     }
 
     fun init(force: Boolean = false) {
         if (!force && isInitialized) return
+        refreshRequest.cancel()
+        genreRequest.cancel()
+        savedFeedRefresh.update { it + 1 }
         isInitialized = true
         pushed = false
         mutableState.update {
@@ -559,13 +549,12 @@ open class FeedScreenModel(
                 showSourceFeeds = shinkuPreferences.feedShowSourceFeeds().get(),
             )
         }
-        screenModelScope.launchIO {
+        refreshRequest.launch {
             try {
                 sourceManager.isInitialized.first { it }
                 // Query DB once per refresh cycle and share across all sections
-                val libraryManga = runCatching { getLibraryManga.await().map { it.manga } }.getOrDefault(emptyList())
-                val stats = runCatching { getReadingStats.await() }.getOrNull()
-                val bestGenres = stats?.bestGenres.orEmpty()
+                val libraryManga = runCatchingCancellable { getLibraryManga.await().map { it.manga } }.getOrDefault(emptyList())
+                val bestGenres = runCatchingCancellable { getReadingStats.awaitBestGenres() }.getOrDefault(emptyList())
                 val sources = getFilteredCatalogueSources()
                 val libraryIds = libraryManga.map { it.id }.toSet()
 
@@ -577,7 +566,7 @@ open class FeedScreenModel(
                 )
 
                 // Release pull-to-refresh spinner as soon as Hero + Titles For You are ready
-                mutableState.update { it.copy(isRefreshing = false) }
+                mutableState.updateIfActive { it.copy(isRefreshing = false) }
 
                 // 2. Load Genre rows, AI Picks, and Custom Source Feeds in background
                 launchIO {
@@ -594,18 +583,14 @@ open class FeedScreenModel(
                         libraryIds = libraryIds,
                     )
                 }
-
-                val newItems = state.value.items?.map { it.copy(results = null) }
-                if (newItems != null) {
-                    mutableState.update { state ->
-                        state.copy(
-                            items = newItems.toImmutableList(),
-                        )
-                    }
-                    getFeed(newItems)
-                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e)
+                _events.send(Event.FailedFetchingSources)
+                mutableState.updateIfActive { it.copy(isInitialLoadDone = true) }
             } finally {
-                mutableState.update { it.copy(isRefreshing = false) }
+                mutableState.updateIfActive { it.copy(isRefreshing = false) }
             }
         }
     }
@@ -718,14 +703,14 @@ open class FeedScreenModel(
         )
     }
 
-    private fun getFeed(feedSavedSearch: List<FeedItemUI>) {
-        screenModelScope.launch {
+    private suspend fun getFeed(feedSavedSearch: List<FeedItemUI>) {
+        coroutineScope {
             feedSavedSearch.map { itemUI ->
                 async {
                     val page = try {
                         if (itemUI.source != null) {
                             withContext(coroutineDispatcher) {
-                                withTimeoutOrNull(SOURCE_CALL_TIMEOUT_MS) {
+                                sourceRequests.request(itemUI.source.id) {
                                     if (itemUI.savedSearch == null) {
                                         itemUI.source.getLatestUpdates(1)
                                     } else {
@@ -740,7 +725,9 @@ open class FeedScreenModel(
                         } else {
                             emptyList()
                         }
-                    } catch (e: Throwable) {
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
                         emptyList()
                     }
 
@@ -750,7 +737,7 @@ open class FeedScreenModel(
                         )
                     }
 
-                    mutableState.update { state ->
+                    mutableState.updateIfActive { state ->
                         state.copy(
                             items = state.items?.map { if (it.feed.id == result.feed.id) result else it }?.toImmutableList(),
                         )
@@ -764,7 +751,7 @@ open class FeedScreenModel(
 
     private fun getFilterList(savedSearch: SavedSearch, source: CatalogueSource): FilterList {
         val filters = savedSearch.filtersJson ?: return FilterList()
-        return runCatching {
+        return runCatchingCancellable {
             val originalFilters = source.getFilterList()
             filterSerializer.deserialize(
                 filters = originalFilters,
@@ -803,10 +790,6 @@ open class FeedScreenModel(
     sealed class Event {
         data object FailedFetchingSources : Event()
         data object TooManyFeeds : Event()
-    }
-
-    companion object {
-        private const val SOURCE_CALL_TIMEOUT_MS = 8_000L
     }
 }
 

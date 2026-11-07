@@ -3,18 +3,23 @@ package com.shinku.reader.presentation.more.settings
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
+import com.shinku.reader.presentation.core.components.ScrollbarLazyColumn
 import com.shinku.reader.presentation.more.settings.screen.SearchableSettings
 import com.shinku.reader.presentation.more.settings.widget.PreferenceGroupHeader
 import kotlinx.coroutines.delay
-import com.shinku.reader.presentation.core.components.ScrollbarLazyColumn
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -57,11 +62,22 @@ fun PreferenceScreen(
                             PreferenceGroupHeader(title = preference.title)
                         }
                     }
-                    items(preference.preferenceItems) { item ->
-                        PreferenceItem(
-                            item = item,
-                            highlightKey = highlightKey,
-                        )
+                    val firstVisible = preference.preferenceItems.indexOfFirst { it.enabled }
+                    val lastVisible = preference.preferenceItems.indexOfLast { it.enabled }
+                    itemsIndexed(preference.preferenceItems) { index, item ->
+                        if (!item.enabled) return@itemsIndexed
+                        Surface(
+                            modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = RoundedCornerShape(
+                                topStart = if (index == firstVisible) 20.dp else 0.dp,
+                                topEnd = if (index == firstVisible) 20.dp else 0.dp,
+                                bottomStart = if (index == lastVisible) 20.dp else 0.dp,
+                                bottomEnd = if (index == lastVisible) 20.dp else 0.dp,
+                            ),
+                        ) {
+                            PreferenceItem(item = item, highlightKey = highlightKey)
+                        }
                     }
                     item {
                         if (i < items.lastIndex) {
@@ -83,7 +99,7 @@ fun PreferenceScreen(
 }
 
 private fun List<Preference>.findHighlightedIndex(highlightKey: String): Int {
-    return flatMap {
+    return filter { it.enabled }.flatMap {
         if (it is Preference.PreferenceGroup) {
             buildList<String?> {
                 add(null) // Header

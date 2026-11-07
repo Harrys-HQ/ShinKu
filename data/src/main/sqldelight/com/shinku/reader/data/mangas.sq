@@ -291,3 +291,6 @@ getIdByUrlAndSource:
 SELECT _id
 FROM mangas
 WHERE url = :url AND source = :source;
+
+getMangaByIds:
+SELECT * FROM mangas WHERE _id IN :ids;

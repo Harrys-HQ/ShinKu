@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -33,16 +34,18 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shinku.reader.presentation.manga.components.MangaCover
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.BadgeGroup
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.util.selectedBackground
+import com.shinku.reader.presentation.manga.components.MangaCover
 import com.shinku.reader.domain.manga.model.MangaCover as MangaCoverModel
 
 object CommonMangaItemDefaults {
@@ -183,6 +186,7 @@ fun MangaComfortableGridItem(
     onLongClick: () -> Unit,
     isSelected: Boolean = false,
     titleMaxLines: Int = 2,
+    captionSurface: Boolean = false,
     coverAlpha: Float = 1f,
     coverBadgeStart: (@Composable RowScope.() -> Unit)? = null,
     coverBadgeEnd: (@Composable RowScope.() -> Unit)? = null,
@@ -218,13 +222,30 @@ fun MangaComfortableGridItem(
                     }
                 },
             )
-            GridItemTitle(
-                modifier = Modifier.padding(4.dp),
-                title = title,
-                style = MaterialTheme.typography.titleSmall,
-                minLines = 2,
-                maxLines = titleMaxLines,
-            )
+            if (captionSurface) {
+                androidx.compose.material3.Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
+                ) {
+                    GridItemTitle(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                        title = title,
+                        style = MaterialTheme.typography.bodySmall,
+                        minLines = titleMaxLines,
+                        maxLines = titleMaxLines,
+                    )
+                }
+            } else {
+                GridItemTitle(
+                    modifier = Modifier.padding(4.dp),
+                    title = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    minLines = 2,
+                    maxLines = titleMaxLines,
+                )
+            }
         }
     }
 }
@@ -306,6 +327,7 @@ private fun GridItemSelectable(
                 onLongClick = onLongClick,
             )
             .selectedOutline(isSelected = isSelected, color = MaterialTheme.colorScheme.secondary)
+            .semantics { selected = isSelected }
             .padding(4.dp),
     ) {
         val contentColor = if (isSelected) {
@@ -315,6 +337,20 @@ private fun GridItemSelectable(
         }
         CompositionLocalProvider(LocalContentColor provides contentColor) {
             content()
+        }
+        if (isSelected) {
+            Box(
+                modifier = Modifier.align(Alignment.TopEnd).padding(6.dp)
+                    .background(MaterialTheme.colorScheme.secondary, androidx.compose.foundation.shape.CircleShape)
+                    .padding(5.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondary,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
         }
     }
 }

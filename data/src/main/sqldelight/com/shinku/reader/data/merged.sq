@@ -120,3 +120,5 @@ DELETE FROM merged;
 
 selectLastInsertedRowId:
 SELECT last_insert_rowid();
+selectByMergeIds:
+SELECT * FROM merged WHERE merge_id IN :ids;

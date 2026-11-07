@@ -11,6 +11,7 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.viewpager.widget.ViewPager
 import com.shinku.reader.R
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.data.download.DownloadManager
 import com.shinku.reader.ui.reader.ReaderActivity
 import com.shinku.reader.ui.reader.model.ChapterTransition
@@ -22,7 +23,6 @@ import com.shinku.reader.ui.reader.viewer.Viewer
 import com.shinku.reader.ui.reader.viewer.ViewerNavigation.NavigationRegion
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
-import com.shinku.reader.core.common.util.system.logcat
 import uy.kohesive.injekt.injectLazy
 import kotlin.math.min
 
@@ -159,6 +159,8 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
     override fun destroy() {
         super.destroy()
         scope.cancel()
+        pager.clearOnPageChangeListeners()
+        pager.adapter = null
     }
 
     /**

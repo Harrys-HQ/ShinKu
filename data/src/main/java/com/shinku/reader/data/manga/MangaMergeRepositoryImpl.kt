@@ -13,6 +13,17 @@ class MangaMergeRepositoryImpl(
     private val handler: DatabaseHandler,
 ) : MangaMergeRepository {
 
+    override suspend fun getMergedMangaByIds(ids: List<Long>): Map<Long, List<Manga>> {
+        if (ids.isEmpty()) return emptyMap()
+        return handler.await(inTransaction = true) {
+            val references = ids.distinct().chunked(900).flatMap { chunk -> mergedQueries.selectByMergeIds(chunk, MergedMangaMapper::map).executeAsList() }
+            val manga = references.mapNotNull { it.mangaId }.distinct().chunked(900).flatMap { chunk ->
+                mangasQueries.getMangaByIds(chunk, MangaMapper::mapManga).executeAsList()
+            }.associateBy { it.id }
+            references.filter { it.mergeId != null }.groupBy { requireNotNull(it.mergeId) }.mapValues { (_, refs) -> refs.mapNotNull { manga[it.mangaId] } }
+        }
+    }
+
     override suspend fun getMergedManga(): List<Manga> {
         return handler.awaitList { mergedQueries.selectAllMergedMangas(MangaMapper::mapManga) }
     }

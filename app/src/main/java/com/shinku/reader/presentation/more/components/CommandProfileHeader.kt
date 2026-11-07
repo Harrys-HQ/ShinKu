@@ -35,9 +35,11 @@ import androidx.compose.ui.unit.dp
 import com.shinku.reader.domain.history.model.SanctuaryLevelInfo
 import com.shinku.reader.domain.history.model.SanctuaryXpEngine
 import com.shinku.reader.exh.source.ShinKuPreferences
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
 import com.shinku.reader.presentation.core.components.SanctuaryProgressBar
 import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.pluralStringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
@@ -141,7 +143,7 @@ fun CommandProfileHeader(
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.ExtraBold,
                                 ),
-                                maxLines = 1,
+                                maxLines = 3,
                                 overflow = TextOverflow.Ellipsis,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f, fill = false),
@@ -198,12 +200,15 @@ fun CommandProfileHeader(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
+                            modifier = Modifier.weight(1f),
                             text = "Level ${levelInfo.level} Mastery",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
+                            modifier = Modifier.weight(1f),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
                             text = "${numFormat.format(levelInfo.currentLevelXp)} / ${numFormat.format(levelInfo.nextLevelXp)} XP",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
@@ -233,7 +238,7 @@ fun CommandProfileHeader(
                         modifier = Modifier.weight(1f),
                     )
                     MetricPill(
-                        value = "🔥 ${readStreak}d",
+                        value = pluralStringResource(MR.plurals.day, readStreak, readStreak),
                         label = "Streak",
                         modifier = Modifier.weight(1f),
                     )
@@ -266,14 +271,14 @@ private fun MetricPill(
                     fontWeight = FontWeight.ExtraBold,
                 ),
                 color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
             )
         }
