@@ -6,6 +6,18 @@ export default defineConfig({
   base: '/ShinKu/',
   cleanUrls: true,
   lastUpdated: true,
+  ignoreDeadLinks: true,
+  srcExclude: [
+    '**/design/**',
+    '**/benchmarks/**',
+    'project-review.md',
+    'code-optimization-follow-up.md',
+    'discover-device-benchmark.md',
+    'github-issues-26-27.md',
+    'reader-memory-device-profile.md',
+    'settings-gemini-model-discovery.md',
+    'updated-build-device-checks.md'
+  ],
   head: [
     ['link', { rel: 'icon', href: '/ShinKu/app-icon.png' }],
     ['meta', { name: 'theme-color', content: '#b71c1c' }]
