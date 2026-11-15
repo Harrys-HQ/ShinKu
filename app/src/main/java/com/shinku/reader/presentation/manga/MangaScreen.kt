@@ -424,179 +424,186 @@ private fun MangaScreenSmallImpl(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { contentPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxHeight(),
-            state = chapterListState,
-            contentPadding = contentPadding,
+        PullRefresh(
+            refreshing = state.isRefreshingData,
+            enabled = !isAnySelected,
+            onRefresh = onRefresh,
+            indicatorPadding = PaddingValues(top = contentPadding.calculateTopPadding()),
         ) {
-            item(key = MangaScreenItem.INFO_BOX) {
-                MangaInfoBox(
-                    isTabletUi = false,
-                    appBarPadding = 0.dp,
-                    manga = state.manga,
-                    sourceName = remember { state.source.getNameForMangaInfo(state.mergedData?.sources) },
-                    isStubSource = remember { state.source is StubSource },
-                    onCoverClick = onCoverClicked,
-                    doSearch = onSearch,
-                )
-            }
+            LazyColumn(
+                modifier = Modifier.fillMaxHeight(),
+                state = chapterListState,
+                contentPadding = contentPadding,
+            ) {
+                item(key = MangaScreenItem.INFO_BOX) {
+                    MangaInfoBox(
+                        isTabletUi = false,
+                        appBarPadding = 0.dp,
+                        manga = state.manga,
+                        sourceName = remember { state.source.getNameForMangaInfo(state.mergedData?.sources) },
+                        isStubSource = remember { state.source is StubSource },
+                        onCoverClick = onCoverClicked,
+                        doSearch = onSearch,
+                    )
+                }
 
-            item(key = MangaScreenItem.ACTION_ROW) {
-                MangaActionRow(
-                    favorite = state.manga.favorite,
-                    trackingCount = state.trackingCount,
-                    nextUpdate = nextUpdate,
-                    isUserIntervalMode = state.manga.fetchInterval < 0,
-                    onAddToLibraryClicked = onAddToLibraryClicked,
-                    onWebViewClicked = onWebViewClicked,
-                    onWebViewLongClicked = onWebViewLongClicked,
-                    onTrackingClicked = onTrackingClicked,
-                    onEditIntervalClicked = onEditIntervalClicked,
-                    onEditCategory = onEditCategoryClicked,
-                    onMergeClicked = onMergeClicked.takeUnless { state.showMergeInOverflow },
-                )
-            }
+                item(key = MangaScreenItem.ACTION_ROW) {
+                    MangaActionRow(
+                        favorite = state.manga.favorite,
+                        trackingCount = state.trackingCount,
+                        nextUpdate = nextUpdate,
+                        isUserIntervalMode = state.manga.fetchInterval < 0,
+                        onAddToLibraryClicked = onAddToLibraryClicked,
+                        onWebViewClicked = onWebViewClicked,
+                        onWebViewLongClicked = onWebViewLongClicked,
+                        onTrackingClicked = onTrackingClicked,
+                        onEditIntervalClicked = onEditIntervalClicked,
+                        onEditCategory = onEditCategoryClicked,
+                        onMergeClicked = onMergeClicked.takeUnless { state.showMergeInOverflow },
+                    )
+                }
 
-            item(key = MangaScreenItem.DESCRIPTION_WITH_TAG) {
-                ExpandableMangaDescription(
-                    defaultExpandState = state.isFromSource,
-                    description = state.manga.description,
-                    tagsProvider = { state.manga.genre },
-                    notes = state.manga.notes,
-                    onTagSearch = onTagSearch,
-                    onCopyTagToClipboard = onCopyTagToClipboard,
-                    onEditNotes = onEditNotesClicked,
-                    doSearch = onSearch,
-                    searchMetadataChips = remember(state.meta, state.source.id, state.manga.genre) {
-                        SearchMetadataChips(state.meta, state.source.id, state.manga.genre)
+                item(key = MangaScreenItem.DESCRIPTION_WITH_TAG) {
+                    ExpandableMangaDescription(
+                        defaultExpandState = state.isFromSource,
+                        description = state.manga.description,
+                        tagsProvider = { state.manga.genre },
+                        notes = state.manga.notes,
+                        onTagSearch = onTagSearch,
+                        onCopyTagToClipboard = onCopyTagToClipboard,
+                        onEditNotes = onEditNotesClicked,
+                        doSearch = onSearch,
+                        searchMetadataChips = remember(state.meta, state.source.id, state.manga.genre) {
+                            SearchMetadataChips(state.meta, state.source.id, state.manga.genre)
+                        },
+                    )
+                }
+
+                item(key = MangaScreenItem.INFO_BUTTONS) {
+                    MangaInfoButtons(
+                        showRecommendsButton = !state.showRecommendationsInOverflow,
+                        showMergeWithAnotherButton = state.showMergeWithAnother,
+                        showVibeButton = state.showVibeButton,
+                        onRecommendClicked = onRecommendClicked,
+                        onMergeWithAnotherClicked = onMergeWithAnotherClicked,
+                        onVibeClicked = onVibeClicked,
+                    )
+                }
+
+                if (state.showRecapPrompt) {
+                    item(key = "ai_chapter_recap_prompt") {
+                        MangaRecapCard(
+                            isLoadingRecap = state.isLoadingRecap,
+                            recapText = state.recapText,
+                            onGenerateRecap = onGenerateRecap,
+                            onDismissRecap = onDismissRecap,
+                        )
+                    }
+                }
+
+                if (state.similarVibes.isNotEmpty()) {
+                    item(key = MangaScreenItem.SIMILAR_VIBES) {
+                        SimilarVibesSection(
+                            mangaList = state.similarVibes,
+                            onClick = { onSearch(it.title, true) },
+                        )
+                    }
+                }
+
+                item(key = MangaScreenItem.CHAPTER_HEADER) {
+                    val missingChapterCount = remember(listItem) {
+                        listItem.filterIsInstance<ChapterList.MissingCount>().sumOf { it.count }
+                    }
+                    ChapterHeader(
+                        enabled = !isAnySelected,
+                        chapterCount = chapters.size,
+                        missingChapterCount = missingChapterCount,
+                        onClick = onFilterClicked,
+                    )
+                }
+
+                // Chapter list items implementation
+                items(
+                    items = listItem,
+                    key = { item ->
+                        when (item) {
+                            is ChapterList.MissingCount -> "missing-count-${item.id}"
+                            is ChapterList.Item -> "chapter-${item.id}"
+                        }
                     },
-                )
-            }
+                    contentType = {
+                        when (it) {
+                            is ChapterList.MissingCount -> MangaScreenItem.CHAPTER
+                            is ChapterList.Item -> MangaScreenItem.CHAPTER
+                        }
+                    },
+                ) { item ->
+                    val haptic = LocalHapticFeedback.current
 
-            item(key = MangaScreenItem.INFO_BUTTONS) {
-                MangaInfoButtons(
-                    showRecommendsButton = !state.showRecommendationsInOverflow,
-                    showMergeWithAnotherButton = state.showMergeWithAnother,
-                    showVibeButton = state.showVibeButton,
-                    onRecommendClicked = onRecommendClicked,
-                    onMergeWithAnotherClicked = onMergeWithAnotherClicked,
-                    onVibeClicked = onVibeClicked,
-                )
-            }
-
-            if (state.showRecapPrompt) {
-                item(key = "ai_chapter_recap_prompt") {
-                    MangaRecapCard(
-                        isLoadingRecap = state.isLoadingRecap,
-                        recapText = state.recapText,
-                        onGenerateRecap = onGenerateRecap,
-                        onDismissRecap = onDismissRecap,
-                    )
-                }
-            }
-
-            if (state.similarVibes.isNotEmpty()) {
-                item(key = MangaScreenItem.SIMILAR_VIBES) {
-                    SimilarVibesSection(
-                        mangaList = state.similarVibes,
-                        onClick = { onSearch(it.title, true) },
-                    )
-                }
-            }
-
-            item(key = MangaScreenItem.CHAPTER_HEADER) {
-                val missingChapterCount = remember(listItem) {
-                    listItem.filterIsInstance<ChapterList.MissingCount>().sumOf { it.count }
-                }
-                ChapterHeader(
-                    enabled = !isAnySelected,
-                    chapterCount = chapters.size,
-                    missingChapterCount = missingChapterCount,
-                    onClick = onFilterClicked,
-                )
-            }
-
-            // Chapter list items implementation
-            items(
-                items = listItem,
-                key = { item ->
                     when (item) {
-                        is ChapterList.MissingCount -> "missing-count-${item.id}"
-                        is ChapterList.Item -> "chapter-${item.id}"
-                    }
-                },
-                contentType = {
-                    when (it) {
-                        is ChapterList.MissingCount -> MangaScreenItem.CHAPTER
-                        is ChapterList.Item -> MangaScreenItem.CHAPTER
-                    }
-                },
-            ) { item ->
-                val haptic = LocalHapticFeedback.current
-
-                when (item) {
-                    is ChapterList.MissingCount -> {
-                        MissingChapterCountListItem(count = item.count)
-                    }
-                    is ChapterList.Item -> {
-                        MangaChapterListItem(
-                            title = if (state.manga.displayMode == com.shinku.reader.domain.manga.model.Manga.CHAPTER_DISPLAY_NUMBER) {
-                                stringResource(
-                                    MR.strings.display_mode_chapter,
-                                    formatChapterNumber(item.chapter.chapterNumber),
-                                )
-                            } else {
-                                item.chapter.name
-                            },
-                            date = item.chapter.dateUpload
-                                .takeIf { it > 0L }
-                                ?.let {
-                                    relativeDateText(item.chapter.dateUpload)
-                                },
-                            readProgress = item.chapter.lastPageRead
-                                .takeIf {
-                                    (!item.chapter.read || state.alwaysShowReadingProgress) && it > 0L
-                                }
-                                ?.let {
+                        is ChapterList.MissingCount -> {
+                            MissingChapterCountListItem(count = item.count)
+                        }
+                        is ChapterList.Item -> {
+                            MangaChapterListItem(
+                                title = if (state.manga.displayMode == com.shinku.reader.domain.manga.model.Manga.CHAPTER_DISPLAY_NUMBER) {
                                     stringResource(
-                                        MR.strings.chapter_progress,
-                                        it + 1,
+                                        MR.strings.display_mode_chapter,
+                                        formatChapterNumber(item.chapter.chapterNumber),
+                                    )
+                                } else {
+                                    item.chapter.name
+                                },
+                                date = item.chapter.dateUpload
+                                    .takeIf { it > 0L }
+                                    ?.let {
+                                        relativeDateText(item.chapter.dateUpload)
+                                    },
+                                readProgress = item.chapter.lastPageRead
+                                    .takeIf {
+                                        (!item.chapter.read || state.alwaysShowReadingProgress) && it > 0L
+                                    }
+                                    ?.let {
+                                        stringResource(
+                                            MR.strings.chapter_progress,
+                                            it + 1,
+                                        )
+                                    },
+                                scanlator = item.chapter.scanlator.takeIf {
+                                    !it.isNullOrBlank() && item.showScanlator
+                                },
+                                sourceName = item.sourceName,
+                                read = item.chapter.read,
+                                bookmark = item.chapter.bookmark,
+                                selected = item.selected,
+                                downloadIndicatorEnabled =
+                                !isAnySelected && !state.manga.isLocal(),
+                                downloadStateProvider = { item.downloadState },
+                                downloadProgressProvider = { item.downloadProgress },
+                                chapterSwipeStartAction = chapterSwipeStartAction,
+                                chapterSwipeEndAction = chapterSwipeEndAction,
+                                onLongClick = {
+                                    onChapterSelected(item, !item.selected, true, true)
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                },
+                                onClick = {
+                                    onChapterItemClick(
+                                        chapterItem = item,
+                                        isAnyChapterSelected = isAnySelected,
+                                        onToggleSelection = { onChapterSelected(item, !item.selected, true, false) },
+                                        onChapterClicked = onChapterClicked,
                                     )
                                 },
-                            scanlator = item.chapter.scanlator.takeIf {
-                                !it.isNullOrBlank() && item.showScanlator
-                            },
-                            sourceName = item.sourceName,
-                            read = item.chapter.read,
-                            bookmark = item.chapter.bookmark,
-                            selected = item.selected,
-                            downloadIndicatorEnabled =
-                            !isAnySelected && !state.manga.isLocal(),
-                            downloadStateProvider = { item.downloadState },
-                            downloadProgressProvider = { item.downloadProgress },
-                            chapterSwipeStartAction = chapterSwipeStartAction,
-                            chapterSwipeEndAction = chapterSwipeEndAction,
-                            onLongClick = {
-                                onChapterSelected(item, !item.selected, true, true)
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            },
-                            onClick = {
-                                onChapterItemClick(
-                                    chapterItem = item,
-                                    isAnyChapterSelected = isAnySelected,
-                                    onToggleSelection = { onChapterSelected(item, !item.selected, true, false) },
-                                    onChapterClicked = onChapterClicked,
-                                )
-                            },
-                            onDownloadClick = if (onDownloadChapter != null) {
-                                { onDownloadChapter(listOf(item), it) }
-                            } else {
-                                null
-                            },
-                            onChapterSwipe = {
-                                onChapterSwipe(item, it)
-                            },
-                        )
+                                onDownloadClick = if (onDownloadChapter != null) {
+                                    { onDownloadChapter(listOf(item), it) }
+                                } else {
+                                    null
+                                },
+                                onChapterSwipe = {
+                                    onChapterSwipe(item, it)
+                                },
+                            )
+                        }
                     }
                 }
             }

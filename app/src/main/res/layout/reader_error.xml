@@ -4,7 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
-    android:gravity="center">
+    android:gravity="center"
+    android:background="@drawable/reader_error_card"
+    android:layout_margin="16dp"
+    android:padding="16dp">
 
     <TextView
         android:id="@+id/error_message"
@@ -12,10 +15,14 @@
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
         android:text="@string/decode_image_error"
+        android:textColor="?attr/colorOnSurface"
+        android:gravity="center"
         android:textAppearance="?attr/textAppearanceBodyMedium" />
 
     <com.shinku.reader.ui.reader.viewer.ReaderButton
         android:id="@+id/action_retry"
+        android:minHeight="48dp"
+        android:maxLines="3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
@@ -23,6 +30,8 @@
 
     <com.shinku.reader.ui.reader.viewer.ReaderButton
         android:id="@+id/action_open_in_web_view"
+        android:minHeight="48dp"
+        android:maxLines="3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"

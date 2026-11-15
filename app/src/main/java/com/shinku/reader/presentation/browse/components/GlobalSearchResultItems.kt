@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -59,6 +60,7 @@ fun GlobalSearchResultItem(
             .padding(horizontal = MaterialTheme.padding.medium, vertical = 6.dp),
         shape = SanctuaryShapes.deckCard,
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+        contentColor = MaterialTheme.colorScheme.onSurface,
         border = SanctuaryBrushes.subtleBorder(),
         shadowElevation = SanctuaryElevation.subtle,
     ) {
@@ -100,8 +102,6 @@ fun GlobalSearchResultItem(
                         Text(
                             text = title,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
                         )
                         if (!subtitle.isNullOrBlank()) {
                             Text(
@@ -119,6 +119,7 @@ fun GlobalSearchResultItem(
                     modifier = Modifier
                         .clip(SanctuaryShapes.pill)
                         .clickable(onClick = onClick)
+                        .heightIn(min = 48.dp)
                         .padding(horizontal = 8.dp, vertical = 6.dp),
                 ) {
                     Text(

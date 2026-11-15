@@ -1,5 +1,32 @@
 # ShinKu Changelog
 
+## 2.8.2 "Upstream Synchronization, 16 KB Alignment & AVIF/Pull-to-Refresh Hardening" (2026-11-15)
+### Bug Fixes & Resilience
+- **Comic Page Pull-to-Refresh Restoration (Fixes #29)**:
+  - Resolved gesture conflict between the top-level refresh indicator and nested vertical scrolling chapter lists in `MangaScreen.kt`.
+  - Restored seamless pull-to-refresh triggers for on-demand chapter refreshes and metadata reloads.
+- **AVIF Sequence Cover Decoding & Container Sanitization (Fixes #30)**:
+  - Fixed broken image placeholder when loading animated AVIF (`.avif` / `avis` brand) covers (such as Voratoon's *My Dragon Girlfriend Has Returned* and *The Rogue First Prince*).
+  - Implemented `ImageUtil.sanitizeAvifSequence` to dynamically strip incompatible container boxes (`moov`) and normalize `avis` headers so `CrabbyAvif` decodes the static cover cleanly across all device models.
+  - *Note on AVIF Animation*: Animated AVIF sequences are raw AV1 video bitstreams within an ISO-BMFF container. Due to OEM platform limitations (`invalid input` in Android `ImageDecoder` on ColorOS/OxygenOS/OneUI) and severe system hardware video decoder limits (preventing `ERROR_INSUFFICIENT_RESOURCE` crashes during grid scrolling), AVIF sequences are safely displayed as crisp static primary frames rather than video loops, adhering to upstream Mihon/TachiyomiSY stability standards. (Native WebP and GIF animations continue to animate smoothly).
+
+### Upstream Synchronization (TachiyomiSY & Mihon)
+- **TachiyomiSY Source Metadata Caching & Value Equality**:
+  - Fixed stored source metadata being written into a discarded cache copy.
+  - Added value equality checks to prevent spurious updates and unintentional title/metadata renames.
+- **Mihon Upcoming Calendar Dynamic Locale Reactivity**:
+  - Fixed the upcoming release calendar so weekday ordering and month labels immediately refresh when the application locale changes.
+
+### Native Runtime & 16 KB Page Alignment
+- **Image Decoder Fork**:
+  - Switched native image decoder to Mihon's maintained fork (`com.github.mihonapp:image-decoder:e03b81e18a`), fully aligned for 16 KB memory pages on Android 15+.
+- **MediaPipe Text**:
+  - Updated Google MediaPipe text task library to `0.10.35` for 16 KB native runtime compatibility.
+
+### Sanctuary Design Suite Polish
+- **Panels & Dialogs (Boards 15–24)**:
+  - Applied polished layout constraints, anti-collision touch targets, and responsive spacing across Reading Stats, Backup & Restore, Migration, Global Search, and Reader configuration dialogs.
+
 ## 2.8.1 "Sanctuary Core Suite, Dynamic AI Discovery & Security Hardening" (2026-11-08)
 ### Security & Stability
 - **OAuth Callback Security Hardening (Fixes #28)**:
@@ -15,9 +42,9 @@
   - Added automatic quota-safe caching and real-time model dropdown listing newer models (e.g. `gemini-2.5-flash`, `gemini-2.5-pro`) without requiring hardcoded updates.
 - **Reader Mood Lighting Overhaul (Fixes #26)**:
   - Restored dynamic ambient lighting in Reader settings with live color extraction, responsive intensity controls, and memory-safe background rendering.
-- **Sanctuary Core Suite Implementation (Boards 01–14 / 95% Completion)**:
-  - Implemented 42 high-fidelity panels across 14 Sanctuary design boards: Library management, Reader controls, Discover feed, Source browsing, Chapter tracking, Downloads, Statistics, History, Settings, and Source Health.
-  - Hardened all layouts against horizontal overflow, button squeezing, and clipping across phone, phablet, and tablet viewports.
+- **Sanctuary UI/UX updates (Boards 01–14)**:
+  - Applied shared styling and supported control improvements across Library, Reader, Browse, Downloads, Statistics, History, Settings, and Source Health.
+  - Visual review and live-flow acceptance remain in progress; this entry does not certify every layout or device configuration.
 
 ## 2.8.0 "Sanctuary Redesign, Interactive Area OCR (Beta) & Tracker Sync" (2026-11-01)
 ### Features & AI Reader Innovation

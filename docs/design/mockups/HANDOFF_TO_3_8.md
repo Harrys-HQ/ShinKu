@@ -1,3 +1,9 @@
+> Superseded workflow (2026-11-10): skip new image generation. Boards 01-14 were source-rechecked and blanket completion percentages suspended. Continue from [the dated recheck](../ui-continuation-2026-11-10.md) and PROJECT_MEMORY.md; older claims and image-generation instructions below are historical.
+
+> Current code pass (2026-11-11): supported UI changes now cover boards 01–24. See [boards 17–24](../boards-17-24-code-pass-2026-11-11.md), the manifest and per-panel audit for actual capabilities, validation and remaining live/device acceptance. Historical examples below do not authorize invented settings, backend features or release publication.
+
+> Latest follow-up (2026-11-12): [phone review and source-tool navigation](../phone-ui-audit-2026-11-12.md). The verified artifact is `build/phone-audit-checksums.json`; installed in place with matching on-device checksum and targeted source-tool/release-note checks. Full live/visual acceptance remains partial. Read current memory and manifest before using any historical instructions below.
+
 # ShinKu Mockup UI/UX Handoff Strategy & Execution Playbook (For Model 3.8)
 
 Updated: 2026-11-07

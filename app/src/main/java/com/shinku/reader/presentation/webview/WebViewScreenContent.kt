@@ -45,22 +45,22 @@ import com.kevinnzou.web.WebContent
 import com.kevinnzou.web.WebView
 import com.kevinnzou.web.WebViewNavigator
 import com.kevinnzou.web.WebViewState
+import com.shinku.reader.BuildConfig
+import com.shinku.reader.R
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.AppBarActions
 import com.shinku.reader.presentation.components.WarningBanner
-import com.shinku.reader.BuildConfig
-import com.shinku.reader.R
+import com.shinku.reader.presentation.core.components.material.Scaffold
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.util.system.getHtml
 import com.shinku.reader.util.system.setDefaultSettings
 import com.shinku.reader.util.system.setUserAgent
 import eu.kanade.tachiyomi.network.NetworkHelper
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.presentation.core.components.material.Scaffold
-import com.shinku.reader.presentation.core.i18n.stringResource
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 
 class WebViewWindow(webContent: WebContent, val navigator: WebViewNavigator) {
     var state by mutableStateOf(WebViewState(webContent))
@@ -239,7 +239,7 @@ fun WebViewScreenContent(
                 Column {
                     AppBar(
                         title = currentWindow.state.pageTitle ?: initialTitle,
-                        subtitle = currentUrl,
+                        subtitle = currentUrl.toUri().host,
                         navigateUp = onNavigateUp,
                         navigationIcon = Icons.Outlined.Close,
                         actions = {

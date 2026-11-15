@@ -11,11 +11,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
-import com.shinku.reader.presentation.components.DynamicBackdrop
-import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -28,7 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import cafe.adriel.voyager.core.model.rememberScreenModel
@@ -37,7 +35,29 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import com.shinku.reader.R
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.data.library.LibraryUpdateJob
+import com.shinku.reader.data.sync.SyncDataJob
+import com.shinku.reader.domain.category.model.Category
+import com.shinku.reader.domain.library.model.LibraryGroup
+import com.shinku.reader.domain.library.model.LibraryManga
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.exh.favorites.FavoritesSyncStatus
+import com.shinku.reader.exh.recs.RecommendsScreen
+import com.shinku.reader.exh.recs.batch.RecommendationSearchBottomSheetDialog
+import com.shinku.reader.exh.recs.batch.RecommendationSearchProgressDialog
+import com.shinku.reader.exh.recs.batch.SearchStatus
+import com.shinku.reader.exh.source.MERGED_SOURCE_ID
+import com.shinku.reader.feature.migration.config.MigrationConfigScreen
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.category.components.ChangeCategoryDialog
+import com.shinku.reader.presentation.components.DynamicBackdrop
+import com.shinku.reader.presentation.core.components.material.Scaffold
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.screens.LoadingScreen
 import com.shinku.reader.presentation.library.DeleteLibraryMangaDialog
 import com.shinku.reader.presentation.library.LibrarySettingsDialog
 import com.shinku.reader.presentation.library.components.LibraryContent
@@ -48,9 +68,6 @@ import com.shinku.reader.presentation.library.components.SyncFavoritesWarningDia
 import com.shinku.reader.presentation.manga.components.LibraryBottomActionMenu
 import com.shinku.reader.presentation.more.onboarding.GETTING_STARTED_URL
 import com.shinku.reader.presentation.util.Tab
-import com.shinku.reader.R
-import com.shinku.reader.data.library.LibraryUpdateJob
-import com.shinku.reader.data.sync.SyncDataJob
 import com.shinku.reader.ui.browse.source.globalsearch.GlobalSearchScreen
 import com.shinku.reader.ui.category.CategoryScreen
 import com.shinku.reader.ui.home.HomeScreen
@@ -58,32 +75,12 @@ import com.shinku.reader.ui.main.MainActivity
 import com.shinku.reader.ui.manga.MangaScreen
 import com.shinku.reader.ui.reader.ReaderActivity
 import com.shinku.reader.util.system.toast
-import com.shinku.reader.exh.favorites.FavoritesSyncStatus
-import com.shinku.reader.exh.recs.RecommendsScreen
-import com.shinku.reader.exh.recs.batch.RecommendationSearchBottomSheetDialog
-import com.shinku.reader.exh.recs.batch.RecommendationSearchProgressDialog
-import com.shinku.reader.exh.recs.batch.SearchStatus
-import com.shinku.reader.exh.source.MERGED_SOURCE_ID
+import eu.kanade.tachiyomi.source.local.isLocal
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import com.shinku.reader.feature.migration.config.MigrationConfigScreen
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.domain.category.model.Category
-import com.shinku.reader.domain.library.model.LibraryGroup
-import com.shinku.reader.domain.library.model.LibraryManga
-import com.shinku.reader.domain.manga.model.Manga
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.components.material.Scaffold
-import com.shinku.reader.presentation.core.i18n.stringResource
-import com.shinku.reader.presentation.core.screens.EmptyScreen
-import com.shinku.reader.presentation.core.screens.EmptyScreenAction
-import com.shinku.reader.presentation.core.screens.LoadingScreen
-import eu.kanade.tachiyomi.source.local.isLocal
 
 data object LibraryTab : Tab {
 
@@ -230,32 +227,18 @@ data object LibraryTab : Tab {
                 state.searchQuery.isNullOrEmpty() && !state.hasActiveFilters && state.isLibraryEmpty -> {
                     val tabNavigator = LocalTabNavigator.current
                     val handler = LocalUriHandler.current
-                    androidx.compose.foundation.layout.Column(
-                        modifier = Modifier
-                            .padding(contentPadding)
-                            .fillMaxWidth()
-                            .fillMaxHeight(),
-                    ) {
-                        com.shinku.reader.presentation.library.components.SanctuaryWelcomeCard(
-                            onExploreClick = { tabNavigator.current = com.shinku.reader.ui.browse.BrowseTab },
-                            onVibeSearchClick = { navigator.push(GlobalSearchScreen("")) },
-                            onRestoreClick = {
-                                navigator.push(com.shinku.reader.ui.setting.SettingsScreen(com.shinku.reader.ui.setting.SettingsScreen.Destination.DataAndStorage))
-                            },
-                        )
-
-                        EmptyScreen(
-                            stringRes = MR.strings.information_empty_library,
-                            modifier = Modifier.weight(1f),
-                            actions = persistentListOf(
-                                EmptyScreenAction(
-                                    stringRes = MR.strings.getting_started_guide,
-                                    icon = Icons.AutoMirrored.Outlined.HelpOutline,
-                                    onClick = { handler.openUri(GETTING_STARTED_URL) },
-                                ),
-                            ),
-                        )
-                    }
+                    com.shinku.reader.presentation.library.components.LibraryEmptyState(
+                        onBrowseSources = {
+                            com.shinku.reader.ui.browse.BrowseTab.showSources()
+                            tabNavigator.current = com.shinku.reader.ui.browse.BrowseTab
+                        },
+                        onRestoreBackup = {
+                            navigator.push(com.shinku.reader.ui.setting.SettingsScreen(com.shinku.reader.ui.setting.SettingsScreen.Destination.DataAndStorage))
+                        },
+                        onOpenGuide = { handler.openUri(GETTING_STARTED_URL) },
+                        modifier = Modifier.padding(contentPadding)
+                            .padding(bottom = if (!com.shinku.reader.presentation.util.isTabletUi()) 84.dp else 0.dp),
+                    )
                 }
 
                 else -> {
@@ -265,7 +248,7 @@ data object LibraryTab : Tab {
                         val themeAnchorManga = firstManga ?: state.lastReadItem?.manga
                         com.shinku.reader.presentation.theme.SyncLibraryThemeEffect(manga = themeAnchorManga)
 
-                        if (state.backdropBlurEnabled) {
+                        if (state.backdropBlurEnabled && !com.shinku.reader.presentation.core.theme.LocalSanctuaryStaticContrast.current) {
                             DynamicBackdrop(manga = themeAnchorManga)
                         }
 
@@ -357,6 +340,7 @@ data object LibraryTab : Tab {
 
             is LibraryScreenModel.Dialog.DeleteManga -> {
                 DeleteLibraryMangaDialog(
+                    selectedCount = dialog.manga.size,
                     containsLocalManga = dialog.manga.any(Manga::isLocal),
                     onDismissRequest = onDismissRequest,
                     onConfirm = { deleteManga, deleteChapter ->

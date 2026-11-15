@@ -12,24 +12,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
+import com.shinku.reader.core.designsystem.utils.isExpandedWidthWindow
+import com.shinku.reader.core.designsystem.utils.isMediumWidthWindow
+import com.shinku.reader.presentation.core.components.material.padding
 import io.woong.compose.grid.SimpleGridCells
 import io.woong.compose.grid.VerticalGrid
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.toImmutableList
-import com.shinku.reader.core.designsystem.utils.isExpandedWidthWindow
-import com.shinku.reader.core.designsystem.utils.isMediumWidthWindow
-import com.shinku.reader.presentation.core.components.material.padding
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.time.temporal.WeekFields
-import java.util.Locale
 
 private val FontSize = 16.sp
 private const val DAYS_OF_WEEK = 7
@@ -70,8 +70,9 @@ private fun CalendarGrid(
     events: ImmutableMap<LocalDate, Int>,
     onClickDay: (day: LocalDate) -> Unit,
 ) {
-    val localeFirstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek.value
-    val weekDays = remember {
+    val locale = LocalConfiguration.current.locales[0]
+    val weekDays = remember(locale) {
+        val localeFirstDayOfWeek = WeekFields.of(locale).firstDayOfWeek.value
         (0 until DAYS_OF_WEEK)
             .map { DayOfWeek.of((localeFirstDayOfWeek - 1 + it) % DAYS_OF_WEEK + 1) }
             .toImmutableList()
@@ -92,7 +93,7 @@ private fun CalendarGrid(
             Text(
                 text = item.getDisplayName(
                     TextStyle.NARROW,
-                    Locale.getDefault(),
+                    locale,
                 ),
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.SemiBold,

@@ -43,6 +43,28 @@ internal class FeedRequestLimiter(
     }
 }
 
+/** Null means the limiter's timeout for these non-null responses; empty results are successful. */
+internal suspend fun <T : Any> FeedRequestLimiter.requestWithFailureCallback(
+    sourceId: Long,
+    onFailure: suspend () -> Unit,
+    block: suspend () -> T,
+): T? {
+    val result = try {
+        request(sourceId, block)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        currentCoroutineContext().ensureActive()
+        onFailure()
+        throw e
+    }
+    if (result == null) {
+        currentCoroutineContext().ensureActive()
+        onFailure()
+    }
+    return result
+}
+
 /** Owns one replaceable operation and all work launched as its children. Called on the UI thread. */
 internal class LatestFeedRequest(
     private val scope: CoroutineScope,

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -76,7 +77,7 @@ fun InfoScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                     shape = SanctuaryShapes.medium,
                     enabled = canAccept,
                     onClick = onAcceptClick,
@@ -88,7 +89,7 @@ fun InfoScreen(
                 }
                 if (rejectText != null && onRejectClick != null) {
                     OutlinedButton(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                         shape = SanctuaryShapes.medium,
                         onClick = onRejectClick,
                     ) {

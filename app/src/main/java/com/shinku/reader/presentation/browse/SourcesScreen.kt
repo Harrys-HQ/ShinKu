@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -224,7 +226,8 @@ private fun SourceLanguageChip(
             } else {
                 MaterialTheme.colorScheme.onSurface
             },
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+            modifier = Modifier.heightIn(min = 48.dp).wrapContentHeight(Alignment.CenterVertically)
+                .padding(horizontal = 14.dp, vertical = 7.dp),
         )
     }
 }

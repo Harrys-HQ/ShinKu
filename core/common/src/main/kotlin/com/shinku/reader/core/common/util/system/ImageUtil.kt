@@ -76,6 +76,21 @@ object ImageUtil {
         return type?.extension ?: "jpg"
     }
 
+    /** AVIF sequences use the avis brand; the native detector currently reports them as static. */
+    fun isAnimatedAvif(source: BufferedSource): Boolean = try {
+        source.peek().use { header ->
+            if (!header.request(16)) return false
+            val size = header.readInt().toLong() and 0xffffffffL
+            if (header.readUtf8(4) != "ftyp" || size < 16 || size > 4096 || size % 4 != 0L) return false
+            if (!header.request(size - 8)) return false
+            val majorBrand = header.readUtf8(4)
+            header.skip(4) // minor version is not a compatible brand
+            majorBrand == "avis" || (16L until size step 4).any { header.readUtf8(4) == "avis" }
+        }
+    } catch (_: Exception) {
+        false
+    }
+
     fun isAnimatedAndSupported(source: BufferedSource): Boolean {
         return try {
             val type = getImageType(source.peek().inputStream()) ?: return false
@@ -91,6 +106,142 @@ object ImageUtil {
         } catch (e: Exception) {
             false
         }
+    }
+
+    fun sanitizeAvifSequenceStream(stream: InputStream): InputStream {
+        val buffered = if (stream.markSupported()) stream else stream.buffered(64)
+        buffered.mark(64)
+        val header = ByteArray(16)
+        val read = buffered.read(header, 0, 16)
+        buffered.reset()
+        if (read >= 12 &&
+            header[4] == 'f'.code.toByte() && header[5] == 't'.code.toByte() &&
+            header[6] == 'y'.code.toByte() && header[7] == 'p'.code.toByte() &&
+            header[8] == 'a'.code.toByte() && header[9] == 'v'.code.toByte() &&
+            header[10] == 'i'.code.toByte() && header[11] == 's'.code.toByte()
+        ) {
+            val raw = buffered.readBytes()
+            val sanitized = sanitizeAvifSequence(raw)
+            return sanitized.inputStream()
+        }
+        return buffered
+    }
+
+    fun sanitizeAvifSequence(bytes: ByteArray): ByteArray {
+        if (bytes.size < 16) return bytes
+        if (bytes[4] != 'f'.code.toByte() || bytes[5] != 't'.code.toByte() ||
+            bytes[6] != 'y'.code.toByte() || bytes[7] != 'p'.code.toByte()
+        ) return bytes
+        if (bytes[8] != 'a'.code.toByte() || bytes[9] != 'v'.code.toByte() ||
+            bytes[10] != 'i'.code.toByte() || bytes[11] != 's'.code.toByte()
+        ) return bytes
+
+        val output = bytes.clone()
+        output[8] = 'a'.code.toByte()
+        output[9] = 'v'.code.toByte()
+        output[10] = 'i'.code.toByte()
+        output[11] = 'f'.code.toByte()
+
+        var offset = 0
+        var metaOffset = -1
+        var metaSize = 0
+        var moovOffset = -1
+        var moovSize = 0
+
+        while (offset + 8 <= output.size) {
+            val bSize = ((output[offset].toInt() and 0xFF) shl 24) or
+                ((output[offset + 1].toInt() and 0xFF) shl 16) or
+                ((output[offset + 2].toInt() and 0xFF) shl 8) or
+                (output[offset + 3].toInt() and 0xFF)
+            val boxSize = when {
+                bSize == 1 && offset + 16 <= output.size -> {
+                    var s = 0L
+                    for (i in 8 until 16) s = (s shl 8) or (output[offset + i].toLong() and 0xFFL)
+                    s.coerceAtMost(output.size.toLong() - offset).toInt()
+                }
+                bSize == 0 -> output.size - offset
+                else -> bSize
+            }
+            if (boxSize < 8 || offset + boxSize > output.size) break
+
+            val tag = String(output, offset + 4, 4, Charsets.ISO_8859_1)
+            if (tag == "meta") {
+                metaOffset = offset
+                metaSize = boxSize
+            } else if (tag == "moov") {
+                moovOffset = offset
+                moovSize = boxSize
+            }
+            offset += boxSize
+        }
+
+        if (moovOffset > 0 && metaOffset >= 0 && moovOffset > metaOffset) {
+            val ilocTag = byteArrayOf('i'.code.toByte(), 'l'.code.toByte(), 'o'.code.toByte(), 'c'.code.toByte())
+            val ilocPos = indexOf(output, ilocTag, metaOffset, metaOffset + metaSize)
+            if (ilocPos != -1 && ilocPos + 12 <= output.size) {
+                val ilocBoxStart = ilocPos - 4
+                val version = output[ilocBoxStart + 8].toInt() and 0xFF
+                val offsetAndLengthSize = output[ilocBoxStart + 12].toInt() and 0xFF
+                val offsetSize = (offsetAndLengthSize shr 4) and 0x0F
+                val lengthSize = offsetAndLengthSize and 0x0F
+                val baseOffsetAndReserved = output[ilocBoxStart + 13].toInt() and 0xFF
+                val baseOffsetSize = (baseOffsetAndReserved shr 4) and 0x0F
+                val indexSize = if (version in 1..2) (baseOffsetAndReserved and 0x0F) else 0
+
+                var p = ilocBoxStart + 14
+                if (version in 1..2) p += 2
+                val itemCount = ((output[p].toInt() and 0xFF) shl 8) or (output[p + 1].toInt() and 0xFF)
+                p += 2
+
+                for (i in 0 until itemCount) {
+                    if (p >= metaOffset + metaSize) break
+                    p += if (version in 1..2) 4 else 2
+                    if (version in 1..2) p += 2
+                    p += 2
+                    p += baseOffsetSize
+                    val extentCount = ((output[p].toInt() and 0xFF) shl 8) or (output[p + 1].toInt() and 0xFF)
+                    p += 2
+                    for (j in 0 until extentCount) {
+                        if (version in 1..2 && indexSize > 0) p += indexSize
+                        if (offsetSize == 4 && p + 4 <= output.size) {
+                            val extentOffset = ((output[p].toInt() and 0xFF) shl 24) or
+                                ((output[p + 1].toInt() and 0xFF) shl 16) or
+                                ((output[p + 2].toInt() and 0xFF) shl 8) or
+                                (output[p + 3].toInt() and 0xFF)
+                            if (extentOffset >= moovOffset + moovSize) {
+                                val newOffset = extentOffset - moovSize
+                                output[p] = (newOffset shr 24).toByte()
+                                output[p + 1] = (newOffset shr 16).toByte()
+                                output[p + 2] = (newOffset shr 8).toByte()
+                                output[p + 3] = newOffset.toByte()
+                            }
+                        }
+                        p += offsetSize + lengthSize
+                    }
+                }
+            }
+            val result = ByteArray(output.size - moovSize)
+            System.arraycopy(output, 0, result, 0, moovOffset)
+            System.arraycopy(output, moovOffset + moovSize, result, moovOffset, output.size - (moovOffset + moovSize))
+            return result
+        }
+
+        return output
+    }
+
+    private fun indexOf(src: ByteArray, target: ByteArray, start: Int, end: Int): Int {
+        val limit = (end - target.size).coerceAtMost(src.size - target.size)
+        for (i in start..limit) {
+            var match = true
+            for (j in target.indices) {
+                if (src[i + j] != target[j]) {
+                    match = false
+                    break
+                }
+            }
+            if (match) return i
+        }
+        return -1
     }
 
     private fun getImageType(stream: InputStream): tachiyomi.decoder.ImageType? {

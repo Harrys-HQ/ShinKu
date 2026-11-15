@@ -5,7 +5,7 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 
-class StubSource(
+data class StubSource(
     override val id: Long,
     override val lang: String,
     override val name: String,

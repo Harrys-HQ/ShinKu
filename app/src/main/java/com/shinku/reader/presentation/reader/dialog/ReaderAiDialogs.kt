@@ -263,7 +263,7 @@ fun ReaderTranslationLanguageDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 LanguageDropdownField(
@@ -367,6 +367,7 @@ private fun LanguageDropdownField(
                 ) {
                     Text(
                         text = displayName,
+                        modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,

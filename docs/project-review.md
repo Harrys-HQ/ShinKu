@@ -4,6 +4,8 @@ Review date: 2026-11-02. Source baseline: `bd94670c13`.
 
 ## Follow-up implementation
 
+November 13: [GitHub issues 29/30](./github-issues-29-30.md) implemented locally: restored manga-details pull refresh and routed supported animated AVIF sequences to the platform decoder for covers and reader pages. Full 68-case Android suite on actual 16 KB, JVM 80 passed/one existing skip, and all five optimized APK verification gates passed. Latest build awaits phone installation; GitHub publication/issue closure remains pending.
+
 The owner authorized starting Discover request limits/cancellation and release configuration. The initial implementation added four overall/two per-source request permits to the main Discover screen, replaceable refresh and genre jobs, cancellation-aware state publication, and one latest-only saved-feed loader. Release/releaseTest optimization and release lint are enabled. Dev debug compilation, 15 focused regression/extension-compatibility tests, and the prescribed optimized release assembly passed. Release lint found no issues. All five APKs were generated, and inspection confirmed the six tested compatibility classes remain in their DEX files. The subsequent adjustment to six/three is described below. No full-UI performance improvement or release publication is claimed. The findings below describe the original review baseline; the remaining optimization and UI/UX items are pending.
 
 A [source-only device comparison on 2026-11-03](./discover-device-benchmark.md) subsequently found median source-completion times of 1.56 s for the old scheduling, 2.00 s for four/two, and 1.32 s for a six/three candidate in a fixed twelve-call workload. The owner approved six/three, now adopted in the limiter defaults. Actual full-feed UI timing has not been measured.
@@ -17,6 +19,12 @@ The next investment should be consolidation: predictable loading and cancellatio
 This is a first-pass architecture/code review with a visual review of stored library, Discover, manga-detail, and More screenshots in `.github/readme-images/`. Screenshots can lag current code. Runtime responsiveness, accessibility, tablet behavior, battery impact, and crash frequency remain unmeasured. Findings below distinguish code behavior from risks and design proposals.
 
 ## Highest-priority engineering work
+
+### Native compatibility follow-up resolved and SDK tooling limitation recorded — November 12
+
+The image decoder and MediaPipe dependencies were replaced with pinned 16 KB-aligned binaries while retaining all four CPU architectures. All five optimized APKs pass ELF/RELRO/ZIP alignment checks; the final 64-case suite passes on an actual 16 KB runtime, including real decoding, local OCR and sentence embeddings. Twelve physical-phone component/native/locale checks pass without acknowledging the previous warning; the package compatibility flag is 0. The exact artifact, installed checksum and selected Mihon/SY ports are in the [native/upstream update report](./native-upstream-update-2026-11-12.md).
+
+The decoder requires compile SDK 37 across consuming modules; target SDK 36 and minimum 26 are unchanged. AGP 8.13.2 warns that it is tested through 36.1. The warning is not suppressed; a future supported-AGP migration remains separate from these validated focused fixes. Broad upstream renderer, DI and merged-schema migrations remain deferred.
 
 An [additional code audit](./code-optimization-follow-up.md) traces retranslation cache invalidation, Suggested Titles pagination, full-statistics recomputation during refresh, and embedding/model-download work. It also revalidates the cache, query, cover-budget and memory opportunities below. These remain pending implementation; no additional speedup is claimed.
 

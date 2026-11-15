@@ -6,6 +6,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -14,9 +15,11 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.ColorUtils
 import com.materialkolor.dynamicColorScheme
+import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.domain.ui.UiPreferences
 import com.shinku.reader.domain.ui.model.AppTheme
 import com.shinku.reader.exh.source.ShinKuPreferences
+import com.shinku.reader.presentation.core.theme.LocalSanctuaryStaticContrast
 import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.theme.colorscheme.BaseColorScheme
 import com.shinku.reader.presentation.theme.colorscheme.CatppuccinColorScheme
@@ -105,7 +108,9 @@ fun TachiyomiTheme(
     val shinkuPreferences = remember { Injekt.get<ShinKuPreferences>() }
     val dynamicLibraryEnabled by shinkuPreferences.dynamicLibraryTheme().collectAsState()
     val dynamicSeedColorInt by shinkuPreferences.dynamicLibrarySeedColor().collectAsState()
-    val isEInk = com.shinku.reader.util.system.DeviceUtil.isEInkDevice
+    val basePreferences = remember { Injekt.get<BasePreferences>() }
+    val performanceMode by basePreferences.performanceMode().collectAsState()
+    val isEInk = com.shinku.reader.util.system.DeviceUtil.isEInkDevice || performanceMode == BasePreferences.PerformanceMode.E_INK.value
     val isDark = isSystemInDarkTheme()
     val isAmoled = amoled ?: uiPreferences.themeDarkAmoled().get()
 
@@ -142,10 +147,9 @@ fun TachiyomiTheme(
 
     val animatedColorScheme = if (isEInk) colorScheme else animateColorScheme(colorScheme)
 
-    MaterialTheme(
-        colorScheme = animatedColorScheme,
-        content = content,
-    )
+    CompositionLocalProvider(LocalSanctuaryStaticContrast provides isEInk) {
+        MaterialTheme(colorScheme = animatedColorScheme, content = content)
+    }
 }
 
 private fun applyGenreTone(scheme: ColorScheme, genres: List<String>): ColorScheme {

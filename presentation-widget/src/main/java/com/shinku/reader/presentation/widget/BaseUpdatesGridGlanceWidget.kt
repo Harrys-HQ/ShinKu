@@ -31,12 +31,8 @@ import coil3.request.transformations
 import coil3.size.Precision
 import coil3.size.Scale
 import coil3.transform.RoundedCornersTransformation
-import com.shinku.reader.core.security.SecurityPreferences
-import com.shinku.reader.util.system.dpToPx
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.flow.map
 import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.core.security.SecurityPreferences
 import com.shinku.reader.domain.manga.model.MangaCover
 import com.shinku.reader.domain.updates.interactor.GetUpdates
 import com.shinku.reader.domain.updates.model.UpdatesWithRelations
@@ -44,8 +40,14 @@ import com.shinku.reader.presentation.widget.components.CoverHeight
 import com.shinku.reader.presentation.widget.components.CoverWidth
 import com.shinku.reader.presentation.widget.components.LockedWidget
 import com.shinku.reader.presentation.widget.components.UpdatesWidget
+import com.shinku.reader.presentation.widget.components.UpdatesWidgetItem
 import com.shinku.reader.presentation.widget.util.appWidgetBackgroundRadius
 import com.shinku.reader.presentation.widget.util.calculateRowAndColumnCount
+import com.shinku.reader.presentation.widget.util.widgetGridForSizes
+import com.shinku.reader.util.system.dpToPx
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.map
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.Instant
@@ -75,10 +77,7 @@ abstract class BaseUpdatesGridGlanceWidget(
 
         val manager = GlanceAppWidgetManager(context)
         val ids = manager.getGlanceIds(javaClass)
-        val (rowCount, columnCount) = ids
-            .flatMap { manager.getAppWidgetSizes(it) }
-            .maxBy { it.height.value * it.width.value }
-            .calculateRowAndColumnCount(topPadding, bottomPadding)
+        val (rowCount, columnCount) = widgetGridForSizes(ids.flatMap { manager.getAppWidgetSizes(it) }, topPadding, bottomPadding)
 
         provideContent {
             // If app lock enabled, don't do anything
@@ -112,7 +111,7 @@ abstract class BaseUpdatesGridGlanceWidget(
     private suspend fun List<UpdatesWithRelations>.prepareData(
         rowCount: Int,
         columnCount: Int,
-    ): ImmutableList<Pair<Long, Bitmap?>> {
+    ): ImmutableList<UpdatesWidgetItem> {
         // Resize to cover size
         val widthPx = CoverWidth.value.toInt().dpToPx
         val heightPx = CoverHeight.value.toInt().dpToPx
@@ -148,7 +147,7 @@ abstract class BaseUpdatesGridGlanceWidget(
                         .image
                         ?.asDrawable(context.resources)
                         ?.toBitmap()
-                    Pair(updatesView.mangaId, bitmap)
+                    UpdatesWidgetItem(updatesView.mangaId, updatesView.mangaTitle, bitmap)
                 }
                 .toImmutableList()
         }

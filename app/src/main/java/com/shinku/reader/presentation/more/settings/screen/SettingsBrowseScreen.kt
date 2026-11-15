@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Explore
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,8 +21,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -31,6 +36,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.shinku.reader.core.common.i18n.stringResource
 import com.shinku.reader.core.preference.asState
 import com.shinku.reader.domain.extensionrepo.interactor.GetExtensionRepoCount
+import com.shinku.reader.domain.library.model.LibraryDisplayMode
+import com.shinku.reader.domain.source.interactor.GetLanguagesWithSources
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.domain.ui.UiPreferences
 import com.shinku.reader.i18n.MR
@@ -43,9 +50,14 @@ import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.more.settings.Preference
 import com.shinku.reader.presentation.more.settings.screen.browse.ExtensionReposScreen
+import com.shinku.reader.presentation.more.settings.widget.SourceLanguageDialog
+import com.shinku.reader.presentation.more.settings.widget.TextPreferenceWidget
+import com.shinku.reader.ui.browse.source.SourcesFilterScreen
 import com.shinku.reader.ui.category.sources.SourceCategoryScreen
 import com.shinku.reader.util.system.AuthenticatorUtil.authenticate
+import com.shinku.reader.util.system.LocaleHelper
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -63,6 +75,16 @@ object SettingsBrowseScreen : SearchableSettings {
         val sourcePreferences = remember { Injekt.get<SourcePreferences>() }
         val getExtensionRepoCount = remember { Injekt.get<GetExtensionRepoCount>() }
 
+        val getLanguages = remember { Injekt.get<GetLanguagesWithSources>() }
+        val installedLanguages by getLanguages.subscribe().collectAsState(initial = sortedMapOf())
+        val selectedLanguages by sourcePreferences.enabledLanguages().collectAsState()
+        var showLanguages by remember { mutableStateOf(false) }
+        if (showLanguages) {
+            val entries = (installedLanguages.keys + selectedLanguages).sortedWith(LocaleHelper.comparator).associateWith {
+                LocaleHelper.getSourceDisplayName(it, context)
+            }
+            SourceLanguageDialog(entries, selectedLanguages, { sourcePreferences.enabledLanguages().set(it) }, { showLanguages = false })
+        }
         val reposCount by getExtensionRepoCount.subscribe().collectAsState(0)
 
         return listOf(
@@ -115,14 +137,44 @@ object SettingsBrowseScreen : SearchableSettings {
                 }
             },
             Preference.PreferenceGroup(
+                title = stringResource(MR.strings.browse_display_preferences),
+                preferenceItems = persistentListOf(
+                    Preference.PreferenceItem.ListPreference(
+                        preference = sourcePreferences.sourceDisplayMode(),
+                        icon = Icons.Outlined.GridView,
+                        title = stringResource(MR.strings.action_display_mode),
+                        entries = persistentMapOf(
+                            LibraryDisplayMode.CompactGrid to stringResource(MR.strings.action_display_grid),
+                            LibraryDisplayMode.ComfortableGrid to stringResource(MR.strings.action_display_comfortable_grid),
+                            LibraryDisplayMode.CoverOnlyGrid to stringResource(MR.strings.action_display_cover_only_grid),
+                            LibraryDisplayMode.List to stringResource(MR.strings.action_display_list),
+                        ),
+                    ),
+                ),
+            ),
+            Preference.PreferenceGroup(
                 title = stringResource(MR.strings.label_sources),
                 preferenceItems = persistentListOf(
+                    Preference.PreferenceItem.CustomPreference(title = stringResource(MR.strings.source_language_preferences)) {
+                        TextPreferenceWidget(
+                            title = stringResource(MR.strings.source_language_preferences),
+                            subtitle = stringResource(MR.strings.source_language_selected, selectedLanguages.size),
+                            onPreferenceClick = { showLanguages = true },
+                        )
+                    },
+                    Preference.PreferenceItem.TextPreference(
+                        title = stringResource(MR.strings.enabled_source_preferences),
+                        subtitle = stringResource(MR.strings.enabled_source_preferences_summary),
+                        onClick = { navigator.push(SourcesFilterScreen()) },
+                    ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = sourcePreferences.hideInLibraryItems(),
+                        icon = Icons.Outlined.VisibilityOff,
                         title = stringResource(MR.strings.pref_hide_in_library_items),
                     ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = sourcePreferences.showNsfwSource(),
+                        icon = Icons.Outlined.Visibility,
                         title = stringResource(MR.strings.pref_category_nsfw_content),
                         subtitle = stringResource(MR.strings.pref_show_nsfw_source),
                     ),

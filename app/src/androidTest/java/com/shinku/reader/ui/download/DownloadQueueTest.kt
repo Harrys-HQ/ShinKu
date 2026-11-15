@@ -197,6 +197,7 @@ class DownloadQueueTest {
     }
 
     private fun nodes(): List<AccessibilityNodeInfo> {
+        if (android.os.Build.VERSION.SDK_INT >= 34) instrumentation.uiAutomation.clearCache()
         val result = mutableListOf<AccessibilityNodeInfo>()
         fun visit(node: AccessibilityNodeInfo) {
             if (node.packageName?.toString() == context.packageName) result.add(node)

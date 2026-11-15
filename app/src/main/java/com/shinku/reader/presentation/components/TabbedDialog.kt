@@ -65,9 +65,11 @@ fun TabbedDialog(
     pagerState: PagerState = rememberPagerState { tabTitles.size },
     footer: @Composable () -> Unit = {},
     header: @Composable () -> Unit = {},
+    preferSidePanel: Boolean = false,
     content: @Composable (Int) -> Unit,
 ) {
     AdaptiveSheet(
+        preferSidePanel = preferSidePanel,
         modifier = modifier,
         onDismissRequest = onDismissRequest,
     ) {

@@ -10,15 +10,22 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
-import com.shinku.reader.presentation.util.formattedMessage
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.core.common.util.lang.withUIContext
+import com.shinku.reader.core.common.util.system.ImageUtil
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.databinding.ReaderErrorBinding
-import eu.kanade.tachiyomi.network.HttpException
-import eu.kanade.tachiyomi.source.model.Page
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.util.formattedMessage
 import com.shinku.reader.ui.reader.model.ReaderPage
 import com.shinku.reader.ui.reader.viewer.ReaderPageImageView
 import com.shinku.reader.ui.reader.viewer.ReaderProgressIndicator
 import com.shinku.reader.ui.webview.WebViewActivity
 import com.shinku.reader.util.system.dpToPx
+import eu.kanade.tachiyomi.network.HttpException
+import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.collectLatest
@@ -27,13 +34,6 @@ import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
 import okio.Buffer
 import okio.BufferedSource
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.core.common.util.lang.withIOContext
-import com.shinku.reader.core.common.util.lang.withUIContext
-import com.shinku.reader.core.common.util.system.ImageUtil
-import com.shinku.reader.core.common.util.system.logcat
-import com.shinku.reader.i18n.MR
 
 /**
  * Holder of the webtoon reader for a single page of a chapter.
@@ -299,11 +299,10 @@ class WebtoonPageHolder(
         val isPermanentHttpError = httpError != null && (httpError.code == 404 || httpError.code == 410)
         errorLayout?.actionRetry?.isVisible = !isPermanentHttpError
 
-        if (isPermanentHttpError) {
-            val compactHeight = (140 * context.resources.displayMetrics.density).toInt()
-            errorLayout?.root?.layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, compactHeight)
-        } else {
-            errorLayout?.root?.layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, (parentHeight * 0.8).toInt())
+        // Keep the inflated card margins and let long messages / scaled text determine its height.
+        errorLayout?.root?.updateLayoutParams<FrameLayout.LayoutParams> {
+            height = WRAP_CONTENT
+            gravity = android.view.Gravity.CENTER
         }
 
         val imageUrl = page?.imageUrl

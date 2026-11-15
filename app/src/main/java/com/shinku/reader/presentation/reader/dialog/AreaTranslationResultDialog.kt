@@ -98,13 +98,12 @@ fun AreaTranslationResultDialog(
                             text = "Area Translation",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1,
                         )
                     }
                 }
                 IconButton(
                     onClick = onDismissRequest,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Close,
@@ -140,17 +139,19 @@ fun AreaTranslationResultDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            SanctuaryOverlineBadge(
-                                text = "TRANSLATION ($targetLanguage)",
-                                compact = true,
-                            )
+                            Box(Modifier.weight(1f)) {
+                                SanctuaryOverlineBadge(
+                                    text = "TRANSLATION ($targetLanguage)",
+                                    compact = true,
+                                )
+                            }
                             IconButton(
                                 onClick = {
                                     val clipboard = context.getSystemService<ClipboardManager>()
                                     clipboard?.setPrimaryClip(ClipData.newPlainText("AI Translation", translatedText))
                                     context.toast("Translation copied")
                                 },
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(48.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.ContentCopy,
@@ -185,17 +186,19 @@ fun AreaTranslationResultDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
-                            SanctuaryOverlineBadge(
-                                text = "DETECTED RAW TEXT",
-                                compact = true,
-                            )
+                            Box(Modifier.weight(1f)) {
+                                SanctuaryOverlineBadge(
+                                    text = "DETECTED RAW TEXT",
+                                    compact = true,
+                                )
+                            }
                             IconButton(
                                 onClick = {
                                     val clipboard = context.getSystemService<ClipboardManager>()
                                     clipboard?.setPrimaryClip(ClipData.newPlainText("Detected Text", originalText))
                                     context.toast("Original text copied")
                                 },
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(48.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.ContentCopy,

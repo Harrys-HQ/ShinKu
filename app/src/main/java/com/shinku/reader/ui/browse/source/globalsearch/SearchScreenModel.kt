@@ -1,19 +1,30 @@
 package com.shinku.reader.ui.browse.source.globalsearch
 
 import android.content.Context
+import android.net.Uri
+import android.util.Base64
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.produceState
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import com.shinku.reader.core.common.preference.toggle
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.core.common.util.system.logcat
+import com.shinku.reader.domain.manga.interactor.GetManga
+import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.manga.model.toDomainManga
 import com.shinku.reader.domain.source.interactor.GeminiVibeSearch
+import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.domain.source.service.SourcePreferences
-import com.shinku.reader.presentation.util.ioCoroutineScope
+import com.shinku.reader.exh.source.ShinKuPreferences
 import com.shinku.reader.extension.ExtensionManager
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.util.ioCoroutineScope
+import com.shinku.reader.util.system.toast
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.local.isLocal
-import com.shinku.reader.util.system.toast
-import com.shinku.reader.exh.source.ShinKuPreferences
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentMapOf
@@ -23,6 +34,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
@@ -31,23 +44,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.shinku.reader.domain.manga.model.toDomainManga
-import com.shinku.reader.core.common.preference.toggle
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.domain.manga.interactor.GetManga
-import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
-import com.shinku.reader.domain.manga.model.Manga
-import com.shinku.reader.domain.source.service.SourceManager
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.core.common.util.system.logcat
 import logcat.LogPriority
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-
-import android.net.Uri
-import android.util.Base64
 import java.io.InputStream
-import kotlinx.coroutines.coroutineScope
 
 abstract class SearchScreenModel(
     initialState: State = State(),
@@ -148,9 +148,14 @@ abstract class SearchScreenModel(
 
     fun searchImage(uri: Uri, context: android.content.Context) {
         searchJob?.cancel()
-        
+
         searchJob = ioCoroutineScope.launch {
             val sources = getSelectedSources()
+            val requestContext = currentCoroutineContext()
+            mutableState.update {
+                requestContext.ensureActive()
+                it.copy(noSourcesSelected = sources.isEmpty())
+            }
             updateItems(
                 sources
                     .associateWith { SearchItemResult.Loading }
@@ -270,6 +275,11 @@ abstract class SearchScreenModel(
 
         searchJob = ioCoroutineScope.launch {
             val sources = getSelectedSources()
+            val requestContext = currentCoroutineContext()
+            mutableState.update {
+                requestContext.ensureActive()
+                it.copy(noSourcesSelected = sources.isEmpty())
+            }
 
             // Reuse previous results if possible
             if (sameQuery) {
@@ -288,9 +298,9 @@ abstract class SearchScreenModel(
             }
             val apiKey = shinkuPreferences.geminiApiKey().get()
             val model = shinkuPreferences.geminiModel().get()
-            
+
             val isVibeEnabled = useVibeSearch && shinkuPreferences.isAiConfigured()
-            
+
             val finalQueries = if (isVibeEnabled) {
                 withContext(Dispatchers.Main) {
                     context.toast(MR.strings.vibe_search_loading)
@@ -345,6 +355,7 @@ abstract class SearchScreenModel(
         val searchQuery: String? = null,
         val sourceFilter: SourceFilter = SourceFilter.PinnedOnly,
         val onlyShowHasResults: Boolean = false,
+        val noSourcesSelected: Boolean = false,
         val items: PersistentMap<CatalogueSource, SearchItemResult> = persistentMapOf(),
         val dialog: Dialog? = null,
     ) {

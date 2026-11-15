@@ -24,7 +24,7 @@ junit = "6.1.2"
 palette = "1.0.0"
 materialKolor = "2.0.2"
 mlkit-text-recognition = "16.0.1"
-mediapipe-tasks-text = "0.10.14"
+mediapipe-tasks-text = "0.10.35"
 
 [libraries]
 haze = "dev.chrisbanes.haze:haze:1.6.10"
@@ -119,7 +119,7 @@ coil-gif = { module = "io.coil-kt.coil3:coil-gif" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp" }
 subsamplingscaleimageview = "com.github.tachiyomiorg:subsampling-scale-image-view:66e0db195d"
-image-decoder = "com.github.tachiyomiorg:image-decoder:41c059e540"
+image-decoder = "com.github.mihonapp:image-decoder:e03b81e18a"
 natural-comparator = "com.github.gpanther:java-nat-sort:natural-comparator-1.1"
 richeditor-compose = "com.mohamedrejeb.richeditor:richeditor-compose:1.0.0-rc13"
 material = "com.google.android.material:material:1.12.0"

@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FormatListBulleted
 import androidx.compose.material.icons.outlined.FormatBold
@@ -44,15 +46,15 @@ import androidx.compose.ui.unit.dp
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditor
 import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults.richTextEditorColors
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.ui.manga.notes.MangaNotesScreen
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.presentation.core.components.material.padding
-import com.shinku.reader.presentation.core.i18n.stringResource
 import kotlin.time.Duration.Companion.seconds
 
 private const val MAX_LENGTH = 250
@@ -99,6 +101,7 @@ fun MangaNotesTextArea(
             .padding(horizontal = MaterialTheme.padding.small)
             .fillMaxSize(),
     ) {
+        Text(stringResource(MR.strings.notes_auto_save_hint), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(8.dp))
         RichTextEditor(
             state = richTextState,
             textStyle = MaterialTheme.typography.bodyLarge,
@@ -135,6 +138,7 @@ fun MangaNotesTextArea(
                         onClick = { richTextState.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold)) },
                         isSelected = richTextState.currentSpanStyle.fontWeight == FontWeight.Bold,
                         icon = Icons.Outlined.FormatBold,
+                        description = stringResource(MR.strings.notes_format_bold),
                     )
                 }
                 item {
@@ -142,6 +146,7 @@ fun MangaNotesTextArea(
                         onClick = { richTextState.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) },
                         isSelected = richTextState.currentSpanStyle.fontStyle == FontStyle.Italic,
                         icon = Icons.Outlined.FormatItalic,
+                        description = stringResource(MR.strings.notes_format_italic),
                     )
                 }
                 item {
@@ -153,6 +158,7 @@ fun MangaNotesTextArea(
                             ?.contains(TextDecoration.Underline)
                             ?: false,
                         icon = Icons.Outlined.FormatUnderlined,
+                        description = stringResource(MR.strings.notes_format_underline),
                     )
                 }
                 item {
@@ -167,6 +173,7 @@ fun MangaNotesTextArea(
                         onClick = { richTextState.toggleUnorderedList() },
                         isSelected = richTextState.isUnorderedList,
                         icon = Icons.AutoMirrored.Outlined.FormatListBulleted,
+                        description = stringResource(MR.strings.notes_format_bullets),
                     )
                 }
                 item {
@@ -174,6 +181,7 @@ fun MangaNotesTextArea(
                         onClick = { richTextState.toggleOrderedList() },
                         isSelected = richTextState.isOrderedList,
                         icon = Icons.Outlined.FormatListNumbered,
+                        description = stringResource(MR.strings.notes_format_numbers),
                     )
                 }
             }
@@ -200,12 +208,16 @@ fun MangaNotesTextAreaButton(
     onClick: () -> Unit,
     icon: ImageVector,
     isSelected: Boolean,
+    description: String = icon.name,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .clip(MaterialTheme.shapes.small)
-            .clickable(
+            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+            .selectable(
+                selected = isSelected,
                 onClick = onClick,
                 enabled = true,
                 role = Role.Button,
@@ -214,10 +226,9 @@ fun MangaNotesTextAreaButton(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = icon.name,
+            contentDescription = description,
             tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
             modifier = Modifier
-                .background(color = if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent)
                 .padding(MaterialTheme.padding.extraSmall),
         )
     }

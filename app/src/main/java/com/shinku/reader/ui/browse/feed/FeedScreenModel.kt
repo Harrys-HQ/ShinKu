@@ -91,6 +91,17 @@ open class FeedScreenModel(
 
     private val coroutineDispatcher = Dispatchers.IO
     private val sourceRequests = sharedFeedRequests
+    private suspend fun <T : Any> requestWithFeedback(source: CatalogueSource, block: suspend () -> T): T? {
+        return sourceRequests.requestWithFailureCallback(
+            sourceId = source.id,
+            onFailure = {
+                mutableState.updateIfActive { state ->
+                    state.copy(failedSources = (state.failedSources + source).distinctBy { it.id }.toImmutableList())
+                }
+            },
+            block = block,
+        )
+    }
     private val refreshRequest = LatestFeedRequest(screenModelScope)
     private val genreRequest = LatestFeedRequest(screenModelScope)
     private val savedFeedRefresh = MutableStateFlow(0L)
@@ -324,14 +335,14 @@ open class FeedScreenModel(
                     val jobs = sources.take(2).mapIndexed { index, source ->
                         async(coroutineDispatcher) {
                             val result = runCatchingCancellable {
-                                sourceRequests.request(source.id) { source.getPopularManga(popularPage).mangas }
+                                requestWithFeedback(source) { source.getPopularManga(popularPage).mangas }
                             }.getOrNull().orEmpty().take(8).map { it.toDomainManga(source.id) }
                             publish(popular, index, result)
                         }
                     } + latestSources.mapIndexed { index, source ->
                         async(coroutineDispatcher) {
                             val result = runCatchingCancellable {
-                                sourceRequests.request(source.id) { source.getLatestUpdates(latestPage).mangas }
+                                requestWithFeedback(source) { source.getLatestUpdates(latestPage).mangas }
                             }.getOrNull().orEmpty().take(8).map { it.toDomainManga(source.id) }
                             publish(latest, index, result)
                         }
@@ -342,7 +353,7 @@ open class FeedScreenModel(
                                 if (filters == null) {
                                     emptyList()
                                 } else {
-                                    sourceRequests.request(source.id) { source.getSearchManga(1, "", filters).mangas }.orEmpty()
+                                    requestWithFeedback(source) { source.getSearchManga(1, "", filters).mangas }.orEmpty()
                                 }
                             }.getOrDefault(emptyList()).take(8).map { it.toDomainManga(source.id) }
                             publish(behavior, index, result)
@@ -421,7 +432,7 @@ open class FeedScreenModel(
                         val genrePage = (1..2).random()
                         val genreResults = supportingSources.map { (source, filterList) ->
                             async(coroutineDispatcher) {
-                                sourceRequests.request(source.id) {
+                                requestWithFeedback(source) {
                                     try {
                                         source.getSearchManga(genrePage, "", filterList).mangas.take(8).map { it.toDomainManga(source.id) }
                                     } catch (e: CancellationException) {
@@ -489,7 +500,7 @@ open class FeedScreenModel(
                     val genreResults = coroutineScope {
                         supportingSources.map { (source, filterList) ->
                             async(coroutineDispatcher) {
-                                sourceRequests.request(source.id) {
+                                requestWithFeedback(source) {
                                     try {
                                         source.getSearchManga(1, "", filterList).mangas.take(10).map { it.toDomainManga(source.id) }
                                     } catch (e: CancellationException) {
@@ -543,6 +554,7 @@ open class FeedScreenModel(
         mutableState.update {
             it.copy(
                 isRefreshing = true,
+                failedSources = persistentListOf(),
                 selectedGenre = null,
                 selectedGenreManga = null,
                 isLoadingGenre = false,
@@ -710,7 +722,7 @@ open class FeedScreenModel(
                     val page = try {
                         if (itemUI.source != null) {
                             withContext(coroutineDispatcher) {
-                                sourceRequests.request(itemUI.source.id) {
+                                requestWithFeedback(itemUI.source) {
                                     if (itemUI.savedSearch == null) {
                                         itemUI.source.getLatestUpdates(1)
                                     } else {
@@ -807,6 +819,7 @@ data class FeedScreenState(
     val isRefreshing: Boolean = false,
     val showSourceFeeds: Boolean = true,
     val isInitialLoadDone: Boolean = false,
+    val failedSources: ImmutableList<CatalogueSource> = persistentListOf(),
 ) {
     val hasContent: Boolean
         get() = featuredManga.isNotEmpty() ||

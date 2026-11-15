@@ -9,9 +9,9 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.shinku.reader.presentation.browse.ExtensionDetailsScreen
+import com.shinku.reader.presentation.core.screens.LoadingScreen
 import com.shinku.reader.presentation.util.Screen
 import kotlinx.coroutines.flow.collectLatest
-import com.shinku.reader.presentation.core.screens.LoadingScreen
 
 data class ExtensionDetailsScreen(
     private val pkgName: String,

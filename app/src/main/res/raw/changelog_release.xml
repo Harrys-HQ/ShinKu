@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.8.2" changeDate="November 15, 2026">
+        <changelogtext>[b]Comic Page Pull-to-Refresh Restoration (Fixes #29)[/b]: Resolved gesture conflicts between the refresh indicator and vertical scrolling chapter lists on manga details screens, restoring smooth pull-to-refresh updates and metadata reloads.</changelogtext>
+        <changelogtext>[b]AVIF Sequence Cover Decoding &amp; Sanitization (Fixes #30)[/b]: Fixed broken image placeholders when loading animated AVIF (.avif / avis brand) covers from sources like Voratoon. Dynamically strips conflicting container boxes so the cover renders cleanly. [i]Note: Due to OEM platform limitations (invalid input in Android ImageDecoder) and hardware video decoder limits, AVIF sequences are safely rendered as crisp static covers rather than video loops, matching upstream behavior.[/i]</changelogtext>
+        <changelogtext>[b]TachiyomiSY Metadata Caching &amp; Value Equality[/b]: Fixed stored source metadata being written into discarded cache copies, and added value equality checks to prevent false updates or unintentional renames.</changelogtext>
+        <changelogtext>[b]Mihon Upcoming Calendar Locale Reactivity[/b]: Updated the upcoming release calendar so weekday ordering and month labels immediately refresh when the application locale changes.</changelogtext>
+        <changelogtext>[b]Native 16 KB Page Alignment &amp; Runtime Stability[/b]: Switched to Mihon's maintained image-decoder fork (e03b81e18a) and upgraded MediaPipe text to 0.10.35, ensuring 100% 16 KB memory page compatibility on Android 15+ devices.</changelogtext>
+        <changelogtext>[b]Sanctuary Visual Suite Polish (Boards 15–24)[/b]: Refined layout constraints, responsive spacing, and dialog presentations across Stats, Backup, Migration, Search, and Reader settings.</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.8.1" changeDate="November 8, 2026">
         <changelogtext>[b]OAuth Callback Security Hardening (Fixes #28)[/b]: Hardened OAuth authorization across external trackers (AniList, Bangumi, Comick, MyAnimeList, Shikimori) with persistent cryptographic state nonces and one-time verification to prevent CSRF callback injection and authorization code interception</changelogtext>
         <changelogtext>[b]Dynamic Gemini Model Discovery (Fixes #27)[/b]: Integrated live Gemini model discovery from Google AI Studio API with automatic quota-safe caching, dynamic model selection, and zero manual code updates needed for newer Gemini releases</changelogtext>
         <changelogtext>[b]Reader Mood Lighting Restoration (Fixes #26)[/b]: Restored dynamic ambient lighting in Reader settings with live color extraction, responsive intensity controls, and memory-safe background rendering</changelogtext>
-        <changelogtext>[b]Sanctuary Core Suite UI/UX (Boards 01–14 / 95% Completion)[/b]: Implemented 42 high-fidelity panels across 14 Sanctuary design boards: Library management, Reader controls, Discover feed, Source browsing, Chapter tracking, Downloads, Statistics, History, Settings, and Source Health</changelogtext>
+        <changelogtext>[b]Sanctuary UI/UX updates (Boards 01–14)[/b]: Applied shared styling and supported control improvements across Library, Reader, Browse, Downloads, Statistics, History, Settings, and Source Health. Visual review and live-flow acceptance remain in progress.</changelogtext>
         <changelogtext>[b]MangaBat HTTP 429 &amp; Cloudflare Rate-Limit Pacing[/b]: Added 800ms query spacing and automatic 1800ms backoff-and-retry in Global Search, seamlessly resolving rate limits and Cloudflare challenges across multi-source queries</changelogtext>
     </changelogversion>
     <changelogversion versionName="2.8.0" changeDate="November 1, 2026">

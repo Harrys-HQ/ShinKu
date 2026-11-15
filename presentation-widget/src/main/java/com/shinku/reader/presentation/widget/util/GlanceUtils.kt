@@ -38,3 +38,7 @@ fun DpSize.calculateRowAndColumnCount(
     val columnCount = (width.value / 64).toInt().coerceIn(1, 10)
     return Pair(rowCount, columnCount)
 }
+
+/** Hosts may report no sizes while binding; keep a valid one-cover layout until the next update. */
+fun widgetGridForSizes(sizes: List<DpSize>, topPadding: Dp, bottomPadding: Dp): Pair<Int, Int> =
+    sizes.maxByOrNull { it.height.value * it.width.value }?.calculateRowAndColumnCount(topPadding, bottomPadding) ?: (1 to 1)

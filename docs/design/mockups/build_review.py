@@ -3,6 +3,7 @@
 import csv
 import html
 import json
+import os
 import re
 from pathlib import Path
 
@@ -27,10 +28,14 @@ def nearest_five(value):
 assert sum(audit['weights']) == 100
 for entry in audit['boards']:
     assert len(entry['panels']) == 3
-    assert entry['percent'] == nearest_five(sum(raw_score(p) for p in entry['panels']) / 3)
+    if entry['percent'] is not None:
+        assert entry['percent'] == nearest_five(sum(raw_score(p) for p in entry['panels']) / 3)
+    else:
+        assert all(p['percent'] is None and p['scores'] is None for p in entry['panels'])
     assert by_id[entry['id']]['implementationPercent'] == entry['percent']
 for panel in [p for entry in audit['boards'] for p in entry['panels']] + audit['earlierConcepts']:
-    assert panel['percent'] == nearest_five(raw_score(panel))
+    if panel['percent'] is not None:
+        assert panel['percent'] == nearest_five(raw_score(panel))
     if panel.get('screenshot'):
         assert (ROOT / panel['screenshot']).is_file(), panel['screenshot']
     if panel.get('largeTextScreenshot'):
@@ -38,12 +43,21 @@ for panel in [p for entry in audit['boards'] for p in entry['panels']] + audit['
 
 
 def score_tag(entry):
+    if entry['percent'] is None:
+        return 'Partial — unscored; acceptance pending'
     if entry.get('status', '').startswith('implemented_locally'):
         return f"{entry['percent']}% — visual acceptance pending"
     return f"{entry['percent']}% — partial (provisional)"
 
 
+def panel_tag(panel):
+    return f"{panel['percent']}%" if panel['percent'] is not None else 'Unscored'
+
+
 def evidence_label(panel):
+    if panel.get('evidenceScope'):
+        label = 'Source + runtime captures (including actual 1.6× text)' if panel.get('largeTextScreenshot') else 'Source + partial runtime capture' if panel.get('screenshot') else 'Source review'
+        return label + '; ' + panel['evidenceScope']
     if panel.get('largeTextScreenshot'):
         return 'Source + default / actual 1.6×-text runtime'
     return 'Source + partial runtime capture' if panel.get('screenshot') else 'Source only; runtime comparison pending'
@@ -59,7 +73,7 @@ audit_report = [
     'Controls cover supported actions and navigation; states cover selection/loading/error/confirmation behavior. '
     'Retained UI earns credit where it already meets the design. A 3 means mostly present, not visually accepted. '
     'A missing capture is an evidence limitation, not proof a feature is absent. No score represents phone installation.', '',
-    'All 13 numbered images and both earlier concept images were inspected. Current relevant source and available local captures were compared. '
+    'All 14 numbered images were rechecked on 2026-11-10. Current relevant source and available local captures were compared. '
     'Existing captures predate some latest fixes; current source takes precedence. Fixture screenshots validate only their rendered control, '
     'not the surrounding scaffold/theme. The file named dock-browse.png actually shows History and was excluded as Browse evidence. '
     'Theme choice, manga artwork, sample counts and configurable grid density are not fidelity defects by themselves. '
@@ -69,22 +83,22 @@ audit_report = [
 for board in boards:
     entry = audited.get(board['id'])
     tag = score_tag(entry) if entry else '0% planned redesign work; visual match unscored'
-    panels = '; '.join(f"{p['name']}: {p['percent']}%" for p in entry['panels']) if entry else 'Not started'
+    panels = '; '.join(f"{p['name']}: {panel_tag(p)}" for p in entry['panels']) if entry else 'Not started'
     audit_report.append(f"| {board['id']} | {board['title']} | {tag} | {panels} |")
 audit_report += ['', audit['plannedNote'], '', '## Panel evidence and remaining work', '']
 panel_rows = []
 for board in audit['boards']:
-    audit_report += [f"### {board['id']} — {by_id[board['id']]['title']} ({board['percent']}%)", '',
+    audit_report += [f"### {board['id']} — {by_id[board['id']]['title']} ({score_tag(board)})", '',
                      '| Panel | Tag | L / S / C / States (0–4) | Present | Remaining | Supported-scope adaptation | Evidence |',
                      '| --- | --- | --- | --- | --- | --- | --- |']
     for panel in board['panels']:
-        scores = ' / '.join(str(v) for v in panel['scores'])
+        scores = ' / '.join(str(v) for v in panel['scores']) if panel['scores'] else 'Unscored'
         evidence = evidence_label(panel)
         if panel.get('screenshot'):
             evidence += f"; local `{panel['screenshot']}`"
-        audit_report.append(f"| {panel['name']} | {panel['percent']}% | {scores} | {panel['present']} | {panel['remaining']} | {panel['adaptation']} | {evidence} |")
+        audit_report.append(f"| {panel['name']} | {panel_tag(panel)} | {scores} | {panel['present']} | {panel['remaining']} | {panel['adaptation']} | {evidence} |")
         panel_rows.append(dict(board=board['id'], panel=panel['name'], percent=panel['percent'],
-                               layout=panel['scores'][0], styling=panel['scores'][1], controls=panel['scores'][2], states=panel['scores'][3],
+                               layout=panel['scores'][0] if panel['scores'] else '', styling=panel['scores'][1] if panel['scores'] else '', controls=panel['scores'][2] if panel['scores'] else '', states=panel['scores'][3] if panel['scores'] else '',
                                evidence=evidence_label(panel), remaining=panel['remaining']))
     audit_report += ['', 'Source evidence:', '']
     for source in board['sources']:
@@ -106,9 +120,9 @@ audit_report += ['', 'Reader controls overlaps boards 06–08. Earlier concepts 
                  ('1. Board 05: verify the latest artifact and final visual acceptance on the owner’s phone; see the per-part log.'
                   if audited['05'].get('parts') else
                   '1. Board 05: filter heading/badge/icon cards, real category counts and bulk More hierarchy.'),
-                 '2. Boards 08 and 12–13: shared sheet headers, icon rows, compact groups and action buttons; apply consistently.',
+                 '2. Finish board 15 and remaining confirmed gaps in boards 08 and 12-14.',
                  '3. Boards 02–03 and 09–11: finish the page compositions around existing functional flows.',
-                 '4. Finish remaining details in 01, 04, 06–07 and earlier concepts; capture each actual screen/state for visual acceptance.', '',
+                 '4. Continue boards 16-24 from existing Sanctuary components and briefs, without new images. Capture actual screen states for acceptance.', '',
                  'A percentage rises only after the listed gap is implemented and evidence is updated. 100% requires a complete supported-scope comparison, documented adaptations and no known visual gaps.', '',
                  ('The initial audit was documentation-only. The subsequent authorized board-05 implementation is recorded in '
                   '[its progress log](mockups/05-implementation-progress.md), with new code, runtime checks and APK verification. '
@@ -207,7 +221,7 @@ def card(board):
     preview = (
         f'<a href="{e(board["file"])}" target="_blank"><img src="{e(board["file"])}" '
         f'loading="lazy" alt="{e(board["title"])} concept board"></a>'
-        if ready else '<div class="placeholder">Image pending — prompt ready<br>'
+        if ready else '<div class="placeholder">No new mockup - reuse Sanctuary direction<br>'
         '<small>All three panel briefs are saved below.</small></div>'
     )
     details = ''.join(f'<li><strong>{e(p["name"])}</strong><p>{e(p["brief"])}</p></li>' for p in board['panels'])
@@ -215,7 +229,7 @@ def card(board):
     tag = score_tag(audited[board['id']]) if board['id'] in audited else '0% planned work; visual match unscored'
     progress = f'<p><strong>Implementation: {e(tag)}</strong> · <a href="../mockup-visual-audit.md">Panel evidence and remaining work</a></p>'
     return f'''<article data-status="{status}" id="board-{board['id']}">
-    <h2>{board['id']}. {e(board['title'])}<span class="badge {status}">{'Generated · review needed' if ready else 'Awaiting generation'}</span></h2>
+    <h2>{board['id']}. {e(board['title'])}<span class="badge {status}">{'Generated · review needed' if ready else 'Existing direction; no new image'}</span></h2>
     {progress}{preview}{note}<details><summary>Screen briefs and behavior scope</summary><ol>{details}</ol></details>
     <p><a href="{board['id']}-prompt.txt">Exact image-generation prompt</a></p></article>'''
 
@@ -227,12 +241,12 @@ pending_code = [b for b in boards if (HERE / b['file']).is_file() and b.get('imp
 def board_range(items):
     return f"{items[0]['id']}–{items[-1]['id']}" if items else 'none'
 next_id = manifest.get('nextBoard')
-next_prompt_link = f'[{next_id}-prompt.txt]({next_id}-prompt.txt)' if next_id else 'none; all planned images exist'
+next_prompt_link = f'[{next_id}-prompt.txt]({next_id}-prompt.txt)' if next_id else 'none; new images skipped by owner'
 generation_note = (
     f"Historical quota observation: image generation reached its usage limit on {manifest.get('lastGenerationDate')}. "
     f"Tool-estimated reset was {manifest['quotaResetLocal']}; quota has not been rechecked during this audit. Resume at board {next_id}."
     if manifest.get('imageGenerationStatus') == 'usage_limit_reached' else
-    f"Generation resumed {manifest.get('lastGenerationDate')}; next board {next_id}."
+    'New mockups skipped by owner instruction (2026-11-10). Continue from existing boards, tokens and briefs.'
 )
 
 prior = '''<article data-status="ready"><h2>Previously reviewed direction</h2>
@@ -251,8 +265,8 @@ h2{{font-size:23px;margin:0 0 18px}}.badge{{display:inline-block;font-size:12px;
 .prior{{display:grid;grid-template-columns:1fr 1fr;gap:14px}}details{{margin-top:16px}}summary{{cursor:pointer;color:#d9ddff}}li p{{margin:5px 0 18px}}.note{{border-left:3px solid #d8b477;padding-left:12px}}[hidden]{{display:none!important}}
 @media(max-width:700px){{.prior{{grid-template-columns:1fr}}h2{{font-size:19px}}.badge{{margin:8px 0;display:table}}}}
 </style><main><h1>ShinKu · UI review gallery</h1>
-<p>Sanctuary direction across the app. {ready_count} of {len(boards)} new boards rendered; {(len(boards)-ready_count)*3} new panels await image generation. Six earlier panels are also included.</p>
-<p><strong>Rendering is incomplete:</strong> {e(generation_note)} Remaining briefs are saved; placeholders are not finished mockups. Images, implementation and phone installation are tracked separately.</p>
+<p>Sanctuary direction across the app. {ready_count} of {len(boards)} new boards rendered; remaining panels use the existing direction without new images. Six earlier panels are also included.</p>
+<p><strong>Implementation workflow:</strong> {e(generation_note)} Remaining briefs are saved; placeholders are not finished mockups. Images, implementation and phone installation are tracked separately.</p>
 <nav><button data-filter="all" aria-pressed="true">All boards</button><button data-filter="ready" aria-pressed="false">Images ready</button><button data-filter="pending" aria-pressed="false">Pending images</button>
 <a class="navlink" href="checklist.md">Mockup checklist</a><a class="navlink" href="../generated-mockups-completion.md">Generated mockup implementation</a><a class="navlink" href="coverage.md">Coverage & implementation rules</a><a class="navlink" href="source-surface-checklist.csv">Source checklist CSV</a></nav>
 {prior}{cards}<p>Generated with the built-in image tool. Content and metrics are illustrative. Reuse existing app behavior and tokens; validate actual layouts, accessibility, permissions, extension interfaces and data safety before shipping.</p></main>
@@ -261,8 +275,8 @@ h2{{font-size:23px;margin:0 0 18px}}.badge{{display:inline-block;font-size:12px;
 
 coverage = [
     '# ShinKu UI mockup coverage and implementation checklist', '',
-    f'Inventory date: 2026-11-03. {len(boards)} new boards / {sum(len(b["panels"]) for b in boards)} planned panels, plus the six earlier panels.', '',
-    f'**Incomplete rendering:** {ready_count} new boards are generated; {len(boards)-ready_count} still await generation. '
+    f'Inventory date: {audit["date"]}. {len(boards)} new boards / {sum(len(b["panels"]) for b in boards)} planned panels, plus the six earlier panels.', '',
+    f'**Reference images:** {ready_count} boards exist. Missing images do not block implementation. '
     f'{generation_note} '
     'See the [mockup checklist](./checklist.md) for separate image, implementation and phone-installation status.', '',
     'Open [the review gallery](./index.html), [the manifest](./manifest.json), or [the source checklist](./source-surface-checklist.csv).', '',
@@ -271,7 +285,7 @@ coverage = [
 for b in boards:
     ready = (HERE / b['file']).exists()
     title = f'[{b["id"]}. {b["title"]}](./{b["file"]})' if ready else f'{b["id"]}. {b["title"]}'
-    coverage.append(f'| {title} | {"; ".join(p["name"] for p in b["panels"])} | {"Generated; review required" if ready else "Prompt ready; not generated"} |')
+    coverage.append(f'| {title} | {"; ".join(p["name"] for p in b["panels"])} | {"Generated; review required" if ready else "Existing direction; no image needed"} |')
 coverage += [
     '', '## What the source inventory means', '',
     f'The CSV contains {len(rows)} named Kotlin surface entries (file entry points and named Screen/Dialog/Sheet/Step functions). '
@@ -302,9 +316,8 @@ for b in boards:
     if b.get('note'):
         coverage.append(f'- Board {b["id"]}: {b["note"]}')
 coverage += [
-    '', '## Resume generation', '',
-    'After the tool quota resets, generate only missing PNGs from their numbered prompt files with the two existing reference boards. '
-    'Keep filenames/versioning stable; do not overwrite reviewed images without requesting an iteration. Use built-in image generation unless the owner explicitly chooses a different provider/path.', '',
+    '', '## Continue implementation', '',
+    'Continue remaining screens directly from the existing Sanctuary direction, briefs and shared components. No new image generation is requested.', '',
     'Set each board status in manifest.json after inspecting its output, then run `python docs/design/mockups/build_review.py` to refresh the gallery and CSV. '
     'An alternate API-key or credit-based image service requires the owner’s explicit choice; no fallback service has been invoked.', '',
 ]
@@ -314,20 +327,22 @@ print(f'Gallery built: {ready_count}/{len(boards)} new boards, {len(rows)} sourc
 # This is board-level progress, not a claim of exhaustive runtime coverage.
 coded_boards = [b for b in boards if b['id'] in audited]
 validation = manifest.get('validation', {})
+code_pass_report = validation.get('codePassReport', 'docs/design/boards-01-14-code-pass-2026-11-11.md')
+code_pass_link = Path(os.path.relpath(ROOT / code_pass_report, HERE)).as_posix()
 checklist = [
     '# ShinKu mockup checklist', '',
-    f'Updated: {manifest.get("lastValidationDate", manifest.get("lastImplementationDate", manifest.get("lastGenerationDate", "unknown")))}.', '',
+    f'Updated: {audit["date"]}.', '',
     'Generated = image exists. Code status records implementation work, including retained existing UI. '
     'Visual completion requires comparison of the actual app with the approved image. Tests/builds do not establish visual fidelity. '
     'Latest physical-phone artifact verification is separate.', '',
     f'- [x] {ready_count}/24 numbered boards generated ({ready_count*3}/72 panels).',
-    f'- [x] Source-informed percentage audit recorded for {len(coded_boards)} generated boards / 39 panels plus six earlier concepts. Visual acceptance remains below 100%.',
-    f'- [x] {validation.get("jvmPassed", "unrecorded")} JVM tests and {validation.get("androidPassed", "unrecorded")} Android emulator tests passed; all five optimized APK signatures verified.',
-    '- [ ] Verify the newest artifact on the physical phone; transfers via LocalSend have not been independently verified.',
+    f'- [x] Source records cover {len(coded_boards)} boards / {len(coded_boards)*3} panels. Most previous percentage claims are suspended; visual acceptance remains pending.',
+    '- Historical test/artifact records are retained in the manifest; current validation is in the dated recheck report.',
+    ('- [x] Latest review APK installed on the physical phone; visual audit remains partial.' if validation.get('phoneInstalled') else '- [ ] Verify the newest artifact on the physical phone.'),
     '- [ ] Finish the documented visual gaps and obtain complete runtime comparisons for every panel.',
-    f'- [ ] Generate remaining boards {board_range(pending_images)}.', '',
+    '- [x] Skip new mockups; reuse existing boards and Sanctuary tokens.', '',
     generation_note, '',
-    'Percentages are provisional supported-scope estimates, weighted 70% toward layout/styling. '
+    'Most previous percentage claims are archived and unscored after recheck. Retained scores are provisional. '
     'They are not pixel measurements or test coverage. See the [full scoring/evidence report](../mockup-visual-audit.md).', '',
     '| Board | Mockup | Image | Implementation estimate | Evidence / visual status | Phone verification |',
     '| --- | --- | --- | --- | --- | --- |',
@@ -337,10 +352,10 @@ for board in boards:
     coded = board['id'] in audited
     phone_status = board.get('phoneInstallationStatus')
     partial = board.get('implementationStatus') == 'partially_implemented'
-    phone = 'Latest artifact unverified' if coded or partial else 'Not applicable'
+    phone = 'Review build installed; visual audit partial' if validation.get('phoneInstalled') and (coded or partial) else 'Latest artifact unverified' if coded or partial else 'Not applicable'
     code_status = score_tag(audited[board['id']]) if coded else '0% planned work; visual match unscored'
     visual = 'Default and actual 1.6× text reviewed; final phone/theme acceptance pending' if board['id'] == '05' and audited['05'].get('parts') else 'Source reviewed; partial captures where available; gaps remain' if coded else 'Draft only; not adopted' if board['id'] == '14' else 'No image target yet'
-    image_status = 'Generated' if exists else 'External draft only' if board['id'] == '14' else 'Prompt ready'
+    image_status = 'Generated' if exists else 'External draft only' if board['id'] == '14' else 'Skipped; reuse direction'
     checklist.append(f'| {board["id"]} | {board["title"]} | {image_status} | {code_status} | {visual} | {phone} |')
 
 checklist += [
@@ -350,13 +365,13 @@ checklist += [
     '| Concept panel | Image | Implementation estimate | Visual status |', '| --- | --- | --- | --- |',
     *[f"| {p['name']} | Generated | {p['percent']}% partial (provisional) | {evidence_label(p)}; gaps remain |" for p in audit['earlierConcepts']], '',
     '## Current build and next batch', '',
-    'Latest verified local APKs remain version 2.8.1-preview.1 / 143. '
-    f'Use {validation.get("artifactRecord", "build/generated-mockups-checksums.json")} to distinguish this build from earlier previews. '
+    f'Build validation is recorded separately from visual acceptance. See the [current code pass]({code_pass_link}) '
+    'and [reference recheck](../ui-continuation-2026-11-10.md). '
+    'Use the dated report for the latest artifact record. '
     'Phone installation is tracked separately above.', '',
     f'Generated boards below 100% visual acceptance: {board_range(pending_code)}. '
-    'Future boards use built-in image_gen with the two earlier concept boards as style references. '
-    'Exact input is the numbered prompt file from Use case onward; only the historical blocked-status header is omitted. '
+    'New images are skipped. Remaining batches use the existing direction and supported capabilities. '
     'Image review notes are in [manifest.json](manifest.json) and the [gallery](index.html). '
-    f'Next generation starts at {next_prompt_link}.', '',
+    f'Next queued implementation batch: {next_id or "none; supported code pass covers 01–24, remaining acceptance is tracked per panel"}.', '',
 ]
 (HERE / 'checklist.md').write_text('\n'.join(checklist), encoding='utf-8')

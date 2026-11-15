@@ -17,19 +17,20 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import kotlinx.collections.immutable.ImmutableList
 import com.shinku.reader.core.common.Constants
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.widget.util.calculateRowAndColumnCount
+import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun UpdatesWidget(
-    data: ImmutableList<Pair<Long, Bitmap?>>?,
+    data: ImmutableList<UpdatesWidgetItem>?,
     contentColor: ColorProvider,
     topPadding: Dp,
     bottomPadding: Dp,
@@ -42,10 +43,19 @@ fun UpdatesWidget(
         if (data == null) {
             CircularProgressIndicator(color = contentColor)
         } else if (data.isEmpty()) {
-            Text(
-                text = stringResource(MR.strings.information_no_recent),
-                style = TextStyle(color = contentColor),
-            )
+            val intent = Intent(LocalContext.current, Class.forName(Constants.MAIN_ACTIVITY)).apply {
+                action = Constants.SHORTCUT_UPDATES
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(MR.strings.information_no_recent),
+                    style = TextStyle(color = contentColor),
+                )
+                Box(GlanceModifier.fillMaxWidth().height(48.dp).clickable(actionStartActivity(intent)), contentAlignment = Alignment.Center) {
+                    Text(stringResource(MR.strings.widget_open_updates), style = TextStyle(color = contentColor))
+                }
+            }
         } else {
             val (rowCount, columnCount) = LocalSize.current.calculateRowAndColumnCount(topPadding, bottomPadding)
             Column(
@@ -65,7 +75,8 @@ fun UpdatesWidget(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            coverRow.forEach { (mangaId, cover) ->
+                            coverRow.forEach { item ->
+                                val mangaId = item.mangaId
                                 Box(
                                     modifier = GlanceModifier
                                         .padding(horizontal = 3.dp),
@@ -84,7 +95,8 @@ fun UpdatesWidget(
                                         addCategory(mangaId.toString())
                                     }
                                     UpdatesMangaCover(
-                                        cover = cover,
+                                        cover = item.cover,
+                                        title = item.title,
                                         modifier = GlanceModifier.clickable(actionStartActivity(intent)),
                                     )
                                 }

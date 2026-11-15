@@ -50,11 +50,12 @@ class BackupFileValidator(
             .map { it.name }
             .sorted()
 
-        return Results(missingSources, missingTrackers)
+        return Results(missingSources, missingTrackers, BackupContentsSummary.from(backup))
     }
 
     data class Results(
         val missingSources: List<String>,
         val missingTrackers: List<String>,
+        val contents: BackupContentsSummary? = null,
     )
 }

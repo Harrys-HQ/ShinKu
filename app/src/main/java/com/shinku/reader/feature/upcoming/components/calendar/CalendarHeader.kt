@@ -23,12 +23,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.tooling.preview.Preview
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.i18n.stringResource
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun CalenderHeader(
@@ -85,7 +85,7 @@ private fun AnimatedContentTransitionScope<YearMonth>.getAnimation(): ContentTra
 @Composable
 @ReadOnlyComposable
 private fun getTitleText(monthYear: YearMonth): String {
-    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
+    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", LocalConfiguration.current.locales[0])
     return formatter.format(monthYear)
 }
 

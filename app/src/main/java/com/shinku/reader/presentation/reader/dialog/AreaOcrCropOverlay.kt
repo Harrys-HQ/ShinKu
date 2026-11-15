@@ -153,9 +153,7 @@ fun AreaOcrCropOverlay(
                                     // Resize handle (bottom right)
                                     val currentR = dstLeft + cropNorm.right * dstWidth + dragAmount.x
                                     val currentB = dstTop + cropNorm.bottom * dstHeight + dragAmount.y
-                                    val nR = ((currentR - dstLeft) / dstWidth).coerceIn(cropNorm.left + 0.05f, 1f)
-                                    val nB = ((currentB - dstTop) / dstHeight).coerceIn(cropNorm.top + 0.03f, 1f)
-                                    cropNorm = Rect(cropNorm.left, cropNorm.top, nR, nB)
+                                    cropNorm = cropSelection(cropNorm.left, cropNorm.top, (currentR - dstLeft) / dstWidth, (currentB - dstTop) / dstHeight, 0.05f, 0.03f)
                                 }
                                 else -> {
                                     // Drawing new selection box
@@ -170,7 +168,7 @@ fun AreaOcrCropOverlay(
                                     val nTop = ((minY - dstTop) / dstHeight).coerceIn(0f, 1f)
                                     val nRight = ((maxX - dstLeft) / dstWidth).coerceIn(0f, 1f)
                                     val nBottom = ((maxY - dstTop) / dstHeight).coerceIn(0f, 1f)
-                                    cropNorm = Rect(nLeft, nTop, maxOf(nRight, nLeft + 0.02f), maxOf(nBottom, nTop + 0.02f))
+                                    cropNorm = cropSelection(nLeft, nTop, nRight, nBottom)
                                 }
                             }
                         },
@@ -283,7 +281,7 @@ fun AreaOcrCropOverlay(
                 }
                 IconButton(
                     onClick = onDismissRequest,
-                    modifier = Modifier.size(44.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Close,
@@ -307,16 +305,16 @@ fun AreaOcrCropOverlay(
             shadowElevation = 10.dp,
             border = SanctuaryBrushes.subtleBorder(),
         ) {
-            Row(
+            FlowRow(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 IconButton(
                     onClick = {
                         cropNorm = Rect(0.20f, 0.35f, 0.80f, 0.55f)
                     },
-                    modifier = Modifier.size(44.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
@@ -359,8 +357,6 @@ fun AreaOcrCropOverlay(
                             text = "Details",
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            softWrap = false,
                         )
                     }
                 }
@@ -390,8 +386,6 @@ fun AreaOcrCropOverlay(
                         text = "Translate",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false,
                     )
                 }
             }

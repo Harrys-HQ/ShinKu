@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,25 +25,27 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.R
+import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.util.system.isPreviewBuildType
 import kotlinx.serialization.Serializable
 import nl.adaptivity.xmlutil.core.AndroidXmlReader
 import nl.adaptivity.xmlutil.serialization.XML
 import nl.adaptivity.xmlutil.serialization.XmlSerialName
 import nl.adaptivity.xmlutil.serialization.XmlValue
-import com.shinku.reader.core.common.util.lang.withIOContext
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.components.material.padding
-import com.shinku.reader.presentation.core.i18n.stringResource
 
 @Composable
 fun WhatsNewDialog(onDismissRequest: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
+        shape = SanctuaryShapes.hero,
         confirmButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(MR.strings.action_close))
             }
         },
         title = {
@@ -64,7 +68,7 @@ fun WhatsNewDialog(onDismissRequest: () -> Unit) {
                 if (changelog != null) {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 560.dp),
                     ) {
                         items(changelog.orEmpty()) { changelog ->
                             Column(Modifier.fillMaxWidth()) {
@@ -85,10 +89,12 @@ fun WhatsNewDialog(onDismissRequest: () -> Unit) {
                             }
                         }
                     }
+                } else {
+                    CircularProgressIndicator(Modifier.padding(16.dp))
                 }
             }
         },
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 

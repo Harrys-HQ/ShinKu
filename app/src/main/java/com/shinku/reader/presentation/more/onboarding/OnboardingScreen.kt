@@ -58,70 +58,16 @@ fun OnboardingScreen(
     var welcomed by rememberSaveable { mutableStateOf(false) }
     var restoreAfterSetup by rememberSaveable { mutableStateOf(false) }
     if (!welcomed) {
-        InfoScreen(
-            icon = Icons.Outlined.RocketLaunch,
-            headingText = stringResource(MR.strings.app_name),
-            subtitleText = stringResource(MR.strings.onboarding_welcome_tagline),
-            acceptText = stringResource(MR.strings.onboarding_setup),
-            onAcceptClick = {
+        WelcomeScreen(
+            onSetup = {
                 restoreAfterSetup = false
                 welcomed = true
             },
-            rejectText = stringResource(MR.strings.pref_restore_backup),
-            onRejectClick = {
+            onRestore = {
                 restoreAfterSetup = true
                 welcomed = true
             },
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                WelcomeFeatureCard(
-                    icon = Icons.AutoMirrored.Outlined.MenuBook,
-                    title = stringResource(MR.strings.browse),
-                    description = stringResource(MR.strings.onboarding_description),
-                )
-                WelcomeFeatureCard(
-                    icon = Icons.Outlined.Translate,
-                    title = stringResource(MR.strings.action_live_translation),
-                    description = stringResource(MR.strings.pref_live_translation_summary),
-                )
-                WelcomeFeatureCard(
-                    icon = Icons.Outlined.CloudSync,
-                    title = stringResource(MR.strings.label_data_storage),
-                    description = stringResource(MR.strings.pref_storage_location_info),
-                )
-            }
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                shape = SanctuaryShapes.medium,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                border = SanctuaryBrushes.subtleBorder(),
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.AutoAwesome,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(
-                        text = stringResource(MR.strings.onboarding_optional_ai),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
+        )
         return
     }
     var currentStep by rememberSaveable { mutableIntStateOf(0) }

@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.components.SanctuaryProgressBar
 import com.shinku.reader.presentation.core.components.SanctuarySectionHeader
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
@@ -48,7 +47,7 @@ fun GenreAndAuthorAffinityPanel(
             )
 
             genres.topGenres.take(5).forEachIndexed { index, genre ->
-                val progress = (5 - index).toFloat() / 5f
+                // Only ranking is supplied by StatsData; do not imply measured proportions.
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -57,6 +56,7 @@ fun GenreAndAuthorAffinityPanel(
                     ) {
                         Text(
                             text = genre,
+                            modifier = Modifier.weight(1f),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -68,10 +68,6 @@ fun GenreAndAuthorAffinityPanel(
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
-                    SanctuaryProgressBar(
-                        progress = progress,
-                        height = 7.dp,
-                    )
                 }
             }
 
@@ -83,14 +79,14 @@ fun GenreAndAuthorAffinityPanel(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     val medals = listOf("🥇", "🥈", "🥉")
                     authors.topAuthors.take(3).forEachIndexed { idx, author ->
                         Surface(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                             shape = SanctuaryShapes.medium,
                             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
                             border = SanctuaryBrushes.subtleBorder(),
@@ -105,7 +101,7 @@ fun GenreAndAuthorAffinityPanel(
                                     text = author,
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
+                                    maxLines = 3,
                                     overflow = TextOverflow.Ellipsis,
                                 )
                             }

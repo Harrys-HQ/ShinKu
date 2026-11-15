@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -21,6 +22,9 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -29,15 +33,17 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.shinku.reader.presentation.components.AppBar
-import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.components.AppBar
+import com.shinku.reader.presentation.components.BatchInputConfirmation
 import com.shinku.reader.presentation.core.components.material.Button
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.util.plus
+import com.shinku.reader.presentation.util.Screen
 
 class BatchAddScreen : Screen() {
 
@@ -47,6 +53,13 @@ class BatchAddScreen : Screen() {
         val state by screenModel.state.collectAsState()
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
+        var confirmInput by rememberSaveable { mutableStateOf(false) }
+        if (confirmInput) {
+            BatchInputConfirmation(state.galleries, onConfirm = {
+                confirmInput = false
+                screenModel.addGalleries(context)
+            }, onDismiss = { confirmInput = false })
+        }
 
         Scaffold(
             topBar = { scrollBehavior ->
@@ -66,8 +79,12 @@ class BatchAddScreen : Screen() {
                             .padding(MaterialTheme.padding.medium),
                     ) {
                         Text(text = stringResource(SYMR.strings.eh_batch_add_title), style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(MR.strings.batch_add_scope_hint), style = MaterialTheme.typography.bodyMedium)
                         Spacer(Modifier.height(8.dp))
                         TextField(
+                            minLines = 5,
+                            maxLines = 10,
+                            shape = SanctuaryShapes.medium,
                             value = state.galleries,
                             onValueChange = screenModel::updateGalleries,
                             modifier = Modifier.fillMaxWidth(),
@@ -83,7 +100,8 @@ class BatchAddScreen : Screen() {
                         Spacer(Modifier.height(8.dp))
                         Button(
                             modifier = Modifier.fillMaxWidth(),
-                            onClick = { screenModel.addGalleries(context) },
+                            enabled = state.galleries.isNotBlank(),
+                            onClick = { confirmInput = true },
                         ) {
                             Text(text = stringResource(SYMR.strings.eh_batch_add_button))
                         }
@@ -97,9 +115,8 @@ class BatchAddScreen : Screen() {
                             Column {
                                 Text(text = stringResource(SYMR.strings.eh_batch_add_adding_galleries), style = MaterialTheme.typography.titleLarge)
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Row(
+                                Column(
                                     Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     val progress = state.progress.toFloat()
                                     if (state.progressTotal > 0 && !progress.isNaN()) {
@@ -109,13 +126,13 @@ class BatchAddScreen : Screen() {
                                                 progress = { realProgress },
                                                 modifier = Modifier
                                                     .padding(top = 2.dp)
-                                                    .weight(1f),
+                                                    .fillMaxWidth(),
                                             )
                                         }
                                     }
                                     Text(
-                                        text = state.progress.toString() + "/" + state.progressTotal,
-                                        modifier = Modifier.weight(0.15f),
+                                        text = stringResource(MR.strings.batch_processed_count, state.progress, state.progressTotal),
+                                        modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Center,
                                         style = MaterialTheme.typography.bodyMedium,
                                     )

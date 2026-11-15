@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ChromeReaderMode
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material.icons.outlined.ScreenRotation
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,9 +26,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.core.i18n.pluralStringResource
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.more.settings.Preference
 import com.shinku.reader.ui.reader.setting.ReaderBottomButton
 import com.shinku.reader.ui.reader.setting.ReaderOrientation
@@ -36,11 +44,6 @@ import com.shinku.reader.util.system.hasDisplayCutout
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.i18n.pluralStringResource
-import com.shinku.reader.presentation.core.i18n.stringResource
-import com.shinku.reader.presentation.core.util.collectAsState
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.text.NumberFormat
@@ -107,62 +110,68 @@ object SettingsReaderScreen : SearchableSettings {
                     }
                 }
             },
-            Preference.PreferenceItem.ListPreference(
-                preference = readerPref.defaultReadingMode(),
-                entries = ReadingMode.entries.drop(1)
-                    .associate { it.flagValue to stringResource(it.stringRes) }
-                    .toImmutableMap(),
-                title = stringResource(MR.strings.pref_viewer_type),
-            ),
-            Preference.PreferenceItem.ListPreference(
-                preference = readerPref.doubleTapAnimSpeed(),
-                entries = persistentMapOf(
-                    1 to stringResource(MR.strings.double_tap_anim_speed_0),
-                    500 to stringResource(MR.strings.double_tap_anim_speed_normal),
-                    250 to stringResource(MR.strings.double_tap_anim_speed_fast),
-                ),
-                title = stringResource(MR.strings.pref_double_tap_anim_speed),
-            ),
-            Preference.PreferenceItem.SwitchPreference(
-                preference = readerPref.showReadingMode(),
-                title = stringResource(MR.strings.pref_show_reading_mode),
-                subtitle = stringResource(MR.strings.pref_show_reading_mode_summary),
-            ),
-            Preference.PreferenceItem.SwitchPreference(
-                preference = readerPref.showNavigationOverlayOnStart(),
-                title = stringResource(MR.strings.pref_show_navigation_mode),
-                subtitle = stringResource(MR.strings.pref_show_navigation_mode_summary),
-            ),
-            // SY -->
-            Preference.PreferenceItem.SwitchPreference(
-                preference = readerPref.forceHorizontalSeekbar(),
-                title = stringResource(SYMR.strings.pref_force_horz_seekbar),
-                subtitle = stringResource(SYMR.strings.pref_force_horz_seekbar_summary),
-            ),
-            Preference.PreferenceItem.SwitchPreference(
-                preference = readerPref.landscapeVerticalSeekbar(),
-                title = stringResource(SYMR.strings.pref_show_vert_seekbar_landscape),
-                subtitle = stringResource(SYMR.strings.pref_show_vert_seekbar_landscape_summary),
-                enabled = !forceHorizontalSeekbar,
-            ),
-            Preference.PreferenceItem.SwitchPreference(
-                preference = readerPref.leftVerticalSeekbar(),
-                title = stringResource(SYMR.strings.pref_left_handed_vertical_seekbar),
-                subtitle = stringResource(SYMR.strings.pref_left_handed_vertical_seekbar_summary),
-                enabled = !forceHorizontalSeekbar,
-            ),
-            // SY <--
-            Preference.PreferenceItem.SwitchPreference(
-                preference = readerPref.loadAheadOnlyOverWifi(),
-                title = stringResource(MR.strings.pref_load_ahead_only_over_wifi),
-                subtitle = stringResource(MR.strings.pref_load_ahead_only_over_wifi_summary),
-            ),
+            Preference.PreferenceGroup(
+                title = stringResource(MR.strings.reader_defaults),
+                preferenceItems = persistentListOf(
+                    Preference.PreferenceItem.ListPreference(
+                        preference = readerPref.defaultReadingMode(),
+                        icon = Icons.AutoMirrored.Outlined.MenuBook,
+                        entries = ReadingMode.entries.drop(1)
+                            .associate { it.flagValue to stringResource(it.stringRes) }
+                            .toImmutableMap(),
+                        title = stringResource(MR.strings.pref_viewer_type),
+                    ),
+                    Preference.PreferenceItem.ListPreference(
+                        preference = readerPref.doubleTapAnimSpeed(),
+                        entries = persistentMapOf(
+                            1 to stringResource(MR.strings.double_tap_anim_speed_0),
+                            500 to stringResource(MR.strings.double_tap_anim_speed_normal),
+                            250 to stringResource(MR.strings.double_tap_anim_speed_fast),
+                        ),
+                        title = stringResource(MR.strings.pref_double_tap_anim_speed),
+                    ),
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = readerPref.showReadingMode(),
+                        title = stringResource(MR.strings.pref_show_reading_mode),
+                        subtitle = stringResource(MR.strings.pref_show_reading_mode_summary),
+                    ),
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = readerPref.showNavigationOverlayOnStart(),
+                        title = stringResource(MR.strings.pref_show_navigation_mode),
+                        subtitle = stringResource(MR.strings.pref_show_navigation_mode_summary),
+                    ),
+                    // SY -->
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = readerPref.forceHorizontalSeekbar(),
+                        title = stringResource(SYMR.strings.pref_force_horz_seekbar),
+                        subtitle = stringResource(SYMR.strings.pref_force_horz_seekbar_summary),
+                    ),
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = readerPref.landscapeVerticalSeekbar(),
+                        title = stringResource(SYMR.strings.pref_show_vert_seekbar_landscape),
+                        subtitle = stringResource(SYMR.strings.pref_show_vert_seekbar_landscape_summary),
+                        enabled = !forceHorizontalSeekbar,
+                    ),
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = readerPref.leftVerticalSeekbar(),
+                        title = stringResource(SYMR.strings.pref_left_handed_vertical_seekbar),
+                        subtitle = stringResource(SYMR.strings.pref_left_handed_vertical_seekbar_summary),
+                        enabled = !forceHorizontalSeekbar,
+                    ),
+                    // SY <--
+                    Preference.PreferenceItem.SwitchPreference(
+                        preference = readerPref.loadAheadOnlyOverWifi(),
+                        title = stringResource(MR.strings.pref_load_ahead_only_over_wifi),
+                        subtitle = stringResource(MR.strings.pref_load_ahead_only_over_wifi_summary),
+                    ),
             /* SY -->
             Preference.PreferenceItem.SwitchPreference(
                 preference = readerPref.pageTransitions(),
                 title = stringResource(MR.strings.pref_page_transitions),
             ),
             SY <-- */
+                ),
+            ),
             getDisplayGroup(readerPreferences = readerPref),
             getReadingGroup(readerPreferences = readerPref),
             getPagedGroup(readerPreferences = readerPref),
@@ -184,6 +193,7 @@ object SettingsReaderScreen : SearchableSettings {
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.defaultOrientationType(),
+                    icon = Icons.Outlined.ScreenRotation,
                     entries = ReaderOrientation.entries.drop(1)
                         .associate { it.flagValue to stringResource(it.stringRes) }
                         .toImmutableMap(),
@@ -210,6 +220,7 @@ object SettingsReaderScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.keepScreenOn(),
+                    icon = Icons.Outlined.LightMode,
                     title = stringResource(MR.strings.pref_keep_screen_on),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
@@ -582,5 +593,4 @@ object SettingsReaderScreen : SearchableSettings {
             ),
         )
     }
-
 }

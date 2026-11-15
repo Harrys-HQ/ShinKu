@@ -5,8 +5,12 @@ import android.os.Bundle
 import android.util.TypedValue
 import android.view.View
 import androidx.appcompat.view.ContextThemeWrapper
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -15,6 +19,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentActivity
@@ -26,23 +31,28 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.DialogPreference
 import androidx.preference.EditTextPreference
 import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceGroup
 import androidx.preference.PreferenceScreen
 import androidx.preference.forEach
 import androidx.preference.getOnBindEditTextListener
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.shinku.reader.presentation.components.AppBar
-import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.R
 import com.shinku.reader.data.preference.SharedPreferencesDataStore
-import eu.kanade.tachiyomi.source.ConfigurableSource
-import eu.kanade.tachiyomi.source.sourcePreferences
-import com.shinku.reader.widget.ShinKuTextInputEditText.Companion.setIncognito
+import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.exh.source.EnhancedHttpSource
 import com.shinku.reader.exh.ui.ifSourcesLoaded
-import com.shinku.reader.domain.source.service.SourceManager
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.core.components.material.Scaffold
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.LoadingScreen
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.util.Screen
+import com.shinku.reader.widget.ShinKuTextInputEditText.Companion.setIncognito
+import eu.kanade.tachiyomi.source.ConfigurableSource
+import eu.kanade.tachiyomi.source.sourcePreferences
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -67,13 +77,18 @@ class SourcePreferencesScreen(val sourceId: Long) : Screen() {
                 )
             },
         ) { contentPadding ->
-            FragmentContainer(
-                fragmentManager = (context as FragmentActivity).supportFragmentManager,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(contentPadding),
-            ) {
-                add(it, SourcePreferencesFragment.getInstance(sourceId), null)
+            Column(Modifier.fillMaxSize().padding(contentPadding)) {
+                Text(stringResource(MR.strings.source_preferences_scope), Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+                Surface(Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 8.dp), shape = SanctuaryShapes.deckCard, border = SanctuaryBrushes.subtleBorder()) {
+                    FragmentContainer(
+                        fragmentManager = (context as FragmentActivity).supportFragmentManager,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
+                    ) {
+                        add(it, SourcePreferencesFragment.getInstance(sourceId), null)
+                    }
+                }
             }
         }
     }
@@ -156,22 +171,26 @@ class SourcePreferencesFragment : PreferenceFragmentCompat() {
             preferenceManager.preferenceDataStore = dataStore
 
             source.setupPreferenceScreen(sourceScreen)
-            sourceScreen.forEach { pref ->
-                pref.isIconSpaceReserved = false
-                pref.isSingleLineTitle = false
-                if (pref is DialogPreference && pref.dialogTitle.isNullOrEmpty()) {
-                    pref.dialogTitle = pref.title
-                }
-
-                // Apply incognito IME for EditTextPreference
-                if (pref is EditTextPreference) {
-                    val setListener = pref.getOnBindEditTextListener()
-                    pref.setOnBindEditTextListener {
-                        setListener?.onBindEditText(it)
-                        it.setIncognito(lifecycleScope)
+            fun configure(group: PreferenceGroup) {
+                group.forEach { pref ->
+                    pref.isIconSpaceReserved = false
+                    pref.isSingleLineTitle = false
+                    if (pref is DialogPreference && pref.dialogTitle.isNullOrEmpty()) {
+                        pref.dialogTitle = pref.title
                     }
+
+                    // Apply incognito IME for EditTextPreference
+                    if (pref is EditTextPreference) {
+                        val setListener = pref.getOnBindEditTextListener()
+                        pref.setOnBindEditTextListener {
+                            setListener?.onBindEditText(it)
+                            it.setIncognito(lifecycleScope)
+                        }
+                    }
+                    if (pref is PreferenceGroup) configure(pref)
                 }
             }
+            configure(sourceScreen)
         }
 
         return sourceScreen

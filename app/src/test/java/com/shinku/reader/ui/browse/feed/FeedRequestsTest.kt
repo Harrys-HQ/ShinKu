@@ -22,6 +22,41 @@ import org.junit.jupiter.api.Test
 
 class FeedRequestsTest {
     @Test
+    fun `feedback distinguishes empty success timeout and source error`() = runTest {
+        val limiter = FeedRequestLimiter(timeoutMillis = 100)
+        var failures = 0
+        assertEquals(emptyList<String>(), limiter.requestWithFailureCallback(1, { failures++ }) { emptyList<String>() })
+        assertEquals(0, failures)
+        assertNull(
+            limiter.requestWithFailureCallback(1, { failures++ }) {
+                delay(200)
+                "late"
+            },
+        )
+        assertEquals(1, failures)
+        val error = IllegalStateException("Fixture unavailable")
+        val result = runCatchingCancellable {
+            limiter.requestWithFailureCallback<String>(1, { failures++ }) { throw error }
+        }
+        assertEquals(error.javaClass, result.exceptionOrNull()?.javaClass)
+        assertEquals(error.message, result.exceptionOrNull()?.message)
+        assertEquals(2, failures)
+        assertEquals("ready", limiter.requestWithFailureCallback(1, { failures++ }) { "ready" })
+        assertEquals(2, failures)
+    }
+
+    @Test
+    fun `cancelled requests do not report source failures`() = runTest {
+        val limiter = FeedRequestLimiter()
+        var failures = 0
+        val request = launch { limiter.requestWithFailureCallback<String>(1, { failures++ }) { awaitCancellation() } }
+        runCurrent()
+        request.cancelAndJoin()
+        assertEquals(0, failures)
+        assertEquals("ready", limiter.request(1) { "ready" })
+    }
+
+    @Test
     fun `suspended requests respect global and per source limits`() = runTest {
         val limiter = FeedRequestLimiter()
         var active = 0

@@ -2,6 +2,8 @@ package com.shinku.reader.presentation.more.settings.screen.data
 
 import android.content.Context
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,7 +17,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,8 +41,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.shinku.reader.data.backup.BackupContentsSummary
 import com.shinku.reader.data.backup.BackupFileValidator
 import com.shinku.reader.data.backup.restore.BackupRestoreJob
 import com.shinku.reader.data.backup.restore.RestoreOptions
@@ -56,7 +62,11 @@ import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.util.system.DeviceUtil
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun RestoreConfirmationDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
@@ -81,6 +91,9 @@ class RestoreBackupScreen(
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
+        val chooseReplacement = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { replacement ->
+            if (replacement != null) navigator.replace(RestoreBackupScreen(replacement.toString()))
+        }
         val model = rememberScreenModel { RestoreBackupScreenModel(context, uri) }
         val state by model.state.collectAsState()
         var confirmRestore by remember { mutableStateOf(false) }
@@ -150,18 +163,24 @@ class RestoreBackupScreen(
                             }
                             Surface(
                                 shape = SanctuaryShapes.tag,
-                                color = if (state.canRestore) {
+                                color = if (state.canRestore || state.isValidating) {
                                     MaterialTheme.colorScheme.primaryContainer
                                 } else {
                                     MaterialTheme.colorScheme.errorContainer
                                 },
                             ) {
                                 Text(
-                                    text = if (state.canRestore) "Validated" else "Invalid",
+                                    text = if (state.isValidating) {
+                                        stringResource(MR.strings.backup_contents_checking)
+                                    } else if (state.canRestore) {
+                                        "Validated"
+                                    } else {
+                                        "Invalid"
+                                    },
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Medium,
-                                    color = if (state.canRestore) {
+                                    color = if (state.canRestore || state.isValidating) {
                                         MaterialTheme.colorScheme.onPrimaryContainer
                                     } else {
                                         MaterialTheme.colorScheme.onErrorContainer
@@ -171,6 +190,16 @@ class RestoreBackupScreen(
                         }
                     }
                 }
+                if (state.isValidating) {
+                    item {
+                        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(MR.strings.backup_contents_checking))
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                }
+                state.contents?.let { contents -> item { BackupContentsCard(contents) } }
+
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
                         WarningBanner(MR.strings.restore_miui_warning)
@@ -194,6 +223,13 @@ class RestoreBackupScreen(
                 }
 
                 if (state.error != null) {
+                    if (state.error is InvalidRestore) {
+                        item {
+                            OutlinedButton(onClick = { chooseReplacement.launch("*/*") }, modifier = Modifier.padding(16.dp)) {
+                                Text(stringResource(MR.strings.restore_choose_another_file))
+                            }
+                        }
+                    }
                     errorMessageItem(state.error)
                 }
             }
@@ -272,7 +308,7 @@ private class RestoreBackupScreenModel(
 ) : StateScreenModel<RestoreBackupScreenModel.State>(State()) {
 
     init {
-        validate(uri.toUri())
+        screenModelScope.launch { validate(uri.toUri()) }
     }
 
     fun toggle(setter: (RestoreOptions, Boolean) -> RestoreOptions, enabled: Boolean) {
@@ -291,9 +327,11 @@ private class RestoreBackupScreenModel(
         )
     }
 
-    private fun validate(uri: Uri) {
+    private suspend fun validate(uri: Uri) {
         val results = try {
-            BackupFileValidator(context).validate(uri)
+            withContext(Dispatchers.IO) { BackupFileValidator(context).validate(uri) }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             setError(
                 error = InvalidRestore(uri, e.message.toString()),
@@ -302,6 +340,7 @@ private class RestoreBackupScreenModel(
             return
         }
 
+        mutableState.update { it.copy(contents = results.contents, isValidating = false) }
         if (results.missingSources.isNotEmpty() || results.missingTrackers.isNotEmpty()) {
             setError(
                 error = MissingRestoreComponents(uri, results.missingSources, results.missingTrackers),
@@ -318,6 +357,7 @@ private class RestoreBackupScreenModel(
             it.copy(
                 error = error,
                 canRestore = canRestore,
+                isValidating = false,
             )
         }
     }
@@ -327,6 +367,8 @@ private class RestoreBackupScreenModel(
         val error: Any? = null,
         val canRestore: Boolean = false,
         val options: RestoreOptions = RestoreOptions(),
+        val contents: BackupContentsSummary? = null,
+        val isValidating: Boolean = true,
     )
 }
 

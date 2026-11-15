@@ -115,7 +115,7 @@ fun TabbedScreen(
                             SanctuaryBrushes.subtleBorder()
                         },
                         modifier = Modifier
-                            .heightIn(min = 40.dp)
+                            .heightIn(min = 48.dp)
                             .clip(SanctuaryShapes.medium)
                             .semantics {
                                 this.selected = isSelected

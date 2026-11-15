@@ -144,11 +144,11 @@ fun MigrationListScreenContent(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text = "$finishedCount of ${items.size} reviewed",
+                                    text = stringResource(MR.strings.migration_match_progress, finishedCount, items.size),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                 )
                                 Text(
-                                    text = if (migrationComplete) "Ready to migrate" else "Searching matches…",
+                                    text = stringResource(if (migrationComplete) MR.strings.migration_match_search_complete else MR.strings.migration_match_searching),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.primary,
                                 )

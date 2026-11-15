@@ -22,9 +22,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.SanctuarySectionHeader
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.more.stats.data.StatsData
@@ -42,12 +46,18 @@ fun CircadianAndVelocityPanel(
     val peakHour = remember(timeStats.timeOfDayHistory) {
         timeStats.timeOfDayHistory.maxByOrNull { it.value }?.key ?: 21
     }
-    val personaLabel = remember(peakHour) {
-        when (peakHour) {
-            in 22..23, in 0..4 -> "🌙 Midnight Owl (Peak ${formatHour(peakHour)})"
-            in 5..10 -> "☀️ Early Bird (Peak ${formatHour(peakHour)})"
-            in 11..16 -> "☕ Daytime Scholar (Peak ${formatHour(peakHour)})"
-            else -> "🌆 Evening Chronicler (Peak ${formatHour(peakHour)})"
+    val minuteLabel = stringResource(MR.strings.journey_minutes_short)
+    val emptyLabel = stringResource(MR.strings.journey_patterns_empty)
+    val personaLabel = remember(peakHour, maxDuration, timeStats.timeOfDayHistory, emptyLabel) {
+        if (timeStats.timeOfDayHistory.values.none { it > 0L }) {
+            emptyLabel
+        } else {
+            when (peakHour) {
+                in 22..23, in 0..4 -> "🌙 Midnight Owl (Peak ${formatHour(peakHour)})"
+                in 5..10 -> "☀️ Early Bird (Peak ${formatHour(peakHour)})"
+                in 11..16 -> "☕ Daytime Scholar (Peak ${formatHour(peakHour)})"
+                else -> "🌆 Evening Chronicler (Peak ${formatHour(peakHour)})"
+            }
         }
     }
 
@@ -61,11 +71,7 @@ fun CircadianAndVelocityPanel(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SanctuarySectionHeader(
                     title = "Circadian Rhythm & Pace",
                     overline = "READING BIORHYTHM",
@@ -124,11 +130,12 @@ fun CircadianAndVelocityPanel(
             ) {
                 (0..23).forEach { hour ->
                     val duration = timeStats.timeOfDayHistory[hour] ?: 0L
-                    val ratio = (duration.toFloat() / maxDuration.toFloat()).coerceIn(0.08f, 1f)
+                    val ratio = if (duration <= 0L) 0f else (duration.toFloat() / maxDuration.toFloat()).coerceIn(0.08f, 1f)
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxHeight(),
+                            .fillMaxHeight()
+                            .semantics { contentDescription = "${formatHour(hour)}: ${duration / 60_000} $minuteLabel" },
                         contentAlignment = Alignment.BottomCenter,
                     ) {
                         Canvas(

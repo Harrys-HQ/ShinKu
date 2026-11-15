@@ -20,6 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +48,7 @@ import com.shinku.reader.presentation.browse.components.DiscoverFeedSkeleton
 import com.shinku.reader.presentation.browse.components.DiscoverGenreCloud
 import com.shinku.reader.presentation.browse.components.DiscoverMangaRow
 import com.shinku.reader.presentation.browse.components.DiscoverSectionHeader
+import com.shinku.reader.presentation.browse.components.FeedSourceFailures
 import com.shinku.reader.presentation.browse.components.GlobalSearchCardRow
 import com.shinku.reader.presentation.browse.components.GlobalSearchErrorResultItem
 import com.shinku.reader.presentation.browse.components.GlobalSearchLoadingResultItem
@@ -54,12 +57,14 @@ import com.shinku.reader.presentation.core.components.material.PullRefresh
 import com.shinku.reader.presentation.core.components.material.topSmallPaddingValues
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.EmptyScreen
+import com.shinku.reader.presentation.core.screens.EmptyScreenAction
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.core.util.plus
 import com.shinku.reader.ui.browse.feed.FeedScreenState
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 
 @Immutable
 data class FeedItemUI(
@@ -95,8 +100,14 @@ fun FeedScreen(
             onClickGenre = onClickGenre,
         )
         !hasContent -> EmptyScreen(
-            SYMR.strings.feed_tab_empty,
+            message = if (state.failedSources.isNotEmpty()) stringResource(MR.strings.feed_empty_failure) else stringResource(SYMR.strings.feed_tab_empty),
             modifier = Modifier.padding(contentPadding),
+            actions = buildList {
+                add(EmptyScreenAction(MR.strings.action_retry, Icons.Outlined.Refresh, onRefresh))
+                state.failedSources.firstOrNull()?.let { source ->
+                    add(EmptyScreenAction(MR.strings.feed_open_source, Icons.Outlined.Public) { onClickSource(source) })
+                }
+            }.toImmutableList(),
         )
         else -> {
             PullRefresh(
@@ -109,6 +120,11 @@ fun FeedScreen(
                     contentPadding = contentPadding + topSmallPaddingValues,
                     modifier = Modifier.fillMaxSize(),
                 ) {
+                    if (state.failedSources.isNotEmpty()) {
+                        item(key = "source-request-failures") {
+                            FeedSourceFailures(state.failedSources, onRefresh, onClickSource)
+                        }
+                    }
                     // 1. Featured Manga Carousel Banner
                     if (state.featuredManga.isNotEmpty()) {
                         item {
@@ -292,7 +308,7 @@ fun FeedScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(
                                         onClick = { onClickDelete(item.feed) },
-                                        modifier = Modifier.size(32.dp),
+                                        modifier = Modifier.size(48.dp),
                                     ) {
                                         Icon(
                                             imageVector = Icons.Outlined.Delete,

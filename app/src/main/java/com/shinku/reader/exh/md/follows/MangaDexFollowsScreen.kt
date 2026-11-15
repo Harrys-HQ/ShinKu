@@ -1,35 +1,44 @@
 package com.shinku.reader.exh.md.follows
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.shinku.reader.core.common.util.lang.launchIO
+import com.shinku.reader.exh.ui.ifSourcesLoaded
+import com.shinku.reader.feature.migration.dialog.MigrateMangaDialog
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.browse.BrowseSourceContent
 import com.shinku.reader.presentation.browse.components.BrowseSourceSimpleToolbar
 import com.shinku.reader.presentation.browse.components.RemoveMangaDialog
 import com.shinku.reader.presentation.category.components.ChangeCategoryDialog
+import com.shinku.reader.presentation.core.components.material.Scaffold
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.screens.LoadingScreen
+import com.shinku.reader.presentation.core.util.collectAsLazyPagingItems
 import com.shinku.reader.presentation.manga.DuplicateMangaDialog
 import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreenModel
 import com.shinku.reader.ui.category.CategoryScreen
 import com.shinku.reader.ui.manga.MangaScreen
-import com.shinku.reader.exh.ui.ifSourcesLoaded
-import com.shinku.reader.feature.migration.dialog.MigrateMangaDialog
-import com.shinku.reader.presentation.core.util.collectAsLazyPagingItems
-import com.shinku.reader.core.common.util.lang.launchIO
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.components.material.Scaffold
-import com.shinku.reader.presentation.core.i18n.stringResource
-import com.shinku.reader.presentation.core.screens.LoadingScreen
 
 class MangaDexFollowsScreen(private val sourceId: Long) : Screen() {
 
@@ -62,37 +71,42 @@ class MangaDexFollowsScreen(private val sourceId: Long) : Screen() {
                 SnackbarHost(hostState = snackbarHostState)
             },
         ) { paddingValues ->
-            BrowseSourceContent(
-                source = screenModel.source,
-                mangaList = screenModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
-                columns = screenModel.getColumnsPreference(LocalConfiguration.current.orientation),
-                // SY -->
-                ehentaiBrowseDisplayMode = screenModel.ehentaiBrowseDisplayMode,
-                // SY <--
-                displayMode = screenModel.displayMode,
-                snackbarHostState = snackbarHostState,
-                contentPadding = paddingValues,
-                onWebViewClick = null,
-                onHelpClick = null,
-                onLocalSourceHelpClick = null,
-                onMangaClick = { navigator.push(MangaScreen(it.id, true)) },
-                onMangaLongClick = { manga ->
-                    scope.launchIO {
-                        val duplicateManga = screenModel.getDuplicateLibraryManga(manga)
-                        when {
-                            manga.favorite -> screenModel.setDialog(BrowseSourceScreenModel.Dialog.RemoveManga(manga))
-                            duplicateManga.isNotEmpty() -> screenModel.setDialog(
-                                BrowseSourceScreenModel.Dialog.AddDuplicateManga(
-                                    manga,
-                                    duplicateManga,
-                                ),
-                            )
-                            else -> screenModel.addFavorite(manga)
-                        }
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    }
-                },
-            )
+            Column(Modifier.padding(paddingValues)) {
+                Text(stringResource(MR.strings.mangadex_follows_scope), Modifier.padding(16.dp), style = MaterialTheme.typography.bodySmall)
+                Box(Modifier.weight(1f)) {
+                    BrowseSourceContent(
+                        source = screenModel.source,
+                        mangaList = screenModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
+                        columns = screenModel.getColumnsPreference(LocalConfiguration.current.orientation),
+                        // SY -->
+                        ehentaiBrowseDisplayMode = screenModel.ehentaiBrowseDisplayMode,
+                        // SY <--
+                        displayMode = screenModel.displayMode,
+                        snackbarHostState = snackbarHostState,
+                        contentPadding = PaddingValues(0.dp),
+                        onWebViewClick = null,
+                        onHelpClick = null,
+                        onLocalSourceHelpClick = null,
+                        onMangaClick = { navigator.push(MangaScreen(it.id, true)) },
+                        onMangaLongClick = { manga ->
+                            scope.launchIO {
+                                val duplicateManga = screenModel.getDuplicateLibraryManga(manga)
+                                when {
+                                    manga.favorite -> screenModel.setDialog(BrowseSourceScreenModel.Dialog.RemoveManga(manga))
+                                    duplicateManga.isNotEmpty() -> screenModel.setDialog(
+                                        BrowseSourceScreenModel.Dialog.AddDuplicateManga(
+                                            manga,
+                                            duplicateManga,
+                                        ),
+                                    )
+                                    else -> screenModel.addFavorite(manga)
+                                }
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+                        },
+                    )
+                }
+            }
         }
 
         val onDismissRequest = { screenModel.setDialog(null) }

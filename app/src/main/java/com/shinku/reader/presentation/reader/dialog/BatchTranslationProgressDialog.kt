@@ -4,11 +4,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesomeMotion
 import androidx.compose.material3.AlertDialog
@@ -26,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -99,6 +105,8 @@ fun BatchTranslationProgressDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
                     .padding(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -114,10 +122,10 @@ fun BatchTranslationProgressDialog(
                             .padding(14.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        Row(
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
                                 text = "Page $currentPage of $totalPages",
@@ -143,10 +151,9 @@ fun BatchTranslationProgressDialog(
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         )
 
-                        Row(
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
                                 text = "$translatedCount pages completed",
@@ -171,8 +178,9 @@ fun BatchTranslationProgressDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .toggleable(value = isOverlayVisible, role = Role.Switch, onValueChange = { onToggleOverlay() })
                             .padding(horizontal = 14.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
@@ -187,7 +195,7 @@ fun BatchTranslationProgressDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        Switch(checked = isOverlayVisible, onCheckedChange = { onToggleOverlay() })
+                        Switch(checked = isOverlayVisible, onCheckedChange = null)
                     }
                 }
             }
@@ -197,7 +205,7 @@ fun BatchTranslationProgressDialog(
                 onClick = onRunInBackground,
                 shape = SanctuaryShapes.medium,
             ) {
-                Text("Run in background", fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Text("Run in background", fontWeight = FontWeight.SemiBold)
             }
         },
         dismissButton = {
@@ -205,8 +213,6 @@ fun BatchTranslationProgressDialog(
                 Text(
                     text = "Cancel",
                     color = MaterialTheme.colorScheme.error,
-                    maxLines = 1,
-                    softWrap = false,
                 )
             }
         },

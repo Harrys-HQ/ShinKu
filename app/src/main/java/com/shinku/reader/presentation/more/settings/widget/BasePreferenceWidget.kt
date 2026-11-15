@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.more.settings.LocalPreferenceHighlighted
 import com.shinku.reader.presentation.more.settings.LocalPreferenceMinHeight
 import kotlinx.coroutines.delay
@@ -56,7 +59,15 @@ internal fun BasePreferenceWidget(
         if (icon != null) {
             Box(
                 modifier = Modifier.padding(start = PrefsHorizontalPadding, end = 8.dp),
-                content = { icon() },
+                content = {
+                    Surface(
+                        shape = SanctuaryShapes.medium,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ) {
+                        Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) { icon() }
+                    }
+                },
             )
         }
         Column(
@@ -69,7 +80,6 @@ internal fun BasePreferenceWidget(
                     modifier = Modifier.padding(horizontal = PrefsHorizontalPadding),
                     text = title,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 3,
                     style = MaterialTheme.typography.titleLarge,
                     fontSize = TitleFontSize,
                 )

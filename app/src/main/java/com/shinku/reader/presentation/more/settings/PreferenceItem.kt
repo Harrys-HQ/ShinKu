@@ -6,6 +6,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ToggleOn
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -60,6 +65,13 @@ internal fun PreferenceItem(
     highlightKey: String?,
 ) {
     val scope = rememberCoroutineScope()
+    val rowIcon = item.icon ?: when (item) {
+        is Preference.PreferenceItem.SwitchPreference -> Icons.Outlined.ToggleOn
+        is Preference.PreferenceItem.ListPreference<*>, is Preference.PreferenceItem.BasicListPreference -> Icons.Outlined.Tune
+        is Preference.PreferenceItem.EditTextPreference -> Icons.Outlined.Edit
+        is Preference.PreferenceItem.TextPreference -> if (item.onClick != null) Icons.Outlined.ChevronRight else null
+        else -> null
+    }
     StatusWrapper(
         item = item,
         highlightKey = highlightKey,
@@ -70,7 +82,7 @@ internal fun PreferenceItem(
                 SwitchPreferenceWidget(
                     title = item.title,
                     subtitle = item.subtitle,
-                    icon = item.icon,
+                    icon = rowIcon,
                     checked = value,
                     onCheckedChanged = { newValue ->
                         scope.launch {
@@ -107,7 +119,7 @@ internal fun PreferenceItem(
                     value = value,
                     title = item.title,
                     subtitle = item.internalSubtitleProvider(value, item.entries),
-                    icon = item.icon,
+                    icon = rowIcon,
                     entries = item.entries,
                     onValueChange = { newValue ->
                         scope.launch {
@@ -123,7 +135,7 @@ internal fun PreferenceItem(
                     value = item.value,
                     title = item.title,
                     subtitle = item.subtitleProvider(item.value, item.entries),
-                    icon = item.icon,
+                    icon = rowIcon,
                     entries = item.entries,
                     onValueChange = { scope.launch { item.onValueChanged(it) } },
                 )
@@ -146,7 +158,7 @@ internal fun PreferenceItem(
                 TextPreferenceWidget(
                     title = item.title,
                     subtitle = item.subtitle,
-                    icon = item.icon,
+                    icon = rowIcon,
                     onPreferenceClick = item.onClick,
                 )
             }
@@ -155,7 +167,7 @@ internal fun PreferenceItem(
                 EditTextPreferenceWidget(
                     title = item.title,
                     subtitle = item.subtitle,
-                    icon = item.icon,
+                    icon = rowIcon,
                     value = values,
                     isSensitive = item.isSensitive,
                     onConfirm = {

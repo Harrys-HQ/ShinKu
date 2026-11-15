@@ -1,5 +1,6 @@
 package com.shinku.reader.presentation.reader.settings
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,10 +47,13 @@ fun ReaderSettingsDialog(
         stringResource(MR.strings.reader_tab_translation),
     )
     val pagerState = rememberPagerState { tabTitles.size }
+    val configuration = LocalConfiguration.current
+    val sidePanel = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && configuration.screenWidthDp >= 600
 
     BoxWithConstraints {
         TabbedDialog(
-            modifier = Modifier.heightIn(max = maxHeight * 0.75f),
+            preferSidePanel = sidePanel,
+            modifier = Modifier.heightIn(max = maxHeight * if (sidePanel) 0.95f else 0.75f),
             onDismissRequest = {
                 onDismissRequest()
                 onShowMenus()
@@ -110,15 +115,25 @@ fun ReaderSettingsDialog(
                         .verticalScroll(rememberScrollState()),
                 ) {
                     when (page) {
-                        0 -> ReadingModePage(screenModel)
+                        0 -> ReaderSettingSection(stringResource(MR.strings.reader_tab_reading)) {
+                            ReadingModePage(screenModel)
+                        }
                         1 -> {
-                            ReaderThemeSettings(screenModel)
-                            ColorFilterPage(screenModel)
+                            ReaderSettingSection(stringResource(MR.strings.pref_category_theme)) {
+                                ReaderThemeSettings(screenModel)
+                            }
+                            ReaderSettingSection(stringResource(MR.strings.pref_category_display)) {
+                                ColorFilterPage(screenModel)
+                            }
                             var advanced by remember { mutableStateOf(false) }
                             TextButton(onClick = { advanced = !advanced }) {
                                 Text(stringResource(MR.strings.pref_category_advanced))
                             }
-                            if (advanced) GeneralPage(screenModel)
+                            if (advanced) {
+                                ReaderSettingSection(stringResource(MR.strings.pref_category_advanced)) {
+                                    GeneralPage(screenModel)
+                                }
+                            }
                         }
                     }
                 }

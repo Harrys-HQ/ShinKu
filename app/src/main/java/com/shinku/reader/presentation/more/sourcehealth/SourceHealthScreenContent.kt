@@ -32,9 +32,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.Pill
 import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
 import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
@@ -123,10 +125,11 @@ private fun SourceHealthItemCard(
     onTestSingleSource: ((Long) -> Unit)? = null,
 ) {
     val health = item.health
-    val performanceScore = health?.performanceScore ?: -1
+    val hasCheck = health != null && (health.lastSuccess > 0L || health.lastFailure > 0L)
+    val performanceScore = if (hasCheck) health?.performanceScore ?: -1 else -1
 
     val (statusLabel, statusColor) = when {
-        health == null -> "UNTESTED" to MaterialTheme.colorScheme.outline
+        health == null || (health.lastSuccess == 0L && health.lastFailure == 0L) -> "UNTESTED" to MaterialTheme.colorScheme.outline
         health.isDnsDead -> "DEAD DOMAIN" to MaterialTheme.colorScheme.error
         health.isServerDown -> "SERVER DOWN" to MaterialTheme.colorScheme.error
         health.isCloudflareBlocked -> "BLOCKED (403)" to MaterialTheme.colorScheme.statusWarning
@@ -157,7 +160,7 @@ private fun SourceHealthItemCard(
                 Text(
                     text = item.source.name,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
@@ -168,7 +171,7 @@ private fun SourceHealthItemCard(
                     IconButton(
                         onClick = { onTestSingleSource(item.source.id) },
                         enabled = !isTesting,
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(48.dp),
                     ) {
                         if (isTesting) {
                             CircularProgressIndicator(
@@ -243,7 +246,7 @@ private fun SourceHealthItemCard(
                 modifier = Modifier.padding(top = 6.dp),
             )
 
-            if (health != null) {
+            if (health != null && hasCheck) {
                 Row(
                     modifier = Modifier.padding(top = MaterialTheme.padding.small),
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
@@ -284,7 +287,11 @@ private fun SourceHealthItemCard(
                             modifier = Modifier.size(14.dp),
                         )
                         Text(
-                            text = friendlyError,
+                            text = if (!health.isFailingNow && health.lastSuccess >= health.lastFailure) {
+                                stringResource(MR.strings.source_health_previous_failure, friendlyError)
+                            } else {
+                                friendlyError
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                             maxLines = 2,

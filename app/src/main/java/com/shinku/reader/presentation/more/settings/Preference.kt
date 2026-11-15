@@ -30,9 +30,9 @@ sealed class Preference {
             override val title: String,
             override val subtitle: CharSequence? = null,
             override val enabled: Boolean = true,
+            override val icon: ImageVector? = null,
             val onClick: (() -> Unit)? = null,
         ) : PreferenceItem<String, Unit>() {
-            override val icon: ImageVector? = null
             override val onValueChanged: suspend (value: String) -> Unit = {}
         }
 
@@ -44,10 +44,9 @@ sealed class Preference {
             override val title: String,
             override val subtitle: CharSequence? = null,
             override val enabled: Boolean = true,
+            override val icon: ImageVector? = null,
             override val onValueChanged: suspend (value: Boolean) -> Boolean = { true },
-        ) : PreferenceItem<Boolean, Boolean>() {
-            override val icon: ImageVector? = null
-        }
+        ) : PreferenceItem<Boolean, Boolean>()
 
         /**
          * A [PreferenceItem] that provides a slider to select an integer number.
@@ -136,10 +135,9 @@ sealed class Preference {
             override val subtitle: String? = "%s",
             override val enabled: Boolean = true,
             val isSensitive: Boolean = false,
+            override val icon: ImageVector? = null,
             override val onValueChanged: suspend (value: String) -> Boolean = { true },
-        ) : PreferenceItem<String, Boolean>() {
-            override val icon: ImageVector? = null
-        }
+        ) : PreferenceItem<String, Boolean>()
 
         /**
          * A [PreferenceItem] for individual tracker.

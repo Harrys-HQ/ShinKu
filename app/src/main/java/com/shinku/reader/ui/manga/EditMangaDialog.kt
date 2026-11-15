@@ -32,32 +32,33 @@ import coil3.transform.RoundedCornersTransformation
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.shinku.reader.presentation.track.components.TrackLogoIcon
 import com.shinku.reader.R
+import com.shinku.reader.core.common.i18n.stringResource
+import com.shinku.reader.core.common.util.system.logcat
 import com.shinku.reader.data.track.EnhancedTracker
 import com.shinku.reader.data.track.Tracker
 import com.shinku.reader.data.track.TrackerManager
 import com.shinku.reader.databinding.EditMangaDialogBinding
-import eu.kanade.tachiyomi.source.model.SManga
+import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.track.interactor.GetTracks
+import com.shinku.reader.domain.track.model.Track
+import com.shinku.reader.exh.ui.metadata.adapters.MetadataUIUtil.getResourceColor
+import com.shinku.reader.exh.util.dropBlank
+import com.shinku.reader.exh.util.trimOrNull
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.track.components.TrackLogoIcon
 import com.shinku.reader.util.lang.chop
 import com.shinku.reader.util.system.dpToPx
 import com.shinku.reader.util.system.toast
 import com.shinku.reader.widget.materialdialogs.setTextInput
-import com.shinku.reader.exh.ui.metadata.adapters.MetadataUIUtil.getResourceColor
-import com.shinku.reader.exh.util.dropBlank
-import com.shinku.reader.exh.util.trimOrNull
+import eu.kanade.tachiyomi.source.local.isLocal
+import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import com.shinku.reader.core.common.i18n.stringResource
-import com.shinku.reader.core.common.util.system.logcat
-import com.shinku.reader.domain.manga.model.Manga
-import com.shinku.reader.domain.track.interactor.GetTracks
-import com.shinku.reader.domain.track.model.Track
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.i18n.stringResource
-import eu.kanade.tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -85,6 +86,7 @@ fun EditMangaDialog(
     val trackerManager = remember { Injekt.get<TrackerManager>() }
     val tracks = remember { mutableStateOf(emptyList<Pair<Track, Tracker>>()) }
     AlertDialog(
+        shape = SanctuaryShapes.hero,
         onDismissRequest = onDismissRequest,
         confirmButton = {
             Row {
@@ -174,6 +176,7 @@ private fun TrackerSelectDialog(
     ) -> Unit,
 ) {
     AlertDialog(
+        shape = SanctuaryShapes.hero,
         modifier = Modifier.fillMaxWidth(),
         onDismissRequest = onDismissRequest,
         confirmButton = {

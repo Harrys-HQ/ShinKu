@@ -19,6 +19,7 @@ import androidx.compose.ui.util.fastForEachIndexed
 import com.shinku.reader.presentation.core.components.ScrollbarLazyColumn
 import com.shinku.reader.presentation.more.settings.screen.SearchableSettings
 import com.shinku.reader.presentation.more.settings.widget.PreferenceGroupHeader
+import com.shinku.reader.presentation.more.settings.widget.SanctuaryPreferenceSurface
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -52,6 +53,7 @@ fun PreferenceScreen(
         contentPadding = contentPadding,
     ) {
         items.fastForEachIndexed { i, preference ->
+            if (!preference.enabled) return@fastForEachIndexed
             when (preference) {
                 // Create Preference Group
                 is Preference.PreferenceGroup -> {
@@ -62,20 +64,9 @@ fun PreferenceScreen(
                             PreferenceGroupHeader(title = preference.title)
                         }
                     }
-                    val firstVisible = preference.preferenceItems.indexOfFirst { it.enabled }
-                    val lastVisible = preference.preferenceItems.indexOfLast { it.enabled }
-                    itemsIndexed(preference.preferenceItems) { index, item ->
-                        if (!item.enabled) return@itemsIndexed
-                        Surface(
-                            modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            shape = RoundedCornerShape(
-                                topStart = if (index == firstVisible) 20.dp else 0.dp,
-                                topEnd = if (index == firstVisible) 20.dp else 0.dp,
-                                bottomStart = if (index == lastVisible) 20.dp else 0.dp,
-                                bottomEnd = if (index == lastVisible) 20.dp else 0.dp,
-                            ),
-                        ) {
+                    val visibleItems = preference.preferenceItems.filter { it.enabled }
+                    itemsIndexed(visibleItems) { index, item ->
+                        SanctuaryPreferenceSurface(first = index == 0, last = index == visibleItems.lastIndex) {
                             PreferenceItem(item = item, highlightKey = highlightKey)
                         }
                     }
@@ -88,10 +79,15 @@ fun PreferenceScreen(
 
                 // Create Preference Item
                 is Preference.PreferenceItem<*, *> -> item {
-                    PreferenceItem(
-                        item = preference,
-                        highlightKey = highlightKey,
-                    )
+                    if (preference.enabled) {
+                        if (preference is Preference.PreferenceItem.CustomPreference || preference is Preference.PreferenceItem.InfoPreference) {
+                            PreferenceItem(item = preference, highlightKey = highlightKey)
+                        } else {
+                            SanctuaryPreferenceSurface(standalone = true) {
+                                PreferenceItem(item = preference, highlightKey = highlightKey)
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -99,12 +95,14 @@ fun PreferenceScreen(
 }
 
 private fun List<Preference>.findHighlightedIndex(highlightKey: String): Int {
-    return filter { it.enabled }.flatMap {
+    return flatMapIndexed { index, preference ->
+        if (!preference.enabled) return@flatMapIndexed emptyList()
+        val it = preference
         if (it is Preference.PreferenceGroup) {
             buildList<String?> {
                 add(null) // Header
-                addAll(it.preferenceItems.map { groupItem -> groupItem.title })
-                add(null) // Spacer
+                addAll(it.preferenceItems.filter { groupItem -> groupItem.enabled }.map { groupItem -> groupItem.title })
+                if (index < lastIndex) add(null) // Rendered spacer
             }
         } else {
             listOf(it.title)

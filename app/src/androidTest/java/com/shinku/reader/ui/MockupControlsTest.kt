@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.shinku.reader.R
@@ -29,6 +30,7 @@ import com.shinku.reader.presentation.reader.dialog.TranslationOptionsContent
 import com.shinku.reader.presentation.reader.settings.ReaderSettingsDialog
 import com.shinku.reader.presentation.theme.TachiyomiTheme
 import com.shinku.reader.ui.browse.migration.sources.MigrateSourceScreenModel
+import com.shinku.reader.ui.browse.source.globalsearch.SearchScreenModel
 import com.shinku.reader.ui.library.LibrarySettingsScreenModel
 import com.shinku.reader.ui.main.MainActivity
 import com.shinku.reader.ui.reader.ReaderViewModel
@@ -68,6 +70,86 @@ class MockupControlsTest {
     @After
     fun cleanup() {
         if (::activity.isInitialized) instrumentation.runOnMainSync { activity.finish() }
+    }
+
+    @Test
+    fun mangaDetailsPullRefreshInvokesRefreshOnPhoneAndTabletLayouts() {
+        val refreshes = AtomicInteger()
+        val state = com.shinku.reader.ui.manga.MangaScreenModel.State.Success(
+            manga = Manga.create().copy(ogTitle = "Refresh fixture", source = 123L),
+            source = com.shinku.reader.domain.source.model.StubSource(123L, "en", "Fixture"),
+            isFromSource = true,
+            chapters = emptyList(),
+            availableScanlators = kotlinx.collections.immutable.persistentSetOf(),
+            excludedScanlators = kotlinx.collections.immutable.persistentSetOf(),
+            meta = null,
+            mergedData = null,
+            showRecommendationsInOverflow = true,
+            showMergeInOverflow = true,
+            showMergeWithAnother = false,
+            pagePreviewsState = com.shinku.reader.ui.manga.PagePreviewState.Unused,
+            alwaysShowReadingProgress = false,
+            previewsRowCount = 0,
+        )
+        for (tablet in listOf(false, true)) {
+            show {
+                com.shinku.reader.presentation.manga.MangaScreen(
+                    state = state,
+                    snackbarHostState = androidx.compose.material3.SnackbarHostState(),
+                    nextUpdate = null,
+                    isTabletUi = tablet,
+                    chapterSwipeStartAction = LibraryPreferences.ChapterSwipeAction.Disabled,
+                    chapterSwipeEndAction = LibraryPreferences.ChapterSwipeAction.Disabled,
+                    previewsRowCount = 0,
+                    navigateUp = {},
+                    onChapterClicked = {},
+                    onDownloadChapter = null,
+                    onAddToLibraryClicked = {},
+                    onWebViewClicked = null,
+                    onWebViewLongClicked = null,
+                    onTrackingClicked = {},
+                    onTagSearch = {},
+                    onCopyTagToClipboard = {},
+                    onFilterClicked = {},
+                    onRefresh = { refreshes.incrementAndGet() },
+                    onContinueReading = {},
+                    onSearch = { _, _ -> },
+                    onCoverClicked = {},
+                    onShareClicked = null,
+                    onDownloadActionClicked = null,
+                    onEditCategoryClicked = null,
+                    onEditIntervalClicked = null,
+                    onMigrateClicked = null,
+                    onEditNotesClicked = {},
+                    onMetadataViewerClicked = {},
+                    onEditInfoClicked = {},
+                    onRecommendClicked = {},
+                    onVibeClicked = {},
+                    onMergedSettingsClicked = {},
+                    onMergeClicked = {},
+                    onMergeWithAnotherClicked = {},
+                    onOpenPagePreview = {},
+                    onMorePreviewsClicked = {},
+                    onMultiBookmarkClicked = { _, _ -> },
+                    onMultiMarkAsReadClicked = { _, _ -> },
+                    onMarkPreviousAsReadClicked = {},
+                    onMultiDeleteClicked = {},
+                    onChapterSwipe = { _, _ -> },
+                    onChapterSelected = { _, _, _, _ -> },
+                    onAllChapterSelected = {},
+                    onInvertSelection = {},
+                    onGenerateRecap = null,
+                    onDismissRecap = null,
+                )
+            }
+            eventually { hasText("Refresh fixture") }
+            val before = refreshes.get()
+            val metrics = context.resources.displayMetrics
+            val x = metrics.widthPixels * 3 / 4
+            val y = metrics.heightPixels / 5
+            instrumentation.uiAutomation.executeShellCommand("input swipe $x $y $x ${metrics.heightPixels * 4 / 5} 700").close()
+            eventually { refreshes.get() == before + 1 }
+        }
     }
 
     @Test
@@ -693,6 +775,524 @@ class MockupControlsTest {
         }
     }
 
+    @Test
+    fun journeyActivityRangesUseOnlyReadingDaysInTheSelectedWindow() {
+        val today = java.time.LocalDate.now()
+        val zone = java.time.ZoneId.systemDefault()
+        val history = listOf(today, today.minusDays(30)).associate {
+            java.util.Date.from(it.atStartOfDay(zone).toInstant()) to 60_000L
+        }
+        showJourney { com.shinku.reader.presentation.more.stats.components.ActivityHeatmapCard(history) }
+        eventually { hasText(context.getString(R.string.journey_activity_summary, 2, 84)) }
+        click(context.getString(R.string.journey_activity_days, 7))
+        eventually { hasText(context.getString(R.string.journey_activity_summary, 1, 7)) }
+        click(context.getString(R.string.journey_activity_days, 28))
+        eventually { hasText(context.getString(R.string.journey_activity_summary, 1, 28)) }
+        screenshot("journey-activity-28-days")
+        click(context.getString(R.string.journey_activity_days, 84))
+        eventually { hasText(context.getString(R.string.journey_activity_summary, 2, 84)) }
+    }
+
+    @Test
+    fun journeyEmptyHistoryExplainsActivityAndPatterns() {
+        showJourney {
+            androidx.compose.foundation.lazy.LazyColumn {
+                item { com.shinku.reader.presentation.more.stats.components.ActivityHeatmapCard(emptyMap()) }
+                item {
+                    com.shinku.reader.presentation.more.stats.components.CircadianAndVelocityPanel(
+                        com.shinku.reader.presentation.more.stats.data.StatsData.TimeStats(emptyMap()),
+                        com.shinku.reader.presentation.more.stats.data.StatsData.VelocityStats(0.0, emptyMap()),
+                    )
+                }
+            }
+        }
+        eventually { hasText(context.getString(R.string.journey_activity_empty)) }
+        screenshot("journey-empty-activity")
+        scrollTo(context.getString(R.string.journey_patterns_empty))
+        screenshot("journey-empty-patterns")
+    }
+
+    @Test
+    fun journeyTotalsAndAppearanceSampleKeepFullText() {
+        showJourney {
+            androidx.compose.foundation.lazy.LazyColumn {
+                item {
+                    com.shinku.reader.presentation.more.stats.components.JourneyOverviewMetrics(
+                        libraryCount = "19,415", readDuration = "623 hours 5 minutes", completedCount = "12,345",
+                    )
+                }
+                item {
+                    com.shinku.reader.presentation.more.stats.components.SanctuaryBentoOverview(
+                        overview = com.shinku.reader.presentation.more.stats.data.StatsData.Overview(19415, 12345, 0L),
+                        titles = com.shinku.reader.presentation.more.stats.data.StatsData.Titles(0, 15000, 0),
+                        chapters = com.shinku.reader.presentation.more.stats.data.StatsData.Chapters(1234567, 123456, 12345),
+                        trackers = com.shinku.reader.presentation.more.stats.data.StatsData.Trackers(12345, 8.75, 3),
+                    )
+                }
+                item { com.shinku.reader.presentation.more.settings.screen.AppearanceReadingPreview() }
+            }
+        }
+        eventually { hasText("623 hours 5 minutes") }
+        screenshot("journey-complete-totals")
+        scrollTo(context.getString(R.string.journey_chapter_counts, "123,456", "1,234,567"))
+        screenshot("journey-chapter-totals")
+        scrollTo(context.getString(R.string.appearance_preview_sample))
+        assertTrue(!hasText("Chapter 42 Ã‚Â· In progress"))
+        scrollTo(context.getString(R.string.appearance_preview_summary))
+        screenshot("appearance-sample-preview")
+    }
+
+    @Test
+    fun sourceLanguagePickerSearchesAndOnlyAppliesConfirmedDraft() {
+        val open = mutableStateOf(true)
+        val selected = mutableStateOf(setOf("en", "custom-fixture"))
+        val writes = AtomicInteger(0)
+        showJourney {
+            if (open.value) {
+                com.shinku.reader.presentation.more.settings.widget.SourceLanguageDialog(
+                    entries = linkedMapOf("en" to "English", "fr" to "French"),
+                    selected = selected.value,
+                    onApply = {
+                        selected.value = it
+                        writes.incrementAndGet()
+                    },
+                    onDismiss = { open.value = false },
+                )
+            } else {
+                Text("Picker closed")
+            }
+        }
+        click("French")
+        click(context.getString(R.string.action_cancel))
+        eventually { !open.value && hasText("Picker closed") }
+        assertEquals(0, writes.get())
+        assertEquals(setOf("en", "custom-fixture"), selected.value)
+        instrumentation.runOnMainSync { open.value = true }
+        eventually { hasText("French") }
+        val search = nodes().last { it.isEditable }
+        val args = android.os.Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "fren")
+        }
+        assertTrue(search.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args))
+        eventually { hasText("French") && !hasText("English") }
+        click("French")
+        screenshot("boards13-language-search")
+        click(context.getString(R.string.source_language_apply, 3))
+        eventually { !open.value && writes.get() == 1 }
+        assertEquals(setOf("en", "fr", "custom-fixture"), selected.value)
+    }
+
+    @Test
+    fun performancePillsUseTheExistingStoredProfile() {
+        val preference = Injekt.get<BasePreferences>().performanceMode()
+        val restore = preserve(preference)
+        try {
+            preference.set(BasePreferences.PerformanceMode.STANDARD.value)
+            showJourney { com.shinku.reader.presentation.more.settings.screen.PerformanceModeSelector(preference) }
+            click(context.getString(R.string.pref_performance_mode_low_power))
+            eventually { preference.get() == BasePreferences.PerformanceMode.LOW_POWER.value }
+            screenshot("boards14-performance-pills")
+            click(context.getString(R.string.pref_performance_mode_eink))
+            eventually { preference.get() == BasePreferences.PerformanceMode.E_INK.value }
+        } finally {
+            restore()
+        }
+    }
+
+    @Test
+    fun bubbleInspectorChangesTheVisibleBubbleAndRetainsPageRetry() {
+        val open = mutableStateOf(true)
+        val retries = AtomicInteger(0)
+        val blocks = listOf("Alpha", "Beta").map {
+            com.shinku.reader.ui.reader.model.TranslatedBlock(
+                originalText = "Original $it", translatedText = "Translated $it", boundingBox = null,
+                bgColor = android.graphics.Color.WHITE, textColor = android.graphics.Color.BLACK,
+            )
+        }
+        showJourney {
+            if (open.value) {
+                com.shinku.reader.presentation.reader.dialog.BubbleInspectorDialog(
+                    pageNumber = 7, targetLanguage = "English", blocks = blocks,
+                    onDismissRequest = { open.value = false }, onRetranslatePage = { retries.incrementAndGet() },
+                )
+            }
+        }
+        eventually { hasText("Original Alpha") && !hasText("Original Beta") }
+        click(context.getString(R.string.reader_next_bubble))
+        eventually { hasText("Original Beta") && !hasText("Original Alpha") }
+        screenshot("boards07-bubble-inspector")
+        click(context.getString(R.string.reader_previous_bubble))
+        eventually { hasText("Original Alpha") }
+        click(context.getString(R.string.reader_inspect_retry))
+        eventually { !open.value && retries.get() == 1 }
+    }
+
+    @Test
+    fun welcomeAndBackupPreviewUseReachableActionsAndRealCounts() {
+        val setups = AtomicInteger(0)
+        val restores = AtomicInteger(0)
+        show { com.shinku.reader.presentation.more.onboarding.WelcomeScreen({ setups.incrementAndGet() }, { restores.incrementAndGet() }) }
+        click(context.getString(R.string.pref_restore_backup))
+        assertEquals(1, restores.get())
+        assertEquals(0, setups.get())
+        screenshot("boards09-welcome")
+        click(context.getString(R.string.onboarding_setup))
+        assertEquals(1, setups.get())
+        showJourney {
+            com.shinku.reader.presentation.more.settings.screen.data.BackupContentsCard(
+                com.shinku.reader.data.backup.BackupContentsSummary(3, 1234L, 2, 17L, 0),
+            )
+        }
+        eventually { hasText(context.getString(R.string.backup_contents_chapters, 1234L)) }
+        assertTrue(hasText(context.getString(R.string.backup_contents_settings, 0)))
+        screenshot("boards10-backup-contents")
+    }
+
+    @Test
+    fun settingsHighlightTargetsVisibleRowsAfterDisabledPreferences() {
+        com.shinku.reader.presentation.more.settings.screen.SearchableSettings.highlightKey = "Visible target"
+        val before = (1..20).map { com.shinku.reader.presentation.more.settings.Preference.PreferenceItem.TextPreference(title = "Before $it") }
+        val hidden = (1..20).map { com.shinku.reader.presentation.more.settings.Preference.PreferenceItem.TextPreference(title = "Hidden $it", enabled = false) }
+        val target = com.shinku.reader.presentation.more.settings.Preference.PreferenceItem.TextPreference(title = "Visible target")
+        val items = listOf(
+            com.shinku.reader.presentation.more.settings.Preference.PreferenceItem.TextPreference(title = "Hidden top", enabled = false),
+            com.shinku.reader.presentation.more.settings.Preference.PreferenceGroup(
+                title = "Fixture group", preferenceItems = (before + hidden + target).toImmutableList(),
+            ),
+        )
+        try {
+            showJourney { com.shinku.reader.presentation.more.settings.PreferenceScreen(items) }
+            eventually { hasText("Visible target") }
+            assertTrue(!hasText("Hidden top") && !hasText("Hidden 1"))
+            screenshot("boards12-highlight-target")
+        } finally {
+            com.shinku.reader.presentation.more.settings.screen.SearchableSettings.highlightKey = null
+        }
+    }
+
+    @Test
+    fun journeyShareStatisticsAppearOnlyAfterSelectionAndDisappearWhenRemoved() {
+        val selected = mutableStateOf(emptySet<com.shinku.reader.presentation.more.stats.components.ShareStatistic>())
+        val time = com.shinku.reader.presentation.more.stats.components.ShareStatistic.TIME
+        val content = com.shinku.reader.presentation.more.stats.components.ShareCardContent(
+            levelSummary = "Level 42 Ã‚Â· 123456 XP", levelProgress = 0.75f, persona = "Fixture persona",
+            metrics = listOf(com.shinku.reader.presentation.more.stats.components.ShareCardMetric(time, "Reading time", "123456 hours 59 minutes")),
+            genres = listOf("Fixture hidden genre"),
+        )
+        showJourney {
+            androidx.compose.foundation.lazy.LazyColumn {
+                item {
+                    com.shinku.reader.presentation.more.stats.components.ShareCardOptions(selected.value) {
+                        selected.value = if (it in selected.value) selected.value - it else selected.value + it
+                    }
+                }
+                item {
+                    com.shinku.reader.presentation.more.stats.components.SanctuaryShareCardPreview(
+                        com.shinku.reader.presentation.more.stats.components.ShareCardTheme.OBSIDIAN, "", "Fixture Reader", "Chosen title",
+                        content.selected(selected.value),
+                    )
+                }
+            }
+        }
+        assertTrue(!hasText("123456 hours 59 minutes"))
+        click(context.getString(R.string.journey_share_time))
+        eventually { selected.value == setOf(time) }
+        scrollTo("123456 hours 59 minutes")
+        assertTrue(!hasText("Level 42 Ã‚Â· 123456 XP") && !hasText("Fixture persona") && !hasText("Fixture hidden genre"))
+        screenshot("journey15-selected-preview")
+        repeat(5) {
+            nodes().lastOrNull { it.isScrollable }?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)
+            SystemClock.sleep(150)
+        }
+        click(context.getString(R.string.journey_share_time))
+        eventually { selected.value.isEmpty() }
+        scrollTo("Fixture Reader")
+        eventually { !hasText("123456 hours 59 minutes") }
+        screenshot("journey15-deselected-preview")
+    }
+
+    @Test
+    fun journeyShareDialogKeepsActionsReachableWithoutSharing() {
+        val open = mutableStateOf(true)
+        val level = com.shinku.reader.domain.history.model.SanctuaryXpEngine.calculate(0, 0L, 0, 0)
+        show {
+            if (open.value) {
+                com.shinku.reader.presentation.more.stats.components.SanctuaryShareCardDialog(
+                    nickname = "A fixture reader with a deliberately long display name",
+                    activeTitle = "A deliberately long selected reader title", levelInfo = level,
+                    readDurationText = "123456 hours 59 minutes", chaptersRead = 987654, streakDays = 1234,
+                    topGenres = listOf("Fixture genre"), unlockedBadgesCount = 999,
+                    onDismiss = { open.value = false },
+                )
+            }
+        }
+        eventually { hasText(context.getString(R.string.journey_share_image)) }
+        val closeBounds = Rect().also { bounds ->
+            nodes().first { it.text?.toString() == context.getString(R.string.action_close) }.getBoundsInScreen(bounds)
+        }
+        val shareBounds = Rect().also { bounds ->
+            nodes().first { it.text?.toString() == context.getString(R.string.journey_share_image) }.getBoundsInScreen(bounds)
+        }
+        assertTrue("Close stays below Share without overlapping it", closeBounds.top >= shareBounds.bottom)
+        assertTrue("Close stays within the display", closeBounds.bottom <= context.resources.displayMetrics.heightPixels)
+        screenshot("journey15-share-dialog")
+        scrollTo(context.getString(R.string.journey_share_patterns))
+        screenshot("journey15-share-options")
+        click(context.getString(R.string.action_close))
+        eventually { !open.value }
+    }
+
+    @Test
+    fun journeyExportWrapsLongIdentityAndUsesSeparateFiles() {
+        val metric = com.shinku.reader.presentation.more.stats.components.ShareCardMetric(
+            com.shinku.reader.presentation.more.stats.components.ShareStatistic.TIME, "Reading time", "123456 hours and 59 minutes",
+        )
+        val content = com.shinku.reader.presentation.more.stats.components.ShareCardContent(
+            levelSummary = "Level 42 Ã‚Â· 123456789 XP", levelProgress = 0f,
+            persona = "A fixture reading persona that wraps without overlapping the identity",
+            metrics = listOf(metric, metric.copy(statistic = com.shinku.reader.presentation.more.stats.components.ShareStatistic.CHAPTERS, label = "Chapters", value = "987654321")),
+            genres = listOf("A long genre description", "Another long genre description", "Adventure"),
+        )
+        val avatarFile = File(context.cacheDir, "journey-fixture-avatar.png")
+        val avatar = android.graphics.Bitmap.createBitmap(2000, 1000, android.graphics.Bitmap.Config.ARGB_8888)
+        avatar.eraseColor(android.graphics.Color.GREEN)
+        android.graphics.Canvas(avatar).apply {
+            drawRect(0f, 0f, 500f, 1000f, android.graphics.Paint().apply { color = android.graphics.Color.RED })
+            drawRect(1500f, 0f, 2000f, 1000f, android.graphics.Paint().apply { color = android.graphics.Color.BLUE })
+        }
+        avatarFile.outputStream().use { avatar.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        avatar.recycle()
+        fun render(payload: com.shinku.reader.presentation.more.stats.components.ShareCardContent, avatarUri: String = "") = kotlinx.coroutines.runBlocking {
+            com.shinku.reader.presentation.more.stats.components.renderAndSaveShareCard(
+                context, avatarUri, "A fixture reader with a deliberately long display name that must wrap",
+                "A deliberately long selected reader title that must stay inside the card", payload,
+                0xFFB8A0FF.toInt(), 0xFF1F1638.toInt(), 0xFF0B0C12.toInt(), 0xFFECEFF4.toInt(),
+            )
+        }
+        val identityUri = checkNotNull(render(content.selected(emptySet())))
+        val selectedUri = checkNotNull(render(content, android.net.Uri.fromFile(avatarFile).toString()))
+        assertTrue(identityUri != selectedUri)
+        val output = File(context.getExternalFilesDir(null), "mockup-review").apply { mkdirs() }
+        val heights = listOf("journey15-export-identity" to identityUri, "journey15-export-selected" to selectedUri).map { (name, uri) ->
+            val bytes = checkNotNull(context.contentResolver.openInputStream(uri)).use { it.readBytes() }
+            File(output, "$name.png").writeBytes(bytes)
+            val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            assertEquals(960, bitmap.width)
+            if (uri == selectedUri) {
+                assertEquals("Avatar uses its center crop", android.graphics.Color.GREEN, bitmap.getPixel(85, 136))
+                assertEquals("Avatar retains its image", android.graphics.Color.GREEN, bitmap.getPixel(187, 136))
+            }
+            bitmap.height.also { bitmap.recycle() }
+        }
+        assertTrue("Selected statistics expand export height", heights[1] > heights[0])
+    }
+
+    @Test
+    fun milestoneCardsWrapTitlesAndKeepDetailsReachable() {
+        val badge = com.shinku.reader.domain.history.model.Badge(
+            id = "fixture", name = "A deliberately long milestone title with complete readable words",
+            description = "A long milestone description that should wrap instead of being squeezed into a narrow fixed-height card.",
+            progress = 0.55f, progressText = "123456 / 987654 chapters",
+        )
+        showJourney {
+            androidx.compose.foundation.lazy.LazyColumn {
+                item {
+                    com.shinku.reader.presentation.more.stats.MilestoneSection(
+                        com.shinku.reader.presentation.more.stats.data.StatsData.Milestones(listOf(badge, badge.copy(id = "earned", name = "Unlocked fixture", isEarned = true))),
+                    )
+                }
+            }
+        }
+        scrollTo(badge.name)
+        screenshot("journey15-milestone-grid")
+        click(badge.name)
+        eventually { hasText(badge.description) }
+        screenshot("journey15-milestone-details")
+        click("Close")
+    }
+
+    @Test
+    fun emptyLibraryKeepsBrowseRestoreAndGuideReachable() {
+        val browse = AtomicInteger()
+        val restore = AtomicInteger()
+        val guide = AtomicInteger()
+        showJourney {
+            com.shinku.reader.presentation.library.components.LibraryEmptyState(
+                onBrowseSources = { browse.incrementAndGet() },
+                onRestoreBackup = { restore.incrementAndGet() },
+                onOpenGuide = { guide.incrementAndGet() },
+                modifier = androidx.compose.ui.Modifier.padding(bottom = 84.dp),
+            )
+        }
+        eventually { hasText(context.getString(R.string.library_empty_heading)) }
+        scrollTo(context.getString(R.string.library_empty_browse_sources))
+        screenshot("states16-library-empty")
+        click(context.getString(R.string.library_empty_browse_sources))
+        scrollTo(context.getString(R.string.library_empty_restore_backup))
+        click(context.getString(R.string.library_empty_restore_backup))
+        scrollTo(context.getString(R.string.getting_started_guide))
+        screenshot("states16-library-actions")
+        click(context.getString(R.string.getting_started_guide))
+        assertEquals(1, browse.get())
+        assertEquals(1, restore.get())
+        assertEquals(1, guide.get())
+    }
+
+    @Test
+    fun searchDistinguishesNoMatchesLoadingAndSourceFailures() {
+        val source = StateFixtureSource(9101, "Fixture source")
+        val result = mutableStateOf<com.shinku.reader.ui.browse.source.globalsearch.SearchItemResult>(
+            com.shinku.reader.ui.browse.source.globalsearch.SearchItemResult.Success(emptyList()),
+        )
+        val reset = AtomicInteger()
+        showJourney {
+            com.shinku.reader.presentation.browse.GlobalSearchContent(
+                items = kotlinx.collections.immutable.persistentMapOf(source to result.value),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                getManga = { androidx.compose.runtime.remember(it) { mutableStateOf(it) } },
+                onClickSource = {}, onClickItem = {}, onLongClickItem = {},
+                searchQuery = "A deliberately long fixture search query with complete readable words",
+                progress = if (result.value == com.shinku.reader.ui.browse.source.globalsearch.SearchItemResult.Loading) 0 else 1,
+                total = 1, onShowAllSources = { reset.incrementAndGet() },
+            )
+        }
+        eventually { hasText(context.getString(R.string.search_no_matching_titles)) }
+        screenshot("states16-no-results")
+        click(context.getString(R.string.search_show_all_sources))
+        assertEquals(1, reset.get())
+        instrumentation.runOnMainSync { result.value = com.shinku.reader.ui.browse.source.globalsearch.SearchItemResult.Loading }
+        eventually { !hasText(context.getString(R.string.search_no_matching_titles)) }
+        screenshot("states16-search-loading")
+        instrumentation.runOnMainSync {
+            result.value = com.shinku.reader.ui.browse.source.globalsearch.SearchItemResult.Error(java.net.UnknownHostException("Fixture source unavailable"))
+        }
+        eventually { hasText(context.getString(R.string.search_sources_failed_without_results, 1)) }
+        assertTrue(!hasText(context.getString(R.string.search_no_matching_titles)))
+        screenshot("states16-search-failure")
+    }
+
+    @Test
+    fun filteredSearchRetainsResultsAndReportsHiddenSourceFailures() {
+        val source = StateFixtureSource(9101, "Available source")
+        val failed = StateFixtureSource(9102, "Failed source")
+        val manga = Manga.create().copy(id = 9101L, source = source.id, url = "/fixture", ogTitle = "Available fixture title")
+        val toggle = AtomicInteger()
+        val opened = AtomicInteger()
+        val state = SearchScreenModel.State(
+            searchQuery = "Fixture search", sourceFilter = com.shinku.reader.ui.browse.source.globalsearch.SourceFilter.All,
+            onlyShowHasResults = true,
+            items = kotlinx.collections.immutable.persistentMapOf(
+                source to com.shinku.reader.ui.browse.source.globalsearch.SearchItemResult.Success(listOf(manga)),
+                failed to com.shinku.reader.ui.browse.source.globalsearch.SearchItemResult.Error(java.io.IOException("Fixture failure")),
+            ),
+        )
+        show {
+            com.shinku.reader.presentation.browse.GlobalSearchScreen(
+                state = state, navigateUp = {}, onChangeSearchQuery = {}, onSearch = {}, onChangeSearchFilter = {},
+                onToggleResults = { toggle.incrementAndGet() }, onClickImageSearch = {},
+                getManga = { androidx.compose.runtime.remember(it) { mutableStateOf(it) } },
+                onClickSource = {}, onClickItem = { opened.incrementAndGet() }, onLongClickItem = {},
+            )
+        }
+        eventually { hasText(context.getString(R.string.search_sources_unavailable, 1)) }
+        click(context.getString(R.string.search_show_all_sources))
+        assertEquals(1, toggle.get())
+        scrollTo(manga.title)
+        screenshot("states16-search-partial")
+        click(manga.title)
+        assertEquals(1, opened.get())
+    }
+
+    @Test
+    fun discoverKeepsLoadedShelfBesideFailuresAndLoadingFeed() {
+        val source = StateFixtureSource(9101, "Fixture source to review")
+        val manga = Manga.create().copy(id = 9101L, source = source.id, url = "/fixture", ogTitle = "Available fixture title")
+        val feed = com.shinku.reader.presentation.browse.FeedItemUI(
+            com.shinku.reader.domain.source.model.FeedSavedSearch(9101L, source.id, null, true), null, source,
+            "Pending fixture feed", "Still loading this source", null,
+        )
+        val state = mutableStateOf(
+            com.shinku.reader.ui.browse.feed.FeedScreenState(
+                forYouManga = kotlinx.collections.immutable.persistentListOf(manga),
+                items = kotlinx.collections.immutable.persistentListOf(feed),
+                failedSources = kotlinx.collections.immutable.persistentListOf(source), isInitialLoadDone = true,
+            ),
+        )
+        val retries = AtomicInteger()
+        val sources = AtomicInteger()
+        val opened = AtomicInteger()
+        showJourney {
+            com.shinku.reader.presentation.browse.FeedScreen(
+                state = state.value, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                onClickSavedSearch = { _, _ -> }, onClickSource = { sources.incrementAndGet() }, onClickDelete = {},
+                onClickManga = { opened.incrementAndGet() }, onRefresh = { retries.incrementAndGet() },
+                getMangaState = { androidx.compose.runtime.remember(it) { mutableStateOf(it) } },
+            )
+        }
+        eventually { hasText(context.getString(R.string.feed_partial_failure, 1)) }
+        screenshot("states16-discover-failure-summary")
+        click(context.getString(R.string.action_retry))
+        click(source.name)
+        scrollTo(manga.title)
+        screenshot("states16-discover-loaded")
+        click(manga.title)
+        assertEquals(1, opened.get())
+        scrollTo("Pending fixture feed")
+        screenshot("states16-discover-pending")
+        instrumentation.runOnMainSync {
+            state.value = state.value.copy(forYouManga = kotlinx.collections.immutable.persistentListOf(), items = kotlinx.collections.immutable.persistentListOf())
+        }
+        eventually { hasText(context.getString(R.string.feed_empty_failure)) }
+        scrollTo(context.getString(R.string.feed_open_source))
+        screenshot("states16-discover-unavailable")
+        click(context.getString(R.string.action_retry))
+        click(context.getString(R.string.feed_open_source))
+        assertEquals(2, retries.get())
+        assertEquals(2, sources.get())
+    }
+
+    @Test
+    fun searchWithoutSelectedSourcesOffersTheRealSourceFilterAction() {
+        val filters = AtomicInteger()
+        show {
+            com.shinku.reader.presentation.browse.GlobalSearchScreen(
+                state = SearchScreenModel.State(searchQuery = "Fixture search", noSourcesSelected = true),
+                navigateUp = {}, onChangeSearchQuery = {}, onSearch = {},
+                onChangeSearchFilter = { if (it == com.shinku.reader.ui.browse.source.globalsearch.SourceFilter.All) filters.incrementAndGet() },
+                onToggleResults = {}, onClickImageSearch = {},
+                getManga = { androidx.compose.runtime.remember(it) { mutableStateOf(it) } },
+                onClickSource = {}, onClickItem = {}, onLongClickItem = {},
+            )
+        }
+        eventually { hasText(context.getString(R.string.search_no_sources_heading)) }
+        assertTrue(!hasText(context.getString(R.string.search_no_matching_titles)))
+        screenshot("states16-no-sources")
+        click(context.getString(R.string.search_show_all_sources))
+        assertEquals(1, filters.get())
+    }
+
+    private class StateFixtureSource(override val id: Long, override val name: String) : eu.kanade.tachiyomi.source.CatalogueSource {
+        override val lang = "en"
+        override val supportsLatest = true
+        override fun getFilterList() = eu.kanade.tachiyomi.source.model.FilterList()
+        override suspend fun getPopularManga(page: Int): eu.kanade.tachiyomi.source.model.MangasPage = error("No fixture network calls")
+        override suspend fun getSearchManga(page: Int, query: String, filters: eu.kanade.tachiyomi.source.model.FilterList): eu.kanade.tachiyomi.source.model.MangasPage = error("No fixture network calls")
+        override suspend fun getLatestUpdates(page: Int): eu.kanade.tachiyomi.source.model.MangasPage = error("No fixture network calls")
+        override suspend fun getMangaDetails(manga: eu.kanade.tachiyomi.source.model.SManga): eu.kanade.tachiyomi.source.model.SManga = error("Unused")
+        override suspend fun getChapterList(manga: eu.kanade.tachiyomi.source.model.SManga): List<eu.kanade.tachiyomi.source.model.SChapter> = error("Unused")
+        override suspend fun getPageList(chapter: eu.kanade.tachiyomi.source.model.SChapter): List<eu.kanade.tachiyomi.source.model.Page> = error("Unused")
+    }
+
+    private fun showJourney(content: @Composable () -> Unit) {
+        show {
+            androidx.compose.material3.Scaffold { contentPadding ->
+                androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.padding(contentPadding)) {
+                    content()
+                }
+            }
+        }
+    }
+
     private fun <T> preserve(preference: com.shinku.reader.core.common.preference.Preference<T>): () -> Unit {
         val wasSet = preference.isSet()
         val value = preference.get()
@@ -776,8 +1376,7 @@ class MockupControlsTest {
 
     private fun screenshot(name: String) {
         SystemClock.sleep(500)
-        val root = instrumentation.uiAutomation.rootInActiveWindow
-        check(root?.packageName?.toString() == context.packageName)
+        eventually { instrumentation.uiAutomation.rootInActiveWindow?.packageName?.toString() == context.packageName }
         val image = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
         val directory = checkNotNull(context.getExternalFilesDir("mockup-review")).apply { mkdirs() }
         File(directory, "$name.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }

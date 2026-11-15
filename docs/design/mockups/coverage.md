@@ -1,8 +1,8 @@
 # ShinKu UI mockup coverage and implementation checklist
 
-Inventory date: 2026-11-03. 24 new boards / 72 planned panels, plus the six earlier panels.
+Inventory date: 2026-11-12. 24 new boards / 72 planned panels, plus the six earlier panels.
 
-**Incomplete rendering:** 13 new boards are generated; 11 still await generation. Historical quota observation: image generation reached its usage limit on 2026-11-05. Tool-estimated reset was 2026-11-06 09:45:35 Asia/Shanghai (tool estimate); quota has not been rechecked during this audit. Resume at board 14. See the [mockup checklist](./checklist.md) for separate image, implementation and phone-installation status.
+**Reference images:** 14 boards exist. Missing images do not block implementation. New mockups skipped by owner instruction (2026-11-10). Continue from existing boards, tokens and briefs. See the [mockup checklist](./checklist.md) for separate image, implementation and phone-installation status.
 
 Open [the review gallery](./index.html), [the manifest](./manifest.json), or [the source checklist](./source-surface-checklist.csv).
 
@@ -23,21 +23,21 @@ Open [the review gallery](./index.html), [the manifest](./manifest.json), or [th
 | [11. Tracking & privacy](./11-tracking-security-v1.png) | Trackers; Link a title; Security & privacy | Generated; review required |
 | [12. Core settings & appearance](./12-general-settings-v1.png) | Settings; Appearance; Library settings | Generated; review required |
 | [13. Reader, browse & download preferences](./13-core-preferences-v1.png) | Reader preferences; Browse preferences; Download preferences | Generated; review required |
-| 14. Performance & maintenance | Performance; Maintenance & source health; Advanced tools | Prompt ready; not generated |
-| 15. Reading journey & identity | Journey overview; Genres & patterns; Milestones & profile | Prompt ready; not generated |
-| 16. Empty, loading & offline states | Empty library; Partial loading; Offline & no results | Prompt ready; not generated |
-| 17. Dialogs, permissions & authentication | Confirm an action; App lock; Website sign-in | Prompt ready; not generated |
-| 18. Recovery, diagnostics & release information | Restore issue; Crash recovery; About & changes | Prompt ready; not generated |
-| 19. Tablet & landscape layouts | Tablet library; Landscape reader; Large-text phone | Prompt ready; not generated |
-| 20. Light, high-contrast & E-Ink | Light theme; Accessible controls; E-Ink profile | Prompt ready; not generated |
-| 21. Specialist source integrations | MangaDex follows; Source integration settings; Metadata editor | Prompt ready; not generated |
-| 22. Extension details & merged manga | Extension details; Source preferences; Merged manga & notes | Prompt ready; not generated |
-| 23. Batch tools & advanced organization | Batch add; Smart search; Advanced categories | Prompt ready; not generated |
-| 24. Widgets & system surfaces | Updates widget; Widget size variants; Notifications & shortcuts | Prompt ready; not generated |
+| [14. Performance & maintenance](./14-maintenance-v1.png) | Performance; Maintenance & source health; Advanced tools | Generated; review required |
+| 15. Reading journey & identity | Journey overview; Genres & patterns; Milestones & profile | Existing direction; no image needed |
+| 16. Empty, loading & offline states | Empty library; Partial loading; Offline & no results | Existing direction; no image needed |
+| 17. Dialogs, permissions & authentication | Confirm an action; App lock; Website sign-in | Existing direction; no image needed |
+| 18. Recovery, diagnostics & release information | Restore issue; Crash recovery; About & changes | Existing direction; no image needed |
+| 19. Tablet & landscape layouts | Tablet library; Landscape reader; Large-text phone | Existing direction; no image needed |
+| 20. Light, high-contrast & E-Ink | Light theme; Accessible controls; E-Ink profile | Existing direction; no image needed |
+| 21. Specialist source integrations | MangaDex follows; Source integration settings; Metadata editor | Existing direction; no image needed |
+| 22. Extension details & merged manga | Extension details; Source preferences; Merged manga & notes | Existing direction; no image needed |
+| 23. Batch tools & advanced organization | Batch add; Smart search; Advanced categories | Existing direction; no image needed |
+| 24. Widgets & system surfaces | Updates widget; Widget size variants; Notifications & shortcuts | Existing direction; no image needed |
 
 ## What the source inventory means
 
-The CSV contains 232 named Kotlin surface entries (file entry points and named Screen/Dialog/Sheet/Step functions). UI wrappers and presentation functions can appear separately. This is a static inventory, not a count of unique user-visible screens or a runtime navigation audit.
+The CSV contains 236 named Kotlin surface entries (file entry points and named Screen/Dialog/Sheet/Step functions). UI wrappers and presentation functions can appear separately. This is a static inventory, not a count of unique user-visible screens or a runtime navigation audit.
 
 Each entry maps to a representative board or shared template. A mapping is not proof that every inherited preference, inline modal, or state is rendered. Rows marked shared/template/manual review must be inspected before implementation is considered covered. Anonymous dialogs, dynamic extension settings, and system/browser UI require runtime review.
 
@@ -80,10 +80,11 @@ A single coordinated UI update is the goal; images cannot guarantee a defect-fre
 - Board 12: Rendered 2026-11-05. General Settings root is mislabeled ShinKu settings and needs a separate ShinKu hub entry. Font, density, page layout, navigation style and scheduling controls are illustrative; verify actual preference capabilities and preserve OS settings/defaults. Preview values are samples.
 - Board 13: Rendered 2026-11-05. Language count matches the two selected example rows. Default search target, page transitions, extension-security grouping and download-ahead switch are illustrative; retain actual supported controls, values and inherited adult-content preferences. Clear-cache versus manga-file removal must match the real storage scopes; the all-downloads deletion confirmation is a design example, not an authorized deletion or new maintenance capability.
 - Board 14: Generation attempted 2026-11-05; tool returned usage_limit_reached and produced no image. Resume at this board after the tool-estimated reset.
+- Board 16: Direct code continuation without a new image. Actual failures/retained results are shown; no unsupported offline-cache promise.
 - Board 24: Respect Android/OEM-controlled layouts and supported widget sizes.
 
-## Resume generation
+## Continue implementation
 
-After the tool quota resets, generate only missing PNGs from their numbered prompt files with the two existing reference boards. Keep filenames/versioning stable; do not overwrite reviewed images without requesting an iteration. Use built-in image generation unless the owner explicitly chooses a different provider/path.
+Continue remaining screens directly from the existing Sanctuary direction, briefs and shared components. No new image generation is requested.
 
 Set each board status in manifest.json after inspecting its output, then run `python docs/design/mockups/build_review.py` to refresh the gallery and CSV. An alternate API-key or credit-based image service requires the owner’s explicit choice; no fallback service has been invoked.

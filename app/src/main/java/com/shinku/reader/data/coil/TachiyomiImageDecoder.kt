@@ -18,13 +18,13 @@ import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import coil3.request.bitmapConfig
 import com.hippo.unifile.UniFile
+import com.shinku.reader.core.common.archive.archiveReader
+import com.shinku.reader.core.common.util.system.ImageUtil
 import com.shinku.reader.util.storage.CbzCrypto
 import com.shinku.reader.util.storage.CbzCrypto.getCoverStream
-import com.shinku.reader.core.common.archive.archiveReader
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import okio.BufferedSource
-import com.shinku.reader.core.common.util.system.ImageUtil
 import tachiyomi.decoder.ImageDecoder
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -65,7 +65,8 @@ class TachiyomiImageDecoder(private val resources: ImageSource, private val opti
         }
         val decoder = resources.sourceOrNull()?.use {
             coverStream.use { coverStream ->
-                ImageDecoder.newInstance(coverStream ?: it.inputStream(), options.cropBorders, displayProfile)
+                val stream = ImageUtil.sanitizeAvifSequenceStream(coverStream ?: it.inputStream())
+                ImageDecoder.newInstance(stream, options.cropBorders, displayProfile)
             }
         }
         // SY <--
@@ -178,7 +179,8 @@ class TachiyomiImageDecoder(private val resources: ImageSource, private val opti
         }
         val decoder = resources.sourceOrNull()?.use {
             coverStream.use { coverStream ->
-                ImageDecoder.newInstance(coverStream ?: it.inputStream(), options.cropBorders, displayProfile)
+                val stream = ImageUtil.sanitizeAvifSequenceStream(coverStream ?: it.inputStream())
+                ImageDecoder.newInstance(stream, options.cropBorders, displayProfile)
             }
         }
         check(decoder != null && decoder.width > 0 && decoder.height > 0) { "Failed to initialize decoder" }

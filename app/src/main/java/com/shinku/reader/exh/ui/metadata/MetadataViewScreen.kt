@@ -21,10 +21,8 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.shinku.reader.presentation.components.AppBar
-import com.shinku.reader.presentation.util.Screen
-import com.shinku.reader.util.system.copyToClipboard
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.core.components.ScrollbarLazyColumn
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.components.material.topSmallPaddingValues
@@ -32,6 +30,8 @@ import com.shinku.reader.presentation.core.screens.EmptyScreen
 import com.shinku.reader.presentation.core.screens.LoadingScreen
 import com.shinku.reader.presentation.core.util.clickableNoIndication
 import com.shinku.reader.presentation.core.util.plus
+import com.shinku.reader.presentation.util.Screen
+import com.shinku.reader.util.system.copyToClipboard
 
 class MetadataViewScreen(private val mangaId: Long, private val sourceId: Long) : Screen() {
 
@@ -64,37 +64,14 @@ class MetadataViewScreen(private val mangaId: Long, private val sourceId: Long) 
                         contentPadding =
                         paddingValues + WindowInsets.navigationBars.asPaddingValues() + topSmallPaddingValues,
                     ) {
-                        items(items) { (title, text) ->
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickableNoIndication(
-                                        onLongClick = {
-                                            context.copyToClipboard(
-                                                title,
-                                                text,
-                                            )
-                                        },
-                                        onClick = {},
-                                    )
-                                    .padding(vertical = 8.dp),
-                            ) {
-                                Text(
-                                    title,
-                                    modifier = Modifier
-                                        .width(140.dp)
-                                        .padding(start = 16.dp),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                                Text(
-                                    text,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(start = 8.dp, end = 8.dp),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = LocalContentColor.current.copy(alpha = 0.7F),
-                                )
+                        item {
+                            androidx.compose.foundation.layout.Column(Modifier.padding(16.dp)) {
+                                Text(com.shinku.reader.presentation.core.i18n.stringResource(MR.strings.source_metadata_heading), style = MaterialTheme.typography.titleMedium)
+                                Text(com.shinku.reader.presentation.core.i18n.stringResource(MR.strings.source_metadata_hint), style = MaterialTheme.typography.bodySmall)
                             }
+                        }
+                        items(items) { (title, text) ->
+                            com.shinku.reader.presentation.components.SourceMetadataCard(title, text) { context.copyToClipboard(title, text) }
                         }
                     }
                 }

@@ -5,12 +5,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+
+val LocalSanctuaryStaticContrast = staticCompositionLocalOf { false }
 
 /**
  * Centralized "ShinKu Sanctuary" design tokens derived from the Library experience.
@@ -36,36 +39,51 @@ object SanctuaryElevation {
 object SanctuaryBrushes {
 
     @Composable
-    fun heroVerticalGradient(): Brush = Brush.verticalGradient(
-        colors = listOf(
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.20f),
-            MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp),
-        ),
-    )
+    fun heroVerticalGradient(): Brush = if (LocalSanctuaryStaticContrast.current) {
+        flatSurface()
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.20f),
+                MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp),
+            ),
+        )
+    }
 
     @Composable
-    fun cardHorizontalGradient(): Brush = Brush.horizontalGradient(
-        colors = listOf(
-            MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp),
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.32f),
-            MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
-        ),
-    )
+    fun cardHorizontalGradient(): Brush = if (LocalSanctuaryStaticContrast.current) {
+        flatSurface()
+    } else {
+        Brush.horizontalGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.surfaceColorAtElevation(4.dp),
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.32f),
+                MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+            ),
+        )
+    }
 
     @Composable
-    fun compactHorizontalGradient(): Brush = Brush.horizontalGradient(
-        colors = listOf(
-            MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.22f),
-            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        ),
-    )
+    fun compactHorizontalGradient(): Brush = if (LocalSanctuaryStaticContrast.current) {
+        flatSurface()
+    } else {
+        Brush.horizontalGradient(
+            colors = listOf(
+                MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.22f),
+                MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+            ),
+        )
+    }
 
     @Composable
     fun subtleBorder(): BorderStroke = BorderStroke(
         width = 1.dp,
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+        color = if (LocalSanctuaryStaticContrast.current) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
     )
+
+    @Composable
+    private fun flatSurface(): Brush = Brush.verticalGradient(listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surface))
 }
 
 @Composable
@@ -74,9 +92,13 @@ fun Modifier.sanctuaryShadow(
     shape: Shape = SanctuaryShapes.card,
     spotAlpha: Float = 0.30f,
     ambientAlpha: Float = 0.14f,
-): Modifier = this.shadow(
-    elevation = elevation,
-    shape = shape,
-    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = spotAlpha),
-    ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = ambientAlpha),
-)
+): Modifier = if (LocalSanctuaryStaticContrast.current) {
+    this
+} else {
+    this.shadow(
+        elevation = elevation,
+        shape = shape,
+        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = spotAlpha),
+        ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = ambientAlpha),
+    )
+}

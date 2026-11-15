@@ -19,15 +19,16 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.components.AppBar
+import com.shinku.reader.presentation.core.components.material.Scaffold
+import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.ui.browse.source.SourcesScreen
 import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreen
 import com.shinku.reader.ui.manga.MangaScreen
 import com.shinku.reader.util.system.toast
-import com.shinku.reader.i18n.sy.SYMR
-import com.shinku.reader.presentation.core.components.material.Scaffold
-import com.shinku.reader.presentation.core.i18n.stringResource
 
 class SmartSearchScreen(
     private val sourceId: Long,
@@ -84,6 +85,8 @@ class SmartSearchScreen(
                     style = MaterialTheme.typography.titleLarge,
                 )
                 CircularProgressIndicator(modifier = Modifier.size(56.dp))
+                Text(smartSearchConfig.origTitle, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 24.dp))
+                Text(stringResource(MR.strings.smart_search_candidate_hint), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(24.dp))
             }
         }
     }

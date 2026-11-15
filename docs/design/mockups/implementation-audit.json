@@ -1,7 +1,7 @@
 {
-  "date": "2026-11-06",
-  "baseline": "bd94670c13 plus current uncommitted worktree",
-  "method": "Source-informed implementation estimate, not pixel similarity, runtime coverage, effort remaining or physical-phone verification. Visual layout 40%, styling 30%, controls 20%, states/safety 10%. Each dimension uses 0 absent, 1 minimal, 2 partial, 3 mostly present, 4 complete for supported scope. Board score is mean of unrounded panel scores rounded to nearest 5; panel tags also rounded to nearest 5. Scores are provisional; allow roughly \u00b115 points where runtime evidence is absent and \u00b110 where partial captures exist. Unsupported generated features are documented adaptations, not automatic requirements.",
+  "date": "2026-11-12",
+  "baseline": "a931760a62 plus current UI worktree",
+  "method": "Source/reference recheck of all 14 existing images and their mapped UI files. Previous blanket 90–95% estimates are archived as previousEstimate and suspended, not silently promoted or rescored. Several old scores do not reproduce their recorded percentages under the stated weighting. Unscored means implementation is partial or evidence is incomplete; it does not mean 0%. Board 05 retains its prior provisional score and historical runtime evidence. New screen batches use existing Sanctuary tokens and briefs without generating more mockups. The November 11 direct code pass is recorded separately in ../boards-01-14-code-pass-2026-11-11.md; supported adaptations and pending phone acceptance remain explicit.",
   "dimensions": [
     "layout",
     "styling",
@@ -17,8 +17,8 @@
   "boards": [
     {
       "id": "01",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/components/TabbedScreen.kt",
         "app/src/main/java/com/shinku/reader/presentation/browse/FeedScreen.kt",
@@ -28,52 +28,72 @@
       "panels": [
         {
           "name": "Discover",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Sanctuary pill tabs, featured carousel with genre badge and 2-line description, descriptive shelf subtitles, genre metadata on cards and dock clearance exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Feed shelves and captions are styled, but populated/loading/fallback compositions still need fresh runtime comparison.",
           "adaptation": "Keep real recommendations and source limits; no invented totals.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Global search",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Query summary header, rounded Sanctuary source result cards with globe badge, language subtitle, See all pill, card genre subtitles and bottom progress card exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Source result cards exist; source/language/genre controls differ from the illustrative board. Preserve supported search filters.",
           "adaptation": "Global genre/language chips and total counts use supported data, not sample values.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Source catalogue",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Sanctuary filter/mode controls, secondary source/genre metadata on grid cards and rounded Sanctuary loading-more footer card exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Catalogue paging and display modes remain; compare the actual filter sheet and populated grid rather than assume the reference tabs were reproduced.",
           "adaptation": "Retain actual source filters and real paging; no fabricated page count.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "02",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/browse/SourcesScreen.kt",
         "app/src/main/java/com/shinku/reader/presentation/browse/ExtensionsScreen.kt",
@@ -82,52 +102,72 @@
       "panels": [
         {
           "name": "Sources",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Sanctuary pill tabs, horizontal language filter chips, rounded source rows, Latest pill, pin toggle and overflow menu button exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Language chips, source cards, pin and overflow exist. Explicit chip target raised to 48dp in this pass; full source-list capture still pending.",
           "adaptation": "Keep all four real Browse routes.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Extensions",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Language filter chips, section headers with item counts, vX.Y.Z \u00b7 language metadata order, explicit untrusted warning banner and action pills exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "scores": null,
+          "percent": null,
+          "present": "Language filter chips, section headers with item counts, vX.Y.Z · language metadata order, explicit untrusted warning banner and action pills exist.",
+          "remaining": "Section counts and trust warning exist. Installed/available/untrusted row states need fresh runtime comparison.",
           "adaptation": "Review trust remains explicit; generated extra tab is not a route replacement.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Repositories",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Installed repositories heading, Sanctuary repo cards with globe icon badge and overflow menu, inline + Add repository card and enhanced Add repository dialog with security notice exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Repository cards and add/review flow exist. Do not add invented freshness, available-extension counts or verification badges.",
           "adaptation": "No invented repository freshness, extension count or verification badge.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "03",
-      "percent": 90,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/browse/MigrateSourceScreen.kt",
         "app/src/main/java/com/shinku/reader/feature/migration/config/MigrationConfigScreenSheet.kt",
@@ -136,53 +176,73 @@
       "panels": [
         {
           "name": "Find affected titles",
-          "scores": [
-            3,
-            4,
-            4,
-            3
-          ],
-          "percent": 85,
+          "scores": null,
+          "percent": null,
           "present": "Top explanatory Sanctuary info card, Sanctuary filter pills for All sources / Missing sources (N) / Failed updates and rounded source rows exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Confirmed adaptation: selection remains source-centric, rather than the title-centric list pictured in the board.",
           "adaptation": "Retains source-first selection flow and keeps missing-source versus title counts distinct.",
           "evidence": "source_and_partial_runtime",
-          "screenshot": "build/generated-mockups-final-screenshots/migration-missing.png"
+          "screenshot": "build/generated-mockups-final-screenshots/migration-missing.png",
+          "previousEstimate": {
+            "percent": 85,
+            "scores": [
+              3,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Migration options",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Header and subtitle, grouped Sanctuary switch card for migration flags, preservation info card, collapsible Advanced card and primary action button exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Grouped migration flags and advanced choices exist; title/source context is not the exact illustrated selection page.",
           "adaptation": "Preserve saved flags and destructive-download confirmation.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Review & progress",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Top migration progress card with progress bar, rounded Sanctuary comparison cards with Current vs New source headers and explicit Migrate/Search manually + Skip buttons exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "scores": null,
+          "percent": null,
+          "present": "Matching cards now label searches processed and search completion separately from manual review; existing migration confirmations remain.",
+          "remaining": "Phone acceptance of matching, missing candidates and actual migration progress remains pending.",
           "adaptation": "No fictional pause/resume engine or guaranteed source matching.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 90,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "04",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/updates/UpdatesScreen.kt",
         "app/src/main/java/com/shinku/reader/presentation/history/components/HistoryItem.kt",
@@ -191,49 +251,69 @@
       "panels": [
         {
           "name": "Updates",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Top Upcoming and Refresh Sanctuary action pills, portrait cards, tinted chapter tag pills with unread dot, Read/Resume button and dock clearance exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Update cards and read/download actions exist; capture multi-selection and bottom-inset behavior at large text.",
           "adaptation": "Use actual update groups and existing downloads.",
           "evidence": "source_and_partial_runtime",
-          "screenshot": "build/generated-mockups-final-screenshots/dock-updates.png"
+          "screenshot": "build/generated-mockups-final-screenshots/dock-updates.png",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "History",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Inline Search reading history pill bar, portrait cards, Ch. X tag badge + timestamp, Resume button and overflow removal exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "History cards and resume exist; verify complete long titles and chapter/page text in populated runtime state.",
           "adaptation": "History does not supply the mockup's page totals.",
           "evidence": "source_and_partial_runtime",
-          "screenshot": "build/generated-mockups-final-screenshots/dock-history.png"
+          "screenshot": "build/generated-mockups-final-screenshots/dock-history.png",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Downloads",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Enhanced queue summary card with download icon badge, live downloading/queued counts, aggregate progress bar and Pause/Resume all button exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Queue summary and actual pause/resume are present. Finished entries are not retained solely to reproduce the generated sample.",
           "adaptation": "No fictional finished archive.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "05",
@@ -260,11 +340,12 @@
           ],
           "percent": 95,
           "present": "Sheet heading, live active badge, three compact icon/gradient cards, Reset/Done and More filters are implemented and runtime-reviewed. Extra filters and Group remain accessible.",
-          "remaining": "Final visual acceptance on the owner\u2019s phone/theme and broader theme/RTL/accessibility coverage. No known layout gap in the reviewed default and 1.6\u00d7-text fixtures.",
+          "remaining": "Prior filter implementation has default/1.6x captures and interaction checks; final owner-device/theme acceptance remains pending.",
           "adaptation": "Downloaded/Unread/Completed are primary; Started/Bookmarked/custom interval/adult/tracker filters remain under More filters. Group remains a fourth tab. Large text reflows the row.",
           "evidence": "source_and_runtime_default_and_large_text",
           "screenshot": "build/library05-review/default/library-filters.png",
-          "largeTextScreenshot": "build/library05-review/large-font/library-filters.png"
+          "largeTextScreenshot": "build/library05-review/large-font/library-filters.png",
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Categories",
@@ -276,11 +357,12 @@
           ],
           "percent": 95,
           "present": "Intro, real distinct library-title counts, edit/More, inline Add including empty state, and key-based reorder indices are implemented. In-memory counts/invalidation and drag/callback tests pass.",
-          "remaining": "Final visual acceptance on the owner\u2019s phone/theme and broader theme/RTL/accessibility coverage. No known layout gap in the reviewed default and 1.6\u00d7-text fixtures.",
+          "remaining": "Real category counts, edit/add/delete and reorder are implemented with earlier runtime evidence; no new full-device certification.",
           "adaptation": "Counts are computed from actual distinct favorite titles, including zero; illustrated counts/names are never seeded. Deletion retains confirmation.",
           "evidence": "source_and_runtime_default_and_large_text",
           "screenshot": "build/library05-review/default/library05-categories.png",
-          "largeTextScreenshot": "build/library05-review/large-font/library05-categories.png"
+          "largeTextScreenshot": "build/library05-review/large-font/library05-categories.png",
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Bulk selection",
@@ -292,11 +374,12 @@
           ],
           "percent": 95,
           "present": "Download/Category/Mark read/More toolbar, dividers, shared gradient, readable wrapping labels and closing secondary menus are implemented. Bottom-slot placement and callbacks pass runtime checks.",
-          "remaining": "Final visual acceptance on the owner\u2019s phone/theme and broader theme/RTL/accessibility coverage. No known layout gap in the reviewed default and 1.6\u00d7-text fixtures.",
+          "remaining": "Primary bulk actions and More routing are implemented with earlier runtime evidence; retain confirmations and conditional capabilities.",
           "adaptation": "Download remains conditional on supported selection; all optional existing actions remain under More. User grid density is unchanged.",
           "evidence": "source_and_runtime_default_and_large_text",
           "screenshot": "build/library05-review/default/library05-bulk-toolbar.png",
-          "largeTextScreenshot": "build/library05-review/large-font/library05-bulk-toolbar.png"
+          "largeTextScreenshot": "build/library05-review/large-font/library05-bulk-toolbar.png",
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         }
       ],
       "progressLog": "05-implementation-progress.md",
@@ -361,7 +444,7 @@
         {
           "name": "Filters: icon/card rows and More filters",
           "percent": 95,
-          "note": "Default and actual 1.6\u00d7 emulator text reviewed; primary choices, extra filters and locked Downloaded tested."
+          "note": "Default and actual 1.6× emulator text reviewed; primary choices, extra filters and locked Downloaded tested."
         },
         {
           "name": "Filters: Reset/Done and other tabs",
@@ -376,7 +459,7 @@
         {
           "name": "Categories: page/cards/add/edit/More",
           "percent": 95,
-          "note": "Populated/empty layouts and add/rename/delete callbacks reviewed at default and 1.6\u00d7 text; final phone appearance acceptance pending."
+          "note": "Populated/empty layouts and add/rename/delete callbacks reviewed at default and 1.6× text; final phone appearance acceptance pending."
         },
         {
           "name": "Categories: reorder positions",
@@ -386,183 +469,262 @@
         {
           "name": "Bulk: four primary actions and bottom placement",
           "percent": 95,
-          "note": "Default/1.6\u00d7 screenshots, bottom-position assertion and primary actions pass; final integrated phone appearance acceptance pending."
+          "note": "Default/1.6× screenshots, bottom-position assertion and primary actions pass; final integrated phone appearance acceptance pending."
         },
         {
           "name": "Bulk: secondary actions and dismissal",
           "percent": 100,
           "note": "Functional scope complete: unread/delete/migrate/download callbacks and dismissal pass; all conditional existing routes retained."
         }
-      ]
+      ],
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "06",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/reader/ReaderPageIndicator.kt",
         "app/src/main/java/com/shinku/reader/presentation/reader/ChapterListDialog.kt",
         "app/src/main/java/com/shinku/reader/presentation/reader/appbars/ReaderAppBars.kt",
         "app/src/main/java/com/shinku/reader/presentation/reader/appbars/ReaderBottomBar.kt",
-        "app/src/main/java/com/shinku/reader/presentation/reader/components/ChapterNavigator.kt"
+        "app/src/main/java/com/shinku/reader/presentation/reader/components/ChapterNavigator.kt",
+        "app/src/main/java/com/shinku/reader/ui/reader/viewer/ReaderPageImageView.kt"
       ],
       "panels": [
         {
           "name": "Paged reader",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Restrained top controls, rounded lower control deck with chapter prev/next buttons, page slider, bottom action bar, and token-driven page indicator exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "scores": null,
+          "percent": null,
+          "present": "Restrained top controls, rounded lower control deck with chapter prev/next buttons, page slider, bottom action bar, and token-driven page indicator exist. ImageView translation overlays now follow drawable/source dimensions, image matrix and padding; bubble text is clipped to its bounds.",
+          "remaining": "Reader deck and slider are styled. Existing configurable icon actions remain rather than the exact pictured button composition.",
           "adaptation": "Preserve gesture-driven visibility and reading modes.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-12 Reader follow-up; see ../reader-translation-audit-2026-11-12.md. SSIV/Webtoon paths unchanged.",
+          "evidenceScope": "Native FIT_CENTER/source-size/padding/hidden-overlay and tiny-bubble containment regressions pass; this is rendering-fixture evidence, not full-reader phone acceptance. November12 phone: corresponding native/component fixtures passed in isolated devDebug packages; optimized production Reader/OCR integration remains unverified.",
+          "phoneReviewNote": "Installed optimized artifact checksum verified; Reader fixtures tested in separate temporary packages, removed afterward. See ../reader-translation-audit-2026-11-12.md."
         },
         {
           "name": "Webtoon reader",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Full-width vertical viewer, compact Sanctuary pill page indicator, distinct loading and retry state presentation exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "scores": null,
+          "percent": null,
+          "present": "Native error content uses a theme-aware bordered card, wrapping text, 48dp actions and content height in Webtoon; permanent failures keep existing retry suppression.",
+          "remaining": "Full-reader loading/error/retry capture at normal and large text remains pending.",
           "adaptation": "Do not display loading and retry as the same state.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Chapters & pages",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Navigate sheet header and subtitle, Chapters/Pages pill tabs, search with leading icon, highlighted current chapter badge, and numbered page chip grid exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Navigate header/search and page chips exist. Page chips are a supported adaptation, not the thumbnail filmstrip in the image.",
           "adaptation": "Numbered page chips replace unsupported thumbnails; bookmarks are chapter-level.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "07",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/reader/dialog/AreaOcrCropOverlay.kt",
         "app/src/main/java/com/shinku/reader/presentation/reader/dialog/BubbleInspectorDialog.kt",
-        "app/src/main/java/com/shinku/reader/presentation/reader/dialog/BatchTranslationProgressDialog.kt"
+        "app/src/main/java/com/shinku/reader/presentation/reader/dialog/BatchTranslationProgressDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/dialog/CropSelection.kt"
       ],
       "panels": [
         {
           "name": "Area selection",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Top Sanctuary instruction card with crop icon, title, subtitle and close action, responsive crop box, and bottom Sanctuary action card with Reset, Cancel and Translate actions exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "scores": null,
+          "percent": null,
+          "present": "Bounded normalized crop geometry, wrapping Reset/Cancel/Details/Translate footer and48dp icon controls; existing production crop callbacks retained.",
+          "remaining": "Full-reader gesture/viewport integration and all-device visual acceptance remain pending.",
           "adaptation": "Crop geometry stays tied to actual viewport coordinates.",
-          "evidence": "source_only"
+          "evidence": "source_and_component_runtime",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-12 normal/actual1.6x/short-landscape/actual-light fixtures; see ../reader-translation-audit-2026-11-12.md. No full live/device acceptance.",
+          "evidenceScope": "Synthetic bitmap and fake callbacks; crop pixel bounds and minimum-size unit regressions pass. November12 phone: corresponding native/component fixtures passed in isolated devDebug packages; optimized production Reader/OCR integration remains unverified.",
+          "screenshot": "build/reader-viewport-review/normal/reader-crop-tools.png",
+          "largeTextScreenshot": "build/reader-viewport-review/large/reader-crop-tools.png",
+          "phoneReviewNote": "Installed optimized artifact checksum verified; Reader fixtures tested in separate temporary packages, removed afterward. See ../reader-translation-audit-2026-11-12.md."
         },
         {
           "name": "Inspect bubbles",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary inspector header, bubble count, Original text and Translated text cards with copy icon buttons, previous/next bubble scrolling and Re-Translate Page action exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "scores": null,
+          "percent": null,
+          "present": "One selected bubble, separate original/translated copy cards, position count, previous/next navigation, combined copy and page retry are implemented.",
+          "remaining": "The actual selected text is presented without a fabricated cropped-image preview. Full-reader translation integration still needs phone acceptance.",
           "adaptation": "No cropped preview or isolated-bubble retry is currently supported; retry is page-scoped.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Chapter translation",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Chapter translation header, progress pill/counters, linear progress bar, Show translated text switch card, Run in background and Cancel actions exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "scores": null,
+          "percent": null,
+          "present": "Progress labels wrap, completed count/language stack, body scrolls and a labelled overlay switch row exposes one toggle action. Run in background and Cancel remain distinct.",
+          "remaining": "Actual provider jobs/background continuation/cancellation need live integration acceptance.",
           "adaptation": "Keep Run in background; unsupported Pause and invented per-page states are excluded.",
-          "evidence": "source_only"
+          "evidence": "source_and_component_runtime",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-12 normal/actual1.6x/short-landscape/actual-light fixtures; see ../reader-translation-audit-2026-11-12.md. No full live/device acceptance.",
+          "evidenceScope": "Synthetic long language/count fixture; overlay/background/Cancel callbacks pass. November12 phone: corresponding native/component fixtures passed in isolated devDebug packages; optimized production Reader/OCR integration remains unverified.",
+          "screenshot": "build/reader-viewport-review/normal/reader-batch-progress.png",
+          "largeTextScreenshot": "build/reader-viewport-review/large/reader-batch-overlay.png",
+          "phoneReviewNote": "Installed optimized artifact checksum verified; Reader fixtures tested in separate temporary packages, removed afterward. See ../reader-translation-audit-2026-11-12.md."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "08",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/reader/settings/ReaderSettingsDialog.kt",
         "app/src/main/java/com/shinku/reader/presentation/reader/dialog/TranslationOptionsDialog.kt",
-        "app/src/main/java/com/shinku/reader/presentation/reader/ReaderPageActionsDialog.kt"
+        "app/src/main/java/com/shinku/reader/presentation/reader/ReaderPageActionsDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/dialog/AreaTranslationResultDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/dialog/ReaderAiDialogs.kt"
       ],
       "panels": [
         {
           "name": "Display controls",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Reader settings header with subtitle, Reading/Display/Translation tabs, brightness/color filters, advanced drawer and primary full-width Done button exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "scores": null,
+          "percent": null,
+          "present": "Reading, theme, display and expanded advanced settings use shared bordered section cards, retaining real preference bindings and tabs.",
+          "remaining": "The reference icon composition is adapted to supported controls. Full-reader and broad theme acceptance remain pending.",
           "adaptation": "Retain supported background/filter options, not invented swatches.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Translation actions",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Grouped Sanctuary option rows with 38dp tinted icon containers, Show overlays toggle, language navigation, and scoped cache-clearing confirmation exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "scores": null,
+          "percent": null,
+          "present": "Existing scoped translation actions retained; long result title wraps, language headings reserve copy controls, language picker scrolls and dropdown labels reserve arrow space.",
+          "remaining": "Live OCR/provider behavior and full-reader entry-point integration remain pending.",
           "adaptation": "Keep real engine/language paths; cache clearing must not imply manga deletion.",
-          "evidence": "source_only"
+          "evidence": "source_and_component_runtime",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-12 normal/actual1.6x/short-landscape/actual-light fixtures; see ../reader-translation-audit-2026-11-12.md. No full live/device acceptance.",
+          "evidenceScope": "Fixtures cover page/chapter callbacks, long original-text copy visibility, language dropdown/swap draft Cancel/Confirm, processing Back and long error dismissal; short-landscape target field reviewed. November12 phone: corresponding native/component fixtures passed in isolated devDebug packages; optimized production Reader/OCR integration remains unverified.",
+          "screenshot": "build/reader-viewport-review/normal/reader-translation-options.png",
+          "largeTextScreenshot": "build/reader-viewport-review/large/reader-result-original.png",
+          "phoneReviewNote": "Installed optimized artifact checksum verified; Reader fixtures tested in separate temporary packages, removed afterward. See ../reader-translation-audit-2026-11-12.md."
         },
         {
           "name": "Page actions",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Sanctuary card action buttons with tinted primary icon containers for Set cover, Copy, Share, Save, and AI Companion cards exist.",
-          "remaining": "Final runtime visual comparison on device/emulator.",
+          "remaining": "Page actions retain richer AI tools and dual-spread handling. Orientation selection remains a separate route; this is not the exact compact menu pictured.",
           "adaptation": "Unsupported page bookmark excluded; keep chapter bookmark.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "09",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/more/onboarding/OnboardingScreen.kt",
         "app/src/main/java/com/shinku/reader/presentation/more/onboarding/StorageStep.kt",
@@ -572,53 +734,73 @@
       "panels": [
         {
           "name": "Welcome",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "ShinKu hero header, 3 Sanctuary benefit cards with tinted icons, clear optional AI notice, and primary/secondary actions exist.",
-          "remaining": "Hero artwork, three benefit rows and dedicated welcome composition are absent.",
+          "scores": null,
+          "percent": null,
+          "present": "Dedicated scrollable welcome view uses the existing crest, Sanctuary hero, three benefit cards and pinned Setup/Restore callbacks.",
+          "remaining": "Existing app crest replaces generated manga artwork. Complete storage/theme/onboarding phone walkthrough remains pending.",
           "adaptation": "Use appropriate owned/licensed art; do not copy sample manga art as an app asset.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Storage & permissions",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Sanctuary storage card with Configured/Required status badge, directory path, 48dp selection button, and storage help card exist.",
-          "remaining": "Match folder/notification cards, step header and action placement.",
+          "remaining": "Storage status/actions and permission steps exist; storage and permissions remain separate real steps.",
           "adaptation": "Actual four steps differ from sample step numbering.",
           "evidence": "source_and_partial_runtime",
-          "screenshot": "build/generated-mockups-final-screenshots/onboarding-storage-required.png"
+          "screenshot": "build/generated-mockups-final-screenshots/onboarding-storage-required.png",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Theme & finish",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Theme selector cards, Sanctuary guide card, restore card, and optional AI notice exist.",
-          "remaining": "Recreate theme-preview tiles and consolidated finish/optional-AI cards.",
+          "remaining": "Theme and guide/restore routes exist as separate steps rather than one combined theme-and-finish screen.",
           "adaptation": "AI setup stays optional; preserve all actual setup steps.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "10",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/data/CreateBackupScreen.kt",
         "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/data/RestoreBackupScreen.kt",
@@ -627,53 +809,73 @@
       "panels": [
         {
           "name": "Create backup",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Sanctuary intro card with backup icon, scope notice, library/settings section cards, and bottom action bar exist.",
-          "remaining": "Match icon-led introduction, section rows and destination presentation.",
+          "remaining": "Backup header and scope choices exist; preserve the supported SAF destination picker and credential exclusions.",
           "adaptation": "Downloaded images/API keys are not included merely because the concept suggests them.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Restore preview",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary file summary card with leading icon, status pill, scope checkboxes, and restore confirmation exist.",
-          "remaining": "No matching rich contents-summary/progress-card composition; rebuild preview layout.",
+          "scores": null,
+          "percent": null,
+          "present": "Already-decoded backup contents provide actual title, chapter, category, history and setting counts; IO validation has a checking state and propagates cancellation.",
+          "remaining": "SAF selection, validation errors, scope confirmation and background restore notifications remain the actual flow. No fictional cover grid, pause or rollback engine.",
           "adaptation": "Progress remains notification-based; no unsupported cancellation guarantee.",
           "evidence": "source_and_partial_runtime",
-          "screenshot": "build/generated-mockups-final-screenshots/restore-confirmation.png"
+          "screenshot": "build/generated-mockups-final-screenshots/restore-confirmation.png",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Sync settings",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Sanctuary cloud sync hero card with last sync timestamp, configured status badge, scope notice, and Sync now action exist.",
-          "remaining": "Dedicated hero/scope/trigger/status layout is not recreated.",
+          "remaining": "Sync settings retain real service configuration and scope choices. Do not replace supported sync backends with a fictional local-folder-only flow.",
           "adaptation": "Keep Drive/WebDAV/Nextcloud; local-folder sync is not an implemented transport.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "11",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsTrackingScreen.kt",
         "app/src/main/java/com/shinku/reader/presentation/track/TrackerSearch.kt",
@@ -682,52 +884,72 @@
       "panels": [
         {
           "name": "Trackers",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Sanctuary tracking banner card, tracker rows with Connect/Disconnect pill buttons, and sync options exist.",
-          "remaining": "Match tracker intro, service-card and progress-sync hierarchy.",
+          "remaining": "Tracker intro and connection rows exist. Fresh connected/disconnected/error-state captures remain pending.",
           "adaptation": "Preserve actual tracker capabilities and logout confirmation.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Link a title",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary search result cards with cover, metadata badges, selection indicator, and bottom confirmation bar with check icon exist.",
-          "remaining": "No matching combined title-header/search/details two-step layout.",
+          "scores": null,
+          "percent": null,
+          "present": "Search results include a context card explaining title matching/linking followed by status and progress editing.",
+          "remaining": "Tracker search/link and status/progress editing remain separate supported steps; connected-account phone acceptance is pending.",
           "adaptation": "Search is per tracker; cross-tracker mixed results are unsupported.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Security & privacy",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Sanctuary security banner card, biometric status pill badge, and grouped security preferences exist.",
-          "remaining": "Match security intro, privacy grouping and icon-row hierarchy.",
+          "remaining": "Security intro, biometric capability and privacy controls exist. Preserve device-dependent authentication and actual incognito semantics.",
           "adaptation": "No invented sensitive-content blur; developer tools keep their existing route.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "12",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsMainScreen.kt",
         "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsAppearanceScreen.kt",
@@ -737,52 +959,75 @@
       "panels": [
         {
           "name": "Settings",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Search pill bar at top, prominent ShinKu settings hero card with AutoAwesome icon and Open pill, and grouped command row settings exist.",
-          "remaining": "Match per-destination icon cards, visible search field and root hierarchy.",
+          "remaining": "Settings search pill, featured ShinKu card and grouped routes exist; the grouped hierarchy differs from the single flat reference list.",
           "adaptation": "General Settings and ShinKu-specific hub remain distinct.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded."
         },
         {
           "name": "Appearance",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
+          "scores": null,
+          "percent": null,
           "present": "Live theme selectors, cover preview card with reading progress subtitle and Resume pill button, and rounded Sanctuary preference groups exist.",
-          "remaining": "Current preview is text-only, not the approved cover/resume card; align accent/control hierarchy.",
+          "remaining": "This pass replaces fixed Chapter 42 and the squeezed Resume pill with an explicitly labeled sample preview and wrapping text. Placeholder cover remains a documented adaptation.",
           "adaptation": "Global font/density/OS navigation controls are unsupported, excluded from scope.",
-          "evidence": "source_only"
+          "evidence": "source_plus_partial_runtime",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-10 source/reference recheck; earlier captures are historical unless a new capture is explicitly recorded.",
+          "screenshot": "build/ui-continuation-review/final-default/appearance-sample-preview.png",
+          "largeTextScreenshot": "build/ui-continuation-review/final-large-font/appearance-sample-preview.png",
+          "evidenceScope": "Appearance sample fixture only; complete Appearance page not certified."
         },
         {
           "name": "Library settings",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary intro card with CollectionsBookmark icon, organized display/category/update controls, and clean token-based hierarchy exist.",
-          "remaining": "Match icon hierarchy, display/badge sections and Advanced arrangement.",
+          "scores": null,
+          "percent": null,
+          "present": "Shared settings rendering now gives grouped and standalone preferences explicit Sanctuary card surfaces, borders, icon badges and wrapping titles.",
+          "remaining": "Phone acceptance of complete category/update/behavior groups remains pending.",
           "adaptation": "Some display/sort controls belong in Library sheet; do not duplicate conflicting state.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "13",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsReaderScreen.kt",
         "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsBrowseScreen.kt",
@@ -791,100 +1036,661 @@
       "panels": [
         {
           "name": "Reader preferences",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary intro card with ChromeReaderMode icon, reader mode selectors, navigation, and display settings exist.",
-          "remaining": "Add approved intro and clearer Defaults/Navigation/Display visual hierarchy.",
+          "scores": null,
+          "percent": null,
+          "present": "Defaults now form an explicit group; shared bordered settings cards and specific reader icons extend beyond the intro.",
+          "remaining": "Preserve inherited reader options and actual orientation/default-mode dialogs; full phone acceptance remains pending.",
           "adaptation": "Keep real reading modes, orientation and advanced options.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Browse preferences",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary intro card with Explore icon, source list toggles, and repository management exist.",
-          "remaining": "Mockup's multi-section page and language-sheet entry composition are not recreated.",
+          "scores": null,
+          "percent": null,
+          "present": "Real catalogue display modes, searchable installed-source-language selection with draft/Cancel/Apply and preserved unknown values, plus enabled-source navigation are implemented.",
+          "remaining": "Global-search defaults absent from supported preferences remain a documented adaptation; whole-screen phone acceptance is pending.",
           "adaptation": "Global default search target/view and duplicate language settings are not assumed available.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Download preferences",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary intro card with GetApp icon, download queue controls, storage shortcuts, and cleanup scopes exist.",
-          "remaining": "Match manage-downloads intro, icon rows and storage/cleanup grouping.",
+          "scores": null,
+          "percent": null,
+          "present": "Shared bordered groups, wrapping rows and specific Wi-Fi/delete icons extend the existing download/storage controls.",
+          "remaining": "Storage cleanup and destructive confirmations remain on their actual routes and need separate phone acceptance.",
           "adaptation": "Download-ahead is numeric; no invented global delete-all control.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         }
-      ]
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
     },
     {
       "id": "14",
-      "percent": 95,
-      "status": "implemented_locally; final_visual_acceptance_pending",
+      "percent": null,
+      "status": "source_rechecked_partial; runtime_visual_acceptance_pending",
       "sources": [
         "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsShinKuSettingsScreen.kt",
-        "app/src/main/java/com/shinku/reader/presentation/more/sourcehealth/SourceHealthScreenContent.kt"
+        "app/src/main/java/com/shinku/reader/presentation/more/sourcehealth/SourceHealthScreenContent.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsAdvancedScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/debug/DebugInfoScreen.kt"
       ],
       "panels": [
         {
           "name": "Performance mode",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary performance group renamed to Performance mode with refresh rate, power profile, enhanced scaling, and predictive loading.",
-          "remaining": "Match exact mockup slider/toggle micro-spacing.",
+          "scores": null,
+          "percent": null,
+          "present": "Standard/Low power/E-Ink profile pills bind the existing stored preference and show a selected checkmark; independent performance controls remain.",
+          "remaining": "Whole-screen phone and device-dependent refresh/scaling acceptance remains pending.",
           "adaptation": "Preserve platform performance mode keys and native refresh rates.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Maintenance & Tools",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary maintenance tools group with Smart Categorizer, Dead Source Scanner, Failed Updates, and Source Health.",
-          "remaining": "Integrate inline quick actions.",
+          "scores": null,
+          "percent": null,
+          "present": "Shared settings cards extend maintenance routes; source-health untested states stay explicit and successful sources label retained errors as historical.",
+          "remaining": "Whole-screen maintenance and destructive-confirmation acceptance remains pending.",
           "adaptation": "Preserve individual maintenance sub-screens.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
         },
         {
           "name": "Source health",
-          "scores": [
-            4,
-            4,
-            4,
-            3
-          ],
-          "percent": 95,
-          "present": "Sanctuary deck cards with live status badges, rating stars, relative check timestamps, avg latency, and single test triggers.",
-          "remaining": "Batch ping all sources button micro-styling.",
+          "scores": null,
+          "percent": null,
+          "present": "Source-health cards preserve actual timestamps and retry behavior, distinguish untested records and qualify retained prior failures.",
+          "remaining": "Advanced/debug routes and broader populated/error phone states still need acceptance; source-health changes do not certify them.",
           "adaptation": "Keep dynamic latency and failure classification.",
-          "evidence": "source_only"
+          "evidence": "source_only",
+          "previousEstimate": {
+            "percent": 95,
+            "scores": [
+              4,
+              4,
+              4,
+              3
+            ]
+          },
+          "evidenceNote": "2026-11-11 direct code pass; see ../boards-01-14-code-pass-2026-11-11.md for validation scope. Component fixtures do not establish full phone acceptance."
+        }
+      ],
+      "previousEstimate": {
+        "percent": 95,
+        "status": "implemented_locally; final_visual_acceptance_pending"
+      },
+      "sourceRecheckDate": "2026-11-10"
+    },
+    {
+      "id": "15",
+      "percent": null,
+      "status": "implementation_in_progress; existing_direction; no_new_mockup",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/StatsScreenContent.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/StatsHeroCard.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/JourneyOverviewMetrics.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/JourneyCollectionOverview.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/ActivityHeatmapCard.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/CircadianVelocityPanel.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/GenreAffinityPanel.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/components/ReaderIdentityDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/SanctuaryShareCardDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/ShareCardContent.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/ShareCardOptions.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/SanctuaryShareCardPreview.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/stats/components/SanctuaryShareCardRenderer.kt"
+      ],
+      "panels": [
+        {
+          "name": "Journey overview",
+          "scores": null,
+          "percent": null,
+          "present": "Full-width wrapping totals and collection/chapter/tracker cards; selectable 48dp stats tabs; readable XP/streak reflow.",
+          "remaining": "Whole-screen profile/overview acceptance across phone/tablet themes remains pending.",
+          "adaptation": "Lifetime totals stay lifetime totals; date ranges are explicitly scoped to reading activity.",
+          "evidence": "source_plus_partial_runtime",
+          "screenshot": "build/ui-continuation-review/final-default/journey-complete-totals.png",
+          "largeTextScreenshot": "build/ui-continuation-review/final-large-font/journey-complete-totals.png",
+          "evidenceScope": "Totals/collection fixture only; hero, quests and tabs not visually certified."
+        },
+        {
+          "name": "Genres & patterns",
+          "scores": null,
+          "percent": null,
+          "present": "7/28/84-day calendar-safe activity windows, empty explanations, date labels, chart text alternatives and truthful genre ranks.",
+          "remaining": "Runtime comparison and broader TalkBack/RTL/theme review remain pending.",
+          "adaptation": "No numeric genre proportions are available in StatsData, so rank-derived bars were removed rather than presented as measured activity.",
+          "evidence": "source_plus_partial_runtime",
+          "screenshot": "build/ui-continuation-review/final-default/journey-activity-28-days.png",
+          "largeTextScreenshot": "build/ui-continuation-review/final-large-font/journey-activity-28-days.png",
+          "evidenceScope": "Activity/empty-hourly fixtures only; genre labels remain source-reviewed."
+        },
+        {
+          "name": "Milestones & profile",
+          "scores": null,
+          "percent": null,
+          "present": "Per-session share-stat opt-ins start unchecked; preview/export receive the same filtered payload. Export text wraps into a measured-height image; avatars are sampled/center-cropped and default crest is untinted. Explicit vertical footer and bounds checks keep actions separate. Milestone columns adapt to width/font scale with full labels and scrolling details.",
+          "remaining": "Whole-screen phone, alternate themes, RTL and broader accessibility acceptance remain pending; component fixtures and synthetic PNG exports are not full live-flow certification.",
+          "adaptation": "No new profile backend, ranking or automatic publication; current sharing still requires the explicit Share action.",
+          "evidence": "source_only",
+          "evidenceScope": "controlled milestone/share fixtures and exported images; full phone flow pending",
+          "evidenceNote": "2026-11-11 direct code pass; ../board-15-code-pass-2026-11-11.md. Final footer checked at both scales.",
+          "screenshot": "build/states16-review/default/journey15-share-options.png",
+          "largeTextScreenshot": "build/states16-review/large-font/journey15-share-options.png"
         }
       ]
+    },
+    {
+      "id": "16",
+      "percent": null,
+      "status": "supported_code_applied; synthetic_runtime_checked; phone_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/library/components/LibraryEmptyState.kt",
+        "app/src/main/java/com/shinku/reader/ui/library/LibraryTab.kt",
+        "app/src/main/java/com/shinku/reader/ui/browse/BrowseTab.kt",
+        "app/src/main/java/com/shinku/reader/presentation/browse/FeedScreen.kt",
+        "app/src/main/java/com/shinku/reader/ui/browse/feed/FeedRequests.kt",
+        "app/src/main/java/com/shinku/reader/ui/browse/feed/FeedScreenModel.kt",
+        "app/src/main/java/com/shinku/reader/presentation/browse/GlobalSearchScreen.kt",
+        "app/src/main/java/com/shinku/reader/ui/browse/source/globalsearch/SearchScreenModel.kt",
+        "presentation-core/src/main/java/com/shinku/reader/presentation/core/screens/EmptyScreen.kt"
+      ],
+      "panels": [
+        {
+          "name": "Empty library",
+          "scores": null,
+          "percent": null,
+          "present": "Single scrollable card, book icon, real Browse-sources route, Restore backup and retained guide, with dock clearance and optional AI setup.",
+          "remaining": "Full phone/theme/RTL/accessibility acceptance remains pending. No new mockup generated.",
+          "adaptation": "Preserve actual library-empty/filter semantics; do not fabricate covers or require AI setup.",
+          "evidence": "controlled_runtime_fixture",
+          "evidenceScope": "synthetic state/callback fixture; full live-flow acceptance pending",
+          "evidenceNote": "See ../board-16-code-pass-2026-11-11.md for counts, limitations and final artifact.",
+          "screenshot": "build/states16-review/default/states16-library-empty.png",
+          "largeTextScreenshot": "build/states16-review/large-font/states16-library-empty.png"
+        },
+        {
+          "name": "Partial loading",
+          "scores": null,
+          "percent": null,
+          "present": "Discover retains loaded shelves/pending-feed skeletons while actual failed source requests get retry and source routes. Timeout/exception feedback excludes empty success and cancellation; limits/scheduling unchanged.",
+          "remaining": "Full phone/theme/RTL/accessibility acceptance remains pending. No new mockup generated.",
+          "adaptation": "Nullable AI title matching is separate from catalogue failures; retry uses the existing refresh flow.",
+          "evidence": "controlled_runtime_fixture",
+          "evidenceScope": "synthetic state/callback fixture; full live-flow acceptance pending",
+          "evidenceNote": "See ../board-16-code-pass-2026-11-11.md for counts, limitations and final artifact.",
+          "screenshot": "build/states16-review/default/states16-discover-loaded.png",
+          "largeTextScreenshot": "build/states16-review/large-font/states16-discover-loaded.png"
+        },
+        {
+          "name": "Offline & no results",
+          "scores": null,
+          "percent": null,
+          "present": "Search separates completed no-match, resolved empty-source selection and source failures. Unfiltered error counts remain visible beside actionable results even when failed rows are filtered out. Existing filter actions preserve the query.",
+          "remaining": "Full phone/theme/RTL/accessibility acceptance remains pending. No new mockup generated.",
+          "adaptation": "No durable offline result cache is claimed. Show actual failures and retained loaded results; no invented Offline/Showing saved results badge.",
+          "evidence": "controlled_runtime_fixture",
+          "evidenceScope": "synthetic state/callback fixture; full live-flow acceptance pending",
+          "evidenceNote": "See ../board-16-code-pass-2026-11-11.md for counts, limitations and final artifact.",
+          "screenshot": "build/states16-review/default/states16-search-partial.png",
+          "largeTextScreenshot": "build/states16-review/large-font/states16-search-partial.png"
+        }
+      ],
+      "sourceRecheckDate": "2026-11-11"
+    },
+    {
+      "id": "17",
+      "percent": null,
+      "status": "supported_code_applied; partial_runtime_evidence; live_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/library/DeleteLibraryMangaDialog.kt",
+        "app/src/main/java/com/shinku/reader/ui/security/UnlockActivity.kt",
+        "app/src/main/java/com/shinku/reader/presentation/security/UnlockScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/webview/WebViewScreenContent.kt"
+      ],
+      "panels": [
+        {
+          "name": "Confirm an action",
+          "scores": null,
+          "percent": null,
+          "present": "Selected count, separate unchecked library/download choices, disabled empty confirmation and explicit action labels.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards17-remove-scopes.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards17-remove-scopes.png"
+        },
+        {
+          "name": "App lock",
+          "scores": null,
+          "percent": null,
+          "present": "Private lock guidance background before the unchanged device biometric/credential prompt.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards17-lock-background.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards17-lock-background.png"
+        },
+        {
+          "name": "Website sign-in",
+          "scores": null,
+          "percent": null,
+          "present": "Current website host in toolbar; existing cookies, header restrictions and browser actions retained.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded."
+        }
+      ],
+      "sourceRecheckDate": "2026-11-11"
+    },
+    {
+      "id": "18",
+      "percent": null,
+      "status": "supported_code_applied; partial_runtime_evidence; live_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/data/RestoreBackupScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/crash/CrashScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/about/WhatsNewDialog.kt",
+        "presentation-core/src/main/java/com/shinku/reader/presentation/core/screens/InfoScreen.kt",
+        "app/src/main/res/raw/changelog_release.xml",
+        "docs/CHANGELOG.md"
+      ],
+      "panels": [
+        {
+          "name": "Restore issue",
+          "scores": null,
+          "percent": null,
+          "present": "Invalid backup offers another file through the platform picker; real restore confirmation/job remain.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards18-unreadable-backup.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards18-unreadable-backup.png"
+        },
+        {
+          "name": "Crash recovery",
+          "scores": null,
+          "percent": null,
+          "present": "Restart and Copy error details prioritized; selectable exception details and explicit Share diagnostics.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards18-recovery.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards18-recovery.png"
+        },
+        {
+          "name": "About & changes",
+          "scores": null,
+          "percent": null,
+          "present": "Bounded scrolling release entries, loading state and Close; actual bundled changelog remains. November12 correction removes the withdrawn95% completion claim from bundled and website release notes.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards18-changes.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards18-changes.png",
+          "phoneReviewNote": "November12 latest730CE7 artifact: real bundled corrected wording/Close inspected; other recovery/restore states are separate evidence."
+        }
+      ],
+      "sourceRecheckDate": "2026-11-11"
+    },
+    {
+      "id": "19",
+      "percent": null,
+      "status": "supported_code_applied; partial_runtime_evidence; live_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/components/AdaptiveSheet.kt",
+        "app/src/main/java/com/shinku/reader/presentation/reader/settings/ReaderSettingsDialog.kt",
+        "presentation-core/src/main/java/com/shinku/reader/presentation/core/components/AdaptiveSheet.kt"
+      ],
+      "panels": [
+        {
+          "name": "Tablet library",
+          "scores": null,
+          "percent": null,
+          "present": "Existing adaptive tablet navigation rail retained; actual wide configuration checked.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/wide/boards19-home-navigation.png",
+          "evidenceScope": "actual1280x800dp wide emulator configuration; sample reader state/existing emulator Library; real tablet and live reader pending",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards19-home-navigation.png"
+        },
+        {
+          "name": "Landscape reader",
+          "scores": null,
+          "percent": null,
+          "present": "Reader settings use a trailing panel in landscape at least600dp wide; phone sheet and Done preserved.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/wide/boards19-reader-controls.png",
+          "evidenceScope": "actual1280x800dp wide emulator configuration; sample reader state/existing emulator Library; real tablet and live reader pending",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards19-reader-controls.png"
+        },
+        {
+          "name": "Large-text phone",
+          "scores": null,
+          "percent": null,
+          "present": "Wrapping/scrolling controls and48dp actions exercised at actual1.6x system font.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards17-remove-scopes.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards17-remove-scopes.png"
+        }
+      ],
+      "sourceRecheckDate": "2026-11-11"
+    },
+    {
+      "id": "20",
+      "percent": null,
+      "status": "supported_code_applied; partial_runtime_evidence; live_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/theme/TachiyomiTheme.kt",
+        "app/src/main/java/com/shinku/reader/presentation/manga/components/MangaNotesTextArea.kt",
+        "app/src/main/java/com/shinku/reader/ui/library/LibraryTab.kt",
+        "presentation-core/src/main/java/com/shinku/reader/presentation/core/theme/SanctuaryTokens.kt"
+      ],
+      "panels": [
+        {
+          "name": "Light theme",
+          "scores": null,
+          "percent": null,
+          "present": "Existing light scheme retained; light recovery and metadata fixtures checked.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/light/boards21-source-metadata.png",
+          "evidenceScope": "light-theme metadata card sample only; whole-app light/contrast acceptance pending"
+        },
+        {
+          "name": "Accessible controls",
+          "scores": null,
+          "percent": null,
+          "present": "Note formatting has localized labels, selected state/contrast and48dp targets; shared borders remain visible.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards22-notes-formatting.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards22-notes-formatting.png"
+        },
+        {
+          "name": "E-Ink profile",
+          "scores": null,
+          "percent": null,
+          "present": "Existing E-Ink profile chooses monochrome, flat shared surfaces, full outlines, no shared glow/theme animation or library backdrop.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards20-eink.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards20-eink.png"
+        }
+      ],
+      "sourceRecheckDate": "2026-11-11"
+    },
+    {
+      "id": "21",
+      "percent": null,
+      "status": "supported_code_applied; partial_runtime_evidence; live_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/exh/md/follows/MangaDexFollowsScreen.kt",
+        "app/src/main/java/com/shinku/reader/exh/ui/metadata/MetadataViewScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/components/SourceMetadataCard.kt"
+      ],
+      "panels": [
+        {
+          "name": "MangaDex follows",
+          "scores": null,
+          "percent": null,
+          "present": "MangaDex follows explains account/source scope while retaining paging, auth and real error/display behavior.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded."
+        },
+        {
+          "name": "Source integration settings",
+          "scores": null,
+          "percent": null,
+          "present": "Existing source integration preferences retain shared Sanctuary cards and actual source capabilities.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded."
+        },
+        {
+          "name": "Metadata editor",
+          "scores": null,
+          "percent": null,
+          "present": "Read-only source metadata wraps in full-width cards and retains long-press copy; local override editor is separate.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards21-source-metadata.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards21-source-metadata.png"
+        }
+      ],
+      "sourceRecheckDate": "2026-11-11"
+    },
+    {
+      "id": "22",
+      "percent": null,
+      "status": "supported_code_applied; partial_runtime_evidence; live_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/presentation/browse/ExtensionDetailsScreen.kt",
+        "app/src/main/java/com/shinku/reader/ui/browse/extension/details/SourcePreferencesScreen.kt",
+        "app/src/main/java/com/shinku/reader/ui/manga/EditMangaDialog.kt",
+        "app/src/main/java/com/shinku/reader/ui/manga/merged/EditMergedSettingsDialog.kt",
+        "app/src/main/java/com/shinku/reader/presentation/manga/components/MangaNotesTextArea.kt"
+      ],
+      "panels": [
+        {
+          "name": "Extension details",
+          "scores": null,
+          "percent": null,
+          "present": "Extension details header uses a bordered card; long action labels stack. Existing trust/install flow retained.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded."
+        },
+        {
+          "name": "Source preferences",
+          "scores": null,
+          "percent": null,
+          "present": "Extension-owned native controls retained; nested titles wrap, empty icon spacing removed, dialog/incognito bindings preserved.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded."
+        },
+        {
+          "name": "Merged manga & notes",
+          "scores": null,
+          "percent": null,
+          "present": "Edit/merge dialogs use established shapes; notes keep existing autosave/limits with accessible selected formatting controls.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards22-notes-formatting.png",
+          "evidenceScope": "sample component/callback fixture; real source/account/device state not certified",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards22-notes-formatting.png"
+        }
+      ],
+      "sourceRecheckDate": "2026-11-11"
+    },
+    {
+      "id": "23",
+      "percent": null,
+      "status": "supported_code_applied; partial_runtime_evidence; live_acceptance_pending",
+      "sources": [
+        "app/src/main/java/com/shinku/reader/exh/ui/batchadd/BatchAddScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/components/BatchInputConfirmation.kt",
+        "app/src/main/java/com/shinku/reader/exh/ui/smartsearch/SmartSearchScreen.kt",
+        "app/src/main/java/com/shinku/reader/presentation/category/components/sources/SourceCategoryListItem.kt",
+        "app/src/main/java/com/shinku/reader/presentation/category/components/genre/SortTagListItem.kt",
+        "app/src/main/java/com/shinku/reader/presentation/more/settings/screen/SettingsShinKuSettingsScreen.kt"
+      ],
+      "panels": [
+        {
+          "name": "Batch add",
+          "scores": null,
+          "percent": null,
+          "present": "ShinKu Advanced tools links to the existing gallery batch screen. Multiline input, disabled empty Add, explicit confirmation and real validator/progress remain; no import occurs merely by opening.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/phone-audit-route-review/1.0/boards23-batch-route.png",
+          "evidenceScope": "real settings-to-input navigation at1.0x/1.6x; prior confirmation callback fixture retained in dated report; no network import or whole-flow certification",
+          "largeTextScreenshot": "build/phone-audit-route-review/1.6/boards23-batch-route.png",
+          "phoneReviewNote": "November12 latest730CE7 artifact: real Advanced->Batch add navigation, empty input and disabled Add inspected; no entry/import."
+        },
+        {
+          "name": "Smart search",
+          "scores": null,
+          "percent": null,
+          "present": "Actual original title shown while existing source matching runs; real match/fallback routing retained.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded."
+        },
+        {
+          "name": "Advanced categories",
+          "scores": null,
+          "percent": null,
+          "present": "Category/tag cards and localized ordering/edit/delete labels retain existing callbacks and disabled bounds. Source categories is also reachable from ShinKu Advanced tools; existing Library tag-sort route retained.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded.",
+          "screenshot": "build/remaining-review/default/boards23-organization.png",
+          "evidenceScope": "tag-order controls fixture plus real settings-to-source-category navigation at1.0x/1.6x; no category creation/edit/delete",
+          "largeTextScreenshot": "build/remaining-review/large-font/boards23-organization.png",
+          "phoneReviewNote": "November12 latest730CE7 artifact: real Advanced->Source categories navigation inspected; no category edit or ordering action."
+        }
+      ],
+      "sourceRecheckDate": "2026-11-12"
+    },
+    {
+      "id": "24",
+      "percent": null,
+      "status": "supported_code_applied; partial_runtime_evidence; live_acceptance_pending",
+      "sources": [
+        "presentation-widget/src/main/java/com/shinku/reader/presentation/widget/BaseUpdatesGridGlanceWidget.kt",
+        "presentation-widget/src/main/java/com/shinku/reader/presentation/widget/components/UpdatesWidget.kt",
+        "presentation-widget/src/main/java/com/shinku/reader/presentation/widget/components/UpdatesMangaCover.kt",
+        "presentation-widget/src/main/java/com/shinku/reader/presentation/widget/util/GlanceUtils.kt"
+      ],
+      "panels": [
+        {
+          "name": "Updates widget",
+          "scores": null,
+          "percent": null,
+          "present": "Actual cover titles exposed as descriptions; empty widget opens existing Updates shortcut; lock/cache gating retained.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded."
+        },
+        {
+          "name": "Widget size variants",
+          "scores": null,
+          "percent": null,
+          "present": "Empty host-size list safely falls back to one cover; largest reported size and existing row/column limits retained.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded."
+        },
+        {
+          "name": "Notifications & shortcuts",
+          "scores": null,
+          "percent": null,
+          "present": "Existing notifications and launcher shortcuts retained as Android-controlled surfaces; no invented system layouts.",
+          "remaining": "See dated report for supported adaptations and remaining live/device/host acceptance. No all-board visual certification.",
+          "adaptation": "Preserve existing source/platform/workflow capabilities; see ../boards-17-24-code-pass-2026-11-11.md.",
+          "evidence": "source_review",
+          "evidenceNote": "Runtime evidence is limited to the named sample fixture, where recorded."
+        }
+      ],
+      "sourceRecheckDate": "2026-11-11"
     }
   ],
   "earlierConcepts": [
@@ -966,11 +1772,11 @@
         3
       ],
       "present": "Reading/Display/Translation tabs and supported control routing exist.",
-      "remaining": "Same grouped icon-row/header/primary-button visual gaps as boards 06\u201308; not independent work.",
+      "remaining": "Same grouped icon-row/header/primary-button visual gaps as boards 06–08; not independent work.",
       "source": "app/src/main/java/com/shinku/reader/presentation/reader/settings/ReaderSettingsDialog.kt",
       "screenshot": "build/generated-mockups-final-screenshots/reader-display.png",
       "percent": 60
     }
   ],
-  "plannedNote": "14 has an external draft at 14-performance-maintenance-v1.png but no adopted canonical board/implementation pass. 15\u201324 have briefs only. Redesign work is not started (0% of the planned pass); visual similarity is unscored. Existing baseline features do not count as applied mockups."
+  "plannedNote": "Supported direct code pass covers01–24 without new mockups. Remaining live authentication, reader, restore, source integrations, widget hosts and full visual acceptance are tracked per panel and in the dated reports; no board is certified100%."
 }

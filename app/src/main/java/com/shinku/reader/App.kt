@@ -17,6 +17,8 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
+import coil3.gif.AnimatedImageDecoder
+import coil3.gif.GifDecoder
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowRgb565
@@ -235,6 +237,11 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         return ImageLoader.Builder(this).apply {
             val callFactoryLazy = lazy { Injekt.get<NetworkHelper>().client }
             components {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    add(AnimatedImageDecoder.Factory())
+                } else {
+                    add(GifDecoder.Factory())
+                }
                 // NetworkFetcher.Factory
                 add(OkHttpNetworkFetcherFactory(callFactoryLazy::value))
                 // Decoder.Factory

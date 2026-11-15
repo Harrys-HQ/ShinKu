@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.util.DisplayMetrics
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -43,28 +46,30 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.R
 import com.shinku.reader.domain.extension.interactor.ExtensionSourceItem
+import com.shinku.reader.extension.model.Extension
+import com.shinku.reader.i18n.MR
+import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.browse.components.ExtensionIcon
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.AppBarActions
 import com.shinku.reader.presentation.components.WarningBanner
-import com.shinku.reader.presentation.more.settings.widget.TextPreferenceWidget
-import com.shinku.reader.presentation.more.settings.widget.TrailingWidgetBuffer
-import com.shinku.reader.R
-import com.shinku.reader.extension.model.Extension
-import eu.kanade.tachiyomi.source.ConfigurableSource
-import com.shinku.reader.ui.browse.extension.details.ExtensionDetailsScreenModel
-import com.shinku.reader.util.system.LocaleHelper
-import com.shinku.reader.util.system.copyToClipboard
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import com.shinku.reader.i18n.MR
-import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.components.ScrollbarLazyColumn
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.screens.EmptyScreen
+import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.presentation.more.settings.widget.TextPreferenceWidget
+import com.shinku.reader.presentation.more.settings.widget.TrailingWidgetBuffer
+import com.shinku.reader.ui.browse.extension.details.ExtensionDetailsScreenModel
+import com.shinku.reader.util.system.LocaleHelper
+import com.shinku.reader.util.system.copyToClipboard
+import eu.kanade.tachiyomi.source.ConfigurableSource
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ExtensionDetailsScreen(
@@ -235,7 +240,7 @@ private fun DetailsHeader(
 ) {
     val context = LocalContext.current
 
-    Column {
+    Column(Modifier.padding(16.dp).clip(SanctuaryShapes.hero).background(MaterialTheme.colorScheme.surfaceContainer).border(SanctuaryBrushes.subtleBorder(), SanctuaryShapes.hero)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -333,14 +338,14 @@ private fun DetailsHeader(
             }
         }
 
-        Row(
+        Column(
             modifier = Modifier
                 .padding(horizontal = MaterialTheme.padding.medium)
                 .padding(top = MaterialTheme.padding.small),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
         ) {
             OutlinedButton(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 onClick = onClickUninstall,
             ) {
                 Text(stringResource(MR.strings.ext_uninstall))
@@ -348,7 +353,7 @@ private fun DetailsHeader(
 
             if (onClickAppInfo != null) {
                 Button(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = onClickAppInfo,
                 ) {
                     Text(

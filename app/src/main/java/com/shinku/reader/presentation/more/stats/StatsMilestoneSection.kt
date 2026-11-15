@@ -6,7 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.CollectionsBookmark
@@ -41,9 +44,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.domain.history.model.Badge
 import com.shinku.reader.domain.history.model.BadgeCategory
@@ -117,7 +120,7 @@ internal fun MilestoneSection(
                 )
                 IconButton(
                     onClick = { showHelpDialog = true },
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
@@ -145,6 +148,7 @@ internal fun MilestoneSection(
                         MilestoneStatusFilter.IN_PROGRESS -> totalBadges - earnedBadges
                     }
                     FilterChip(
+                        modifier = Modifier.heightIn(min = 48.dp),
                         selected = statusFilter == filter,
                         onClick = { statusFilter = filter },
                         shape = SanctuaryShapes.pill,
@@ -161,6 +165,7 @@ internal fun MilestoneSection(
             ) {
                 BadgeCategory.entries.forEach { cat ->
                     FilterChip(
+                        modifier = Modifier.heightIn(min = 48.dp),
                         selected = categoryFilter == cat,
                         onClick = { categoryFilter = cat },
                         shape = SanctuaryShapes.pill,
@@ -169,21 +174,22 @@ internal fun MilestoneSection(
                 }
             }
 
-            filteredBadges.chunked(2).forEach { rowBadges ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    rowBadges.forEach { badge ->
-                        MilestoneCard(
-                            badge = badge,
-                            isEquipped = equippedTitle == badge.name,
-                            onClick = { selectedBadge = badge },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    if (rowBadges.size == 1) {
-                        Box(modifier = Modifier.weight(1f))
+            val fontScale = LocalDensity.current.fontScale
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val columns = (maxWidth / (170.dp * fontScale.coerceAtLeast(1f))).toInt().coerceIn(1, 3)
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    filteredBadges.chunked(columns).forEach { rowBadges ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            rowBadges.forEach { badge ->
+                                MilestoneCard(
+                                    badge = badge,
+                                    isEquipped = equippedTitle == badge.name,
+                                    onClick = { selectedBadge = badge },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            repeat(columns - rowBadges.size) { Box(Modifier.weight(1f)) }
+                        }
                     }
                 }
             }
@@ -210,10 +216,10 @@ internal fun MilestoneSection(
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                     Text(text = badge.description, style = MaterialTheme.typography.bodyMedium)
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 text = if (badge.isEarned) "Unlocked 🎉" else "${(badge.progress * 100).toInt()}% Complete",
                                 style = MaterialTheme.typography.labelSmall,
@@ -348,16 +354,12 @@ private fun MilestoneCard(
                 text = badge.name,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
 
             Text(
                 text = badge.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.heightIn(min = 34.dp),
             )
 
@@ -370,12 +372,11 @@ private fun MilestoneCard(
                 )
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             text = badge.progressText,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
                         )
                         Text(
                             text = "${(badge.progress * 100).toInt()}%",

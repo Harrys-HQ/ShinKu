@@ -238,6 +238,20 @@ fun TrackerSearch(
                         contentPadding = innerPadding + PaddingValues(vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
+                        item(key = "tracker-link-context") {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                shape = SanctuaryShapes.deckCard,
+                                color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                border = SanctuaryBrushes.subtleBorder(),
+                            ) {
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(stringResource(MR.strings.tracker_search_heading), style = MaterialTheme.typography.titleMedium)
+                                    Text(stringResource(MR.strings.tracker_search_next_step), style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
                         items(
                             items = availableTracks,
                             key = { it.hashCode() },
@@ -309,81 +323,81 @@ private fun SearchResultItem(
             }
             Column {
                 Row {
-                MangaCover.Book(
-                    data = trackSearch.cover_url,
-                    modifier = Modifier.height(96.dp),
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = trackSearch.title,
-                        modifier = Modifier.padding(end = 28.dp),
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleMedium,
+                    MangaCover.Book(
+                        data = trackSearch.cover_url,
+                        modifier = Modifier.height(96.dp),
                     )
-                    SearchResultItemDropDownMenu(
-                        expanded = dropDownMenuExpanded,
-                        onCollapseMenu = { dropDownMenuExpanded = false },
-                        onCopyName = {
-                            clipboardManager.setText(AnnotatedString(trackSearch.title))
-                        },
-                        onOpenInBrowser = {
-                            val url = trackSearch.tracking_url
-                            if (url.isNotBlank()) {
-                                context.openInBrowser(url)
-                            }
-                        },
-                    )
-                    if (trackSearch.authors.isNotEmpty() || trackSearch.artists.isNotEmpty()) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
                         Text(
-                            text = (trackSearch.authors + trackSearch.artists).distinct().joinToString(),
-                            modifier = Modifier.secondaryItemAlpha(),
-                            maxLines = 1,
+                            text = trackSearch.title,
+                            modifier = Modifier.padding(end = 28.dp),
+                            maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.titleMedium,
                         )
-                    }
-                    if (type.isNotBlank()) {
-                        SearchResultItemDetails(
-                            title = stringResource(MR.strings.track_type),
-                            text = type,
+                        SearchResultItemDropDownMenu(
+                            expanded = dropDownMenuExpanded,
+                            onCollapseMenu = { dropDownMenuExpanded = false },
+                            onCopyName = {
+                                clipboardManager.setText(AnnotatedString(trackSearch.title))
+                            },
+                            onOpenInBrowser = {
+                                val url = trackSearch.tracking_url
+                                if (url.isNotBlank()) {
+                                    context.openInBrowser(url)
+                                }
+                            },
                         )
-                    }
-                    if (trackSearch.start_date.isNotBlank()) {
-                        SearchResultItemDetails(
-                            title = stringResource(MR.strings.label_started),
-                            text = trackSearch.start_date,
-                        )
-                    }
-                    if (status.isNotBlank()) {
-                        SearchResultItemDetails(
-                            title = stringResource(MR.strings.track_status),
-                            text = status,
-                        )
-                    }
-                    if (trackSearch.score != -1.0) {
-                        SearchResultItemDetails(
-                            title = stringResource(MR.strings.score),
-                            text = trackSearch.score.toString(),
-                        )
+                        if (trackSearch.authors.isNotEmpty() || trackSearch.artists.isNotEmpty()) {
+                            Text(
+                                text = (trackSearch.authors + trackSearch.artists).distinct().joinToString(),
+                                modifier = Modifier.secondaryItemAlpha(),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        if (type.isNotBlank()) {
+                            SearchResultItemDetails(
+                                title = stringResource(MR.strings.track_type),
+                                text = type,
+                            )
+                        }
+                        if (trackSearch.start_date.isNotBlank()) {
+                            SearchResultItemDetails(
+                                title = stringResource(MR.strings.label_started),
+                                text = trackSearch.start_date,
+                            )
+                        }
+                        if (status.isNotBlank()) {
+                            SearchResultItemDetails(
+                                title = stringResource(MR.strings.track_status),
+                                text = status,
+                            )
+                        }
+                        if (trackSearch.score != -1.0) {
+                            SearchResultItemDetails(
+                                title = stringResource(MR.strings.score),
+                                text = trackSearch.score.toString(),
+                            )
+                        }
                     }
                 }
-            }
-            if (description.isNotBlank()) {
-                Text(
-                    text = description,
-                    modifier = Modifier
-                        .paddingFromBaseline(top = 24.dp)
-                        .secondaryItemAlpha(),
-                    maxLines = 4,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                if (description.isNotBlank()) {
+                    Text(
+                        text = description,
+                        modifier = Modifier
+                            .paddingFromBaseline(top = 24.dp)
+                            .secondaryItemAlpha(),
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
     }
-}
 }
 
 @Composable

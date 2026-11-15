@@ -17,7 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 
 @Composable
 fun SortTagListItem(
@@ -31,6 +34,7 @@ fun SortTagListItem(
 ) {
     ElevatedCard(
         modifier = modifier,
+        shape = SanctuaryShapes.deckCard,
     ) {
         Row(
             modifier = Modifier
@@ -42,7 +46,7 @@ fun SortTagListItem(
                 ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = "")
+            Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = null)
             Text(text = tag, modifier = Modifier.padding(start = MaterialTheme.padding.medium))
         }
         Row {
@@ -50,17 +54,17 @@ fun SortTagListItem(
                 onClick = onMoveUp,
                 enabled = canMoveUp,
             ) {
-                Icon(imageVector = Icons.Outlined.ArrowDropUp, contentDescription = "")
+                Icon(imageVector = Icons.Outlined.ArrowDropUp, contentDescription = stringResource(MR.strings.organize_move_up))
             }
             IconButton(
                 onClick = onMoveDown,
                 enabled = canMoveDown,
             ) {
-                Icon(imageVector = Icons.Outlined.ArrowDropDown, contentDescription = "")
+                Icon(imageVector = Icons.Outlined.ArrowDropDown, contentDescription = stringResource(MR.strings.organize_move_down))
             }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = onDelete) {
-                Icon(imageVector = Icons.Outlined.Delete, contentDescription = "")
+                Icon(imageVector = Icons.Outlined.Delete, contentDescription = stringResource(MR.strings.action_delete))
             }
         }
     }

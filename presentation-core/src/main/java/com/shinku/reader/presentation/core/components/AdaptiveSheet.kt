@@ -57,6 +57,7 @@ fun AdaptiveSheet(
     enableSwipeDismiss: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    panelAlignment: Alignment = Alignment.Center,
     content: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -83,7 +84,7 @@ fun AdaptiveSheet(
                 )
                 .fillMaxSize()
                 .alpha(alpha),
-            contentAlignment = Alignment.Center,
+            contentAlignment = panelAlignment,
         ) {
             Surface(
                 modifier = Modifier

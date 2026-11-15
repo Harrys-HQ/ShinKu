@@ -1,18 +1,11 @@
 package eu.kanade.tachiyomi.source
 
 import android.content.Context
-import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.data.download.DownloadManager
-import com.shinku.reader.extension.ExtensionManager
-import eu.kanade.tachiyomi.source.online.HttpSource
-import eu.kanade.tachiyomi.source.online.all.Lanraragi
-import eu.kanade.tachiyomi.source.online.all.MangaDex
-import eu.kanade.tachiyomi.source.online.all.MergedSource
-import eu.kanade.tachiyomi.source.online.all.NHentai
-import eu.kanade.tachiyomi.source.online.english.EightMuses
-import eu.kanade.tachiyomi.source.online.english.HBrowse
-import eu.kanade.tachiyomi.source.online.english.Pururin
-import eu.kanade.tachiyomi.source.online.english.Tsumino
+import com.shinku.reader.domain.source.model.StubSource
+import com.shinku.reader.domain.source.repository.StubSourceRepository
+import com.shinku.reader.domain.source.service.SourceManager
+import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.exh.log.xLogD
 import com.shinku.reader.exh.source.BlacklistedSources
 import com.shinku.reader.exh.source.DelegatedHttpSource
@@ -24,6 +17,17 @@ import com.shinku.reader.exh.source.MERGED_SOURCE_ID
 import com.shinku.reader.exh.source.PURURIN_SOURCE_ID
 import com.shinku.reader.exh.source.TSUMINO_SOURCE_ID
 import com.shinku.reader.exh.source.handleSourceLibrary
+import com.shinku.reader.extension.ExtensionManager
+import eu.kanade.tachiyomi.source.local.LocalSource
+import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.source.online.all.Lanraragi
+import eu.kanade.tachiyomi.source.online.all.MangaDex
+import eu.kanade.tachiyomi.source.online.all.MergedSource
+import eu.kanade.tachiyomi.source.online.all.NHentai
+import eu.kanade.tachiyomi.source.online.english.EightMuses
+import eu.kanade.tachiyomi.source.online.english.HBrowse
+import eu.kanade.tachiyomi.source.online.english.Pururin
+import eu.kanade.tachiyomi.source.online.english.Tsumino
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -37,10 +41,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import com.shinku.reader.domain.source.model.StubSource
-import com.shinku.reader.domain.source.repository.StubSourceRepository
-import com.shinku.reader.domain.source.service.SourceManager
-import eu.kanade.tachiyomi.source.local.LocalSource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
@@ -114,9 +114,8 @@ class AndroidSourceManager(
         scope.launch {
             sourceRepository.subscribeAll()
                 .collectLatest { sources ->
-                    val mutableMap = stubSourcesMap.toMutableMap()
                     sources.forEach {
-                        mutableMap[it.id] = it
+                        stubSourcesMap[it.id] = it
                     }
                 }
         }

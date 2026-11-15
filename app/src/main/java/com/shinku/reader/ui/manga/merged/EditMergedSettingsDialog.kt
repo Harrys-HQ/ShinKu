@@ -23,14 +23,15 @@ import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.shinku.reader.databinding.EditMergedSettingsDialogBinding
-import com.shinku.reader.ui.manga.MergedMangaData
-import com.shinku.reader.util.system.toast
-import com.shinku.reader.exh.source.MERGED_SOURCE_ID
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.domain.manga.model.MergedMangaReference
+import com.shinku.reader.exh.source.MERGED_SOURCE_ID
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.ui.manga.MergedMangaData
+import com.shinku.reader.util.system.toast
 
 @Stable
 class EditMergedSettingsState(
@@ -181,6 +182,7 @@ fun EditMergedSettingsDialog(
         EditMergedSettingsState(context, onDeleteClick, onDismissRequest, onPositiveClick)
     }
     AlertDialog(
+        shape = SanctuaryShapes.hero,
         onDismissRequest = onDismissRequest,
         confirmButton = {
             TextButton(onClick = state::onPositiveButtonClick) {

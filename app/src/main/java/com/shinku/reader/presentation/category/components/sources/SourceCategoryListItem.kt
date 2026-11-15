@@ -17,7 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.stringResource
+import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 
 @Composable
 fun SourceCategoryListItem(
@@ -28,6 +31,7 @@ fun SourceCategoryListItem(
 ) {
     ElevatedCard(
         modifier = modifier,
+        shape = SanctuaryShapes.deckCard,
     ) {
         Row(
             modifier = Modifier
@@ -40,16 +44,16 @@ fun SourceCategoryListItem(
                 ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = "")
+            Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = null)
             Text(text = category, modifier = Modifier.padding(start = MaterialTheme.padding.medium))
         }
         Row {
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = onRename) {
-                Icon(imageVector = Icons.Outlined.Edit, contentDescription = "")
+                Icon(imageVector = Icons.Outlined.Edit, contentDescription = stringResource(MR.strings.action_edit))
             }
             IconButton(onClick = onDelete) {
-                Icon(imageVector = Icons.Outlined.Delete, contentDescription = "")
+                Icon(imageVector = Icons.Outlined.Delete, contentDescription = stringResource(MR.strings.action_delete))
             }
         }
     }

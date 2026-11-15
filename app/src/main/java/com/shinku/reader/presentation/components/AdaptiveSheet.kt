@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -64,9 +65,10 @@ fun AdaptiveSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     enableSwipeDismiss: Boolean = true,
+    preferSidePanel: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val isTabletUi = isTabletUi()
+    val isTabletUi = isTabletUi() || preferSidePanel
 
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -77,6 +79,7 @@ fun AdaptiveSheet(
             enableSwipeDismiss = enableSwipeDismiss,
             onDismissRequest = onDismissRequest,
             modifier = modifier,
+            panelAlignment = if (preferSidePanel) Alignment.CenterEnd else Alignment.Center,
         ) {
             content()
         }

@@ -734,6 +734,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
 class TranslationOverlay(context: Context) : View(context) {
     var page: ReaderPage? = null
     var pageView: View? = null
+    private val mappedImageBounds = RectF()
 
     init {
         isClickable = false
@@ -902,12 +903,15 @@ class TranslationOverlay(context: Context) : View(context) {
                     val dWidth = drawable.intrinsicWidth
                     val dHeight = drawable.intrinsicHeight
                     if (dWidth <= 0 || dHeight <= 0) continue
-                    val scaleX = view.width.toFloat() / dWidth.toFloat()
-                    val scaleY = view.height.toFloat() / dHeight.toFloat()
-                    left = box.left * scaleX
-                    top = box.top * scaleY
-                    right = box.right * scaleX
-                    bottom = box.bottom * scaleY
+                    val scaleX = if (block.sourceWidth > 0) dWidth.toFloat() / block.sourceWidth else 1f
+                    val scaleY = if (block.sourceHeight > 0) dHeight.toFloat() / block.sourceHeight else 1f
+                    mappedImageBounds.set(box.left * scaleX, box.top * scaleY, box.right * scaleX, box.bottom * scaleY)
+                    view.imageMatrix.mapRect(mappedImageBounds)
+                    mappedImageBounds.offset(view.paddingLeft.toFloat(), view.paddingTop.toFloat())
+                    left = mappedImageBounds.left
+                    top = mappedImageBounds.top
+                    right = mappedImageBounds.right
+                    bottom = mappedImageBounds.bottom
                 }
                 else -> continue
             }
@@ -959,6 +963,8 @@ class TranslationOverlay(context: Context) : View(context) {
             canvas.drawRoundRect(actualLeft, actualTop, actualRight, actualBottom, cornerRadius, cornerRadius, maskBorderPaint)
 
             // 2. Typeset cached layout with crisp scanlation halo + foreground text (0 frame allocations)
+            // The minimum text padding uses 4px on each side; smaller masks have no text area.
+            if (width <= 8 || height <= 8) continue
             val cached = getOrBuildBubbleLayout(
                 text = block.translatedText,
                 width = width,
@@ -968,6 +974,7 @@ class TranslationOverlay(context: Context) : View(context) {
             )
 
             canvas.save()
+            canvas.clipRect(actualLeft, actualTop, actualRight, actualBottom)
             val textHeight = cached.fillLayout.height
             val textLeft = actualLeft + (width - cached.contentWidth) / 2f
             val dy = actualTop + (height - textHeight) / 2f

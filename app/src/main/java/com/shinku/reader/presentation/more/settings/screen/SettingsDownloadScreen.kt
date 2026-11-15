@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.GetApp
+import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -123,10 +126,12 @@ object SettingsDownloadScreen : SearchableSettings {
                 preferenceItems = persistentListOf(
                     Preference.PreferenceItem.SwitchPreference(
                         preference = downloadPreferences.downloadOnlyOverWifi(),
+                        icon = Icons.Outlined.Wifi,
                         title = stringResource(MR.strings.connected_to_wifi),
                     ),
                     Preference.PreferenceItem.SwitchPreference(
                         preference = downloadPreferences.saveChaptersAsCBZ(),
+                        icon = Icons.Outlined.Archive,
                         title = stringResource(MR.strings.save_chapter_as_cbz),
                     ),
                     Preference.PreferenceItem.SwitchPreference(
@@ -178,6 +183,7 @@ object SettingsDownloadScreen : SearchableSettings {
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = downloadPreferences.removeAfterMarkedAsRead(),
+                    icon = Icons.Outlined.DeleteSweep,
                     title = stringResource(MR.strings.pref_remove_after_marked_as_read),
                 ),
                 Preference.PreferenceItem.ListPreference(

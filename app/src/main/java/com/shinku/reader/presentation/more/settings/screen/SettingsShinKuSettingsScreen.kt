@@ -2,7 +2,10 @@ package com.shinku.reader.presentation.more.settings.screen
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -173,32 +176,24 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = basePreferences.highRefreshRate(),
+                    icon = Icons.Outlined.Speed,
                     title = stringResource(MR.strings.pref_high_refresh_rate),
                     subtitle = stringResource(MR.strings.pref_high_refresh_rate_summary),
                 ),
-                Preference.PreferenceItem.ListPreference(
-                    preference = basePreferences.performanceMode(),
+                Preference.PreferenceItem.CustomPreference(
                     title = stringResource(MR.strings.pref_performance_mode),
-                    entries = persistentMapOf(
-                        BasePreferences.PerformanceMode.STANDARD.value to stringResource(MR.strings.pref_performance_mode_standard),
-                        BasePreferences.PerformanceMode.E_INK.value to stringResource(MR.strings.pref_performance_mode_eink),
-                        BasePreferences.PerformanceMode.LOW_POWER.value to stringResource(MR.strings.pref_performance_mode_low_power),
-                    ),
-                    subtitleProvider = { value, entries ->
-                        when (value) {
-                            BasePreferences.PerformanceMode.E_INK.value -> stringResource(MR.strings.pref_performance_mode_eink_summary)
-                            BasePreferences.PerformanceMode.LOW_POWER.value -> stringResource(MR.strings.pref_performance_mode_low_power_summary)
-                            else -> entries[value].orEmpty()
-                        }
-                    },
-                ),
+                ) {
+                    PerformanceModeSelector(basePreferences.performanceMode())
+                },
                 Preference.PreferenceItem.SwitchPreference(
                     preference = shinkuPreferences.aiUpscaling(),
+                    icon = Icons.Outlined.AutoAwesome,
                     title = "Enhanced scaling",
                     subtitle = "Sharper upscaled pages; may be slower on older devices",
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = shinkuPreferences.predictiveLoading(),
+                    icon = Icons.Outlined.Layers,
                     title = stringResource(SYMR.strings.pref_predictive_loading),
                     subtitle = stringResource(SYMR.strings.pref_predictive_loading_summary),
                 ),
@@ -1001,9 +996,20 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
         sourcePreferences: SourcePreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
+        val navigator = LocalNavigator.currentOrThrow
         return Preference.PreferenceGroup(
             title = "Advanced Options",
             preferenceItems = persistentListOf(
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(SYMR.strings.batch_add),
+                    subtitle = stringResource(MR.strings.batch_add_scope_hint),
+                    onClick = { navigator.push(com.shinku.reader.exh.ui.batchadd.BatchAddScreen()) },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.source_categories_title),
+                    subtitle = stringResource(MR.strings.source_categories_summary),
+                    onClick = { navigator.push(com.shinku.reader.ui.category.sources.SourceCategoryScreen()) },
+                ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.flashOnPageChange(),
                     title = stringResource(MR.strings.pref_flash_page),
