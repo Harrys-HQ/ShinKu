@@ -1,0 +1,56 @@
+import kotlin.Boolean;
+
+-- Cross-source grouping as a stored fact.
+--
+-- `merged` (3.sqm) already serves the SY-lineage virtual merged entry with its own
+-- chapter_priority / chapter_sort_mode / download_chapters settings, and it stays as it is. This
+-- table answers a different question — "which group is this manga in" — by id lookup instead of
+-- re-deriving it per call from preferences plus a same-title scan, which is what makes library
+-- assembly O(entries) rather than O(entries × comparisons). UNIQUE(manga_id) keeps a manga in at
+-- most one group, and both foreign keys cascade so membership cannot outlive either side.
+CREATE TABLE merge_group(
+    _id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    title_override TEXT,
+    cover_override TEXT,
+    override_source_ranking INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+CREATE TABLE merge_group_manga(
+    _id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER NOT NULL,
+    manga_id INTEGER NOT NULL,
+    source_priority INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY(group_id) REFERENCES merge_group (_id)
+    ON DELETE CASCADE,
+    FOREIGN KEY(manga_id) REFERENCES mangas (_id)
+    ON DELETE CASCADE,
+    UNIQUE(manga_id)
+);
+
+CREATE INDEX merge_group_manga_group_id_index ON merge_group_manga(group_id);
+CREATE INDEX merge_group_manga_manga_id_index ON merge_group_manga(manga_id);
+
+getGroupId:
+SELECT group_id FROM merge_group_manga WHERE manga_id = :mangaId;
+
+getMembers:
+SELECT manga_id FROM merge_group_manga WHERE group_id = :groupId ORDER BY source_priority, manga_id;
+
+getMemberships:
+SELECT manga_id, group_id FROM merge_group_manga;
+
+insertGroup:
+INSERT INTO merge_group (override_source_ranking) VALUES (:overrideSourceRanking);
+
+insertMember:
+INSERT INTO merge_group_manga (group_id, manga_id, source_priority)
+VALUES (:groupId, :mangaId, :sourcePriority);
+
+removeMember:
+DELETE FROM merge_group_manga WHERE manga_id = :mangaId;
+
+deleteGroup:
+DELETE FROM merge_group WHERE _id = :groupId;
+
+selectLastInsertedRowId:
+SELECT last_insert_rowid();
