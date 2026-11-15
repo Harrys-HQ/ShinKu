@@ -59,6 +59,7 @@ import com.shinku.reader.data.track.TrackerManager
 import com.shinku.reader.data.track.anilist.AnilistApi
 import com.shinku.reader.data.track.bangumi.BangumiApi
 import com.shinku.reader.data.track.comick.ComickApi
+import com.shinku.reader.data.track.mangabaka.MangaBakaApi
 import com.shinku.reader.data.track.myanimelist.MyAnimeListApi
 import com.shinku.reader.data.track.shikimori.ShikimoriApi
 import com.shinku.reader.util.system.openInBrowser
@@ -213,6 +214,11 @@ object SettingsTrackingScreen : SearchableSettings {
             Preference.PreferenceGroup(
                 title = stringResource(MR.strings.services),
                 preferenceItems = persistentListOf(
+                    Preference.PreferenceItem.TrackerPreference(
+                        tracker = trackerManager.mangaBaka,
+                        login = { context.openInBrowser(MangaBakaApi.authUrl(), forceDefaultBrowser = true) },
+                        logout = { dialog = LogoutDialog(trackerManager.mangaBaka) },
+                    ),
                     Preference.PreferenceItem.TrackerPreference(
                         tracker = trackerManager.myAnimeList,
                         login = { context.openInBrowser(MyAnimeListApi.authUrl(), forceDefaultBrowser = true) },

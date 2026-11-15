@@ -861,6 +861,7 @@
     <string name="paused">Paused</string>
     <string name="plan_to_read">Plan to read</string>
     <string name="repeating">Rereading</string>
+    <string name="considering">Considering</string>
     <string name="reading_list">Reading List</string>
     <string name="wish_list">Wish List</string>
     <string name="complete_list">Complete List</string>

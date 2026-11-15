@@ -33,6 +33,7 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
                 "anilist-auth" -> handleAniList(data["access_token"], data["state"])
                 "comick-auth" -> handleComick(data["code"], data["state"])
                 "bangumi-auth" -> handleBangumi(data["code"], data["state"])
+                "mangabaka-auth" -> handleMangaBaka(data["code"], data["state"])
                 "myanimelist-auth" -> handleMyAnimeList(data["code"], data["state"])
                 "shikimori-auth" -> handleShikimori(data["code"], data["state"])
             }
@@ -80,6 +81,18 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
             trackerManager.bangumi.login(code)
         } else {
             trackerManager.bangumi.logout()
+        }
+    }
+
+    private suspend fun handleMangaBaka(code: String?, state: String?) {
+        if (state == null || !trackerManager.mangaBaka.verifyOAuthState(state)) {
+            logcat(LogPriority.WARN) { "Received invalid or missing OAuth state back from MangaBaka" }
+            return
+        }
+        if (code != null) {
+            trackerManager.mangaBaka.login(code)
+        } else {
+            trackerManager.mangaBaka.logout()
         }
     }
 

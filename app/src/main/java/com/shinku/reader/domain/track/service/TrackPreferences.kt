@@ -36,6 +36,8 @@ class TrackPreferences(
 
     fun anilistScoreType() = preferenceStore.getString("anilist_score_type", Anilist.POINT_10)
 
+    fun mangabakaScoreType() = preferenceStore.getString("mangabaka_score_type", "STEP_1")
+
     fun autoUpdateTrack() = preferenceStore.getBoolean("pref_auto_update_manga_sync_key", true)
 
     fun autoUpdateTrackOnMarkRead() = preferenceStore.getEnum(
