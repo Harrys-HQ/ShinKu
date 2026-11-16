@@ -12,4 +12,8 @@ data class FeedSavedSearch(
 
     // If the feed is a global or source specific feed
     val global: Boolean,
+
+    val category: Long = 1,
+    val feedOrder: Long = 0,
+    val searchType: Long = 1,
 )

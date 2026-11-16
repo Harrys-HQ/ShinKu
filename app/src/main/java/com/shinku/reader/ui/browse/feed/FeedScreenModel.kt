@@ -16,12 +16,19 @@ import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.manga.interactor.UpdateManga
 import com.shinku.reader.domain.manga.model.toDomainManga
 import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchGlobal
+import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchGlobalByCategory
+import com.shinku.reader.domain.source.interactor.DeleteFeedCategory
 import com.shinku.reader.domain.source.interactor.DeleteFeedSavedSearchById
+import com.shinku.reader.domain.source.interactor.GetFeedCategories
 import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchGlobal
+import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchGlobalByCategory
 import com.shinku.reader.domain.source.interactor.GetRemoteManga
 import com.shinku.reader.domain.source.interactor.GetSavedSearchBySourceId
 import com.shinku.reader.domain.source.interactor.GetSavedSearchGlobalFeed
+import com.shinku.reader.domain.source.interactor.InsertFeedCategory
 import com.shinku.reader.domain.source.interactor.InsertFeedSavedSearch
+import com.shinku.reader.domain.source.interactor.UpdateFeedCategory
+import com.shinku.reader.domain.source.model.FeedCategory
 import com.shinku.reader.domain.source.model.FeedSavedSearch
 import com.shinku.reader.domain.source.model.SavedSearch
 import com.shinku.reader.domain.source.repository.SourceHealthRepository
@@ -40,6 +47,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
@@ -50,6 +58,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
@@ -85,6 +94,12 @@ open class FeedScreenModel(
     private val getRemoteManga: GetRemoteManga = Injekt.get(),
     private val getLibraryManga: com.shinku.reader.domain.manga.interactor.GetLibraryManga = Injekt.get(),
     private val sourceHealthRepository: SourceHealthRepository = Injekt.get(),
+    private val getFeedCategories: GetFeedCategories = Injekt.get(),
+    private val insertFeedCategory: InsertFeedCategory = Injekt.get(),
+    private val updateFeedCategory: UpdateFeedCategory = Injekt.get(),
+    private val deleteFeedCategory: DeleteFeedCategory = Injekt.get(),
+    private val getFeedSavedSearchGlobalByCategory: GetFeedSavedSearchGlobalByCategory = Injekt.get(),
+    private val countFeedSavedSearchGlobalByCategory: CountFeedSavedSearchGlobalByCategory = Injekt.get(),
 ) : StateScreenModel<FeedScreenState>(FeedScreenState()) {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
@@ -106,6 +121,7 @@ open class FeedScreenModel(
     private val refreshRequest = LatestFeedRequest(screenModelScope)
     private val genreRequest = LatestFeedRequest(screenModelScope)
     private val savedFeedRefresh = MutableStateFlow(0L)
+    private val selectedCategoryId = MutableStateFlow(1L)
     var pushed: Boolean = false
     var isInitialized: Boolean = false
         private set
@@ -121,12 +137,35 @@ open class FeedScreenModel(
             }
             .launchIn(screenModelScope)
 
-        getFeedSavedSearchGlobal.subscribe()
+        getFeedCategories.subscribe()
             .distinctUntilChanged()
-            .combine(savedFeedRefresh) { feeds, _ -> feeds }
-            .mapLatest {
+            .onEach { categories ->
+                mutableState.updateIfActive { state ->
+                    val activeId = selectedCategoryId.value
+                    val currentCategory = categories.find { it._id == activeId } ?: categories.firstOrNull()
+                    val newId = currentCategory?._id ?: 1L
+                    if (newId != selectedCategoryId.value) {
+                        selectedCategoryId.value = newId
+                    }
+                    val index = categories.indexOfFirst { it._id == newId }.coerceAtLeast(0)
+                    state.copy(
+                        categories = categories.toImmutableList(),
+                        selectedCategoryIndex = index,
+                    )
+                }
+            }
+            .launchIn(screenModelScope)
+
+        @OptIn(ExperimentalCoroutinesApi::class)
+        selectedCategoryId
+            .flatMapLatest { categoryId ->
+                getFeedSavedSearchGlobalByCategory.subscribe(categoryId)
+                    .distinctUntilChanged()
+                    .combine(savedFeedRefresh) { feeds, _ -> feeds }
+            }
+            .mapLatest { feeds ->
                 sourceManager.isInitialized.first { it }
-                val items = getSourcesToGetFeed(it).map { (feed, savedSearch) ->
+                val items = getSourcesToGetFeed(feeds).map { (feed, savedSearch) ->
                     createCatalogueSearchItem(
                         feed = feed,
                         savedSearch = savedSearch,
@@ -615,7 +654,8 @@ open class FeedScreenModel(
 
     fun openAddDialog() {
         screenModelScope.launchIO {
-            if (hasTooManyFeeds()) {
+            val activeCategoryId = state.value.selectedCategory?._id ?: 1L
+            if (hasTooManyFeeds(activeCategoryId)) {
                 _events.send(Event.TooManyFeeds)
                 return@launchIO
             }
@@ -653,8 +693,8 @@ open class FeedScreenModel(
         }
     }
 
-    private suspend fun hasTooManyFeeds(): Boolean {
-        return countFeedSavedSearchGlobal.await() >= FeedLimits.MAX_SOURCES_PER_FEED
+    private suspend fun hasTooManyFeeds(categoryId: Long = state.value.selectedCategory?._id ?: 1L): Boolean {
+        return countFeedSavedSearchGlobalByCategory.await(categoryId) >= FeedLimits.MAX_SOURCES_PER_FEED
     }
 
     fun getEnabledSources(): ImmutableList<CatalogueSource> {
@@ -676,6 +716,7 @@ open class FeedScreenModel(
     }
 
     fun createFeed(source: CatalogueSource, savedSearch: SavedSearch?) {
+        val activeCategoryId = state.value.selectedCategory?._id ?: 1L
         screenModelScope.launchNonCancellable {
             insertFeedSavedSearch.await(
                 FeedSavedSearch(
@@ -683,8 +724,55 @@ open class FeedScreenModel(
                     source = source.id,
                     savedSearch = savedSearch?.id,
                     global = true,
+                    category = activeCategoryId,
                 ),
             )
+        }
+    }
+
+    fun selectCategory(index: Int) {
+        val cat = state.value.categories.getOrNull(index) ?: return
+        selectedCategoryId.value = cat._id
+        mutableState.update { it.copy(selectedCategoryIndex = index, items = null) }
+    }
+
+    fun openManageCategoriesDialog() {
+        mutableState.update { it.copy(dialog = Dialog.ManageCategories) }
+    }
+
+    fun openCreateCategoryDialog() {
+        mutableState.update { it.copy(dialog = Dialog.CreateCategory) }
+    }
+
+    fun openEditCategoryDialog(category: FeedCategory) {
+        mutableState.update { it.copy(dialog = Dialog.EditCategory(category)) }
+    }
+
+    fun openDeleteCategoryDialog(category: FeedCategory) {
+        mutableState.update { it.copy(dialog = Dialog.DeleteCategory(category)) }
+    }
+
+    fun createCategory(name: String, lang: String = "all") {
+        screenModelScope.launchNonCancellable {
+            val newId = insertFeedCategory.await(name, lang, explore = false)
+            selectedCategoryId.value = newId
+            dismissDialog()
+        }
+    }
+
+    fun updateCategory(id: Long, name: String, lang: String = "all") {
+        screenModelScope.launchNonCancellable {
+            updateFeedCategory.await(id, name, lang)
+            dismissDialog()
+        }
+    }
+
+    fun deleteCategory(category: FeedCategory) {
+        if (category._id == 1L) return
+        screenModelScope.launchNonCancellable {
+            deleteFeedCategory.await(category._id)
+            selectedCategoryId.value = 1L
+            dismissDialog()
         }
     }
 
@@ -803,6 +891,10 @@ open class FeedScreenModel(
         data class AddFeed(val options: ImmutableList<CatalogueSource>) : Dialog()
         data class AddFeedSearch(val source: CatalogueSource, val options: ImmutableList<SavedSearch?>) : Dialog()
         data class DeleteFeed(val feed: FeedSavedSearch) : Dialog()
+        data object ManageCategories : Dialog()
+        data object CreateCategory : Dialog()
+        data class EditCategory(val category: FeedCategory) : Dialog()
+        data class DeleteCategory(val category: FeedCategory) : Dialog()
     }
 
     sealed class Event {
@@ -814,6 +906,8 @@ open class FeedScreenModel(
 @androidx.compose.runtime.Immutable
 data class FeedScreenState(
     val dialog: FeedScreenModel.Dialog? = null,
+    val categories: kotlinx.collections.immutable.ImmutableList<FeedCategory> = kotlinx.collections.immutable.persistentListOf(),
+    val selectedCategoryIndex: Int = 0,
     val items: kotlinx.collections.immutable.ImmutableList<FeedItemUI>? = null,
     val recommendations: kotlinx.collections.immutable.ImmutableList<DomainManga>? = null,
     val featuredManga: kotlinx.collections.immutable.ImmutableList<DomainManga> = kotlinx.collections.immutable.persistentListOf(),
@@ -827,13 +921,23 @@ data class FeedScreenState(
     val isInitialLoadDone: Boolean = false,
     val failedSources: ImmutableList<CatalogueSource> = persistentListOf(),
 ) {
+    val selectedCategory: FeedCategory?
+        get() = categories.getOrNull(selectedCategoryIndex) ?: categories.firstOrNull()
+
+    val isGlobalTab: Boolean
+        get() = (selectedCategory?._id ?: 1L) == 1L || selectedCategory?.explore == true
+
     val hasContent: Boolean
-        get() = featuredManga.isNotEmpty() ||
-            forYouManga.isNotEmpty() ||
-            genreSections.isNotEmpty() ||
-            selectedGenreManga != null ||
-            !recommendations.isNullOrEmpty() ||
-            (showSourceFeeds && !items.isNullOrEmpty())
+        get() = if (isGlobalTab) {
+            featuredManga.isNotEmpty() ||
+                forYouManga.isNotEmpty() ||
+                genreSections.isNotEmpty() ||
+                selectedGenreManga != null ||
+                !recommendations.isNullOrEmpty() ||
+                (showSourceFeeds && !items.isNullOrEmpty())
+        } else {
+            !items.isNullOrEmpty()
+        }
 
     val isLoading: Boolean
         get() = !isInitialLoadDone && !hasContent

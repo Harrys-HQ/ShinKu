@@ -1,0 +1,35 @@
+import kotlin.Boolean;
+
+CREATE TABLE feed_categories (
+    _id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    sort INTEGER NOT NULL,
+    lang TEXT NOT NULL DEFAULT 'all',
+    explore INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+-- System category. Existing installs keep their current feed here.
+INSERT OR IGNORE INTO feed_categories(_id, name, sort) VALUES (1, 'Global', 0);
+
+selectAll:
+SELECT * FROM feed_categories ORDER BY sort;
+
+selectById:
+SELECT * FROM feed_categories WHERE _id = :id;
+
+insert:
+INSERT INTO feed_categories(name, sort, lang, explore)
+VALUES (:name, (SELECT COALESCE(MAX(sort), 0) + 1 FROM feed_categories), :lang, :explore);
+
+update:
+UPDATE feed_categories SET name = :name, lang = :lang WHERE _id = :id;
+
+updateSort:
+UPDATE feed_categories SET sort = :sort WHERE _id = :id;
+
+-- never delete the system category
+delete:
+DELETE FROM feed_categories WHERE _id = :id AND _id != 1;
+
+selectLastInsertedRowId:
+SELECT last_insert_rowid();

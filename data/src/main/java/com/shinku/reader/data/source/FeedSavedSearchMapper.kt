@@ -8,12 +8,18 @@ object FeedSavedSearchMapper {
         source: Long,
         savedSearch: Long?,
         global: Boolean,
+        category: Long,
+        feedOrder: Long,
+        searchType: Long,
     ): FeedSavedSearch {
         return FeedSavedSearch(
             id = id,
             source = source,
             savedSearch = savedSearch,
             global = global,
+            category = category,
+            feedOrder = feedOrder,
+            searchType = searchType,
         )
     }
 }

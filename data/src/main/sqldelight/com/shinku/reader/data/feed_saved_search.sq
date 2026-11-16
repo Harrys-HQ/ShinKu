@@ -5,6 +5,9 @@ CREATE TABLE feed_saved_search (
     source INTEGER NOT NULL,
     saved_search INTEGER,
     global INTEGER AS Boolean NOT NULL,
+    category INTEGER NOT NULL DEFAULT 1,
+    feed_order INTEGER NOT NULL DEFAULT 0,
+    search_type INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY(saved_search) REFERENCES saved_search (_id)
     ON DELETE CASCADE
 );
@@ -12,7 +15,13 @@ CREATE TABLE feed_saved_search (
 CREATE INDEX feed_saved_search_saved_search_index ON feed_saved_search(saved_search);
 
 selectAllGlobal:
-SELECT * FROM feed_saved_search WHERE global = 1;
+SELECT * FROM feed_saved_search WHERE global = 1 ORDER BY feed_order;
+
+selectGlobalByCategory:
+SELECT * FROM feed_saved_search WHERE global = 1 AND category = :categoryId ORDER BY feed_order;
+
+countGlobalByCategory:
+SELECT count(*) FROM feed_saved_search WHERE global = 1 AND category = :categoryId;
 
 countGlobal:
 SELECT count(*) FROM feed_saved_search WHERE global = 1;
@@ -23,8 +32,20 @@ SELECT * FROM feed_saved_search WHERE source = :sourceId AND global = 0;
 insert:
 INSERT INTO feed_saved_search (source, saved_search, global) VALUES (:sourceId, :savedSearch, :global);
 
+insertWithCategory:
+INSERT INTO feed_saved_search (source, saved_search, global, category, feed_order, search_type)
+VALUES (:sourceId, :savedSearch, :global, :category,
+        (SELECT COALESCE(MAX(feed_order), 0) + 1 FROM feed_saved_search WHERE category = :category),
+        :searchType);
+
+reorderInCategory:
+UPDATE feed_saved_search SET feed_order = :feedOrder WHERE _id = :id AND category = :categoryId;
+
 deleteById:
 DELETE FROM feed_saved_search WHERE _id = :id;
+
+deleteByCategory:
+DELETE FROM feed_saved_search WHERE category = :categoryId;
 
 deleteAll:
 DELETE FROM feed_saved_search;
@@ -32,7 +53,15 @@ DELETE FROM feed_saved_search;
 selectGlobalFeedSavedSearch:
 SELECT saved_search.*
 FROM (
-    SELECT saved_search FROM feed_saved_search WHERE global = 1
+    SELECT saved_search FROM feed_saved_search WHERE global = 1 ORDER BY feed_order
+) AS M
+JOIN saved_search
+ON saved_search._id = M.saved_search;
+
+selectGlobalFeedSavedSearchByCategory:
+SELECT saved_search.*
+FROM (
+    SELECT saved_search FROM feed_saved_search WHERE global = 1 AND category = :categoryId ORDER BY feed_order
 ) AS M
 JOIN saved_search
 ON saved_search._id = M.saved_search;

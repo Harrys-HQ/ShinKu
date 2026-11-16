@@ -47,6 +47,10 @@ import com.shinku.reader.presentation.browse.components.DiscoverFeaturedCarousel
 import com.shinku.reader.presentation.browse.components.DiscoverFeedSkeleton
 import com.shinku.reader.presentation.browse.components.DiscoverGenreCloud
 import com.shinku.reader.presentation.browse.components.DiscoverMangaRow
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.ui.platform.LocalLayoutDirection
+import com.shinku.reader.presentation.browse.components.FeedCategoryTabs
 import com.shinku.reader.presentation.browse.components.DiscoverSectionHeader
 import com.shinku.reader.presentation.browse.components.FeedSourceFailures
 import com.shinku.reader.presentation.browse.components.GlobalSearchCardRow
@@ -80,6 +84,8 @@ data class FeedItemUI(
 fun FeedScreen(
     state: FeedScreenState,
     contentPadding: PaddingValues,
+    onSelectCategory: (Int) -> Unit = {},
+    onManageCategories: () -> Unit = {},
     onClickSavedSearch: (SavedSearch, CatalogueSource) -> Unit,
     onClickSource: (CatalogueSource) -> Unit,
     onClickDelete: (FeedSavedSearch) -> Unit,
@@ -92,57 +98,97 @@ fun FeedScreen(
     getMangaState: @Composable (Manga) -> State<Manga>,
 ) {
     val hasContent = state.hasContent
+    val layoutDirection = LocalLayoutDirection.current
+    val topPadding = contentPadding.calculateTopPadding()
+    val hasTabs = state.categories.size > 1
+    val innerPadding = if (hasTabs) {
+        PaddingValues(
+            start = contentPadding.calculateStartPadding(layoutDirection),
+            end = contentPadding.calculateEndPadding(layoutDirection),
+            bottom = contentPadding.calculateBottomPadding(),
+            top = 0.dp,
+        )
+    } else {
+        contentPadding
+    }
 
-    when {
-        state.isLoading -> DiscoverFeedSkeleton(
-            contentPadding = contentPadding,
-            selectedGenre = state.selectedGenre,
-            onClickGenre = onClickGenre,
-        )
-        !hasContent -> EmptyScreen(
-            message = if (state.failedSources.isNotEmpty()) stringResource(MR.strings.feed_empty_failure) else stringResource(SYMR.strings.feed_tab_empty),
-            modifier = Modifier.padding(contentPadding),
-            actions = buildList {
-                add(EmptyScreenAction(MR.strings.action_retry, Icons.Outlined.Refresh, onRefresh))
-                state.failedSources.firstOrNull()?.let { source ->
-                    add(EmptyScreenAction(MR.strings.feed_open_source, Icons.Outlined.Public) { onClickSource(source) })
-                }
-            }.toImmutableList(),
-        )
-        else -> {
-            PullRefresh(
-                refreshing = state.isRefreshing,
-                onRefresh = onRefresh,
-                enabled = true,
-                indicatorPadding = contentPadding,
-            ) {
-                ScrollbarLazyColumn(
-                    contentPadding = contentPadding + topSmallPaddingValues,
-                    modifier = Modifier.fillMaxSize(),
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = if (hasTabs) topPadding else 0.dp),
+    ) {
+        if (hasTabs) {
+            FeedCategoryTabs(
+                categories = state.categories,
+                selectedCategoryIndex = state.selectedCategoryIndex,
+                onSelectCategory = onSelectCategory,
+                onManageCategories = onManageCategories,
+            )
+        }
+
+        when {
+            state.isLoading -> DiscoverFeedSkeleton(
+                contentPadding = innerPadding,
+                selectedGenre = state.selectedGenre,
+                onClickGenre = onClickGenre,
+            )
+            !hasContent -> EmptyScreen(
+                message = if (state.failedSources.isNotEmpty()) {
+                    stringResource(MR.strings.feed_empty_failure)
+                } else if (!state.isGlobalTab) {
+                    "No feeds in this tab. Tap below to add sources to this category."
+                } else {
+                    stringResource(SYMR.strings.feed_tab_empty)
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(innerPadding),
+                actions = buildList {
+                    if (!state.isGlobalTab) {
+                        add(EmptyScreenAction(MR.strings.action_add, Icons.Outlined.Add, onAddFeed))
+                    }
+                    add(EmptyScreenAction(MR.strings.action_retry, Icons.Outlined.Refresh, onRefresh))
+                    state.failedSources.firstOrNull()?.let { source ->
+                        add(EmptyScreenAction(MR.strings.feed_open_source, Icons.Outlined.Public) { onClickSource(source) })
+                    }
+                }.toImmutableList(),
+            )
+            else -> {
+                PullRefresh(
+                    refreshing = state.isRefreshing,
+                    onRefresh = onRefresh,
+                    enabled = true,
+                    indicatorPadding = innerPadding,
+                    modifier = Modifier.weight(1f),
                 ) {
-                    if (state.failedSources.isNotEmpty()) {
-                        item(key = "source-request-failures") {
-                            FeedSourceFailures(state.failedSources, onRefresh, onClickSource)
+                    ScrollbarLazyColumn(
+                        contentPadding = innerPadding + topSmallPaddingValues,
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        if (state.failedSources.isNotEmpty()) {
+                            item(key = "source-request-failures") {
+                                FeedSourceFailures(state.failedSources, onRefresh, onClickSource)
+                            }
                         }
-                    }
-                    // 1. Featured Manga Carousel Banner
-                    if (state.featuredManga.isNotEmpty()) {
-                        item {
-                            DiscoverFeaturedCarousel(
-                                featuredManga = state.featuredManga,
-                                onClickManga = onClickManga,
-                                getMangaState = getMangaState,
-                            )
-                        }
-                    }
+                        if (state.isGlobalTab) {
+                            // 1. Featured Manga Carousel Banner
+                            if (state.featuredManga.isNotEmpty()) {
+                                item {
+                                    DiscoverFeaturedCarousel(
+                                        featuredManga = state.featuredManga,
+                                        onClickManga = onClickManga,
+                                        getMangaState = getMangaState,
+                                    )
+                                }
+                            }
 
-                    // 2. Discover Genre Navigation Pills
-                    item {
-                        DiscoverGenreCloud(
-                            selectedGenre = state.selectedGenre,
-                            onSelectGenre = onClickGenre,
-                        )
-                    }
+                            // 2. Discover Genre Navigation Pills
+                            item {
+                                DiscoverGenreCloud(
+                                    selectedGenre = state.selectedGenre,
+                                    onSelectGenre = onClickGenre,
+                                )
+                            }
 
                     // 3. Dynamic Selected Genre Section (When user taps any genre chip)
                     if (state.selectedGenre != null) {
@@ -178,7 +224,7 @@ fun FeedScreen(
                                 }
                             } else if (hasGenreManga) {
                                 DiscoverMangaRow(
-                                    mangas = state.selectedGenreManga!!,
+                                    mangas = state.selectedGenreManga.orEmpty(),
                                     onClickManga = onClickManga,
                                     getMangaState = getMangaState,
                                 )
@@ -258,6 +304,7 @@ fun FeedScreen(
                                 )
                             }
                         }
+                    }
                     }
 
                     // 7. Custom Feeds & Saved Searches
@@ -418,6 +465,7 @@ fun FeedScreen(
             }
         }
     }
+}
 }
 
 @Composable

@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.AlertDialog
@@ -59,6 +60,7 @@ fun FeedFilterDialog(
     onApply: (sourceFilter: String, languageFilter: String, showSourceFeeds: Boolean) -> Unit,
     onAddFeed: () -> Unit,
     onDeleteFeed: (FeedSavedSearch) -> Unit,
+    onManageCategories: (() -> Unit)? = null,
 ) {
     var sourceFilter by remember { mutableStateOf(currentSourceFilter) }
     var languageFilter by remember { mutableStateOf(currentLanguageFilter) }
@@ -178,6 +180,55 @@ fun FeedFilterDialog(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                            }
+                        }
+                    }
+
+                    if (onManageCategories != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Surface(
+                            shape = SanctuaryShapes.medium,
+                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+                            border = BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(SanctuaryShapes.medium)
+                                .clickable(onClick = onManageCategories),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(SanctuaryShapes.tag)
+                                        .background(MaterialTheme.colorScheme.secondaryContainer),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Category,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Manage Feed Categories",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    Text(
+                                        text = "Organize feeds into tabs and categories",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                     }

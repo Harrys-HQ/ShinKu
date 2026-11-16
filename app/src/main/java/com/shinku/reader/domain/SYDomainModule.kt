@@ -6,14 +6,33 @@ import com.shinku.reader.domain.manga.interactor.DeleteSortTag
 import com.shinku.reader.domain.manga.interactor.GetPagePreviews
 import com.shinku.reader.domain.manga.interactor.GetSortTag
 import com.shinku.reader.domain.manga.interactor.ReorderSortTag
+import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchBySourceId
+import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchGlobal
+import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchGlobalByCategory
 import com.shinku.reader.domain.source.interactor.CreateSourceCategory
+import com.shinku.reader.domain.source.interactor.DeleteFeedCategory
+import com.shinku.reader.domain.source.interactor.DeleteFeedSavedSearchById
+import com.shinku.reader.domain.source.interactor.DeleteSavedSearchById
 import com.shinku.reader.domain.source.interactor.DeleteSourceCategory
 import com.shinku.reader.domain.source.interactor.GetExhSavedSearch
+import com.shinku.reader.domain.source.interactor.GetFeedCategories
+import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchBySourceId
+import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchGlobal
+import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchGlobalByCategory
+import com.shinku.reader.domain.source.interactor.GetSavedSearchById
+import com.shinku.reader.domain.source.interactor.GetSavedSearchBySourceId
+import com.shinku.reader.domain.source.interactor.GetSavedSearchBySourceIdFeed
+import com.shinku.reader.domain.source.interactor.GetSavedSearchGlobalFeed
 import com.shinku.reader.domain.source.interactor.GetShowLatest
 import com.shinku.reader.domain.source.interactor.GetSourceCategories
+import com.shinku.reader.domain.source.interactor.InsertFeedCategory
+import com.shinku.reader.domain.source.interactor.InsertFeedSavedSearch
+import com.shinku.reader.domain.source.interactor.InsertSavedSearch
 import com.shinku.reader.domain.source.interactor.RenameSourceCategory
 import com.shinku.reader.domain.source.interactor.SetSourceCategories
 import com.shinku.reader.domain.source.interactor.ToggleExcludeFromDataSaver
+import com.shinku.reader.domain.source.interactor.UpdateFeedCategory
+import com.shinku.reader.domain.source.repository.FeedCategoryRepository
 import com.shinku.reader.di.InjektModule
 import com.shinku.reader.di.addFactory
 import com.shinku.reader.di.addSingletonFactory
@@ -24,6 +43,7 @@ import com.shinku.reader.data.manga.FavoritesEntryRepositoryImpl
 import com.shinku.reader.data.manga.MangaMergeRepositoryImpl
 import com.shinku.reader.data.manga.MangaMetadataRepositoryImpl
 import com.shinku.reader.data.manga.MergeGroupRepositoryImpl
+import com.shinku.reader.data.source.FeedCategoryRepositoryImpl
 import com.shinku.reader.data.source.FeedSavedSearchRepositoryImpl
 import com.shinku.reader.data.source.SavedSearchRepositoryImpl
 import com.shinku.reader.domain.chapter.interactor.DeleteChapters
@@ -64,18 +84,6 @@ import com.shinku.reader.domain.manga.repository.CustomMangaRepository
 import com.shinku.reader.domain.manga.repository.FavoritesEntryRepository
 import com.shinku.reader.domain.manga.repository.MangaMergeRepository
 import com.shinku.reader.domain.manga.repository.MangaMetadataRepository
-import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchBySourceId
-import com.shinku.reader.domain.source.interactor.CountFeedSavedSearchGlobal
-import com.shinku.reader.domain.source.interactor.DeleteFeedSavedSearchById
-import com.shinku.reader.domain.source.interactor.DeleteSavedSearchById
-import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchBySourceId
-import com.shinku.reader.domain.source.interactor.GetFeedSavedSearchGlobal
-import com.shinku.reader.domain.source.interactor.GetSavedSearchById
-import com.shinku.reader.domain.source.interactor.GetSavedSearchBySourceId
-import com.shinku.reader.domain.source.interactor.GetSavedSearchBySourceIdFeed
-import com.shinku.reader.domain.source.interactor.GetSavedSearchGlobalFeed
-import com.shinku.reader.domain.source.interactor.InsertFeedSavedSearch
-import com.shinku.reader.domain.source.interactor.InsertSavedSearch
 import com.shinku.reader.domain.source.repository.FeedSavedSearchRepository
 import com.shinku.reader.domain.source.repository.SavedSearchRepository
 import com.shinku.reader.domain.track.interactor.IsTrackUnfollowed
@@ -160,6 +168,14 @@ class SYDomainModule : InjektModule {
         addFactory { CountFeedSavedSearchBySourceId(get()) }
         addFactory { GetSavedSearchGlobalFeed(get()) }
         addFactory { GetSavedSearchBySourceIdFeed(get()) }
+        addFactory { CountFeedSavedSearchGlobalByCategory(get()) }
+        addFactory { GetFeedSavedSearchGlobalByCategory(get()) }
+
+        addSingletonFactory<FeedCategoryRepository> { FeedCategoryRepositoryImpl(get()) }
+        addFactory { GetFeedCategories(get()) }
+        addFactory { InsertFeedCategory(get()) }
+        addFactory { UpdateFeedCategory(get()) }
+        addFactory { DeleteFeedCategory(get(), get()) }
 
         addSingletonFactory<CustomMangaRepository> { CustomMangaRepositoryImpl(get<Application>()) }
         addFactory { GetCustomMangaInfo(get()) }

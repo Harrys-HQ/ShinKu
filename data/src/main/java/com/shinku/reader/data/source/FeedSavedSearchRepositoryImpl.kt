@@ -18,12 +18,28 @@ class FeedSavedSearchRepositoryImpl(
         return handler.subscribeToList { feed_saved_searchQueries.selectAllGlobal(FeedSavedSearchMapper::map) }
     }
 
+    override suspend fun getGlobalByCategory(categoryId: Long): List<FeedSavedSearch> {
+        return handler.awaitList { feed_saved_searchQueries.selectGlobalByCategory(categoryId, FeedSavedSearchMapper::map) }
+    }
+
+    override fun getGlobalByCategoryAsFlow(categoryId: Long): Flow<List<FeedSavedSearch>> {
+        return handler.subscribeToList { feed_saved_searchQueries.selectGlobalByCategory(categoryId, FeedSavedSearchMapper::map) }
+    }
+
     override suspend fun getGlobalFeedSavedSearch(): List<SavedSearch> {
         return handler.awaitList { feed_saved_searchQueries.selectGlobalFeedSavedSearch(SavedSearchMapper::map) }
     }
 
+    override suspend fun getGlobalFeedSavedSearchByCategory(categoryId: Long): List<SavedSearch> {
+        return handler.awaitList { feed_saved_searchQueries.selectGlobalFeedSavedSearchByCategory(categoryId, SavedSearchMapper::map) }
+    }
+
     override suspend fun countGlobal(): Long {
         return handler.awaitOne { feed_saved_searchQueries.countGlobal() }
+    }
+
+    override suspend fun countGlobalByCategory(categoryId: Long): Long {
+        return handler.awaitOne { feed_saved_searchQueries.countGlobalByCategory(categoryId) }
     }
 
     override suspend fun getBySourceId(sourceId: Long): List<FeedSavedSearch> {
@@ -48,13 +64,31 @@ class FeedSavedSearchRepositoryImpl(
         handler.await { feed_saved_searchQueries.deleteById(feedSavedSearchId) }
     }
 
+    override suspend fun deleteByCategory(categoryId: Long) {
+        handler.await { feed_saved_searchQueries.deleteByCategory(categoryId) }
+    }
+
+    override suspend fun reorderInCategory(id: Long, categoryId: Long, feedOrder: Long) {
+        handler.await { feed_saved_searchQueries.reorderInCategory(feedOrder, id, categoryId) }
+    }
+
     override suspend fun insert(feedSavedSearch: FeedSavedSearch): Long {
         return handler.awaitOneExecutable(true) {
-            feed_saved_searchQueries.insert(
-                feedSavedSearch.source,
-                feedSavedSearch.savedSearch,
-                feedSavedSearch.global,
-            )
+            if (feedSavedSearch.global) {
+                feed_saved_searchQueries.insertWithCategory(
+                    sourceId = feedSavedSearch.source,
+                    savedSearch = feedSavedSearch.savedSearch,
+                    global = feedSavedSearch.global,
+                    category = feedSavedSearch.category,
+                    searchType = feedSavedSearch.searchType,
+                )
+            } else {
+                feed_saved_searchQueries.insert(
+                    feedSavedSearch.source,
+                    feedSavedSearch.savedSearch,
+                    feedSavedSearch.global,
+                )
+            }
             feed_saved_searchQueries.selectLastInsertedRowId()
         }
     }
@@ -62,11 +96,21 @@ class FeedSavedSearchRepositoryImpl(
     override suspend fun insertAll(feedSavedSearch: List<FeedSavedSearch>) {
         return handler.await(true) {
             feedSavedSearch.forEach {
-                feed_saved_searchQueries.insert(
-                    it.source,
-                    it.savedSearch,
-                    it.global,
-                )
+                if (it.global) {
+                    feed_saved_searchQueries.insertWithCategory(
+                        sourceId = it.source,
+                        savedSearch = it.savedSearch,
+                        global = it.global,
+                        category = it.category,
+                        searchType = it.searchType,
+                    )
+                } else {
+                    feed_saved_searchQueries.insert(
+                        it.source,
+                        it.savedSearch,
+                        it.global,
+                    )
+                }
             }
         }
     }

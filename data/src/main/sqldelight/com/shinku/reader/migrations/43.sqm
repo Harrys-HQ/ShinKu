@@ -1,0 +1,13 @@
+CREATE TABLE feed_categories (
+    _id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    sort INTEGER NOT NULL,
+    lang TEXT NOT NULL DEFAULT 'all',
+    explore INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+INSERT OR IGNORE INTO feed_categories(_id, name, sort) VALUES (1, 'Global', 0);
+
+ALTER TABLE feed_saved_search ADD COLUMN category INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE feed_saved_search ADD COLUMN feed_order INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE feed_saved_search ADD COLUMN search_type INTEGER NOT NULL DEFAULT 1;

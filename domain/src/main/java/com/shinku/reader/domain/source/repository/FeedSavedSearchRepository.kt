@@ -10,9 +10,17 @@ interface FeedSavedSearchRepository {
 
     fun getGlobalAsFlow(): Flow<List<FeedSavedSearch>>
 
+    suspend fun getGlobalByCategory(categoryId: Long): List<FeedSavedSearch>
+
+    fun getGlobalByCategoryAsFlow(categoryId: Long): Flow<List<FeedSavedSearch>>
+
     suspend fun getGlobalFeedSavedSearch(): List<SavedSearch>
 
+    suspend fun getGlobalFeedSavedSearchByCategory(categoryId: Long): List<SavedSearch>
+
     suspend fun countGlobal(): Long
+
+    suspend fun countGlobalByCategory(categoryId: Long): Long
 
     suspend fun getBySourceId(sourceId: Long): List<FeedSavedSearch>
 
@@ -24,7 +32,11 @@ interface FeedSavedSearchRepository {
 
     suspend fun delete(feedSavedSearchId: Long)
 
+    suspend fun deleteByCategory(categoryId: Long)
+
     suspend fun insert(feedSavedSearch: FeedSavedSearch): Long?
 
     suspend fun insertAll(feedSavedSearch: List<FeedSavedSearch>)
+
+    suspend fun reorderInCategory(id: Long, categoryId: Long, feedOrder: Long)
 }

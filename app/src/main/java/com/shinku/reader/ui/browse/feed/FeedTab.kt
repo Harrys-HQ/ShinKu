@@ -16,8 +16,12 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import com.shinku.reader.presentation.browse.FeedScreen
 import com.shinku.reader.presentation.browse.components.FeedAddDialog
 import com.shinku.reader.presentation.browse.components.FeedAddSearchDialog
+import com.shinku.reader.presentation.browse.components.FeedCreateCategoryDialog
+import com.shinku.reader.presentation.browse.components.FeedDeleteCategoryDialog
 import com.shinku.reader.presentation.browse.components.FeedDeleteConfirmDialog
+import com.shinku.reader.presentation.browse.components.FeedEditCategoryDialog
 import com.shinku.reader.presentation.browse.components.FeedFilterDialog
+import com.shinku.reader.presentation.browse.components.FeedManageCategoriesDialog
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.TabContent
 import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreen
@@ -68,11 +72,19 @@ fun Screen.feedTab(): TabContent {
                     screenModel.openFilterDialog()
                 },
             ),
+            AppBar.OverflowAction(
+                title = stringResource(MR.strings.action_edit_categories),
+                onClick = {
+                    screenModel.openManageCategoriesDialog()
+                },
+            ),
         ),
         content = { contentPadding, snackbarHostState ->
             FeedScreen(
                 state = state,
                 contentPadding = contentPadding,
+                onSelectCategory = screenModel::selectCategory,
+                onManageCategories = screenModel::openManageCategoriesDialog,
                 onClickSavedSearch = { savedSearch, source ->
                     screenModel.sourcePreferences.lastUsedSource().set(savedSearch.source)
                     navigator.push(
@@ -132,6 +144,10 @@ fun Screen.feedTab(): TabContent {
                             onDeleteFeed = { feed ->
                                 screenModel.openDeleteDialog(feed)
                             },
+                            onManageCategories = {
+                                screenModel.dismissDialog()
+                                screenModel.openManageCategoriesDialog()
+                            },
                         )
                     }
                     is FeedScreenModel.Dialog.AddFeed -> {
@@ -164,6 +180,39 @@ fun Screen.feedTab(): TabContent {
                             onClickDeleteConfirm = {
                                 screenModel.deleteFeed(it)
                                 screenModel.dismissDialog()
+                            },
+                        )
+                    }
+                    is FeedScreenModel.Dialog.ManageCategories -> {
+                        FeedManageCategoriesDialog(
+                            categories = state.categories,
+                            onDismiss = screenModel::dismissDialog,
+                            onCreateCategory = screenModel::openCreateCategoryDialog,
+                            onEditCategory = screenModel::openEditCategoryDialog,
+                            onDeleteCategory = screenModel::openDeleteCategoryDialog,
+                        )
+                    }
+                    is FeedScreenModel.Dialog.CreateCategory -> {
+                        FeedCreateCategoryDialog(
+                            onDismiss = screenModel::dismissDialog,
+                            onConfirm = screenModel::createCategory,
+                        )
+                    }
+                    is FeedScreenModel.Dialog.EditCategory -> {
+                        FeedEditCategoryDialog(
+                            category = dialog.category,
+                            onDismiss = screenModel::dismissDialog,
+                            onConfirm = { name, lang ->
+                                screenModel.updateCategory(dialog.category._id, name, lang)
+                            },
+                        )
+                    }
+                    is FeedScreenModel.Dialog.DeleteCategory -> {
+                        FeedDeleteCategoryDialog(
+                            category = dialog.category,
+                            onDismiss = screenModel::dismissDialog,
+                            onConfirm = {
+                                screenModel.deleteCategory(dialog.category)
                             },
                         )
                     }
