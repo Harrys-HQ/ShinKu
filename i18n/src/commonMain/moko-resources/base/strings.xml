@@ -171,6 +171,10 @@
     <string name="action_start_downloading_now">Start downloading now</string>
     <string name="action_not_now">Not now</string>
     <string name="action_add_anyway">Add anyway</string>
+    <string name="action_group_with_existing">Group with existing</string>
+    <string name="action_dont_ask_again_for_pair">Don\'t ask again for this title</string>
+    <string name="pref_enable_library_merge_groups">Merge duplicate groups</string>
+    <string name="pref_enable_library_merge_groups_summary">Collapse cross-source duplicate series into a single library entry</string>
     <string name="action_find_similar_vibes">Find Similar Vibes</string>
     <string name="action_interactive_footnotes">Interactive Footnotes</string>
     <string name="action_live_translation">Live Translation</string>

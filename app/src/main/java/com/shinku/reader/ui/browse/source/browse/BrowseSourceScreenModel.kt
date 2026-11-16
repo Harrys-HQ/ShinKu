@@ -58,6 +58,8 @@ import com.shinku.reader.core.common.util.lang.launchNonCancellable
 import com.shinku.reader.core.common.util.lang.withUIContext
 import com.shinku.reader.domain.category.interactor.GetCategories
 import com.shinku.reader.domain.category.interactor.SetMangaCategories
+import com.shinku.reader.domain.manga.interactor.GroupManga
+import com.shinku.reader.exh.source.ShinKuPreferences
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.domain.chapter.interactor.SetMangaDefaultChapterFlags
 import com.shinku.reader.domain.library.service.LibraryPreferences
@@ -109,6 +111,8 @@ open class BrowseSourceScreenModel(
     private val deleteSavedSearchById: DeleteSavedSearchById = Injekt.get(),
     private val insertSavedSearch: InsertSavedSearch = Injekt.get(),
     private val getExhSavedSearch: GetExhSavedSearch = Injekt.get(),
+    private val groupManga: GroupManga = Injekt.get(),
+    private val shinkuPreferences: ShinKuPreferences = Injekt.get(),
     // SY <--
 ) : StateScreenModel<BrowseSourceScreenModel.State>(State(Listing.valueOf(listingQuery))) {
 
@@ -395,7 +399,24 @@ open class BrowseSourceScreenModel(
     }
 
     suspend fun getDuplicateLibraryManga(manga: Manga): List<MangaWithChapterCount> {
-        return getDuplicateLibraryManga.invoke(manga)
+        val duplicates = getDuplicateLibraryManga.invoke(manga)
+        return if (shinkuPreferences.enableLibraryMergeGroups().get()) {
+            duplicates.filterNot { shinkuPreferences.isManualUnmerge(manga.id, it.manga.id) }
+        } else {
+            duplicates
+        }
+    }
+
+    fun groupWith(newManga: Manga, targetManga: Manga) {
+        screenModelScope.launchIO {
+            addFavorite(newManga)
+            groupManga.await(newManga.id, targetManga.id)
+        }
+    }
+
+    fun neverGroup(manga1: Manga, manga2: Manga) {
+        shinkuPreferences.addManualUnmerge(manga1.id, manga2.id)
+        addFavorite(manga1)
     }
 
     private fun moveMangaToCategories(manga: Manga, vararg categories: Category) {

@@ -311,6 +311,8 @@ class MangaScreen(
                     onConfirm = { screenModel.toggleFavorite(onRemoved = {}, checkDuplicate = false) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
                     onMigrate = { screenModel.showMigrateDialog(it) },
+                    onGroup = { screenModel.groupWith(it) },
+                    onNeverGroup = { screenModel.neverGroup(it) },
                 )
             }
 

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.DoneAll
+import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.HorizontalDivider
@@ -85,6 +86,8 @@ fun DuplicateMangaDialog(
     onOpenManga: (manga: Manga) -> Unit,
     onMigrate: (manga: Manga) -> Unit,
     modifier: Modifier = Modifier,
+    onGroup: ((manga: Manga) -> Unit)? = null,
+    onNeverGroup: ((manga: Manga) -> Unit)? = null,
 ) {
     val sourceManager = remember { Injekt.get<SourceManager>() }
     val minHeight = LocalPreferenceMinHeight.current
@@ -131,12 +134,26 @@ fun DuplicateMangaDialog(
                         onMigrate = { onMigrate(it.manga) },
                         onDismissRequest = onDismissRequest,
                         onOpenManga = { onOpenManga(it.manga) },
+                        onGroup = onGroup?.let { groupFn -> { groupFn(it.manga) } },
                     )
                 }
             }
 
             Column(modifier = horizontalPaddingModifier) {
                 HorizontalDivider()
+
+                if (onGroup != null && duplicates.isNotEmpty()) {
+                    TextPreferenceWidget(
+                        title = stringResource(MR.strings.action_group_with_existing),
+                        subtitle = duplicates.firstOrNull()?.manga?.title,
+                        icon = Icons.Outlined.Layers,
+                        onPreferenceClick = {
+                            onDismissRequest()
+                            onGroup(duplicates.first().manga)
+                        },
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp)),
+                    )
+                }
 
                 TextPreferenceWidget(
                     title = stringResource(MR.strings.action_add_anyway),
@@ -147,6 +164,18 @@ fun DuplicateMangaDialog(
                     },
                     modifier = Modifier.clip(RoundedCornerShape(12.dp)),
                 )
+
+                if (onNeverGroup != null && duplicates.isNotEmpty()) {
+                    TextPreferenceWidget(
+                        title = stringResource(MR.strings.action_dont_ask_again_for_pair),
+                        icon = Icons.Outlined.Block,
+                        onPreferenceClick = {
+                            onDismissRequest()
+                            onNeverGroup(duplicates.first().manga)
+                        },
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp)),
+                    )
+                }
             }
 
             OutlinedButton(
@@ -175,6 +204,7 @@ private fun DuplicateMangaListItem(
     onDismissRequest: () -> Unit,
     onOpenManga: () -> Unit,
     onMigrate: () -> Unit,
+    onGroup: (() -> Unit)? = null,
 ) {
     val source = getSource()
     val manga = duplicate.manga
@@ -284,6 +314,31 @@ private fun DuplicateMangaListItem(
                 maxLines = 1,
             )
         }
+
+        if (onGroup != null) {
+            Spacer(modifier = Modifier.height(MaterialTheme.padding.extraSmall))
+            OutlinedButton(
+                onClick = {
+                    onDismissRequest()
+                    onGroup()
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Layers,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = stringResource(MR.strings.action_group_with_existing),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 
@@ -382,9 +437,10 @@ private fun calculateMangaCardHeight(
     }
     val statusHeight = textMeasurer.measureHeight("", typography.bodySmall, 2, detailsConstraints)
     val sourceHeight = textMeasurer.measureHeight("", typography.labelSmall, 1, constraints)
+    val groupButtonHeight = with(density) { 38.dp.roundToPx() }
 
-    val totalHeight = coverHeight + titleHeight + authorHeight + artistHeight + statusHeight + sourceHeight
-    return with(density) { ((2 * smallPadding) + totalHeight + (5 * extraSmallPadding)).toDp() }
+    val totalHeight = coverHeight + titleHeight + authorHeight + artistHeight + statusHeight + sourceHeight + groupButtonHeight
+    return with(density) { ((2 * smallPadding) + totalHeight + (6 * extraSmallPadding)).toDp() }
 }
 
 private fun TextMeasurer.measureHeight(

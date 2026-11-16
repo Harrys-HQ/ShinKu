@@ -116,6 +116,8 @@ import com.shinku.reader.domain.manga.interactor.DeleteByMergeId
 import com.shinku.reader.domain.manga.interactor.DeleteMangaById
 import com.shinku.reader.domain.manga.interactor.DeleteMergeById
 import com.shinku.reader.domain.manga.interactor.GetDuplicateLibraryManga
+import com.shinku.reader.domain.manga.interactor.GroupManga
+import com.shinku.reader.exh.source.ShinKuPreferences
 import com.shinku.reader.domain.manga.interactor.GetFlatMetadataById
 import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.GetMangaWithChapters
@@ -200,6 +202,7 @@ class MangaScreenModel(
     private val geminiVibeSearch: com.shinku.reader.domain.source.interactor.GeminiVibeSearch = Injekt.get(),
     private val getSimilarManga: com.shinku.reader.domain.ai.interactor.GetSimilarManga = Injekt.get(),
     private val historyRepository: com.shinku.reader.domain.history.repository.HistoryRepository = Injekt.get(),
+    private val groupManga: GroupManga = Injekt.get(),
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
 
@@ -861,7 +864,12 @@ class MangaScreenModel(
                 // Add to library
                 // First, check if duplicate exists if callback is provided
                 if (checkDuplicate) {
-                    val duplicates = getDuplicateLibraryManga(manga)
+                    val rawDuplicates = getDuplicateLibraryManga(manga)
+                    val duplicates = if (shinkuPreferences.enableLibraryMergeGroups().get()) {
+                        rawDuplicates.filterNot { shinkuPreferences.isManualUnmerge(manga.id, it.manga.id) }
+                    } else {
+                        rawDuplicates
+                    }
 
                     if (duplicates.isNotEmpty()) {
                         updateSuccessState { it.copy(dialog = Dialog.DuplicateManga(manga, duplicates)) }
@@ -896,6 +904,20 @@ class MangaScreenModel(
                 addTracks.bindEnhancedTrackers(manga, state.source)
             }
         }
+    }
+
+    fun groupWith(targetManga: Manga) {
+        screenModelScope.launchIO {
+            val manga = successState?.manga ?: return@launchIO
+            toggleFavorite(onRemoved = {}, checkDuplicate = false)
+            groupManga.await(manga.id, targetManga.id)
+        }
+    }
+
+    fun neverGroup(targetManga: Manga) {
+        val manga = successState?.manga ?: return
+        shinkuPreferences.addManualUnmerge(manga.id, targetManga.id)
+        toggleFavorite(onRemoved = {}, checkDuplicate = false)
     }
 
     fun showChangeCategoryDialog() {

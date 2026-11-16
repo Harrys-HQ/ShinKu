@@ -43,6 +43,7 @@ import com.shinku.reader.domain.library.model.sort
 import com.shinku.reader.domain.library.service.LibraryPreferences
 import com.shinku.reader.domain.manga.interactor.GetIdsOfFavoriteMangaWithMetadata
 import com.shinku.reader.domain.manga.interactor.GetLibraryManga
+import com.shinku.reader.domain.manga.interactor.GetMergeGroupMemberships
 import com.shinku.reader.domain.manga.interactor.GetMergedMangaById
 import com.shinku.reader.domain.manga.interactor.GetSearchTags
 import com.shinku.reader.domain.manga.interactor.GetSearchTitles
@@ -52,6 +53,7 @@ import com.shinku.reader.domain.manga.model.CustomMangaInfo
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.domain.manga.model.MangaUpdate
 import com.shinku.reader.domain.manga.model.applyFilter
+import com.shinku.reader.domain.manga.model.dedupeByMergeGroup
 import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.domain.sync.SyncPreferences
@@ -145,6 +147,7 @@ class LibraryScreenModel(
 
     syncPreferences: SyncPreferences = Injekt.get(),
     private val shinkuPreferences: com.shinku.reader.exh.source.ShinKuPreferences = Injekt.get(),
+    private val getMergeGroupMemberships: GetMergeGroupMemberships = Injekt.get(),
     private val getHistory: com.shinku.reader.domain.history.interactor.GetHistory = Injekt.get(),
     private val getManga: com.shinku.reader.domain.manga.interactor.GetManga = Injekt.get(),
     // SY <--
@@ -736,7 +739,13 @@ class LibraryScreenModel(
             getLibraryManga.subscribe(),
             getLibraryItemPreferencesFlow(),
             downloadCache.changes,
-        ) { libraryManga, preferences, _ ->
+            getMergeGroupMemberships.subscribe(),
+        ) { rawLibraryManga, preferences, _, mergeGroups ->
+            val libraryManga = if (shinkuPreferences.enableLibraryMergeGroups().get()) {
+                rawLibraryManga.dedupeByMergeGroup(mergeGroups) { it.manga.id }
+            } else {
+                rawLibraryManga
+            }
             val merged = if (preferences.downloadBadge) {
                 getMergedMangaById.await(libraryManga.filter { it.manga.source == MERGED_SOURCE_ID }.map { it.manga.id })
             } else {

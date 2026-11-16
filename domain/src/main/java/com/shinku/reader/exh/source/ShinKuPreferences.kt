@@ -79,6 +79,22 @@ class ShinKuPreferences(
 
     fun dynamicLibrarySeedColor() = preferenceStore.getInt("pref_dynamic_library_seed_color", 0)
 
+    fun enableLibraryMergeGroups() = preferenceStore.getBoolean("pref_enable_library_merge_groups", true)
+
+    fun mangaManualUnmerges() = preferenceStore.getStringSet("pref_manga_manual_unmerges", emptySet())
+
+    fun isManualUnmerge(id1: Long, id2: Long): Boolean {
+        val pair = "${minOf(id1, id2)},${maxOf(id1, id2)}"
+        return pair in mangaManualUnmerges().get()
+    }
+
+    fun addManualUnmerge(id1: Long, id2: Long) {
+        val pair = "${minOf(id1, id2)},${maxOf(id1, id2)}"
+        val set = mangaManualUnmerges().get().toMutableSet()
+        set.add(pair)
+        mangaManualUnmerges().set(set)
+    }
+
     fun isAiConfigured(): Boolean {
         return when (aiEngineProvider().get()) {
             "openrouter" -> openRouterApiKey().get().isNotBlank()

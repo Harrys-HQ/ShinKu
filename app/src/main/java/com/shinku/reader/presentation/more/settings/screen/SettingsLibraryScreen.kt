@@ -43,6 +43,7 @@ import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.presentation.more.settings.Preference
 import com.shinku.reader.presentation.more.settings.widget.TriStateListDialog
+import com.shinku.reader.exh.source.ShinKuPreferences
 import com.shinku.reader.ui.category.CategoryScreen
 import com.shinku.reader.ui.category.genre.SortTagScreen
 import kotlinx.collections.immutable.persistentListOf
@@ -326,9 +327,15 @@ object SettingsLibraryScreen : SearchableSettings {
     private fun getBehaviorGroup(
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
+        val shinkuPreferences = remember { Injekt.get<ShinKuPreferences>() }
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.pref_behavior),
             preferenceItems = persistentListOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = shinkuPreferences.enableLibraryMergeGroups(),
+                    title = stringResource(MR.strings.pref_enable_library_merge_groups),
+                    subtitle = stringResource(MR.strings.pref_enable_library_merge_groups_summary),
+                ),
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.swipeToStartAction(),
                     entries = persistentMapOf(

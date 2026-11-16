@@ -23,6 +23,7 @@ import com.shinku.reader.data.manga.CustomMangaRepositoryImpl
 import com.shinku.reader.data.manga.FavoritesEntryRepositoryImpl
 import com.shinku.reader.data.manga.MangaMergeRepositoryImpl
 import com.shinku.reader.data.manga.MangaMetadataRepositoryImpl
+import com.shinku.reader.data.manga.MergeGroupRepositoryImpl
 import com.shinku.reader.data.source.FeedSavedSearchRepositoryImpl
 import com.shinku.reader.data.source.SavedSearchRepositoryImpl
 import com.shinku.reader.domain.chapter.interactor.DeleteChapters
@@ -32,6 +33,7 @@ import com.shinku.reader.domain.manga.interactor.DeleteByMergeId
 import com.shinku.reader.domain.manga.interactor.DeleteFavoriteEntries
 import com.shinku.reader.domain.manga.interactor.DeleteMangaById
 import com.shinku.reader.domain.manga.interactor.DeleteMergeById
+import com.shinku.reader.domain.manga.interactor.DeleteMergeGroupMember
 import com.shinku.reader.domain.manga.interactor.GetAllManga
 import com.shinku.reader.domain.manga.interactor.GetCustomMangaInfo
 import com.shinku.reader.domain.manga.interactor.GetExhFavoriteMangaWithMetadata
@@ -40,6 +42,8 @@ import com.shinku.reader.domain.manga.interactor.GetFlatMetadataById
 import com.shinku.reader.domain.manga.interactor.GetIdsOfFavoriteMangaWithMetadata
 import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.GetMangaBySource
+import com.shinku.reader.domain.manga.interactor.GetMergeGroupForManga
+import com.shinku.reader.domain.manga.interactor.GetMergeGroupMemberships
 import com.shinku.reader.domain.manga.interactor.GetMergedManga
 import com.shinku.reader.domain.manga.interactor.GetMergedMangaById
 import com.shinku.reader.domain.manga.interactor.GetMergedMangaForDownloading
@@ -48,6 +52,8 @@ import com.shinku.reader.domain.manga.interactor.GetReadMangaNotInLibraryView
 import com.shinku.reader.domain.manga.interactor.GetSearchMetadata
 import com.shinku.reader.domain.manga.interactor.GetSearchTags
 import com.shinku.reader.domain.manga.interactor.GetSearchTitles
+import com.shinku.reader.domain.manga.interactor.GroupManga
+import com.shinku.reader.domain.manga.repository.MergeGroupRepository
 import com.shinku.reader.domain.manga.interactor.InsertFavoriteEntries
 import com.shinku.reader.domain.manga.interactor.InsertFavoriteEntryAlternative
 import com.shinku.reader.domain.manga.interactor.InsertFlatMetadata
@@ -125,6 +131,12 @@ class SYDomainModule : InjektModule {
         addFactory { DeleteByMergeId(get()) }
         addFactory { DeleteMergeById(get()) }
         addFactory { GetMergedMangaForDownloading(get()) }
+
+        addSingletonFactory<MergeGroupRepository> { MergeGroupRepositoryImpl(get()) }
+        addFactory { GetMergeGroupMemberships(get()) }
+        addFactory { GetMergeGroupForManga(get()) }
+        addFactory { GroupManga(get()) }
+        addFactory { DeleteMergeGroupMember(get()) }
 
         addSingletonFactory<FavoritesEntryRepository> { FavoritesEntryRepositoryImpl(get()) }
         addFactory { GetFavoriteEntries(get()) }
