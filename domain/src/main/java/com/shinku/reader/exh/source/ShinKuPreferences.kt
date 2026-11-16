@@ -62,7 +62,10 @@ class ShinKuPreferences(
 
     fun feedSourceFilter() = preferenceStore.getString("pref_feed_source_filter", "all")
 
-    fun feedLanguageFilter() = preferenceStore.getString("pref_feed_language_filter", "en")
+    fun feedLanguageFilter() = preferenceStore.getString(
+        "pref_feed_language_filter",
+        java.util.Locale.getDefault().language.ifBlank { "all" },
+    )
 
     fun feedShowSourceFeeds() = preferenceStore.getBoolean("pref_feed_show_source_feeds", true)
 

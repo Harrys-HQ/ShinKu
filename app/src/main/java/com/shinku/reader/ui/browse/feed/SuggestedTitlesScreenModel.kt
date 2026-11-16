@@ -88,7 +88,12 @@ class SuggestedTitlesScreenModel(
         var filtered = if (languageFilterMode == "all") {
             allSources.filter { it.lang in enabledLanguages || it.lang == "all" }
         } else {
-            allSources.filter { it.lang.equals(languageFilterMode, ignoreCase = true) || it.lang == "all" }
+            val matching = allSources.filter { it.lang.equals(languageFilterMode, ignoreCase = true) || it.lang == "all" }
+            if (matching.isEmpty()) {
+                allSources.filter { it.lang in enabledLanguages || it.lang == "all" }
+            } else {
+                matching
+            }
         }
 
         if (sourceFilterMode == "pinned" && pinnedSources.isNotEmpty()) {

@@ -11,6 +11,7 @@ import dev.icerock.moko.resources.StringResource
 import com.shinku.reader.core.preference.asState
 import com.shinku.reader.domain.manga.interactor.UpdateManga
 import com.shinku.reader.domain.source.interactor.GetExhSavedSearch
+import com.shinku.reader.domain.source.service.FeedLimits
 import com.shinku.reader.domain.ui.UiPreferences
 import com.shinku.reader.presentation.browse.SourceFeedUI
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -105,7 +106,7 @@ open class SourceFeedScreenModel(
     }
 
     private suspend fun hasTooManyFeeds(): Boolean {
-        return countFeedSavedSearchBySourceId.await(source.id) > 10
+        return countFeedSavedSearchBySourceId.await(source.id) >= FeedLimits.MAX_SOURCES_PER_FEED
     }
 
     fun createFeed(savedSearchId: Long) {

@@ -25,6 +25,7 @@ import com.shinku.reader.domain.source.interactor.InsertFeedSavedSearch
 import com.shinku.reader.domain.source.model.FeedSavedSearch
 import com.shinku.reader.domain.source.model.SavedSearch
 import com.shinku.reader.domain.source.repository.SourceHealthRepository
+import com.shinku.reader.domain.source.service.FeedLimits
 import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.presentation.browse.FeedItemUI
@@ -242,7 +243,12 @@ open class FeedScreenModel(
         var filtered = if (languageFilterMode == "all") {
             allSources.filter { it.lang in enabledLanguages || it.lang == "all" }
         } else {
-            allSources.filter { it.lang.equals(languageFilterMode, ignoreCase = true) || it.lang == "all" }
+            val matching = allSources.filter { it.lang.equals(languageFilterMode, ignoreCase = true) || it.lang == "all" }
+            if (matching.isEmpty()) {
+                allSources.filter { it.lang in enabledLanguages || it.lang == "all" }
+            } else {
+                matching
+            }
         }
 
         if (sourceFilterMode == "pinned" && pinnedSources.isNotEmpty()) {
@@ -648,7 +654,7 @@ open class FeedScreenModel(
     }
 
     private suspend fun hasTooManyFeeds(): Boolean {
-        return countFeedSavedSearchGlobal.await() > 10
+        return countFeedSavedSearchGlobal.await() >= FeedLimits.MAX_SOURCES_PER_FEED
     }
 
     fun getEnabledSources(): ImmutableList<CatalogueSource> {
