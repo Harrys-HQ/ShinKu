@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.8.3" changeDate="November 17, 2026">
+        <changelogtext>[b]MangaBaka Tracker Integration (Fixes #31)[/b]: Added full native tracking support for MangaBaka with token-based authentication, reading status, score ratings, and chapter synchronization.</changelogtext>
+        <changelogtext>[b]Multi-Tab Feed Categories &amp; Limit Cap (Fixes #32, PR #36)[/b]: Integrated custom category tab selection into Discover feed settings with independent saved search feeds per category and a domain-level 25-source safety cap to protect device responsiveness.</changelogtext>
+        <changelogtext>[b]Library Manga Merge Groups &amp; Deduplication (Fixes #33, PR #34)[/b]: Added dedicated merge group viewing in Manga Details with real-time merged chapter list consolidation, unified chapter counting, and one-tap duplicate cleanup.</changelogtext>
+        <changelogtext>[b]Reader Dual-Page Split Exclusivity (Upstream SY)[/b]: Fixed a silent page loss bug where dual-page split mode in landscape paired holders dropped alternating sibling pages; split mode now cleanly overrides double-page binding with immediate pager listener invalidation.</changelogtext>
+        <changelogtext>[b]MangaDex Authentication User-Agent Compliance (Upstream SY)[/b]: Added custom User-Agent headers to MangaDex OAuth token exchange and session termination to prevent HTTP 403 Forbidden errors.</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.8.2" changeDate="November 15, 2026">
         <changelogtext>[b]Comic Page Pull-to-Refresh Restoration (Fixes #29)[/b]: Resolved gesture conflicts between the refresh indicator and vertical scrolling chapter lists on manga details screens, restoring smooth pull-to-refresh updates and metadata reloads.</changelogtext>
         <changelogtext>[b]AVIF Sequence Cover Decoding &amp; Sanitization (Fixes #30)[/b]: Fixed broken image placeholders when loading animated AVIF (.avif / avis brand) covers from sources like Voratoon. Dynamically strips conflicting container boxes so the cover renders cleanly. [i]Note: Due to OEM platform limitations (invalid input in Android ImageDecoder) and hardware video decoder limits, AVIF sequences are safely rendered as crisp static covers rather than video loops, matching upstream behavior.[/i]</changelogtext>

@@ -20,6 +20,7 @@ class MangaDexLoginHelper(
     private val preferences: TrackPreferences,
     private val mdList: MdList,
     private val mangaDexAuthInterceptor: MangaDexAuthInterceptor,
+    private val headers: Headers,
 ) {
 
     /**
@@ -37,7 +38,7 @@ class MangaDexLoginHelper(
         val error = kotlin.runCatching {
             val data = with(MdUtil.jsonParser) {
                 client.newCall(
-                    POST(MdApi.baseAuthUrl + MdApi.token, body = loginFormBody),
+                    POST(MdApi.baseAuthUrl + MdApi.token, body = loginFormBody, headers = headers),
                 ).awaitSuccess().parseAs<MALOAuth>()
             }
             mangaDexAuthInterceptor.setAuth(data)
@@ -72,7 +73,7 @@ class MangaDexLoginHelper(
             client.newCall(
                 POST(
                     url = MdApi.baseAuthUrl + MdApi.logout,
-                    headers = Headers.Builder().add("Authorization", "Bearer $sessionToken")
+                    headers = headers.newBuilder().add("Authorization", "Bearer $sessionToken")
                         .build(),
                     body = formBody,
                 ),

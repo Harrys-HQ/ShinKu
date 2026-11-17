@@ -1,5 +1,26 @@
 # ShinKu Changelog
 
+## 2.8.3 "Multi-Tab Feed Categories, Library Merge Groups & MangaBaka Tracking" (2026-11-17)
+### Features & Integrations
+- **MangaBaka Tracker Integration (Fixes #31)**:
+  - Added full native tracker support for MangaBaka with secure token-based authentication.
+  - Supports reading status tracking (Reading, Plan to Read, Completed, Dropped, On Hold, Rereading), score ratings (1–10), and bi-directional chapter progress synchronization.
+- **Multi-Tab Feed Categories & Saved Search Feeds (Fixes #32, PR #36)**:
+  - Added multi-tab category grouping in Discover feeds with category selection in Feed Settings.
+  - Feeds now support custom category-specific saved searches and independent tab feeds.
+  - Enforced a hard domain-level 25-source limit (`InsertFeedSavedSearch`) to prevent unbounded query expansion and keep Discover feed loading fast and responsive.
+- **Library Manga Merge Groups & One-Tap Deduplication (Fixes #33, PR #34)**:
+  - Added dedicated Merge Group section in Manga Details to view and manage linked manga entries.
+  - Consolidated chapter list display and unified unread/download counters for merged manga.
+  - Added one-tap "Remove Duplicate Chapters" action to keep chapter lists clean across multi-source merges.
+
+### Upstream Synchronization & Reader Stability (TachiyomiSY)
+- **Reader Dual-Page Split Exclusivity**:
+  - Enforced mutual exclusivity between `setDoublePageMode` and `dualPageSplit`, preventing silent drops of alternate pages in landscape reader mode when dual-page split is active.
+  - Re-registered `dualPageSplitPaged` listener to immediately recompute double-page binding and trigger chapter reload.
+- **MangaDex OAuth Token User-Agent Headers**:
+  - Added custom User-Agent headers to MangaDex token request and logout calls to prevent HTTP 403 Forbidden responses from Cloudflare/MangaDex API.
+
 ## 2.8.2 "Upstream Synchronization, 16 KB Alignment & AVIF/Pull-to-Refresh Hardening" (2026-11-15)
 ### Bug Fixes & Resilience
 - **Comic Page Pull-to-Refresh Restoration (Fixes #29)**:

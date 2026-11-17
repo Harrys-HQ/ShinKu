@@ -77,7 +77,9 @@ class MangaDex(delegate: HttpSource, val context: Context) :
         context.getSharedPreferences("source_$id", 0x0000)
     }
 
-    private val loginHelper = MangaDexLoginHelper(network.client, trackPreferences, mdList, mdList.interceptor)
+    private val loginHelper by lazy {
+        MangaDexLoginHelper(network.client, trackPreferences, mdList, mdList.interceptor, headers)
+    }
 
     override val baseHttpClient: OkHttpClient = delegate.client.newBuilder()
         .addInterceptor(mdList.interceptor)
