@@ -384,7 +384,7 @@
     <string name="invalid_category_name">অবৈধ শ্ৰেণী নাম</string>
     <string name="feed">ফিড</string>
     <string name="feed_delete">ফিড আইটেম মচি পেলামনে?</string>
-    <string name="too_many_in_feed">আপোনাৰ ফিডত বেছি সংখ্যক উৎস আছে, ১০ টাতকৈ অধিক যোগ কৰিব নোৱাৰিব</string>
+    <string name="too_many_in_feed">আপোনাৰ ফিডত বেছি সংখ্যক উৎস আছে, %1$d টাতকৈ অধিক যোগ কৰিব নোৱাৰিব</string>
     <string name="feed_tab_empty">আপোনাৰ ফিডত কোনো উৎস নাই, এটা যোগ কৰিবলৈ ওপৰৰ সোঁফালে যাউক</string>
     <string name="feed_add">%1$s ফিডত যোগ কৰিমনে?</string>
     <string name="pref_tag_sorting">টেগ শ্ৰেণীবিভাজন টেগসমূহ</string>

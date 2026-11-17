@@ -378,7 +378,7 @@
     <string name="no_source_categories">لا توجد فئات مصدر متاحة</string>
     <string name="feed">الخلاصه</string>
     <string name="feed_delete">حذف عنصر الخلاصة ؟</string>
-    <string name="too_many_in_feed">هناك عدد كبير جدًا من المصادر في صفحة الخلاصة الخاصة بك، لا يمكن إضافة أكثر من 10</string>
+    <string name="too_many_in_feed">هناك عدد كبير جدًا من المصادر في صفحة الخلاصة الخاصة بك، لا يمكن إضافة أكثر من %1$d</string>
     <string name="feed_tab_empty">ليس لديك أي مصادر في صفحة الخلاصه الخاصة بك ، انتقل إلى الجزء العلوي الأيسر لإضافة مصدر</string>
     <string name="feed_add">اضف %1$s الى صفحة الخلاصه ؟</string>
     <string name="pref_tag_sorting">فئة فرز الفئات</string>

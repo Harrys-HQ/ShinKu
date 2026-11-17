@@ -615,7 +615,7 @@
     <string name="pref_hide_feed">Sakrij karticu feeda</string>
     <string name="pref_feed_position_summery">Želiš li da kartica feeda bude prva kartica u pregledavanju? Time će se pojaviti kao zadana kartica prilikom otvaranja pregledavanja. Ne preporučuje se ako koristiš mobilne podatke ili mrežu s tarifom</string>
     <string name="feed_delete">Izbrisati stavku feeda?</string>
-    <string name="too_many_in_feed">Previše izvora u tvom feedu, ne možeš dodati više od 10</string>
+    <string name="too_many_in_feed">Previše izvora u tvom feedu, ne možeš dodati više od %1$d</string>
     <string name="feed_tab_empty">Nemaš nijedan izvor u svom feedu, idi gore desno za dodavanje izvora</string>
     <string name="feed_add">Dodati %1$s u feed?</string>
     <string name="download_threads">Preuzmi teme</string>

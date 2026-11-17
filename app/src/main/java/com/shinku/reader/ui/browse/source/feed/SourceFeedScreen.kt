@@ -115,8 +115,8 @@ class SourceFeedScreen(val sourceId: Long) : Screen() {
                         )
                     },
                     onSavedSearchPress = { search ->
-                        screenModel.onSavedSearchAddToFeed(search) {
-                            context.toast(it)
+                        screenModel.onSavedSearchAddToFeed(search) { resource, formatArgs ->
+                            context.toast(resource, formatArgs)
                         }
                     },
                     openMangaDexRandom = if (screenModel.sourceIsMangaDex) {

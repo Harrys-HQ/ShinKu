@@ -549,7 +549,7 @@
     <string name="pref_crop_borders_webtoon">Recortar bordes Webtoon</string>
     <string name="feed">Feed</string>
     <string name="feed_delete">¿Borrar artículo de feed?</string>
-    <string name="too_many_in_feed">Demasiadas fuentes en tu feed, no se pueden agregar más de 10</string>
+    <string name="too_many_in_feed">Demasiadas fuentes en tu feed, no se pueden agregar más de %1$d</string>
     <string name="action_add_tags_message">¡Lee esto! ¡Etiquetas deben ser exactas, no hay coincidencias parciales, no puedes hacer netorare para excluir mujer:netorare o similar!\nEl estilo para etiquetas de nombre es\n\"mujer: solo mujer\"\n¡sin citas!\n¡Se pueden añadir multiples variantes de la misma etiqueta, así que puedes hacer \"etiqueta:netorare\" para NHentai y \"mujer:netorare\" para E-Hentai!</string>
     <string name="select_none">Selecciona ninguno</string>
     <string name="feed_tab_empty">No tiene fuentes en su feed, navegar a la parte superior derecha para añadir una</string>

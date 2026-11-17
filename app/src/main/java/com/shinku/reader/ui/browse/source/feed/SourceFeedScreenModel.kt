@@ -263,12 +263,12 @@ open class SourceFeedScreenModel(
 
     fun onSavedSearchAddToFeed(
         search: EXHSavedSearch,
-        onToast: (StringResource) -> Unit,
+        onToast: (StringResource, List<Any>) -> Unit,
     ) {
         screenModelScope.launchIO {
             if (hasTooManyFeeds()) {
                 withUIContext {
-                    onToast(SYMR.strings.too_many_in_feed)
+                    onToast(SYMR.strings.too_many_in_feed, listOf(FeedLimits.MAX_SOURCES_PER_FEED))
                 }
                 return@launchIO
             }
