@@ -1,6 +1,6 @@
 # ShinKu project memory
 
-Last updated: 2026-11-15. Current release: `2.8.2` (`145`). Baseline review commit: `bd94670c13`.
+Last updated: 2026-11-17. Current release: `2.8.3` (`147`). Baseline review commit: `4b4acb129f`.
 
 This is repository-backed memory for future sessions. Read this first, then inspect task-specific code and changes since the baseline. It reduces repeated discovery; it does not replace validation of current behavior. The first review sampled critical paths and repository screenshots, not every file or a running device.
 
