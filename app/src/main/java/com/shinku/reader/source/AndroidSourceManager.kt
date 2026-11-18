@@ -156,7 +156,7 @@ class AndroidSourceManager(
             this
         }
 
-        return if (id in BlacklistedSources.BLACKLISTED_EXT_SOURCES) {
+        return if (id in BlacklistedSources.BLACKLISTED_EXT_SOURCES && sourcePreferences.enableSourceBlacklist().get()) {
             xLogD(
                 "Removing blacklisted source: (id: %s, name: %s, lang: %s)!",
                 id,

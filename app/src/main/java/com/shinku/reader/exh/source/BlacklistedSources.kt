@@ -21,12 +21,11 @@ object BlacklistedSources {
         6140480779421365791,
     )
 
-    val BLACKLISTED_EXT_SOURCES = EHENTAI_EXT_SOURCES
+    // ShinKu does not register built-in E-Hentai/ExHentai sources, so external E-Hentai
+    // extensions do not conflict and should not be hidden from users.
+    val BLACKLISTED_EXT_SOURCES = longArrayOf()
 
-    val BLACKLISTED_EXTENSIONS = arrayOf(
-        "com.shinku.reader.extension.all.ehentai",
-        "eu.kanade.tachiyomi.extension.all.ehentai",
-    )
+    val BLACKLISTED_EXTENSIONS = emptyArray<String>()
 
     var HIDDEN_SOURCES = setOf(
         MERGED_SOURCE_ID,
