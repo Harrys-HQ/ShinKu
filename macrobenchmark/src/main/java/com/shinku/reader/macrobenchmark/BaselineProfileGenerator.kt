@@ -23,7 +23,7 @@ class BaselineProfileGenerator {
                 device.displayHeight * 3 / 4,
                 device.displayWidth / 2,
                 device.displayHeight / 4,
-                15
+                15,
             )
             device.waitForIdle()
 

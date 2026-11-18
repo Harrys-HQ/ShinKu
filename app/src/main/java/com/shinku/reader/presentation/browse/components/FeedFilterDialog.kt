@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -48,6 +50,7 @@ import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
+import com.shinku.reader.util.system.LocaleHelper
 
 @Composable
 fun FeedFilterDialog(
@@ -65,6 +68,7 @@ fun FeedFilterDialog(
     var sourceFilter by remember { mutableStateOf(currentSourceFilter) }
     var languageFilter by remember { mutableStateOf(currentLanguageFilter) }
     var showSourceFeeds by remember { mutableStateOf(currentShowSourceFeeds) }
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -317,22 +321,30 @@ fun FeedFilterDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                Row(
+                val availableLanguages = remember(enabledLanguages, languageFilter) {
+                    val base = (enabledLanguages + if (languageFilter != "all") setOf(languageFilter) else emptySet())
+                        .filter { it != "all" }
+                        .sortedWith(LocaleHelper.comparator)
+                    listOf("all") + if (base.isEmpty()) listOf("en") else base
+                }
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    FilterChip(
-                        selected = languageFilter == "en",
-                        onClick = { languageFilter = "en" },
-                        shape = SanctuaryShapes.pill,
-                        label = { Text("English (en)") },
-                    )
-                    FilterChip(
-                        selected = languageFilter == "all",
-                        onClick = { languageFilter = "all" },
-                        shape = SanctuaryShapes.pill,
-                        label = { Text("All Languages") },
-                    )
+                    availableLanguages.forEach { lang ->
+                        val labelText = if (lang == "all") {
+                            "All Languages"
+                        } else {
+                            "${LocaleHelper.getSourceDisplayName(lang, context)} ($lang)"
+                        }
+                        FilterChip(
+                            selected = languageFilter.equals(lang, ignoreCase = true),
+                            onClick = { languageFilter = lang },
+                            shape = SanctuaryShapes.pill,
+                            label = { Text(labelText) },
+                        )
+                    }
                 }
             }
         },
