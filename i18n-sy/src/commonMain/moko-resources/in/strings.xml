@@ -643,7 +643,7 @@
     <string name="center_margin_double_page">Tambahkan ke Halaman ganda</string>
     <string name="center_margin_wide_page">Tambahkan ke Halaman lebar</string>
     <string name="feed">Daftar Konten</string>
-    <string name="too_many_in_feed">Terlalu banyak sumber di daftar konten Anda, tidak dapat menambahkan lebih dari 10</string>
+    <string name="too_many_in_feed">Terlalu banyak sumber di daftar konten Anda, tidak dapat menambahkan lebih dari %1$d</string>
     <string name="entry_not_tracked">Entri tidak dilacak.</string>
     <string name="favorites_sync_unable_to_add_to_remote">Tidak dapat menambahkan galeri ke remote server: \'%1$s\' (GID: %2$s)!</string>
     <string name="relation_shared_universe">Semesta bersama</string>

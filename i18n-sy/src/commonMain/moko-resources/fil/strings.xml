@@ -338,7 +338,7 @@
     <string name="single_page">Isang pahina</string>
     <string name="center_margin_wide_page">Idagdag sa malawak na Pahina</string>
     <string name="archive_mode_load_into_memory">I-load sa memory</string>
-    <string name="too_many_in_feed">Masyadong maraming source sa iyong feed, hindi maaaring magdagdag ng higit sa 10</string>
+    <string name="too_many_in_feed">Masyadong maraming source sa iyong feed, hindi maaaring magdagdag ng higit sa %1$d</string>
     <string name="pref_center_margin_summary">Maglagay ng spacer upang mabawasan ang deadspace sa mga foldable na device.</string>
     <string name="archive_mode_load_from_file">Magload mula sa file</string>
     <string name="pref_archive_reader_mode_summary">Ang paraan kung paano naglo-load ang mga imahe sa loob ng mga archive, tulad ng CBZ o CBR</string>

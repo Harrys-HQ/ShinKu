@@ -1,6 +1,6 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import shinku.buildlogic.generatedBuildDir
 import shinku.buildlogic.tasks.getLocalesConfigTask
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
     id("shinku.library")

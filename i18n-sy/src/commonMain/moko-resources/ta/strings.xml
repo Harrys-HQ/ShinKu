@@ -452,7 +452,7 @@
     <string name="invalid_category_name">தவறான வகை பெயர்</string>
     <string name="feed">தீவனம்</string>
     <string name="feed_delete">தீவன உருப்படியை நீக்கவா?</string>
-    <string name="too_many_in_feed">உங்கள் ஊட்டத்தில் பல ஆதாரங்கள், 10 க்கு மேல் சேர்க்க முடியாது</string>
+    <string name="too_many_in_feed">உங்கள் ஊட்டத்தில் பல ஆதாரங்கள், %1$d க்கு மேல் சேர்க்க முடியாது</string>
     <string name="feed_tab_empty">உங்கள் ஊட்டத்தில் உங்களிடம் எந்த ஆதாரங்களும் இல்லை, ஒன்றைச் சேர்க்க மேல் உரிமைக்கு செல்லவும்</string>
     <string name="feed_add">உணவளிக்க %1$s ஐச் சேர்க்கவா?</string>
     <string name="add_tag">குறிச்சொல்லைச் சேர்க்கவும்</string>

@@ -385,7 +385,7 @@
     <!-- Feed Tab -->
     <string name="feed">訂閱</string>
     <string name="feed_delete">刪除訂閱項？</string>
-    <string name="too_many_in_feed">您的訂閱來源過多，不能多於 10 個</string>
+    <string name="too_many_in_feed">您的訂閱來源過多，不能多於 %1$d 個</string>
     <string name="feed_tab_empty">訂閱中沒有任何來源，導覽到右上角新增一個</string>
     <string name="feed_add">新增 %1$s 到訂閱？</string>
     <!-- Sort by tags -->

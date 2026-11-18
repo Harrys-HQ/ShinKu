@@ -31,6 +31,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import com.shinku.reader.domain.source.interactor.GetRemoteManga
+import com.shinku.reader.domain.source.service.FeedLimits
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.core.i18n.stringResource
@@ -220,7 +221,12 @@ fun Screen.feedTab(): TabContent {
             }
 
             val internalErrString = stringResource(MR.strings.internal_error)
-            val tooManyFeedsString = stringResource(SYMR.strings.too_many_in_feed)
+            // The cap lives in one place (FeedLimits) and the message now reads it, so a locale
+            // can never advertise a number the code does not enforce.
+            val tooManyFeedsString = stringResource(
+                SYMR.strings.too_many_in_feed,
+                FeedLimits.MAX_SOURCES_PER_FEED,
+            )
             LaunchedEffect(Unit) {
                 screenModel.events.collectLatest { event ->
                     when (event) {
