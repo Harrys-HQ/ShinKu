@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.8.4" changeDate="November 19, 2026">
+        <changelogtext>[b]External E-Hentai Extension Compatibility (Fixes #38)[/b]: Cleared legacy built-in blacklist entries so third-party E-Hentai extensions appear cleanly in Browse and Sources, and ensured source blacklist checks respect the Settings toggle.</changelogtext>
+        <changelogtext>[b]Dynamic Priority Language Selection for Feed Suggestions[/b]: Upgraded Feed Settings &amp; Filter to dynamically display all enabled source languages alongside All Languages, allowing readers to prioritize Discover suggestions and highlights in their preferred language.</changelogtext>
+        <changelogtext>[b]Localized Feed Limit Cap Synchronization (PR #37)[/b]: Replaced hardcoded legacy numerals across 15 translations with dynamic format tokens bound to the 25-source feed cap, ensuring snackbars and toasts display accurate locale-native numbers.</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.8.3" changeDate="November 17, 2026">
         <changelogtext>[b]MangaBaka Tracker Integration (Fixes #31)[/b]: Added full native tracking support for MangaBaka with token-based authentication, reading status, score ratings, and chapter synchronization.</changelogtext>
         <changelogtext>[b]Multi-Tab Feed Categories &amp; Limit Cap (Fixes #32, PR #36)[/b]: Integrated custom category tab selection into Discover feed settings with independent saved search feeds per category and a domain-level 25-source safety cap to protect device responsiveness.</changelogtext>

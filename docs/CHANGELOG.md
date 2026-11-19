@@ -1,5 +1,19 @@
 # ShinKu Changelog
 
+## 2.8.4 "External E-Hentai Compatibility, Dynamic Feed Languages & i18n Cap Sync" (2026-11-19)
+### Bug Fixes & Source Compatibility
+- **External E-Hentai Extension Support (Fixes #38)**:
+  - Cleared legacy TachiyomiSY blacklist entries (`BLACKLISTED_EXT_SOURCES` and `BLACKLISTED_EXTENSIONS`) since ShinKu does not register built-in E-Hentai/ExHentai sources, allowing installed third-party E-Hentai extensions to appear normally in **Browse → Extensions** and **Sources**.
+  - Updated `AndroidSourceManager` to respect the `enableSourceBlacklist` toggle in Settings instead of unconditionally dropping blacklisted source IDs.
+
+### Discover Feed & Localization Improvements
+- **Dynamic Priority Language Selection**:
+  - Updated `FeedFilterDialog` to dynamically render all user-enabled source languages (sorted via `LocaleHelper`) alongside *All Languages*, replacing the hardcoded `English (en)` / `All Languages` binary choice.
+- **Feed Cap Localization Alignment (PR #37)**:
+  - Replaced hardcoded `10` in `too_many_in_feed` across 15 localized `strings.xml` files with `%1$d` bound to `FeedLimits.MAX_SOURCES_PER_FEED` (`25`), including a safe `List<Any>` toast formatter overload.
+- **CI Hygiene**:
+  - Resolved a pre-existing trailing-comma formatting violation in `BaselineProfileGenerator.kt`.
+
 ## 2.8.3 "Multi-Tab Feed Categories, Library Merge Groups & MangaBaka Tracking" (2026-11-17)
 ### Features & Integrations
 - **MangaBaka Tracker Integration (Fixes #31)**:
