@@ -237,10 +237,16 @@ data class BrowseSourceScreen(
                         }
 
                         state.savedSearches.take(5).forEach { savedSearchItem ->
+                            val currentSearch = state.listing as? Listing.Search
+                            val isSelected = currentSearch != null &&
+                                currentSearch.query.orEmpty() == savedSearchItem.query.orEmpty() &&
+                                (savedSearchItem.filterList == null || currentSearch.filters == savedSearchItem.filterList)
                             FilterChip(
-                                selected = state.listing is Listing.Search && state.toolbarQuery == savedSearchItem.query,
+                                selected = isSelected,
                                 onClick = {
-                                    screenModel.search(savedSearchItem.query.orEmpty())
+                                    screenModel.onSavedSearch(savedSearchItem) {
+                                        context.toast(it)
+                                    }
                                 },
                                 label = { Text(savedSearchItem.name) },
                             )
