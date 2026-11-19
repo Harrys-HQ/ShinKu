@@ -75,6 +75,17 @@ ShinKu preserves and enhances the best features from TachiyomiSY and Mihon:
 
 ---
 
+## 👥 ShinKu Contributors
+
+Direct maintainers and code contributors to the ShinKu project:
+
+| Contributor | Role & Contributions |
+| :--- | :--- |
+| <a href="https://github.com/Harrys-HQ"><img src="https://github.com/Harrys-HQ.png?size=40" width="24" valign="middle" alt="Harrys-HQ" /> **Harrys-HQ**</a> | Lead Maintainer & Core Developer (Sanctuary UI, AI Discovery, Area OCR & Live Translation, MangaBaka Tracker, Release Pipeline) |
+| <a href="https://github.com/Alex17273747576777"><img src="https://github.com/Alex17273747576777.png?size=40" width="24" valign="middle" alt="Alex17273747576777" /> **Alex17273747576777**</a> | Code Contributor — Persisted library merge groups ([#34](https://github.com/Harrys-HQ/ShinKu/pull/34)), domain-level 25-source feed cap ([#36](https://github.com/Harrys-HQ/ShinKu/pull/36)), and feed cap i18n tokenization ([#37](https://github.com/Harrys-HQ/ShinKu/pull/37)) |
+
+---
+
 ## 📜 Credits & Attributions
 
 ShinKu is built upon the incredible work of the following projects and developers:
