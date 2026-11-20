@@ -88,6 +88,33 @@ class BackupStreamDecoderTest {
     }
 
     @Test
+    fun `skips nested unknown groups and rejects malformed or excessive nesting`() {
+        val input = Buffer()
+        writeVarint(input, (900L shl 3) or 3L)
+        writeVarint(input, (901L shl 3) or 3L)
+        writeVarint(input, (902L shl 3) or 0L)
+        writeVarint(input, 42L)
+        writeVarint(input, (901L shl 3) or 4L)
+        writeVarint(input, (900L shl 3) or 4L)
+        assertTrue(BackupStreamDecoder(ProtoBuf).decode(input).backupManga.isEmpty())
+
+        val mismatched = Buffer()
+        writeVarint(mismatched, (900L shl 3) or 3L)
+        writeVarint(mismatched, (901L shl 3) or 4L)
+        assertThrows(IOException::class.java) { BackupStreamDecoder(ProtoBuf).decode(mismatched) }
+
+        val tooDeep = Buffer()
+        repeat(65) { writeVarint(tooDeep, (900L shl 3) or 3L) }
+        repeat(65) { writeVarint(tooDeep, (900L shl 3) or 4L) }
+        assertThrows(IOException::class.java) { BackupStreamDecoder(ProtoBuf).decode(tooDeep) }
+
+        val tooLargeField = Buffer()
+        writeVarint(tooLargeField, (1L shl 32) or 0L)
+        writeVarint(tooLargeField, 1L)
+        assertThrows(IOException::class.java) { BackupStreamDecoder(ProtoBuf).decode(tooLargeField) }
+    }
+
+    @Test
     fun `rejects a single record above the heap-aware safety cap before allocating it`() {
         val record = ProtoBuf.encodeToByteArray(
             BackupManga.serializer(),

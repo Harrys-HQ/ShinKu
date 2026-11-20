@@ -44,7 +44,7 @@ internal class BackupStreamDecoder(
 
             val fieldNumber = tag ushr 3
             val wireType = (tag and WIRE_TYPE_MASK).toInt()
-            if (fieldNumber == 0L) throw IOException("Invalid protobuf field number")
+            if (fieldNumber == 0L || fieldNumber > MAX_FIELD_NUMBER) throw IOException("Invalid protobuf field number")
 
             when (fieldNumber) {
                 BACKUP_MANGA_FIELD -> manga += readMessage(source, wireType, BackupManga.serializer())
@@ -110,20 +110,31 @@ internal class BackupStreamDecoder(
     }
 
     private fun skipGroup(source: BufferedSource, openingFieldNumber: Long) {
-        while (true) {
+        // Groups are deprecated but unknown fields may still use them. Bound nesting so a hostile
+        // input cannot exhaust the call stack; retain field numbers to verify matching end tags.
+        val groups = ArrayList<Long>()
+        groups.add(openingFieldNumber)
+        while (groups.isNotEmpty()) {
             val tag = readVarint(source)
             if (tag <= 0L) throw IOException("Invalid protobuf tag in group")
 
             val fieldNumber = tag ushr 3
             val wireType = (tag and WIRE_TYPE_MASK).toInt()
-            if (fieldNumber == 0L) throw IOException("Invalid protobuf field number in group")
-
-            if (wireType == WIRE_TYPE_END_GROUP) {
-                if (fieldNumber != openingFieldNumber) throw IOException("Mismatched protobuf end-group tag")
-                return
+            if (fieldNumber == 0L || fieldNumber > MAX_FIELD_NUMBER) {
+                throw IOException("Invalid protobuf field number in group")
             }
 
-            skipField(source, fieldNumber, wireType)
+            when (wireType) {
+                WIRE_TYPE_END_GROUP -> {
+                    if (fieldNumber != groups.last()) throw IOException("Mismatched protobuf end-group tag")
+                    groups.removeAt(groups.lastIndex)
+                }
+                WIRE_TYPE_START_GROUP -> {
+                    if (groups.size >= MAX_GROUP_DEPTH) throw IOException("Protobuf group nesting limit exceeded")
+                    groups.add(fieldNumber)
+                }
+                else -> skipField(source, fieldNumber, wireType)
+            }
         }
     }
 
@@ -175,6 +186,8 @@ internal class BackupStreamDecoder(
         private const val VARINT_SHIFT_BITS = 7
         private const val MAX_VARINT_BYTES = 10
         private const val MAX_VARINT_SHIFT = 63
+        private const val MAX_FIELD_NUMBER = (1L shl 29) - 1
+        private const val MAX_GROUP_DEPTH = 64
         private const val FIXED64_BYTES = 8L
         private const val FIXED32_BYTES = 4L
 
