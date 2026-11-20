@@ -72,14 +72,14 @@ class BackupRestorer(
     }
 
     private suspend fun restoreFromFile(uri: Uri, options: RestoreOptions) {
-        val backup = BackupDecoder(context).decode(uri)
+        val decoder = BackupDecoder(context)
+        val metadata = decoder.decodeMetadata(uri)
 
         // Store source mapping for error messages
-        val backupMaps = backup.backupSources
-        sourceMapping = backupMaps.associate { it.sourceId to it.name }
+        sourceMapping = metadata.backupSources.associate { it.sourceId to it.name }
 
         if (options.libraryEntries) {
-            restoreAmount += backup.backupManga.size
+            restoreAmount += metadata.mangaCount
         }
         if (options.categories) {
             restoreAmount += 1
@@ -93,7 +93,7 @@ class BackupRestorer(
             restoreAmount += 1
         }
         if (options.extensionRepoSettings) {
-            restoreAmount += backup.backupExtensionRepo.size
+            restoreAmount += metadata.backupExtensionRepo.size
         }
         if (options.sourceSettings) {
             restoreAmount += 1
@@ -101,34 +101,35 @@ class BackupRestorer(
 
         coroutineScope {
             val restoreCategoriesJob = if (options.categories) {
-                restoreCategories(backup.backupCategories)
+                restoreCategories(metadata.backupCategories)
             } else {
                 null
             }
             // SY -->
             if (options.savedSearches) {
-                restoreSavedSearches(backup.backupSavedSearches)
+                restoreSavedSearches(metadata.backupSavedSearches)
             }
             // SY <--
             if (options.appSettings) {
                 restoreAppPreferences(
-                    backup.backupPreferences,
-                    backup.backupCategories.takeIf { options.categories },
+                    metadata.backupPreferences,
+                    metadata.backupCategories.takeIf { options.categories },
                     restoreCategoriesJob,
                 )
             }
             if (options.sourceSettings) {
-                restoreSourcePreferences(backup.backupSourcePreferences)
+                restoreSourcePreferences(metadata.backupSourcePreferences)
             }
             if (options.libraryEntries) {
                 restoreManga(
-                    backup.backupManga,
-                    if (options.categories) backup.backupCategories else emptyList(),
+                    decoder,
+                    uri,
+                    if (options.categories) metadata.backupCategories else emptyList(),
                     restoreCategoriesJob,
                 )
             }
             if (options.extensionRepoSettings) {
-                restoreExtensionRepos(backup.backupExtensionRepo)
+                restoreExtensionRepos(metadata.backupExtensionRepo)
             }
 
             // TODO: optionally trigger online library + tracker update
@@ -164,26 +165,40 @@ class BackupRestorer(
     // SY <--
 
     private fun CoroutineScope.restoreManga(
-        backupMangas: List<BackupManga>,
+        decoder: BackupDecoder,
+        uri: Uri,
         backupCategories: List<BackupCategory>,
         restoreCategoriesJob: Job?,
     ) = launch {
         restoreCategoriesJob?.join()
-        mangaRestorer.sortByNew(backupMangas)
-            /* SY --> */.sortedBy { it.source == MERGED_SOURCE_ID } /* SY <-- */
-            .forEach {
-                ensureActive()
-
-                try {
-                    mangaRestorer.restore(it, backupCategories)
-                } catch (e: Exception) {
-                    val sourceName = sourceMapping[it.source] ?: it.source.toString()
-                    errors.add(Date() to "${it.title} [$sourceName]: ${e.message}")
-                }
-
-                restoreProgress += 1
-                notifier.showRestoreProgress(it.title, restoreProgress, restoreAmount, isSync)
+        val deferredMergedMangas = mutableListOf<BackupManga>()
+        decoder.forEachManga(uri) { manga ->
+            ensureActive()
+            if (manga.source == MERGED_SOURCE_ID) {
+                deferredMergedMangas.add(manga)
+            } else {
+                restoreSingleManga(manga, backupCategories)
             }
+        }
+        deferredMergedMangas.forEach { manga ->
+            ensureActive()
+            restoreSingleManga(manga, backupCategories)
+        }
+    }
+
+    private suspend fun restoreSingleManga(
+        manga: BackupManga,
+        backupCategories: List<BackupCategory>,
+    ) {
+        try {
+            mangaRestorer.restore(manga, backupCategories)
+        } catch (e: Exception) {
+            val sourceName = sourceMapping[manga.source] ?: manga.source.toString()
+            errors.add(Date() to "${manga.title} [$sourceName]: ${e.message}")
+        }
+
+        restoreProgress += 1
+        notifier.showRestoreProgress(manga.title, restoreProgress, restoreAmount, isSync)
     }
 
     private fun CoroutineScope.restoreAppPreferences(

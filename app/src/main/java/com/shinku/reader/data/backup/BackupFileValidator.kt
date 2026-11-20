@@ -20,13 +20,13 @@ class BackupFileValidator(
      * @return List of missing sources or missing trackers.
      */
     fun validate(uri: Uri): Results {
-        val backup = try {
-            BackupDecoder(context).decode(uri)
+        val inspection = try {
+            BackupDecoder(context).inspect(uri)
         } catch (e: Exception) {
             throw IllegalStateException(e)
         }
 
-        val sources = backup.backupSources.associate { it.sourceId to it.name }
+        val sources = inspection.sources.associate { it.sourceId to it.name }
         val missingSources = sources
             .filter { sourceManager.get(it.key) == null }
             .values.map {
@@ -40,17 +40,13 @@ class BackupFileValidator(
             .distinct()
             .sorted()
 
-        val trackers = backup.backupManga
-            .flatMap { it.tracking }
-            .map { it.syncId }
-            .distinct()
-        val missingTrackers = trackers
+        val missingTrackers = inspection.trackerIds
             .mapNotNull { trackerManager.get(it.toLong()) }
             .filter { !it.isLoggedIn }
             .map { it.name }
             .sorted()
 
-        return Results(missingSources, missingTrackers, BackupContentsSummary.from(backup))
+        return Results(missingSources, missingTrackers, inspection.summary)
     }
 
     data class Results(
