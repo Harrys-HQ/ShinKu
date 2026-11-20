@@ -801,6 +801,7 @@
     <string name="manga_interval_expected_update_null">Este manga está terminado o no hay fecha de publicación prevista.</string>
     <string name="invalid_backup_file_json">Copia de seguridad JSON no compatible</string>
     <string name="invalid_backup_file_unknown">El archivo de la copia de seguridad está dañado</string>
+    <string name="backup_file_record_too_large">Esta copia contiene una entrada de biblioteca demasiado grande para cargarla de forma segura en este dispositivo. No se restauraron datos. Prueba otra copia o un dispositivo con más memoria.</string>
     <string name="extensionRepo_settings">Repositorios de extensiones</string>
     <string name="action_copy_link">Copiar el enlace</string>
     <string name="pref_download_new_unread_chapters_only">Omitir la descarga de capítulos duplicados y ya leídos</string>

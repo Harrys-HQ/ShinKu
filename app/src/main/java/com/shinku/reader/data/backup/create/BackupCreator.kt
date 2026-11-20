@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import com.hippo.unifile.UniFile
 import com.shinku.reader.BuildConfig
-import com.shinku.reader.data.backup.BackupFileValidator
 import com.shinku.reader.data.backup.create.creators.CategoriesBackupCreator
 import com.shinku.reader.data.backup.create.creators.ExtensionRepoBackupCreator
 import com.shinku.reader.data.backup.create.creators.MangaBackupCreator
@@ -120,9 +119,9 @@ class BackupCreator(
                 }
             val fileUri = file.uri
 
-            // Make sure it's a valid backup file
-            BackupFileValidator(context).validate(fileUri)
-
+            // The in-memory Backup was successfully serialized and the output stream was closed.
+            // Reopening this file would materialize a second Backup solely for a result the creator
+            // discards; restore parses the file again before applying its contents.
             if (isAutoBackup) {
                 backupPreferences.lastAutoBackupTimestamp().set(Instant.now().toEpochMilli())
             }
