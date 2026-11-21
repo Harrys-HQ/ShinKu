@@ -1,5 +1,15 @@
 # ShinKu Changelog
 
+## 2.8.5 "Streaming Backup Architecture & Saved Search Chips Fix" (2026-11-21)
+### Bug Fixes & Performance
+- **Streaming Backup Validation & Restoration (Fixes #40)**:
+  - Implemented `BackupProtoStream` to stream-parse gzipped and raw `.tachibk` protobuf wire fields directly from `okio.BufferedSource`, eliminating full-file `ByteArray` buffering and full-graph `Backup` retention.
+  - `BackupFileValidator.validate` now scans `BackupManga` wire fields in-place to count titles, chapters, history entries, and tracker IDs with O(1) heap usage and a 64 MiB single-record guard.
+  - `BackupRestorer` now streams metadata first and decodes/restores `BackupManga` entries one at a time (deferring only `MERGED_SOURCE_ID` entries until component manga finish), preventing `OutOfMemoryError` crashes on 512 MiB heap devices.
+- **Saved Search Chips in Source Browse (Fixes #39)**:
+  - Fixed top-bar saved search `FilterChip` handlers in `BrowseSourceScreen` to invoke `onSavedSearch` instead of `search(query)`, ensuring both saved queries and saved filter lists are applied when tapping a chip.
+  - Updated chip selection highlighting to accurately match both the active query and filter list.
+
 ## 2.8.4 "External E-Hentai Compatibility, Dynamic Feed Languages & i18n Cap Sync" (2026-11-19)
 ### Bug Fixes & Source Compatibility
 - **External E-Hentai Extension Support (Fixes #38)**:

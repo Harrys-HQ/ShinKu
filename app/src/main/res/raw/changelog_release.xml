@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.8.5" changeDate="November 21, 2026">
+        <changelogtext>[b]Streaming Backup Validation &amp; Restoration (Fixes #40)[/b]: Replaced full-file byte-array buffering and full-graph protobuf decoding with streaming wire inspection and single-entry restoration via BackupProtoStream, eliminating OutOfMemoryError crashes on large multi-year backups under 512 MiB heap limits.</changelogtext>
+        <changelogtext>[b]Saved Search Chips in Source Browse (Fixes #39)[/b]: Fixed top-bar saved search chips in BrowseSourceScreen so tapping a chip applies both the saved query and saved filter list instead of falling back to default filters.</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.8.4" changeDate="November 19, 2026">
         <changelogtext>[b]External E-Hentai Extension Compatibility (Fixes #38)[/b]: Cleared legacy built-in blacklist entries so third-party E-Hentai extensions appear cleanly in Browse and Sources, and ensured source blacklist checks respect the Settings toggle.</changelogtext>
         <changelogtext>[b]Dynamic Priority Language Selection for Feed Suggestions[/b]: Upgraded Feed Settings &amp; Filter to dynamically display all enabled source languages alongside All Languages, allowing readers to prioritize Discover suggestions and highlights in their preferred language.</changelogtext>
