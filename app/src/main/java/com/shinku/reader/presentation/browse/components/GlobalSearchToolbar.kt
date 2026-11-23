@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.PushPin
@@ -47,6 +48,7 @@ fun GlobalSearchToolbar(
     onlyShowHasResults: Boolean,
     onToggleResults: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior,
+    onEnterSelectionMode: (() -> Unit)? = null,
 ) {
     SearchToolbar(
         modifier = Modifier.background(MaterialTheme.colorScheme.surface),
@@ -121,6 +123,23 @@ fun GlobalSearchToolbar(
                             Text(text = stringResource(MR.strings.has_results))
                         },
                     )
+
+                    if (onEnterSelectionMode != null) {
+                        FilterChip(
+                            selected = false,
+                            onClick = onEnterSelectionMode,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Checklist,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                )
+                            },
+                            label = {
+                                Text(text = stringResource(MR.strings.action_select_items))
+                            },
+                        )
+                    }
                 }
 
                 HorizontalDivider()

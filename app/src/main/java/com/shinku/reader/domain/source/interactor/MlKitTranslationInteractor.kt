@@ -5,6 +5,7 @@ import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -21,12 +22,13 @@ class MlKitTranslationInteractor {
         blocks: List<GeminiVibeSearch.TranslationBlockInput>,
         targetLanguageName: String,
         sourceLanguageName: String = "Auto-Detect",
+        languageDetectionText: String? = null,
         onModelDownloadStarting: suspend () -> Unit = {},
     ): List<GeminiVibeSearch.TranslationBlockOutput> = withContext(Dispatchers.IO) {
         if (blocks.isEmpty()) return@withContext emptyList()
 
         val targetLangCode = languageNameToCode(targetLanguageName)
-        val combinedText = blocks.joinToString(" ") { it.text }
+        val combinedText = languageDetectionText ?: blocks.joinToString(" ") { it.text }
         val sourceLangCode = if (sourceLanguageName.equals("Auto-Detect", ignoreCase = true)) {
             detectLanguageFromText(combinedText, fallback = TranslateLanguage.JAPANESE)
         } else {
@@ -51,6 +53,8 @@ class MlKitTranslationInteractor {
             onModelDownloadStarting()
             val conditions = DownloadConditions.Builder().build()
             translator.downloadModelIfNeeded(conditions).await()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             throw Exception("Failed to download on-device translation model: ${e.localizedMessage ?: e.message}")
         }
@@ -68,6 +72,8 @@ class MlKitTranslationInteractor {
                         } else {
                             GeminiVibeSearch.TranslationBlockOutput(block.id, block.text)
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         failureCount++
                         lastError = e

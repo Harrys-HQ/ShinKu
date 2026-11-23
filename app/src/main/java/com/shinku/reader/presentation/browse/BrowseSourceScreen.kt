@@ -58,6 +58,7 @@ fun BrowseSourceContent(
     // SY <--
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    isSelected: (Manga) -> Boolean = { false },
 ) {
     val context = LocalContext.current
 
@@ -143,6 +144,7 @@ fun BrowseSourceContent(
             contentPadding = contentPadding,
             onMangaClick = onMangaClick,
             onMangaLongClick = onMangaLongClick,
+            isSelected = isSelected,
         )
         return
     }
@@ -156,6 +158,7 @@ fun BrowseSourceContent(
                 contentPadding = contentPadding,
                 onMangaClick = onMangaClick,
                 onMangaLongClick = onMangaLongClick,
+                isSelected = isSelected,
                 source = source,
             )
         }
@@ -165,6 +168,7 @@ fun BrowseSourceContent(
                 contentPadding = contentPadding,
                 onMangaClick = onMangaClick,
                 onMangaLongClick = onMangaLongClick,
+                isSelected = isSelected,
             )
         }
         LibraryDisplayMode.CompactGrid, LibraryDisplayMode.CoverOnlyGrid -> {
@@ -174,6 +178,7 @@ fun BrowseSourceContent(
                 contentPadding = contentPadding,
                 onMangaClick = onMangaClick,
                 onMangaLongClick = onMangaLongClick,
+                isSelected = isSelected,
             )
         }
     }

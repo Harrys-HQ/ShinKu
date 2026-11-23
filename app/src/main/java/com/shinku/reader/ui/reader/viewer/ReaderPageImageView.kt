@@ -159,7 +159,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
         background = pageBackground
 
         val isLiveTranslation = Injekt.get<ShinKuPreferences>().liveTranslation().get()
-        val page = currentPage
+        val page = currentPage?.let { (it as? com.shinku.reader.ui.reader.model.InsertPage)?.parent ?: it }
         if (page != null) {
             val language = Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()
             if (page.translationLanguage != language) {
@@ -168,25 +168,11 @@ open class ReaderPageImageView @JvmOverloads constructor(
             }
             val isChapterShowing = page.chapter.pages?.any { it.showTranslation } == true
             val shouldShow = isLiveTranslation || isChapterShowing
-            if (page.translationBlocks == null) {
-                try {
-                    val chapterId = page.chapter.chapter.id ?: 0L
-                    if (chapterId > 0L) {
-                        val targetLang = Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()
-                        val cached = com.shinku.reader.ui.reader.model.TranslationCache.getMemory(chapterId, page.index, targetLang)
-                        if (cached != null) {
-                            page.translationBlocks = cached
-                            page.translationLanguage = targetLang
-                            page.showTranslation = shouldShow
-                        }
-                    }
-                } catch (_: Throwable) {
-                }
-            } else if (shouldShow) {
+            if (page.translationBlocks != null && shouldShow) {
                 page.showTranslation = true
             }
         }
-        if (currentPage?.showTranslation == true) {
+        if (page?.showTranslation == true) {
             updateTranslationOverlay()
         }
     }
@@ -700,25 +686,11 @@ open class ReaderPageImageView @JvmOverloads constructor(
     }
 
     fun updateTranslationOverlay(targetPage: ReaderPage? = null) {
-        val pageToUse = targetPage ?: this.currentPage ?: return
+        val shownPage = targetPage ?: this.currentPage ?: return
+        val pageToUse = (shownPage as? com.shinku.reader.ui.reader.model.InsertPage)?.parent ?: shownPage
         if (pageToUse.translationLanguage != Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()) {
             pageToUse.translationBlocks = null
             pageToUse.showTranslation = false
-        }
-        if (pageToUse.translationBlocks == null) {
-            try {
-                val chapterId = pageToUse.chapter.chapter.id ?: 0L
-                if (chapterId > 0L) {
-                    val targetLang = Injekt.get<ShinKuPreferences>().translationTargetLanguage().get()
-                    val cached = com.shinku.reader.ui.reader.model.TranslationCache.getMemory(chapterId, pageToUse.index, targetLang)
-                    if (cached != null) {
-                        pageToUse.translationBlocks = cached
-                        pageToUse.translationLanguage = targetLang
-                        pageToUse.showTranslation = true
-                    }
-                }
-            } catch (_: Throwable) {
-            }
         }
         ensureTranslationOverlay(pageToUse)
         translationOverlay?.page = pageToUse

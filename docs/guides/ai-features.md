@@ -10,9 +10,8 @@ Read untranslated raw manga and foreign-language webtoons on the fly without wai
 
 ### Supported Translation Backends:
 1. **Google Gemini API (Cloud):** High-precision cloud translation capable of nuanced dialogue understanding, slang translation, and honorific preservation.
-2. **Universal OpenAI-Compatible API:** Connect to OpenRouter, DeepSeek, Groq, or custom self-hosted endpoints with Zero-Leak client privacy.
-3. **On-Device Google ML Kit (Offline OCR):** Local text recognition that detects speech bubbles and dialog boxes directly on your device with 0 network latency.
-4. **On-Device AICore / Gemini Nano:** Ultra-fast offline translation on supported flagship hardware.
+2. **Universal OpenAI-Compatible API:** Connect to OpenRouter, DeepSeek, Groq, or a custom endpoint.
+3. **On-Device Google ML Kit:** OCR and translation run on your device.
 
 ### How to Use Live Translation:
 1. **Reader Bottom Bar**: Tap the center of your screen while reading. Tap the **Translate** icon (`文A`) in the bottom bar to toggle dialogue bubble overlays on or off.
@@ -20,6 +19,13 @@ Read untranslated raw manga and foreign-language webtoons on the fly without wai
    - **Inspect Page Bubbles**: View detected text blocks, compare original raw text against translated dialogue, or copy quotes.
    - **Pre-Translate Entire Chapter**: Translate all chapter pages in the background with persistent disk caching.
    - **Change Target Language**: Select English, Spanish, French, German, Indonesian, Tagalog, and more.
+   - **Series glossary**: Add original terms and preferred translations for this series, and choose whether to preserve honorifics. The glossary is stored on this device. On-device translation substitutes matching terms locally. For a cloud request, matching entries appear in the prompt preview before you approve it.
+
+For cloud translation of a page or selected area, the reader shows the destination and the exact text prompt for approval. The phone runs OCR on the image and removes recognizable credentials from the text before previewing it. Cloud translation sends the approved prompt with OCR text and language instructions. Page images, series title, genres, and library history stay on-device in this flow. Tap **Cancel** to skip the request. Keep the chapter translation dialog open to review each uncached page that needs cloud translation.
+
+Automatic translation as you turn pages reuses saved translations, or uses on-device ML Kit in Automatic and on-device modes. In cloud-only mode, tap Translate to request a preview for an uncached page. ML Kit may download language models before its first translation for a language.
+
+New saved results are kept separately for each set of language, provider, model, and glossary settings. After changing those settings, translate again to see results for the new profile. Use **Show older translations** to view saved overlays from before ShinKu tracked these settings.
 
 ---
 

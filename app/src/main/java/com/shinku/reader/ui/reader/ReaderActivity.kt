@@ -515,16 +515,17 @@ class ReaderActivity : BaseActivity() {
                     translationContent = {
                         val targetLang = remember { shinkuPreferences.translationTargetLanguage().get() }
                         val chapterId = state.currentChapter?.chapter?.id ?: 0L
-                        val hasCached by androidx.compose.runtime.produceState(false, chapterId, targetLang) {
+                        val savedTranslations by androidx.compose.runtime.produceState(false to false, chapterId, targetLang) {
                             value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
+                                viewModel.hasCompatibleChapterTranslations(chapterId) to
+                                    com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
                             }
                         }
                         val activePageBlocks = state.activePage?.translationBlocks?.size ?: 0
                         com.shinku.reader.presentation.reader.dialog.TranslationOptionsContent(
                             totalPages = state.totalPages,
                             targetLanguage = targetLang,
-                            hasCachedTranslations = hasCached,
+                            hasCachedTranslations = savedTranslations.first || savedTranslations.second,
                             isOverlayVisible = state.currentChapter?.pages?.any { it.showTranslation } == true,
                             currentPageBlockCount = activePageBlocks,
                             onDismissRequest = onDismissRequest,
@@ -535,6 +536,8 @@ class ReaderActivity : BaseActivity() {
                             onTranslateEntireChapter = { viewModel.startBatchChapterTranslation() },
                             onChangeLanguages = { viewModel.openTranslationLanguageSelectDialog() },
                             onClearTranslations = { viewModel.clearChapterTranslation(chapterId) },
+                            onOpenGlossary = viewModel::openTranslationGlossary,
+                            onShowOlderTranslations = (viewModel::showPreviouslySavedTranslation).takeIf { savedTranslations.second },
                         )
                     },
                 )
@@ -604,7 +607,7 @@ class ReaderActivity : BaseActivity() {
                     targetLanguage = targetLang,
                     isOverlayVisible = isOverlayVisible,
                     onToggleOverlay = { viewModel.toggleTranslation() },
-                    onRunInBackground = onDismissRequest,
+                    onRunInBackground = onDismissRequest.takeUnless { dialog.requiresConsent },
                     onCancel = { viewModel.cancelBatchChapterTranslation() },
                 )
             }
@@ -612,16 +615,17 @@ class ReaderActivity : BaseActivity() {
             is ReaderViewModel.Dialog.TranslationOptions -> {
                 val targetLang = remember { shinkuPreferences.translationTargetLanguage().get() }
                 val chapterId = state.currentChapter?.chapter?.id ?: 0L
-                val hasCached by androidx.compose.runtime.produceState(false, chapterId, targetLang) {
+                val savedTranslations by androidx.compose.runtime.produceState(false to false, chapterId, targetLang) {
                     value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
+                        viewModel.hasCompatibleChapterTranslations(chapterId) to
+                            com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
                     }
                 }
                 val activePageBlocks = state.activePage?.translationBlocks?.size ?: 0
                 com.shinku.reader.presentation.reader.dialog.TranslationOptionsDialog(
                     totalPages = state.totalPages,
                     targetLanguage = targetLang,
-                    hasCachedTranslations = hasCached,
+                    hasCachedTranslations = savedTranslations.first || savedTranslations.second,
                     isOverlayVisible = state.currentChapter?.pages?.any { it.showTranslation } == true,
                     currentPageBlockCount = activePageBlocks,
                     onDismissRequest = onDismissRequest,
@@ -632,6 +636,8 @@ class ReaderActivity : BaseActivity() {
                     onTranslateEntireChapter = { viewModel.startBatchChapterTranslation() },
                     onChangeLanguages = { viewModel.openTranslationLanguageSelectDialog() },
                     onClearTranslations = { viewModel.clearChapterTranslation(chapterId) },
+                    onOpenGlossary = viewModel::openTranslationGlossary,
+                    onShowOlderTranslations = (viewModel::showPreviouslySavedTranslation).takeIf { savedTranslations.second },
                 )
             }
 
@@ -785,6 +791,8 @@ class ReaderActivity : BaseActivity() {
                                 cropRect = pageCropRect,
                                 originalText = dialog.originalText,
                                 translatedText = dialog.translatedText,
+                                targetLanguage = dialog.targetLanguage,
+                                cacheKey = dialog.cacheKey,
                                 sourceWidth = sWidth,
                                 sourceHeight = sHeight,
                             )
@@ -799,6 +807,16 @@ class ReaderActivity : BaseActivity() {
                 )
             }
 
+            is ReaderViewModel.Dialog.RemoteTranslationConsent -> {
+                val request = state.dialog as ReaderViewModel.Dialog.RemoteTranslationConsent
+                com.shinku.reader.presentation.reader.dialog.ReaderRemoteTranslationDialog(
+                    destination = request.destination,
+                    prompt = request.prompt,
+                    onConfirm = { viewModel.answerRemoteTranslation(request, true) },
+                    onDismissRequest = { viewModel.answerRemoteTranslation(request, false) },
+                )
+            }
+
             is ReaderViewModel.Dialog.TranslationLanguageSelect -> {
                 val currentSourceLanguage = remember { shinkuPreferences.translationSourceLanguage().get() }
                 val currentTargetLanguage = remember { shinkuPreferences.translationTargetLanguage().get() }
@@ -809,6 +827,15 @@ class ReaderActivity : BaseActivity() {
                         viewModel.changeTranslationSourceLanguage(selectedSource)
                         viewModel.changeTranslationTargetLanguage(selectedTarget)
                     },
+                    onDismissRequest = onDismissRequest,
+                )
+            }
+
+            is ReaderViewModel.Dialog.SeriesGlossary -> {
+                val dialog = state.dialog as ReaderViewModel.Dialog.SeriesGlossary
+                com.shinku.reader.presentation.reader.dialog.TranslationGlossaryDialog(
+                    glossary = dialog.glossary,
+                    onSave = { viewModel.saveTranslationGlossary(dialog.mangaId, it) },
                     onDismissRequest = onDismissRequest,
                 )
             }
@@ -905,6 +932,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onPause() {
+        viewModel.setReaderForeground(false)
         disableLightSensor()
         viewModel.pauseAtmosphericAudio()
         lifecycleScope.launchNonCancellable {
@@ -963,6 +991,7 @@ class ReaderActivity : BaseActivity() {
      */
     override fun onResume() {
         super.onResume()
+        viewModel.setReaderForeground(true)
         viewModel.restartReadTimer()
         viewModel.resumeAtmosphericAudio()
         setMenuVisibility(viewModel.state.value.menuVisible)

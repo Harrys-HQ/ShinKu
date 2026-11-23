@@ -22,6 +22,9 @@ import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.domain.track.interactor.AddTracks
 import com.shinku.reader.domain.ui.UiPreferences
 import com.shinku.reader.presentation.util.ioCoroutineScope
+import com.shinku.reader.ui.browse.BrowseSelectionState
+import com.shinku.reader.ui.browse.BulkAddFavoritesHelper
+import com.shinku.reader.ui.browse.BulkFavoriteCoordinator
 import com.shinku.reader.data.cache.CoverCache
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
@@ -129,6 +132,24 @@ open class BrowseSourceScreenModel(
 
     val sourceIsMangaDex = sourceId in mangaDexSourceIds
     // SY <--
+
+    private val bulkFavoriteCoordinator by lazy {
+        BulkFavoriteCoordinator(
+            BulkAddFavoritesHelper(
+                libraryPreferences = libraryPreferences,
+                getCategories = getCategories,
+                setMangaCategories = setMangaCategories,
+                setMangaDefaultChapterFlags = setMangaDefaultChapterFlags,
+                addTracks = addTracks,
+                getManga = getManga,
+                updateManga = updateManga,
+                getDuplicateLibraryManga = getDuplicateLibraryManga,
+                shinkuPreferences = shinkuPreferences,
+            ),
+        )
+    }
+
+    val bulkFavoriteEvents = bulkFavoriteCoordinator.events
 
     init {
         if (source is CatalogueSource) {
@@ -444,6 +465,48 @@ open class BrowseSourceScreenModel(
         mutableState.update { it.copy(toolbarQuery = query) }
     }
 
+    fun enterSelectionMode() {
+        mutableState.update { it.copy(selection = it.selection.enterSelectionMode()) }
+    }
+
+    fun exitSelectionMode() {
+        mutableState.update { it.copy(selection = it.selection.exitSelectionMode()) }
+    }
+
+    fun toggleSelection(manga: Manga) {
+        mutableState.update { it.copy(selection = it.selection.toggle(manga)) }
+    }
+
+    fun selectAllLoaded(loaded: List<Manga>) {
+        mutableState.update { it.copy(selection = it.selection.selectAllLoaded(loaded)) }
+    }
+
+    fun invertLoaded(loaded: List<Manga>) {
+        mutableState.update { it.copy(selection = it.selection.invertLoaded(loaded)) }
+    }
+
+    fun requestBulkAddToLibrary() {
+        bulkFavoriteCoordinator.requestBulkAdd(
+            scope = screenModelScope,
+            selected = state.value.selection.selectedManga,
+            sourceProvider = { sourceManager.getOrStub(it) },
+            onNeedsCategoryChoice = { mangas, initialSelection ->
+                setDialog(Dialog.BulkChangeMangaCategory(mangas, initialSelection))
+            },
+            onFinished = ::exitSelectionMode,
+        )
+    }
+
+    fun confirmBulkAddToLibrary(mangas: List<Manga>, categoryIds: List<Long>) {
+        bulkFavoriteCoordinator.confirmBulkAdd(
+            scope = screenModelScope,
+            mangas = mangas,
+            categoryIds = categoryIds,
+            sourceProvider = { sourceManager.getOrStub(it) },
+            onFinished = ::exitSelectionMode,
+        )
+    }
+
     sealed class Listing(open val query: String?, open val filters: FilterList) {
         data object Popular : Listing(query = GetRemoteManga.QUERY_POPULAR, filters = FilterList())
         data object Latest : Listing(query = GetRemoteManga.QUERY_LATEST, filters = FilterList())
@@ -471,6 +534,10 @@ open class BrowseSourceScreenModel(
             val manga: Manga,
             val initialSelection: ImmutableList<CheckboxState.State<Category>>,
         ) : Dialog
+        data class BulkChangeMangaCategory(
+            val mangas: List<Manga>,
+            val initialSelection: ImmutableList<CheckboxState.State<Category>>,
+        ) : Dialog
         data class Migrate(val target: Manga, val current: Manga) : Dialog
 
         // SY -->
@@ -485,6 +552,7 @@ open class BrowseSourceScreenModel(
         val filters: FilterList = FilterList(),
         val toolbarQuery: String? = null,
         val dialog: Dialog? = null,
+        val selection: BrowseSelectionState = BrowseSelectionState(),
         // SY -->
         val savedSearches: ImmutableList<EXHSavedSearch> = persistentListOf(),
         val filterable: Boolean = true,

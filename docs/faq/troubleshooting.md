@@ -42,10 +42,12 @@ Sources enforce rate limits when too many requests are sent in a short burst (e.
 
 ---
 
-## 📜 Viewing Error Logs
+## 📜 Viewing Error Logs & Running Diagnostics
 
-If an unexpected error occurs, ShinKu maintains a diagnostic crash log:
+If an unexpected error occurs, ShinKu provides built-in local diagnostics and redacted error export:
 
-1. Go to **More → Settings → Advanced**.
-2. Tap **Dump crash log** or **Share logcat**.
-3. You can review the log or attach it to a report on our [GitHub Issues](https://github.com/Harrys-HQ/ShinKu/issues) page.
+1. Open **More → App Diagnostics** (or **More → Settings → Advanced → App Diagnostics**).
+2. Review check statuses (`OK`, `WARNING`, `FAILED`, `NOT CHECKED`), check **Source Health**, or tap **Preview & export** to inspect and share a redacted report.
+3. See the [App Diagnostics & Health Guide](/guides/diagnostics) for details on each check, redaction rules, and clearing stored diagnostic history.
+
+For a full crash-log share outside diagnostics, go to **More → Settings → Advanced → Dump crash logs**.

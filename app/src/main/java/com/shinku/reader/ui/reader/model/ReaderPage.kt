@@ -30,6 +30,7 @@ open class ReaderPage(
 
     // Translation Overlay Data
     var translationLanguage: String? = null
+    var translationCacheKey: String? = null
     var translationBlocks: List<TranslatedBlock>? = null
     var showTranslation: Boolean = false
 }
@@ -47,9 +48,6 @@ data class TranslatedBlock(
 
 object TranslationCache {
     private val memCache = android.util.LruCache<String, List<TranslatedBlock>>(128)
-
-    fun getMemory(chapterId: Long, pageIndex: Int, targetLanguage: String): List<TranslatedBlock>? =
-        memCache.get("${chapterId}_${pageIndex}_$targetLanguage")
 
     @Synchronized
     fun get(chapterId: Long, pageIndex: Int, targetLanguage: String): List<TranslatedBlock>? {

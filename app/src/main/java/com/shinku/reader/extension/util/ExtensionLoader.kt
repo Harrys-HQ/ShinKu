@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
+import com.shinku.reader.domain.diagnostics.ExtensionLoadFailureReason
 import com.shinku.reader.domain.extension.interactor.TrustExtension
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.extension.model.Extension
@@ -174,9 +175,15 @@ internal object ExtensionLoader {
         // Load each extension concurrently and wait for completion
         val results = runBlocking(Dispatchers.IO) {
             val deferred = extPkgs.map {
-                async { 
+                async {
                     runCatching { loadExtension(context, it) }
-                        .getOrElse { LoadResult.Error } 
+                        .getOrElse { e ->
+                            LoadResult.Error(
+                                pkgName = it.packageInfo.packageName,
+                                reason = ExtensionLoadFailureReason.UNKNOWN,
+                                detail = e.message,
+                            )
+                        }
                 }
             }
             deferred.awaitAll()
@@ -194,7 +201,11 @@ internal object ExtensionLoader {
         val extensionPackage = getExtensionInfoFromPkgName(context, pkgName)
         if (extensionPackage == null) {
             logcat(LogPriority.ERROR) { "Extension package is not found ($pkgName)" }
-            return LoadResult.Error
+            return LoadResult.Error(
+                pkgName = pkgName,
+                reason = ExtensionLoadFailureReason.MISSING_PACKAGE,
+                detail = "Extension package is not installed or is missing extension metadata",
+            )
         }
         return loadExtension(context, extensionPackage)
     }
@@ -264,7 +275,12 @@ internal object ExtensionLoader {
 
         if (versionName.isNullOrEmpty()) {
             logcat(LogPriority.WARN) { "Missing versionName for extension $extName" }
-            return LoadResult.Error
+            return LoadResult.Error(
+                pkgName = pkgName,
+                name = extName,
+                reason = ExtensionLoadFailureReason.MISSING_VERSION,
+                detail = "Missing extension versionName",
+            )
         }
 
         // Validate lib version
@@ -274,13 +290,23 @@ internal object ExtensionLoader {
                 "Lib version is $libVersion, while only versions " +
                     "$LIB_VERSION_MIN to $LIB_VERSION_MAX are allowed"
             }
-            return LoadResult.Error
+            return LoadResult.Error(
+                pkgName = pkgName,
+                name = extName,
+                reason = ExtensionLoadFailureReason.INCOMPATIBLE_LIB,
+                detail = "Extension API version $libVersion is outside supported $LIB_VERSION_MIN–$LIB_VERSION_MAX",
+            )
         }
 
         val signatures = getSignatures(pkgInfo)
         if (signatures.isNullOrEmpty()) {
             logcat(LogPriority.WARN) { "Package $pkgName isn't signed" }
-            return LoadResult.Error
+            return LoadResult.Error(
+                pkgName = pkgName,
+                name = extName,
+                reason = ExtensionLoadFailureReason.UNSIGNED,
+                detail = "Extension APK has no signing certificate",
+            )
         } else if (!trustExtension.isTrusted(pkgInfo, signatures)) {
             val extension = Extension.Untrusted(
                 extName,
@@ -297,17 +323,37 @@ internal object ExtensionLoader {
         val isNsfw = appInfo.metaData.getInt(METADATA_NSFW) == 1
         if (!loadNsfwSource && isNsfw) {
             logcat(LogPriority.WARN) { "NSFW extension $pkgName not allowed" }
-            return LoadResult.Error
+            return LoadResult.Error(
+                pkgName = pkgName,
+                name = extName,
+                reason = ExtensionLoadFailureReason.NSFW_DISABLED,
+                detail = "18+ / NSFW sources are disabled in Browse settings",
+            )
         }
 
         val classLoader = try {
             ChildFirstPathClassLoader(appInfo.sourceDir, null, context.classLoader)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Extension load error: $extName ($pkgName)" }
-            return LoadResult.Error
+            return LoadResult.Error(
+                pkgName = pkgName,
+                name = extName,
+                reason = ExtensionLoadFailureReason.CLASSLOADER_ERROR,
+                detail = e.message ?: e::class.simpleName,
+            )
         }
 
-        val sources = appInfo.metaData.getString(METADATA_SOURCE_CLASS)!!
+        val sourceClassMetadata = appInfo.metaData.getString(METADATA_SOURCE_CLASS)
+        if (sourceClassMetadata.isNullOrBlank()) {
+            return LoadResult.Error(
+                pkgName = pkgName,
+                name = extName,
+                reason = ExtensionLoadFailureReason.INSTANTIATION_ERROR,
+                detail = "Missing $METADATA_SOURCE_CLASS manifest metadata",
+            )
+        }
+
+        val sources = sourceClassMetadata
             .split(";")
             .map {
                 val sourceClass = it.trim()
@@ -326,7 +372,12 @@ internal object ExtensionLoader {
                     }
                 } catch (e: Throwable) {
                     logcat(LogPriority.ERROR, e) { "Extension load error: $extName ($it)" }
-                    return LoadResult.Error
+                    return LoadResult.Error(
+                        pkgName = pkgName,
+                        name = extName,
+                        reason = ExtensionLoadFailureReason.INSTANTIATION_ERROR,
+                        detail = "${e::class.simpleName}: ${e.message ?: "Failed to instantiate $it"}",
+                    )
                 }
             }
 

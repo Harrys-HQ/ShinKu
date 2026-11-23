@@ -15,6 +15,7 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
@@ -61,7 +62,12 @@ import com.shinku.reader.domain.manga.model.toMangaUpdate
 import com.shinku.reader.domain.manga.model.toSManga
 import com.shinku.reader.domain.source.interactor.GetSourceHealth
 import com.shinku.reader.domain.source.interactor.UpdateSourceHealth
+import com.shinku.reader.domain.source.model.DiagnosticPhase
+import com.shinku.reader.domain.source.model.HealthProbeType
+import com.shinku.reader.domain.source.model.SourceHealthCategory
+import com.shinku.reader.domain.source.model.SourceHealthClassifier
 import com.shinku.reader.domain.source.model.SourceNotInstalledException
+import com.shinku.reader.domain.source.model.SourceProbeOutcome
 import com.shinku.reader.domain.source.service.SourceManager
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.domain.sync.SyncPreferences
@@ -82,6 +88,7 @@ import com.shinku.reader.util.storage.getUriCompat
 import com.shinku.reader.util.system.createFileInCacheDir
 import com.shinku.reader.util.system.isConnectedToVpn
 import com.shinku.reader.util.system.isConnectedToWifi
+import com.shinku.reader.util.system.isOnline
 import com.shinku.reader.util.system.isRunning
 import com.shinku.reader.util.system.setForegroundSafely
 import com.shinku.reader.util.system.workManager
@@ -93,6 +100,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
@@ -466,8 +476,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                 progressCount,
                                                 manga,
                                             ) {
-                                                var success = false
-                                                var error: String? = null
+                                                var probeOutcome: SourceProbeOutcome? = null
                                                 val latency = measureTimeMillis {
                                                     try {
                                                         val newChapters = updateManga(manga, fetchWindow)
@@ -500,7 +509,22 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                             }
                                                         }
                                                         updateManga.await(MangaUpdate(manga.id, lastUpdateError = false))
-                                                        success = true
+                                                        probeOutcome = SourceProbeOutcome(
+                                                            isSuccess = true,
+                                                            category = SourceHealthCategory.HEALTHY,
+                                                            probeType = HealthProbeType.SOURCE_OPERATION,
+                                                            phase = DiagnosticPhase.SOURCE_REQUEST,
+                                                        )
+                                                    } catch (e: CancellationException) {
+                                                        if (e !is kotlinx.coroutines.TimeoutCancellationException) throw e
+                                                        updateManga.await(MangaUpdate(manga.id, lastUpdateError = true))
+                                                        probeOutcome = SourceHealthClassifier.classifyThrowable(
+                                                            throwable = e,
+                                                            isNetworkAvailable = context.isOnline(),
+                                                            probeType = HealthProbeType.SOURCE_OPERATION,
+                                                            phase = DiagnosticPhase.SOURCE_REQUEST,
+                                                        )
+                                                        failedUpdates.add(manga to e.message)
                                                     } catch (e: Throwable) {
                                                         logcat(LogPriority.ERROR, e) { "Failed to update manga ${manga.title}" }
                                                         updateManga.await(MangaUpdate(manga.id, lastUpdateError = true))
@@ -515,15 +539,36 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
                                                             else -> e.message
                                                         }
-                                                        error = errorMessage
+                                                        probeOutcome = if (e is NoChaptersException) {
+                                                            SourceProbeOutcome(
+                                                                isSuccess = false,
+                                                                category = SourceHealthCategory.PARSER_ERROR,
+                                                                probeType = HealthProbeType.SOURCE_OPERATION,
+                                                                phase = DiagnosticPhase.SOURCE_REQUEST,
+                                                                sanitizedSummary = errorMessage,
+                                                                countAsFailure = false,
+                                                            )
+                                                        } else {
+                                                            SourceHealthClassifier.classifyThrowable(
+                                                                throwable = e,
+                                                                isNetworkAvailable = context.isOnline(),
+                                                                probeType = HealthProbeType.SOURCE_OPERATION,
+                                                                phase = DiagnosticPhase.SOURCE_REQUEST,
+                                                            )
+                                                        }
                                                         failedUpdates.add(manga to errorMessage)
                                                     }
                                                 }
                                                 // SY -->
-                                                launch {
-                                                    try {
-                                                        updateSourceHealth.await(sourceId, success, latency, error)
-                                                    } catch (_: Throwable) {}
+                                                val resolvedOutcome = probeOutcome?.let {
+                                                    if (it.isSuccess) it.copy(latencyMs = latency) else it
+                                                }
+                                                if (resolvedOutcome != null) {
+                                                    launch {
+                                                        try {
+                                                            updateSourceHealth.await(sourceId, resolvedOutcome)
+                                                        } catch (_: Throwable) {}
+                                                    }
                                                 }
                                                 // SY <--
                                             }
@@ -879,6 +924,11 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         const val KEY_GROUP = "group"
         const val KEY_GROUP_EXTRA = "group_extra"
         // SY <--
+
+        internal fun observeManualUpdate(workManager: WorkManager): Flow<Boolean> =
+            workManager.getWorkInfosByTagFlow(WORK_NAME_MANUAL)
+                .map { jobs -> jobs.any { !it.state.isFinished } }
+                .distinctUntilChanged()
 
         fun cancelAllWorks(context: Context) {
             context.workManager.cancelAllWorkByTag(TAG)

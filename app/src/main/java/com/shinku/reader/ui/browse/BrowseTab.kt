@@ -29,7 +29,7 @@ import com.shinku.reader.ui.browse.migration.sources.migrateSourceTab
 import com.shinku.reader.ui.browse.source.globalsearch.GlobalSearchScreen
 import com.shinku.reader.ui.browse.source.sourcesTab
 import com.shinku.reader.ui.main.MainActivity
-import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
@@ -80,20 +80,17 @@ data object BrowseTab : Tab {
         val extensionsState by extensionsScreenModel.state.collectAsState()
 
         // SY -->
-        val tabs = if (hideFeedTab) {
-            persistentListOf(
-                sourcesTab(),
-                extensionsTab(extensionsScreenModel),
-                migrateSourceTab(),
-            )
-        } else {
-            persistentListOf(
-                feedTab(),
-                sourcesTab(),
-                extensionsTab(extensionsScreenModel),
-                migrateSourceTab(),
-            )
+        val tabOrder = remember(hideFeedTab, feedTabInFront) {
+            computeBrowseTabOrder(hideFeedTab = hideFeedTab, feedTabInFront = feedTabInFront)
         }
+        val tabs = tabOrder.map { kind ->
+            when (kind) {
+                BrowseTabKind.FEED -> feedTab()
+                BrowseTabKind.SOURCES -> sourcesTab()
+                BrowseTabKind.EXTENSIONS -> extensionsTab(extensionsScreenModel)
+                BrowseTabKind.MIGRATE -> migrateSourceTab()
+            }
+        }.toImmutableList()
         // SY <--
 
         val state = rememberPagerState { tabs.size }
@@ -105,10 +102,13 @@ data object BrowseTab : Tab {
             searchQuery = extensionsState.searchQuery,
             onChangeSearchQuery = extensionsScreenModel::search,
         )
-        LaunchedEffect(hideFeedTab) {
+        LaunchedEffect(tabOrder) {
             switchToTabChannel.receiveAsFlow().collectLatest { section ->
-                val sourceIndex = if (hideFeedTab) 0 else 1
-                state.scrollToPage(sourceIndex + if (section == Section.EXTENSIONS) 1 else 0)
+                val targetKind = when (section) {
+                    Section.SOURCES -> BrowseTabKind.SOURCES
+                    Section.EXTENSIONS -> BrowseTabKind.EXTENSIONS
+                }
+                state.scrollToPage(indexForBrowseTab(tabOrder, targetKind))
             }
         }
 

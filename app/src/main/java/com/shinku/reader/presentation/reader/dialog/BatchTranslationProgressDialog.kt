@@ -49,7 +49,7 @@ fun BatchTranslationProgressDialog(
     targetLanguage: String,
     isOverlayVisible: Boolean = true,
     onToggleOverlay: () -> Unit = {},
-    onRunInBackground: () -> Unit,
+    onRunInBackground: (() -> Unit)?,
     onCancel: () -> Unit,
 ) {
     val progress = if (totalPages > 0) {
@@ -60,7 +60,7 @@ fun BatchTranslationProgressDialog(
     val percentage = (progress * 100).toInt()
 
     AlertDialog(
-        onDismissRequest = onRunInBackground,
+        onDismissRequest = onRunInBackground ?: onCancel,
         shape = SanctuaryShapes.hero,
         containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.card),
         tonalElevation = SanctuaryElevation.card,
@@ -201,11 +201,13 @@ fun BatchTranslationProgressDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = onRunInBackground,
-                shape = SanctuaryShapes.medium,
-            ) {
-                Text("Run in background", fontWeight = FontWeight.SemiBold)
+            if (onRunInBackground != null) {
+                Button(
+                    onClick = onRunInBackground,
+                    shape = SanctuaryShapes.medium,
+                ) {
+                    Text("Run in background", fontWeight = FontWeight.SemiBold)
+                }
             }
         },
         dismissButton = {

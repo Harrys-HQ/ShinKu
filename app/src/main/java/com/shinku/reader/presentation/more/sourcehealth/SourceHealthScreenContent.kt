@@ -3,58 +3,52 @@ package com.shinku.reader.presentation.more.sourcehealth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.StarHalf
-import androidx.compose.material.icons.filled.HealthAndSafety
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarBorder
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.shinku.reader.data.diagnostics.LiveHealthScanState
+import com.shinku.reader.domain.source.model.DiagnosticPhase
+import com.shinku.reader.domain.diagnostics.DiagnosticCheckStatus
+import com.shinku.reader.domain.diagnostics.RepositoryHealthCheck
 import com.shinku.reader.i18n.MR
-import com.shinku.reader.presentation.core.components.Pill
 import com.shinku.reader.presentation.core.components.SanctuaryOverlineBadge
+import com.shinku.reader.presentation.core.components.SanctuaryProgressBar
 import com.shinku.reader.presentation.core.components.material.padding
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryElevation
 import com.shinku.reader.presentation.core.theme.SanctuaryShapes
-import com.shinku.reader.presentation.core.theme.active
-import com.shinku.reader.presentation.core.theme.statusDegraded
 import com.shinku.reader.presentation.core.theme.statusExcellent
-import com.shinku.reader.presentation.core.theme.statusGood
 import com.shinku.reader.presentation.core.theme.statusWarning
-import com.shinku.reader.presentation.util.relativeTimeSpanString
 
 @Composable
 fun SourceHealthScreenContent(
     healthList: List<SourceHealthItem>,
     paddingValues: PaddingValues,
     testingSourceIds: Set<Long> = emptySet(),
+    liveScan: LiveHealthScanState = LiveHealthScanState(),
+    repoChecks: List<RepositoryHealthCheck> = emptyList(),
     onTestSingleSource: ((Long) -> Unit)? = null,
+    onCancelSingleSource: ((Long) -> Unit)? = null,
+    onCancelScan: (() -> Unit)? = null,
+    onRetryScan: (() -> Unit)? = null,
 ) {
-    if (healthList.isEmpty()) {
+    if (healthList.isEmpty() && !liveScan.isRunning && repoChecks.isEmpty()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -81,7 +75,23 @@ fun SourceHealthScreenContent(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        item {
+        if (liveScan.isRunning || liveScan.isCancelled || liveScan.finishedAt != null) {
+            item(key = "live-scan-banner") {
+                LiveScanProgressCard(
+                    liveScan = liveScan,
+                    onCancelScan = onCancelScan,
+                    onRetryScan = onRetryScan,
+                )
+            }
+        }
+
+        if (repoChecks.isNotEmpty()) {
+            item(key = "repo-health-summary") {
+                RepositoryHealthSummaryCard(repoChecks = repoChecks)
+            }
+        }
+
+        item(key = "source-health-header") {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -108,195 +118,102 @@ fun SourceHealthScreenContent(
                 }
             }
         }
+
         items(healthList, key = { it.source.id }) { item ->
             SourceHealthItemCard(
                 item = item,
                 isTesting = item.source.id in testingSourceIds,
                 onTestSingleSource = onTestSingleSource,
+                onCancelSingleSource = onCancelSingleSource,
             )
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SourceHealthItemCard(
-    item: SourceHealthItem,
-    isTesting: Boolean = false,
-    onTestSingleSource: ((Long) -> Unit)? = null,
+private fun LiveScanProgressCard(
+    liveScan: LiveHealthScanState,
+    onCancelScan: (() -> Unit)?,
+    onRetryScan: (() -> Unit)?,
 ) {
-    val health = item.health
-    val hasCheck = health != null && (health.lastSuccess > 0L || health.lastFailure > 0L)
-    val performanceScore = if (hasCheck) health?.performanceScore ?: -1 else -1
-
-    val (statusLabel, statusColor) = when {
-        health == null || (health.lastSuccess == 0L && health.lastFailure == 0L) -> "UNTESTED" to MaterialTheme.colorScheme.outline
-        health.isDnsDead -> "DEAD DOMAIN" to MaterialTheme.colorScheme.error
-        health.isServerDown -> "SERVER DOWN" to MaterialTheme.colorScheme.error
-        health.isCloudflareBlocked -> "BLOCKED (403)" to MaterialTheme.colorScheme.statusWarning
-        health.isTimeout -> "TIMEOUT" to MaterialTheme.colorScheme.statusWarning
-        health.isFailingNow -> "OFFLINE" to MaterialTheme.colorScheme.error
-        performanceScore >= 95 -> "EXCELLENT" to MaterialTheme.colorScheme.statusExcellent
-        performanceScore >= 80 -> "STABLE" to MaterialTheme.colorScheme.statusGood
-        performanceScore >= 60 -> "UNSTABLE" to MaterialTheme.colorScheme.statusWarning
-        else -> "DEGRADED" to MaterialTheme.colorScheme.statusDegraded
+    val progress = if (liveScan.totalCount > 0) {
+        liveScan.completedCount.toFloat() / liveScan.totalCount.toFloat()
+    } else {
+        0f
     }
-
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = SanctuaryShapes.deckCard,
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.compact),
         border = SanctuaryBrushes.subtleBorder(),
-        shadowElevation = SanctuaryElevation.subtle,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(MaterialTheme.padding.medium),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-            ) {
-                Text(
-                    text = item.source.name,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-
-                HealthRatingStars(performanceScore)
-
-                if (onTestSingleSource != null) {
-                    IconButton(
-                        onClick = { onTestSingleSource(item.source.id) },
-                        enabled = !isTesting,
-                        modifier = Modifier.size(48.dp),
-                    ) {
-                        if (isTesting) {
-                            CircularProgressIndicator(
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Outlined.Refresh,
-                                contentDescription = "Test Source",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
-                }
-            }
-
-            Row(
-                modifier = Modifier.padding(top = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
             ) {
                 SanctuaryOverlineBadge(
-                    text = statusLabel,
+                    text = when {
+                        liveScan.isRunning -> "LOCAL SCAN IN PROGRESS"
+                        liveScan.isCancelled -> "SCAN CANCELLED"
+                        liveScan.currentPhase == DiagnosticPhase.FAILED -> "SCAN FAILED"
+                        else -> "SCAN COMPLETE"
+                    },
                     compact = true,
-                    color = statusColor,
+                    color = when {
+                        liveScan.isRunning -> MaterialTheme.colorScheme.primary
+                        liveScan.isCancelled -> MaterialTheme.colorScheme.statusWarning
+                        liveScan.currentPhase == DiagnosticPhase.FAILED -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.statusExcellent
+                    },
                 )
-
-                if (health?.isFailingNow == true) {
-                    val failureBadge = when {
-                        health.isDnsDead -> "DNS FAILED"
-                        health.isServerDown -> "HTTP 522"
-                        health.isCloudflareBlocked -> "CLOUDFLARE 403"
-                        health.isTimeout -> "TIMED OUT"
-                        else -> "OFFLINE"
-                    }
-                    Pill(
-                        text = failureBadge,
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                } else if (health?.isSensitive == true) {
-                    Pill(
-                        text = "SAFE CONCURRENCY (3x)",
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        style = MaterialTheme.typography.labelSmall,
-                    )
-                }
-            }
-
-            val lastCheckText = when {
-                health == null || (health.lastSuccess == 0L && health.lastFailure == 0L) -> "Not checked yet"
-                health.isFailingNow -> if (health.lastFailure > 0L) {
-                    "Last check failed (${relativeTimeSpanString(health.lastFailure)})"
-                } else {
-                    "Last check failed"
-                }
-                health.lastSuccess > 0L -> {
-                    val latencyStr = if (health.avgLatency > 0L) " · ${health.avgLatency}ms" else ""
-                    "Last check succeeded (${relativeTimeSpanString(health.lastSuccess)})$latencyStr"
-                }
-                else -> "Not checked yet"
-            }
-
-            Text(
-                text = lastCheckText,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 6.dp),
-            )
-
-            if (health != null && hasCheck) {
-                Row(
-                    modifier = Modifier.padding(top = MaterialTheme.padding.small),
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
-                ) {
-                    HealthStat(
-                        icon = Icons.Default.HealthAndSafety,
-                        label = "${health.healthScore}%",
-                        color = statusColor,
-                    )
-                    HealthStat(
-                        icon = Icons.Default.Speed,
-                        label = if (health.avgLatency > 0L) {
-                            "${health.avgLatency}ms"
-                        } else if (health.isFailingNow) {
-                            "Failed"
-                        } else {
-                            "--"
-                        },
-                    )
+                liveScan.correlationId?.let { id ->
                     Text(
-                        text = "S: ${health.successCount} / F: ${health.failureCount}",
-                        style = MaterialTheme.typography.bodySmall,
+                        text = id,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                val lastError = health.lastError
-                if (lastError != null) {
-                    val friendlyError = formatFriendlyError(lastError)
-                    Row(
-                        modifier = Modifier.padding(top = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(14.dp),
-                        )
-                        Text(
-                            text = if (!health.isFailingNow && health.lastSuccess >= health.lastFailure) {
-                                stringResource(MR.strings.source_health_previous_failure, friendlyError)
-                            } else {
-                                friendlyError
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+            }
+
+            if (liveScan.totalCount > 0) {
+                SanctuaryProgressBar(progress = progress)
+            }
+
+            val detailText = when {
+                liveScan.isRunning -> buildString {
+                    append("${liveScan.completedCount} / ${liveScan.totalCount}")
+                    append(" · ${liveScan.currentPhase.name}")
+                    liveScan.currentTargetName?.let { append(" · $it") }
+                }
+                liveScan.isCancelled -> "Stopped at ${liveScan.completedCount} / ${liveScan.totalCount}."
+                liveScan.currentPhase == DiagnosticPhase.FAILED -> "Stopped after checking ${liveScan.completedCount} sources."
+                else -> "Checked ${liveScan.completedCount} sources."
+            }
+            Text(
+                text = detailText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (liveScan.isRunning && onCancelScan != null) {
+                    OutlinedButton(onClick = onCancelScan) {
+                        Text(stringResource(MR.strings.action_cancel), maxLines = 1, softWrap = false)
+                    }
+                } else if (!liveScan.isRunning && onRetryScan != null) {
+                    OutlinedButton(onClick = onRetryScan) {
+                        Text(stringResource(MR.strings.action_retry), maxLines = 1, softWrap = false)
                     }
                 }
             }
@@ -304,66 +221,34 @@ private fun SourceHealthItemCard(
     }
 }
 
-private fun formatFriendlyError(error: String): String {
-    return when {
-        error.contains("unable to resolve host", ignoreCase = true) -> {
-            val host = error.substringAfter("unable to resolve host ").substringBefore(":")
-                .replace("\"", "").trim()
-            "Host unreachable ($host) — Domain is offline, changed, or blocked by DNS"
-        }
-        error.contains("522") -> "Cloudflare Origin Timeout (522) — Manga site host server is offline"
-        error.contains("524") -> "Cloudflare Gateway Timeout (524) — Site server took too long to reply"
-        error.contains("502") || error.contains("504") -> "Bad Gateway / Host Unreachable — Server down"
-        error.contains("403") -> "Cloudflare Bot Protection (403) — Anti-bot challenge or IP blocked"
-        error.contains("429") -> "Rate Limited (429) — Too many requests sent"
-        error.contains("timeout", ignoreCase = true) -> "Connection Timed Out — No response within 15 seconds"
-        else -> error
-    }
-}
-
 @Composable
-private fun HealthRatingStars(score: Int) {
-    if (score == -1) return
-
-    val rating = (score / 20f) // 0-5 scale
-    Row {
-        repeat(5) { index ->
-            val starIcon = when {
-                rating >= index + 1 -> Icons.Default.Star
-                rating >= index + 0.5f -> Icons.AutoMirrored.Filled.StarHalf
-                else -> Icons.Default.StarBorder
-            }
-            Icon(
-                imageVector = starIcon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.active,
-                modifier = Modifier.size(16.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun HealthStat(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+private fun RepositoryHealthSummaryCard(repoChecks: List<RepositoryHealthCheck>) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = SanctuaryShapes.deckCard,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(SanctuaryElevation.subtle),
+        border = SanctuaryBrushes.subtleBorder(),
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(14.dp),
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = color,
-            fontWeight = FontWeight.Bold,
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(MaterialTheme.padding.medium),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            SanctuaryOverlineBadge(text = "EXTENSION REPOSITORIES", compact = true)
+            repoChecks.forEach { repo ->
+                val color = when (repo.status) {
+                    DiagnosticCheckStatus.OK -> MaterialTheme.colorScheme.statusExcellent
+                    DiagnosticCheckStatus.WARNING -> MaterialTheme.colorScheme.statusWarning
+                    DiagnosticCheckStatus.FAILED -> MaterialTheme.colorScheme.error
+                    DiagnosticCheckStatus.NOT_CHECKED -> MaterialTheme.colorScheme.outline
+                }
+                Text(
+                    text = "${repo.repoName} (${repo.repoHost}): ${repo.summary}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = color,
+                )
+            }
+        }
     }
 }

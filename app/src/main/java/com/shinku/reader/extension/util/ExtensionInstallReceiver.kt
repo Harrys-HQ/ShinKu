@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.shinku.reader.BuildConfig
+import com.shinku.reader.domain.diagnostics.ExtensionLoadFailureReason
 import com.shinku.reader.extension.model.Extension
 import com.shinku.reader.extension.model.LoadResult
 import kotlinx.coroutines.CoroutineScope
@@ -135,7 +136,7 @@ internal class ExtensionInstallReceiver(private val listener: Listener) : Broadc
         val pkgName = getPackageNameFromIntent(intent)
         if (pkgName == null) {
             logcat(LogPriority.WARN) { "Package name not found" }
-            return LoadResult.Error
+            return LoadResult.Error(reason = ExtensionLoadFailureReason.MISSING_PACKAGE)
         }
         return ExtensionLoader.loadExtensionFromPkgName(context, pkgName)
     }

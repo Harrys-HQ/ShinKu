@@ -1,6 +1,9 @@
 package com.shinku.reader.domain.source.interactor
 
 import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.domain.ai.GeminiApi
+import com.shinku.reader.domain.ai.OpenAiCompatibleEngine
+import com.shinku.reader.domain.ai.forReaderContext
 import com.shinku.reader.exh.source.ShinKuPreferences
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
@@ -12,13 +15,13 @@ import uy.kohesive.injekt.api.get
 
 class GeminiVibeSearch(
     private val networkHelper: NetworkHelper,
+    private val shinkuPreferences: ShinKuPreferences = Injekt.get(),
+    private val aiEngineRegistry: com.shinku.reader.domain.ai.AiEngineRegistry = Injekt.get(),
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
     }
-    private val shinkuPreferences: ShinKuPreferences = Injekt.get()
-    private val aiEngineRegistry: com.shinku.reader.domain.ai.AiEngineRegistry = Injekt.get()
 
     private val vibeCache = java.util.Collections.synchronizedMap(object : LinkedHashMap<String, List<String>>(50, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<String>>?): Boolean = size > 50
@@ -32,9 +35,7 @@ class GeminiVibeSearch(
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean = size > 30
     })
 
-    private val translationCache = java.util.Collections.synchronizedMap(object : LinkedHashMap<String, List<TranslationBlockOutput>>(50, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<TranslationBlockOutput>>?): Boolean = size > 50
-    })
+    private val readerContextClient by lazy { networkHelper.client.forReaderContext() }
 
     suspend fun getMangaTitles(query: String, apiKey: String, model: String): List<String> {
         val cacheKey = query.trim().lowercase()
@@ -169,50 +170,67 @@ class GeminiVibeSearch(
         val text: String,
     )
 
-    suspend fun translateBlocks(
+    internal class ReaderTranslationProvider(
+        val cacheIdentity: String,
+        val destination: String,
+        val send: suspend (String) -> String,
+    )
+
+    internal fun readerTranslationProvider(apiKey: String, model: String): ReaderTranslationProvider? {
+        val compatibleEngine = aiEngineRegistry.getActiveEngine() as? OpenAiCompatibleEngine
+        val compatibleConfig = compatibleEngine?.resolveConfig()?.takeIf { it.isAvailable }
+        if (compatibleEngine != null && compatibleConfig != null) {
+            val destination = compatibleConfig.readerDestination ?: return null
+            return ReaderTranslationProvider(
+                cacheIdentity = "${compatibleConfig.provider}|${compatibleConfig.baseUrl}|${compatibleConfig.model}",
+                destination = destination,
+            ) { prompt ->
+                compatibleEngine.generateApprovedReaderText(prompt, compatibleConfig)
+                    .getOrElse { error("Cloud translation request failed") }
+            }
+        }
+        if (apiKey.isBlank()) return null
+        return ReaderTranslationProvider("gemini|$model", "Google Gemini (generativelanguage.googleapis.com)") { prompt ->
+            try {
+                GeminiApi(readerContextClient).generateText(prompt, apiKey, model).text
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                error("Cloud translation request failed")
+            }
+        }
+    }
+
+    internal suspend fun translateBlocks(
         blocks: List<TranslationBlockInput>,
-        apiKey: String,
-        model: String,
         targetLanguage: String,
         sourceLanguage: String = "Auto-Detect",
-        mangaTitle: String? = null,
-        mangaGenres: List<String>? = null,
+        glossary: TranslationGlossary = TranslationGlossary(),
+        provider: ReaderTranslationProvider,
+        authorize: suspend (String, String) -> Boolean,
     ): List<TranslationBlockOutput> {
         if (blocks.isEmpty()) return emptyList()
-        val blocksJson = json.encodeToString(blocks)
-        val cacheKey = "$sourceLanguage::$targetLanguage::${mangaTitle.orEmpty()}::$blocksJson"
-        translationCache[cacheKey]?.let { return it }
+        val blocksJson = json.encodeToString(blocks.map { it.copy(text = sanitizeReaderTranslationText(it.text)) })
 
         val translationContext = if (sourceLanguage == "Auto-Detect") {
-            "to $targetLanguage"
+            "to ${sanitizeReaderTranslationText(targetLanguage)}"
         } else {
-            "from $sourceLanguage to $targetLanguage"
-        }
-        val seriesContext = buildString {
-            if (!mangaTitle.isNullOrBlank()) {
-                append("Series title: \"$mangaTitle\". ")
-            }
-            if (!mangaGenres.isNullOrEmpty()) {
-                append("Genres: ${mangaGenres.take(5).joinToString(", ")}. ")
-            }
+            "from ${sanitizeReaderTranslationText(sourceLanguage)} to ${sanitizeReaderTranslationText(targetLanguage)}"
         }
         val prompt = """
             You are an expert manga/manhwa scanlation translator and typesetter. Translate the following OCR text blocks $translationContext.
-            $seriesContext
             Guidelines:
             1. The input comes from optical character recognition (OCR) of speech bubbles; silently infer and heal minor OCR character mistakes or broken words using the surrounding dialogue context.
             2. Keep translations natural, punchy, and concise so they fit comfortably inside comic speech balloons without wordy filler.
             3. Preserve character voice, honorifics/terminology where appropriate for the series, and dramatic tone.
             4. Return ONLY a valid JSON array of objects with the exact same integer "id" and translated "text" (no markdown code fences or commentary).
+            ${glossary.cloudInstructions(blocks)}
 
             Input:
             $blocksJson
         """.trimIndent()
 
-        val resultText = callGeminiForText(prompt, apiKey, model)
-        if (resultText.startsWith("Error:")) {
-            throw Exception(resultText)
-        }
+        val resultText = sendReaderTranslation(provider.destination, prompt, authorize, provider.send)
 
         val cleanResult = resultText
             .replace("```json", "")
@@ -237,7 +255,6 @@ class GeminiVibeSearch(
                         }
                     }
                     if (outputs.isNotEmpty()) {
-                        translationCache[cacheKey] = outputs
                         return outputs
                     }
                 } catch (_: Exception) {
@@ -268,13 +285,12 @@ class GeminiVibeSearch(
             }
 
             if (parsed.isNotEmpty()) {
-                translationCache[cacheKey] = parsed
                 parsed
             } else {
-                throw Exception("Failed to parse translation JSON: $cleanResult")
+                error("Invalid translation response")
             }
-        } catch (e: Exception) {
-            throw Exception("Failed to parse translation: ${e.message}. Raw response: $resultText")
+        } catch (_: Exception) {
+            error("Invalid translation response")
         }
     }
 

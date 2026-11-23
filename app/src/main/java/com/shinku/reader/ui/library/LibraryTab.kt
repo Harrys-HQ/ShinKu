@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -75,6 +76,7 @@ import com.shinku.reader.ui.main.MainActivity
 import com.shinku.reader.ui.manga.MangaScreen
 import com.shinku.reader.ui.reader.ReaderActivity
 import com.shinku.reader.util.system.toast
+import com.shinku.reader.util.system.workManager
 import eu.kanade.tachiyomi.source.local.isLocal
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.channels.Channel
@@ -110,10 +112,13 @@ data object LibraryTab : Tab {
         val screenModel = rememberScreenModel { LibraryScreenModel() }
         val settingsScreenModel = rememberScreenModel { LibrarySettingsScreenModel() }
         val state by screenModel.state.collectAsState()
+        val isRefreshing by remember(context) {
+            LibraryUpdateJob.observeManualUpdate(context.workManager)
+        }.collectAsStateWithLifecycle(initialValue = false)
 
         val snackbarHostState = remember { SnackbarHostState() }
 
-        val onClickRefresh: (Category?) -> Boolean = { category ->
+        val onClickRefresh: (Category?) -> Unit = { category ->
             // SY -->
             val started = LibraryUpdateJob.startNow(
                 context = context,
@@ -135,7 +140,6 @@ data object LibraryTab : Tab {
                 }
                 snackbarHostState.showSnackbar(context.stringResource(msgRes))
             }
-            started
         }
 
         Scaffold(
@@ -148,6 +152,7 @@ data object LibraryTab : Tab {
                 LibraryToolbar(
                     hasActiveFilters = state.hasActiveFilters,
                     selectedCount = state.selection.size,
+                    selectedOutOfViewCount = state.selectedOutOfViewCount,
                     title = title,
                     onClickUnselectAll = screenModel::clearSelection,
                     onClickSelectAll = screenModel::selectAll,
@@ -174,6 +179,7 @@ data object LibraryTab : Tab {
                             context.toast(SYMR.strings.sync_in_progress)
                         }
                     },
+                    onClickManageEntries = { navigator.push(LibraryManagementScreen()) },
                     // SY -->
                     onClickSyncExh = screenModel::openFavoritesSyncDialog.takeIf { state.showSyncExh },
                     isSyncEnabled = state.isSyncEnabled,
@@ -253,7 +259,7 @@ data object LibraryTab : Tab {
                         }
 
                         val layoutDirection = LocalLayoutDirection.current
-                        val dockBottomPadding = if (!com.shinku.reader.presentation.util.isTabletUi()) 84.dp else 0.dp
+                        val dockBottomPadding = if (!com.shinku.reader.presentation.util.isTabletUi() && !state.selectionMode) 84.dp else 0.dp
                         val libraryContentPadding = PaddingValues(
                             start = contentPadding.calculateStartPadding(layoutDirection),
                             top = contentPadding.calculateTopPadding(),
@@ -289,6 +295,7 @@ data object LibraryTab : Tab {
                                 screenModel.toggleRangeSelection(category, manga)
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             },
+                            isRefreshing = isRefreshing,
                             onRefresh = { onClickRefresh(state.activeCategory) },
                             onGlobalSearchClicked = {
                                 navigator.push(GlobalSearchScreen(screenModel.state.value.searchQuery ?: ""))

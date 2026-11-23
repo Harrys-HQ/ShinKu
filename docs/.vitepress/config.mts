@@ -58,6 +58,7 @@ export default defineConfig({
         text: '❓ FAQ & Troubleshooting',
         items: [
           { text: 'Common Troubleshooting', link: '/faq/troubleshooting' },
+          { text: 'App Diagnostics & Health', link: '/guides/diagnostics' },
           { text: 'Storage & Downloads', link: '/faq/storage' },
           { text: 'Library & Bulk Updates', link: '/faq/library' }
         ]

@@ -203,7 +203,7 @@ class DomainModule : InjektModule {
         addFactory { GetMangaEmbeddings(get()) }
         addFactory { GetSimilarManga(get(), get()) }
         addFactory { UpdateMangaEmbedding(get()) }
-        addFactory { AiClustering(get(), get(), get(), get(), get()) }
+        addFactory { AiClustering(get(), get(), get(), get()) }
         addFactory { GetEnabledSources(get(), get()) }
         addFactory { GetLanguagesWithSources(get(), get()) }
         addFactory { GetRemoteManga(get()) }

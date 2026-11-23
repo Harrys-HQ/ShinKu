@@ -34,6 +34,7 @@ fun BrowseSourceCompactGrid(
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    isSelected: (Manga) -> Boolean = { false },
 ) {
     LazyVerticalGrid(
         columns = columns,
@@ -59,6 +60,7 @@ fun BrowseSourceCompactGrid(
                 // SY -->
                 metadata = metadata,
                 // SY <--
+                isSelected = isSelected(manga),
                 onClick = { onMangaClick(manga) },
                 onLongClick = { onMangaLongClick(manga) },
             )
@@ -78,11 +80,13 @@ private fun BrowseSourceCompactGridItem(
     // SY -->
     metadata: RaisedSearchMetadata?,
     // SY <--
+    isSelected: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
 ) {
     MangaCompactGridItem(
         title = manga.title,
+        isSelected = isSelected,
         coverData = MangaCover(
             mangaId = manga.id,
             sourceId = manga.source,

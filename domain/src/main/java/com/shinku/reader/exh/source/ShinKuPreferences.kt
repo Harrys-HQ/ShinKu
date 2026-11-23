@@ -1,5 +1,6 @@
 package com.shinku.reader.exh.source
 
+import com.shinku.reader.core.common.preference.Preference
 import com.shinku.reader.core.common.preference.PreferenceStore
 
 class ShinKuPreferences(
@@ -12,6 +13,8 @@ class ShinKuPreferences(
     fun translationTargetLanguage() = preferenceStore.getString("pref_translation_target_language", "English")
 
     fun translationSourceLanguage() = preferenceStore.getString("pref_translation_source_language", "Auto-Detect")
+
+    fun translationGlossary(mangaId: Long) = preferenceStore.getString(Preference.privateKey("reader_glossary_$mangaId"), "")
 
     fun liveTranslation() = preferenceStore.getBoolean("pref_live_translation", false)
 
@@ -93,6 +96,24 @@ class ShinKuPreferences(
         val set = mangaManualUnmerges().get().toMutableSet()
         set.add(pair)
         mangaManualUnmerges().set(set)
+    }
+
+    fun addManualUnmerges(mangaIds: Collection<Long>) {
+        val distinctIds = mangaIds.distinct()
+        if (distinctIds.size < 2) return
+        val updated = mangaManualUnmerges().get().toMutableSet()
+        for (i in 0 until distinctIds.size) {
+            for (j in i + 1 until distinctIds.size) {
+                val a = distinctIds[i]
+                val b = distinctIds[j]
+                updated.add("${minOf(a, b)},${maxOf(a, b)}")
+            }
+        }
+        mangaManualUnmerges().set(updated)
+    }
+
+    fun clearManualUnmerges() {
+        mangaManualUnmerges().set(emptySet())
     }
 
     fun isAiConfigured(): Boolean {

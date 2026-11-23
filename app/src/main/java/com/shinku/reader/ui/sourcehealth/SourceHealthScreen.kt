@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
@@ -32,6 +33,7 @@ import com.shinku.reader.presentation.more.sourcehealth.SourceHealthScreenConten
 import com.shinku.reader.presentation.more.sourcehealth.SourceHealthScreenState
 import com.shinku.reader.presentation.more.sourcehealth.SourceHealthSort
 import com.shinku.reader.presentation.util.Screen
+import com.shinku.reader.ui.diagnostics.AppDiagnosticsScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 
@@ -58,10 +60,14 @@ class SourceHealthScreen : Screen() {
                         AppBarActions(
                             persistentListOf(
                                 AppBar.Action(
+                                    title = stringResource(MR.strings.diagnostics_title),
+                                    icon = Icons.Default.HealthAndSafety,
+                                    onClick = { navigator.push(AppDiagnosticsScreen()) },
+                                ),
+                                AppBar.Action(
                                     title = stringResource(MR.strings.action_update_library),
                                     icon = Icons.Outlined.Refresh,
                                     onClick = {
-                                        // Scan Installed only if on tab 0, else scan All (English)
                                         RepoHealthScanJob.startNow(context, onlyInstalled = pagerState.currentPage == 0)
                                     },
                                 ),
@@ -110,20 +116,18 @@ class SourceHealthScreen : Screen() {
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
                 ) { page ->
-                    when (page) {
-                        0 -> SourceHealthScreenContent(
-                            healthList = successState.installedList,
-                            paddingValues = PaddingValues(),
-                            testingSourceIds = successState.testingSourceIds,
-                            onTestSingleSource = screenModel::testSingleSource,
-                        )
-                        1 -> SourceHealthScreenContent(
-                            healthList = successState.repoList,
-                            paddingValues = PaddingValues(),
-                            testingSourceIds = successState.testingSourceIds,
-                            onTestSingleSource = screenModel::testSingleSource,
-                        )
-                    }
+                    val list = if (page == 0) successState.installedList else successState.repoList
+                    SourceHealthScreenContent(
+                        healthList = list,
+                        paddingValues = PaddingValues(),
+                        testingSourceIds = successState.testingSourceIds,
+                        liveScan = successState.liveScan,
+                        repoChecks = successState.repoChecks,
+                        onTestSingleSource = screenModel::testSingleSource,
+                        onCancelSingleSource = screenModel::cancelSingleSource,
+                        onCancelScan = { RepoHealthScanJob.stop(context) },
+                        onRetryScan = { RepoHealthScanJob.startNow(context, onlyInstalled = page == 0) },
+                    )
                 }
             }
         }

@@ -29,8 +29,8 @@ class CreateCategoryWithName(
         )
 
         try {
-            categoryRepository.insert(newCategory)
-            Result.Success(/* SY --> */newCategory/* SY <-- */)
+            val id = categoryRepository.insert(newCategory)
+            Result.Success(newCategory.copy(id = id))
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
             Result.InternalError(e)

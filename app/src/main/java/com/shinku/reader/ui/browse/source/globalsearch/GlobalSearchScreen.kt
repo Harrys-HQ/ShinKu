@@ -1,8 +1,10 @@
 package com.shinku.reader.ui.browse.source.globalsearch
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -10,16 +12,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.shinku.reader.exh.ui.ifSourcesLoaded
 import com.shinku.reader.presentation.browse.GlobalSearchScreen
+import com.shinku.reader.presentation.category.components.ChangeCategoryDialog
+import com.shinku.reader.presentation.core.screens.LoadingScreen
 import com.shinku.reader.presentation.util.Screen
 import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreen
+import com.shinku.reader.ui.category.CategoryScreen
 import com.shinku.reader.ui.manga.MangaScreen
-import com.shinku.reader.exh.ui.ifSourcesLoaded
-import com.shinku.reader.presentation.core.screens.LoadingScreen
+import kotlinx.coroutines.flow.collectLatest
 
 class GlobalSearchScreen(
     val searchQuery: String = "",
@@ -35,6 +42,8 @@ class GlobalSearchScreen(
 
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
+        val haptic = LocalHapticFeedback.current
+        val snackbarHostState = remember { SnackbarHostState() }
 
         val screenModel = rememberScreenModel {
             GlobalSearchScreenModel(
@@ -43,7 +52,17 @@ class GlobalSearchScreen(
             )
         }
         val state by screenModel.state.collectAsState()
-        
+
+        BackHandler(enabled = state.selection.selectionMode) {
+            screenModel.exitSelectionMode()
+        }
+
+        LaunchedEffect(Unit) {
+            screenModel.bulkFavoriteEvents.collectLatest { summary ->
+                snackbarHostState.showSnackbar(summary.formatMessage(context))
+            }
+        }
+
         val imagePicker = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.PickVisualMedia(),
         ) { uri ->
@@ -89,9 +108,38 @@ class GlobalSearchScreen(
                 onClickSource = {
                     navigator.push(BrowseSourceScreen(it.id, state.searchQuery))
                 },
-                onClickItem = { navigator.push(MangaScreen(it.id, true)) },
-                onLongClickItem = { navigator.push(MangaScreen(it.id, true)) },
+                onClickItem = { manga ->
+                    if (state.selection.selectionMode) {
+                        screenModel.toggleSelection(manga)
+                    } else {
+                        navigator.push(MangaScreen(manga.id, true))
+                    }
+                },
+                onLongClickItem = { manga ->
+                    screenModel.toggleSelection(manga)
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+                snackbarHostState = snackbarHostState,
+                onEnterSelectionMode = screenModel::enterSelectionMode,
+                onCancelSelectionMode = screenModel::exitSelectionMode,
+                onSelectAllLoaded = screenModel::selectAllLoaded,
+                onInvertLoaded = screenModel::invertLoaded,
+                onAddSelectedToLibrary = screenModel::requestBulkAddToLibrary,
             )
+
+            when (val dialog = state.dialog) {
+                is SearchScreenModel.Dialog.BulkChangeMangaCategory -> {
+                    ChangeCategoryDialog(
+                        initialSelection = dialog.initialSelection,
+                        onDismissRequest = screenModel::clearDialog,
+                        onEditCategories = { navigator.push(CategoryScreen()) },
+                        onConfirm = { include, _ ->
+                            screenModel.confirmBulkAddToLibrary(dialog.mangas, include)
+                        },
+                    )
+                }
+                else -> {}
+            }
         }
     }
 }

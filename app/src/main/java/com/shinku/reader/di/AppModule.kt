@@ -185,6 +185,21 @@ class AppModule(val app: Application) : InjektModule {
         addSingletonFactory { EHentaiUpdateHelper(app) }
 
         addSingletonFactory { PagePreviewCache(app) }
+        addSingletonFactory { com.shinku.reader.data.diagnostics.DiagnosticsStore() }
+        addFactory {
+            com.shinku.reader.data.diagnostics.AppDiagnosticsCollector(
+                context = app,
+                extensionManager = get(),
+                sourceManager = get(),
+                getSourceHealth = get(),
+                getExtensionRepo = get(),
+                networkHelper = get(),
+                networkPreferences = get(),
+                diagnosticsStore = get(),
+                protoBuf = get(),
+                json = get(),
+            )
+        }
         addSingletonFactory { com.shinku.reader.ui.reader.audio.AtmosphericAudioManager(app, get()) }
         // SY <--
     }

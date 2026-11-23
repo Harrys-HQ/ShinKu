@@ -1611,6 +1611,13 @@ class LibraryScreenModel(
 
         val selectionMode = selection.isNotEmpty()
 
+        val selectedOutOfViewCount: Int by lazy {
+            countSelectedOutOfView(
+                selection = selection,
+                visibleIds = activeCategory?.let { groupedFavorites[it] }.orEmpty(),
+            )
+        }
+
         val selectedManga by lazy { selection.mapNotNull { libraryData.favoritesById[it]?.libraryManga?.manga } }
 
         // SY -->
@@ -1671,4 +1678,13 @@ class LibraryScreenModel(
             return LibraryToolbarTitle(title, count)
         }
     }
+}
+
+internal fun countSelectedOutOfView(
+    selection: Set<Long>,
+    visibleIds: Collection<Long>,
+): Int {
+    if (selection.isEmpty()) return 0
+    val visibleSet = if (visibleIds is Set<Long>) visibleIds else visibleIds.toHashSet()
+    return selection.count { it !in visibleSet }
 }

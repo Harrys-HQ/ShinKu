@@ -30,6 +30,7 @@ fun BrowseSourceList(
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    isSelected: (Manga) -> Boolean = { false },
 ) {
     LazyColumn(
         contentPadding = contentPadding + PaddingValues(vertical = 8.dp),
@@ -52,6 +53,7 @@ fun BrowseSourceList(
                 // SY -->
                 metadata = metadata,
                 // SY <--
+                isSelected = isSelected(manga),
                 onClick = { onMangaClick(manga) },
                 onLongClick = { onMangaLongClick(manga) },
             )
@@ -71,11 +73,13 @@ private fun BrowseSourceListItem(
     // SY -->
     metadata: RaisedSearchMetadata?,
     // SY <--
+    isSelected: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
 ) {
     MangaListItem(
         title = manga.title,
+        isSelected = isSelected,
         coverData = MangaCover(
             mangaId = manga.id,
             sourceId = manga.source,

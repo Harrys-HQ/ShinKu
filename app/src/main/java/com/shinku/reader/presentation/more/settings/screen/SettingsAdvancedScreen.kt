@@ -48,6 +48,7 @@ import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.presentation.more.settings.Preference
 import com.shinku.reader.presentation.more.settings.screen.advanced.ClearDatabaseScreen
 import com.shinku.reader.presentation.more.settings.screen.debug.DebugInfoScreen
+import com.shinku.reader.ui.diagnostics.AppDiagnosticsScreen
 import com.shinku.reader.presentation.more.settings.widget.BasePreferenceWidget
 import com.shinku.reader.presentation.more.settings.widget.PrefsHorizontalPadding
 import com.shinku.reader.presentation.more.settings.widget.TextPreferenceWidget
@@ -160,6 +161,11 @@ object SettingsAdvancedScreen : SearchableSettings {
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.pref_debug_info),
                 onClick = { navigator.push(DebugInfoScreen()) },
+            ),
+            Preference.PreferenceItem.TextPreference(
+                title = stringResource(MR.strings.diagnostics_title),
+                subtitle = stringResource(MR.strings.diagnostics_subtitle),
+                onClick = { navigator.push(AppDiagnosticsScreen()) },
             ),
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.pref_onboarding_guide),

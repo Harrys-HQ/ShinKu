@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -15,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.i18n.MR
+import com.shinku.reader.presentation.browse.components.BrowseSelectionToolbar
 import com.shinku.reader.presentation.browse.components.GlobalSearchCardRow
 import com.shinku.reader.presentation.browse.components.GlobalSearchErrorResultItem
 import com.shinku.reader.presentation.browse.components.GlobalSearchLoadingResultItem
@@ -44,24 +47,45 @@ fun GlobalSearchScreen(
     onClickSource: (CatalogueSource) -> Unit,
     onClickItem: (Manga) -> Unit,
     onLongClickItem: (Manga) -> Unit,
+    snackbarHostState: SnackbarHostState? = null,
+    onEnterSelectionMode: (() -> Unit)? = null,
+    onCancelSelectionMode: () -> Unit = {},
+    onSelectAllLoaded: (() -> Unit)? = null,
+    onInvertLoaded: (() -> Unit)? = null,
+    onAddSelectedToLibrary: () -> Unit = {},
 ) {
     Scaffold(
         topBar = { scrollBehavior ->
-            GlobalSearchToolbar(
-                searchQuery = state.searchQuery,
-                progress = state.progress,
-                total = state.total,
-                navigateUp = navigateUp,
-                onChangeSearchQuery = onChangeSearchQuery,
-                onSearch = onSearch,
-                onClickImageSearch = onClickImageSearch,
-                hideSourceFilter = false,
-                sourceFilter = state.sourceFilter,
-                onChangeSearchFilter = onChangeSearchFilter,
-                onlyShowHasResults = state.onlyShowHasResults,
-                onToggleResults = onToggleResults,
-                scrollBehavior = scrollBehavior,
-            )
+            if (state.selection.selectionMode) {
+                BrowseSelectionToolbar(
+                    selectedCount = state.selection.selectedCount,
+                    onCancelSelectionMode = onCancelSelectionMode,
+                    onAddSelectedToLibrary = onAddSelectedToLibrary,
+                    onSelectAllLoaded = onSelectAllLoaded,
+                    onInvertLoaded = onInvertLoaded,
+                    scrollBehavior = scrollBehavior,
+                )
+            } else {
+                GlobalSearchToolbar(
+                    searchQuery = state.searchQuery,
+                    progress = state.progress,
+                    total = state.total,
+                    navigateUp = navigateUp,
+                    onChangeSearchQuery = onChangeSearchQuery,
+                    onSearch = onSearch,
+                    onClickImageSearch = onClickImageSearch,
+                    hideSourceFilter = false,
+                    sourceFilter = state.sourceFilter,
+                    onChangeSearchFilter = onChangeSearchFilter,
+                    onlyShowHasResults = state.onlyShowHasResults,
+                    onToggleResults = onToggleResults,
+                    scrollBehavior = scrollBehavior,
+                    onEnterSelectionMode = onEnterSelectionMode,
+                )
+            }
+        },
+        snackbarHost = {
+            snackbarHostState?.let { SnackbarHost(hostState = it) }
         },
     ) { paddingValues ->
         GlobalSearchContent(
@@ -71,6 +95,7 @@ fun GlobalSearchScreen(
             onClickSource = onClickSource,
             onClickItem = onClickItem,
             onLongClickItem = onLongClickItem,
+            isSelected = state.selection::isSelected,
             searchQuery = state.searchQuery,
             progress = state.progress,
             total = state.total,
@@ -96,6 +121,7 @@ internal fun GlobalSearchContent(
     onClickSource: (CatalogueSource) -> Unit,
     onClickItem: (Manga) -> Unit,
     onLongClickItem: (Manga) -> Unit,
+    isSelected: (Manga) -> Boolean = { false },
     fromSourceId: Long? = null,
     searchQuery: String? = null,
     progress: Int = 0,
@@ -182,6 +208,7 @@ internal fun GlobalSearchContent(
                                 getManga = getManga,
                                 onClick = onClickItem,
                                 onLongClick = onLongClickItem,
+                                isSelected = isSelected,
                             )
                         }
                         is SearchItemResult.Error -> {

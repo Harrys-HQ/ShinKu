@@ -5,7 +5,15 @@ CREATE TABLE source_health (
     failure_count INTEGER NOT NULL DEFAULT 0,
     success_count INTEGER NOT NULL DEFAULT 0,
     avg_latency INTEGER NOT NULL DEFAULT 0,
-    last_error TEXT
+    last_error TEXT,
+    consecutive_failures INTEGER NOT NULL DEFAULT 0,
+    last_category TEXT NOT NULL DEFAULT 'UNKNOWN',
+    last_status_code INTEGER,
+    last_probe_type TEXT NOT NULL DEFAULT 'UNKNOWN',
+    last_probe_phase TEXT NOT NULL DEFAULT 'IDLE',
+    last_checked INTEGER NOT NULL DEFAULT 0,
+    last_correlation_id TEXT,
+    last_probe_target TEXT
 );
 
 findAll:
@@ -18,8 +26,40 @@ FROM source_health
 WHERE source_id = :id;
 
 upsert:
-INSERT INTO source_health(source_id, last_success, last_failure, failure_count, success_count, avg_latency, last_error)
-VALUES (:id, :last_success, :last_failure, :failure_count, :success_count, :avg_latency, :last_error)
+INSERT INTO source_health(
+    source_id,
+    last_success,
+    last_failure,
+    failure_count,
+    success_count,
+    avg_latency,
+    last_error,
+    consecutive_failures,
+    last_category,
+    last_status_code,
+    last_probe_type,
+    last_probe_phase,
+    last_checked,
+    last_correlation_id,
+    last_probe_target
+)
+VALUES (
+    :id,
+    :last_success,
+    :last_failure,
+    :failure_count,
+    :success_count,
+    :avg_latency,
+    :last_error,
+    :consecutive_failures,
+    :last_category,
+    :last_status_code,
+    :last_probe_type,
+    :last_probe_phase,
+    :last_checked,
+    :last_correlation_id,
+    :last_probe_target
+)
 ON CONFLICT(source_id)
 DO UPDATE
 SET
@@ -28,7 +68,15 @@ SET
     failure_count = :failure_count,
     success_count = :success_count,
     avg_latency = :avg_latency,
-    last_error = :last_error;
+    last_error = :last_error,
+    consecutive_failures = :consecutive_failures,
+    last_category = :last_category,
+    last_status_code = :last_status_code,
+    last_probe_type = :last_probe_type,
+    last_probe_phase = :last_probe_phase,
+    last_checked = :last_checked,
+    last_correlation_id = :last_correlation_id,
+    last_probe_target = :last_probe_target;
 
 updateStats:
 INSERT INTO source_health(
@@ -38,7 +86,10 @@ INSERT INTO source_health(
     success_count,
     failure_count,
     avg_latency,
-    last_error
+    last_error,
+    consecutive_failures,
+    last_category,
+    last_checked
 )
 VALUES (
     :id,
@@ -47,7 +98,10 @@ VALUES (
     CASE WHEN :is_success = 1 THEN 1 ELSE 0 END,
     CASE WHEN :is_success = 0 THEN 1 ELSE 0 END,
     :latency,
-    CASE WHEN :is_success = 0 THEN :error ELSE NULL END
+    CASE WHEN :is_success = 0 THEN :error ELSE NULL END,
+    CASE WHEN :is_success = 0 THEN 1 ELSE 0 END,
+    :category,
+    :timestamp
 )
 ON CONFLICT(source_id)
 DO UPDATE
@@ -57,7 +111,63 @@ SET
     success_count = success_count + CASE WHEN :is_success = 1 THEN 1 ELSE 0 END,
     failure_count = failure_count + CASE WHEN :is_success = 0 THEN 1 ELSE 0 END,
     avg_latency = CASE WHEN :is_success = 1 AND :latency > 0 THEN (CASE WHEN avg_latency = 0 THEN :latency ELSE (avg_latency + :latency) / 2 END) ELSE avg_latency END,
-    last_error = CASE WHEN :is_success = 0 THEN :error ELSE last_error END;
+    last_error = CASE WHEN :is_success = 0 THEN :error ELSE last_error END,
+    consecutive_failures = CASE WHEN :is_success = 1 THEN 0 ELSE consecutive_failures + 1 END,
+    last_category = :category,
+    last_checked = :timestamp;
+
+updateOutcome:
+INSERT INTO source_health(
+    source_id,
+    last_success,
+    last_failure,
+    success_count,
+    failure_count,
+    avg_latency,
+    last_error,
+    consecutive_failures,
+    last_category,
+    last_status_code,
+    last_probe_type,
+    last_probe_phase,
+    last_checked,
+    last_correlation_id,
+    last_probe_target
+)
+VALUES (
+    :id,
+    :last_success,
+    :last_failure,
+    :success_delta,
+    :failure_delta,
+    :latency,
+    :error,
+    :failure_delta,
+    :category,
+    :status_code,
+    :probe_type,
+    :probe_phase,
+    :timestamp,
+    :correlation_id,
+    :probe_target
+)
+ON CONFLICT(source_id)
+DO UPDATE
+SET
+    last_success = CASE WHEN :last_success > 0 THEN :last_success ELSE last_success END,
+    last_failure = CASE WHEN :last_failure > 0 THEN :last_failure ELSE last_failure END,
+    success_count = success_count + :success_delta,
+    failure_count = failure_count + :failure_delta,
+    avg_latency = CASE WHEN :success_delta > 0 AND :latency > 0 THEN (CASE WHEN avg_latency = 0 THEN :latency ELSE (avg_latency + :latency) / 2 END) ELSE avg_latency END,
+    last_error = :error,
+    consecutive_failures = CASE WHEN :success_delta > 0 THEN 0 ELSE consecutive_failures + :failure_delta END,
+    last_category = :category,
+    last_status_code = :status_code,
+    last_probe_type = :probe_type,
+    last_probe_phase = :probe_phase,
+    last_checked = :timestamp,
+    last_correlation_id = :correlation_id,
+    last_probe_target = :probe_target;
 
 resetStats:
 UPDATE source_health
@@ -65,5 +175,16 @@ SET
     failure_count = 0,
     success_count = 0,
     avg_latency = 0,
-    last_error = NULL
+    last_error = NULL,
+    consecutive_failures = 0,
+    last_category = 'UNKNOWN',
+    last_status_code = NULL,
+    last_probe_type = 'UNKNOWN',
+    last_probe_phase = 'IDLE',
+    last_checked = 0,
+    last_correlation_id = NULL,
+    last_probe_target = NULL
 WHERE source_id = :id;
+
+resetAllStats:
+DELETE FROM source_health;

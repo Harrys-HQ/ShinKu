@@ -51,6 +51,7 @@ import com.shinku.reader.ui.browse.migration.failed.FailedUpdatesMigrationScreen
 import com.shinku.reader.ui.reader.setting.ReaderBottomButton
 import com.shinku.reader.ui.reader.setting.ReaderPreferences
 import com.shinku.reader.ui.reader.viewer.pager.PagerConfig
+import com.shinku.reader.ui.diagnostics.AppDiagnosticsScreen
 import com.shinku.reader.ui.sourcehealth.SourceHealthScreen
 import com.shinku.reader.util.system.toast
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -161,6 +162,11 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                     title = "Source Health",
                     subtitle = "Monitor and rank source stability",
                     onClick = { navigator.push(SourceHealthScreen()) },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.diagnostics_title),
+                    subtitle = stringResource(MR.strings.diagnostics_subtitle),
+                    onClick = { navigator.push(AppDiagnosticsScreen()) },
                 ),
             ),
         )
@@ -526,11 +532,11 @@ object SettingsShinKuSettingsScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = shinkuPreferences.translationEngine(),
                     title = "Translation Engine",
-                    subtitle = "Select translation provider (Cloud AI or Offline ML Kit)",
+                    subtitle = "Cloud translation asks for approval before sending text",
                     entries = persistentMapOf(
-                        "auto" to "Automatic (Cloud AI if configured, with ML Kit fallback)",
+                        "auto" to "Automatic (on-device while reading, cloud with approval)",
                         "gemini_cloud" to "Cloud AI (Gemini / OpenRouter / DeepSeek / Groq)",
-                        "mlkit" to "Standard ML Kit (Offline On-Device - Instant Speed)",
+                        "mlkit" to "Standard ML Kit (on-device)",
                     ),
                 ),
                 Preference.PreferenceItem.TextPreference(

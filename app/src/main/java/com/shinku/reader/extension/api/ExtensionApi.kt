@@ -5,9 +5,17 @@ import com.shinku.reader.core.common.preference.Preference
 import com.shinku.reader.core.common.preference.PreferenceStore
 import com.shinku.reader.core.common.util.lang.withIOContext
 import com.shinku.reader.core.common.util.system.logcat
+import com.shinku.reader.data.diagnostics.DiagnosticsStore
+import com.shinku.reader.domain.diagnostics.DiagnosticCheckStatus
+import com.shinku.reader.domain.diagnostics.DiagnosticRedactor
+import com.shinku.reader.domain.diagnostics.RepositoryHealthCheck
 import com.shinku.reader.domain.extensionrepo.interactor.GetExtensionRepo
 import com.shinku.reader.domain.extensionrepo.interactor.UpdateExtensionRepo
 import com.shinku.reader.domain.extensionrepo.model.ExtensionRepo
+import com.shinku.reader.domain.source.model.DiagnosticPhase
+import com.shinku.reader.domain.source.model.HealthProbeType
+import com.shinku.reader.domain.source.model.SourceHealthCategory
+import com.shinku.reader.domain.source.model.SourceHealthClassifier
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.exh.source.BlacklistedSources
 import com.shinku.reader.extension.ExtensionManager
@@ -18,6 +26,7 @@ import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.parseAs
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.serialization.Serializable
@@ -28,6 +37,8 @@ import logcat.LogPriority
 import okio.BufferedSource
 import okio.buffer
 import okio.gzip
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
 import java.time.Instant
 import kotlin.time.Duration.Companion.days
@@ -75,12 +86,58 @@ internal class ExtensionApi {
         val repoBaseUrl = extRepo.baseUrl
         return try {
             // Prefer protobuf index (Keiyoushi and modern repos stub/deprecate index.min.json)
-            fetchProtobufExtensions(repoBaseUrl)
+            val extensions = fetchProtobufExtensions(repoBaseUrl)
                 ?.takeIf { it.isNotEmpty() }
                 ?: fetchJsonExtensions(repoBaseUrl)
+            recordPassiveRepoResult(extRepo, extensions.size, error = null)
+            extensions
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "Failed to get extensions from $repoBaseUrl" }
+            recordPassiveRepoResult(extRepo, count = 0, error = e)
             emptyList()
+        }
+    }
+
+    private fun recordPassiveRepoResult(repo: ExtensionRepo, count: Int, error: Throwable?) {
+        runCatching {
+            val store = Injekt.get<DiagnosticsStore>()
+            val displayName = repo.shortName?.takeIf { it.isNotBlank() } ?: repo.name.ifBlank { "Repository" }
+            val repoHost = DiagnosticRedactor.redactRepoUrl(repo.baseUrl)
+            val now = System.currentTimeMillis()
+            val check = if (error == null) {
+                RepositoryHealthCheck(
+                    repoName = displayName,
+                    repoHost = repoHost,
+                    status = DiagnosticCheckStatus.OK,
+                    category = SourceHealthCategory.HEALTHY,
+                    checkedAt = now,
+                    phase = DiagnosticPhase.COMPLETED,
+                    summary = "Repository index loaded ($count extensions)",
+                    nextStep = SourceHealthClassifier.plainLanguageNextStep(SourceHealthCategory.HEALTHY, 0),
+                )
+            } else {
+                val outcome = SourceHealthClassifier.classifyThrowable(
+                    throwable = error,
+                    isNetworkAvailable = true,
+                    probeType = HealthProbeType.REPO_INDEX_FETCH,
+                    phase = DiagnosticPhase.REPOSITORY_FETCH,
+                    targetUrl = repo.baseUrl,
+                )
+                RepositoryHealthCheck(
+                    repoName = displayName,
+                    repoHost = repoHost,
+                    status = DiagnosticCheckStatus.FAILED,
+                    category = outcome.category,
+                    statusCode = outcome.statusCode,
+                    checkedAt = now,
+                    phase = outcome.phase,
+                    summary = outcome.category.name,
+                    nextStep = SourceHealthClassifier.plainLanguageNextStep(outcome.category, 1, outcome.statusCode),
+                )
+            }
+            store.recordRepoCheck(repo.baseUrl, check)
         }
     }
 
@@ -284,17 +341,6 @@ internal class ExtensionApi {
         return version.substringBeforeLast('.').toDoubleOrNull() ?: 0.0
     }
 
-    private fun BufferedSource.decompressIfGzipped(): BufferedSource {
-        val isGzip = peek().use { peeked ->
-            try {
-                peeked.readShort().toInt() and 0xFFFF == 0x1f8b
-            } catch (_: Exception) {
-                false
-            }
-        }
-        return if (isGzip) gzip().buffer() else this
-    }
-
     // SY -->
     private fun Extension.isBlacklisted(
         blacklistEnabled: Boolean = sourcePreferences.enableSourceBlacklist().get(),
@@ -304,8 +350,19 @@ internal class ExtensionApi {
     // SY <--
 }
 
+internal fun BufferedSource.decompressIfGzipped(): BufferedSource {
+    val isGzip = peek().use { peeked ->
+        try {
+            peeked.readShort().toInt() and 0xFFFF == 0x1f8b
+        } catch (_: Exception) {
+            false
+        }
+    }
+    return if (isGzip) gzip().buffer() else this
+}
+
 @Serializable
-private data class ExtensionJsonObject(
+internal data class ExtensionJsonObject(
     val name: String,
     val pkg: String,
     val apk: String,
@@ -317,7 +374,7 @@ private data class ExtensionJsonObject(
 )
 
 @Serializable
-private data class ExtensionSourceJsonObject(
+internal data class ExtensionSourceJsonObject(
     val id: Long,
     val lang: String,
     val name: String,

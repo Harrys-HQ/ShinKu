@@ -1,5 +1,6 @@
 package com.shinku.reader.presentation.browse.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +60,7 @@ fun BrowseSourceEHentaiList(
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    isSelected: (Manga) -> Boolean = { false },
 ) {
     LazyColumn(
         contentPadding = contentPadding,
@@ -79,6 +81,7 @@ fun BrowseSourceEHentaiList(
                 // SY -->
                 metadata = metadata,
                 // SY <--
+                isSelected = isSelected(manga),
                 onClick = { onMangaClick(manga) },
                 onLongClick = { onMangaLongClick(manga) },
             )
@@ -98,6 +101,7 @@ fun BrowseSourceEHentaiListItem(
     // SY -->
     metadata: RaisedSearchMetadata?,
     // SY <--
+    isSelected: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
 ) {
@@ -163,6 +167,13 @@ fun BrowseSourceEHentaiListItem(
     Row(
         modifier = Modifier
             .height(148.dp)
+            .then(
+                if (isSelected) {
+                    Modifier.background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f))
+                } else {
+                    Modifier
+                },
+            )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,

@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -21,6 +22,7 @@ class OpenAiCompatibleEngine(
     override val name: String = "OpenAI-Compatible (OpenRouter / DeepSeek / Groq / OpenAI / Custom)"
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val readerContextClient by lazy { networkHelper.client.forReaderContext() }
 
     data class ResolvedConfig(
         val provider: String,
@@ -28,7 +30,13 @@ class OpenAiCompatibleEngine(
         val apiKey: String,
         val model: String,
         val isOpenRouter: Boolean,
-    )
+    ) {
+        val isAvailable: Boolean
+            get() = if (provider == "custom") baseUrl.isNotBlank() else apiKey.isNotBlank()
+
+        val readerDestination: String?
+            get() = baseUrl.toHttpUrlOrNull()?.let { "${it.redact()} ($model)" }
+    }
 
     fun resolveConfig(): ResolvedConfig {
         val provider = shinkuPreferences.aiEngineProvider().get()
@@ -99,19 +107,15 @@ class OpenAiCompatibleEngine(
     }
 
     override val isAvailable: Boolean
-        get() {
-            val config = resolveConfig()
-            // In custom setups (e.g. local Ollama), API key might be empty but URL is present
-            return if (config.provider == "custom") {
-                config.baseUrl.isNotBlank()
-            } else {
-                config.apiKey.isNotBlank()
-            }
-        }
+        get() = resolveConfig().isAvailable
 
-    override suspend fun generateText(prompt: String): Result<String> = withContext(Dispatchers.IO) {
-        val config = resolveConfig()
-        if (!isAvailable) {
+    override suspend fun generateText(prompt: String): Result<String> = generateText(prompt, resolveConfig(), readerContext = false)
+
+    suspend fun generateApprovedReaderText(prompt: String, config: ResolvedConfig): Result<String> =
+        generateText(prompt, config, readerContext = true)
+
+    private suspend fun generateText(prompt: String, config: ResolvedConfig, readerContext: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        if (!config.isAvailable) {
             return@withContext Result.failure(IllegalStateException("API Key not set for ${config.provider}"))
         }
 
@@ -121,7 +125,7 @@ class OpenAiCompatibleEngine(
             "${config.baseUrl.removeSuffix("/")}/chat/completions"
         }
 
-        val modelsToTry = when (config.provider) {
+        val modelsToTry = when (config.provider.takeUnless { readerContext }) {
             "openrouter" -> listOf(
                 config.model,
                 "google/gemini-2.0-flash-001",
@@ -137,8 +141,9 @@ class OpenAiCompatibleEngine(
                 config.model,
                 "deepseek-chat",
             ).distinct()
-            else -> listOf(config.model).distinct()
+            else -> listOf(config.model)
         }
+        val client = if (readerContext) readerContextClient else networkHelper.client
 
         var lastError: Exception? = null
         for (model in modelsToTry) {
@@ -169,9 +174,10 @@ class OpenAiCompatibleEngine(
                     reqBuilder.addHeader("X-Title", "ShinKu Reader")
                 }
 
-                networkHelper.client.newCall(reqBuilder.build()).execute().use { response ->
+                client.newCall(reqBuilder.build()).execute().use { response ->
                     val responseBody = response.body.string()
                     if (!response.isSuccessful) {
+                        if (readerContext) return@withContext Result.failure(IllegalStateException("HTTP ${response.code}"))
                         val parsedMessage = try {
                             val errObj = json.parseToJsonElement(responseBody).jsonObject["error"]?.jsonObject
                             errObj?.get("message")?.jsonPrimitive?.content
@@ -195,8 +201,10 @@ class OpenAiCompatibleEngine(
                         return@withContext Result.failure(Exception("Empty message content returned from LLM"))
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
-                lastError = e
+                lastError = if (readerContext) IllegalStateException("Reader translation request failed") else e
             }
         }
         Result.failure(lastError ?: Exception("Failed to generate text from ${config.provider}"))

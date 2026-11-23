@@ -14,10 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.shinku.reader.domain.base.BasePreferences
+import com.shinku.reader.domain.source.interactor.TranslationGlossary
 import com.shinku.reader.presentation.reader.dialog.AreaOcrCropOverlay
 import com.shinku.reader.presentation.reader.dialog.AreaTranslationResultDialog
 import com.shinku.reader.presentation.reader.dialog.BatchTranslationProgressDialog
+import com.shinku.reader.presentation.reader.dialog.ReaderRemoteTranslationDialog
 import com.shinku.reader.presentation.reader.dialog.TranslationOptionsDialog
+import com.shinku.reader.presentation.reader.dialog.TranslationGlossaryDialog
 import com.shinku.reader.presentation.theme.TachiyomiTheme
 import com.shinku.reader.ui.main.MainActivity
 import org.junit.After
@@ -61,6 +64,60 @@ class ReaderTranslationAuditTest {
     }
     private fun show(content: @Composable () -> Unit) = instrumentation.runOnMainSync {
         activity.setContent { TachiyomiTheme { Surface(Modifier.fillMaxSize()) { content() } } }
+    }
+
+    @Test fun seriesGlossaryRemovesAnEntryAndSavesHonorificSetting() {
+        val initial = TranslationGlossary(listOf(TranslationGlossary.Entry("Hana", "Hanaa")), preserveHonorifics = true)
+        val saved = java.util.concurrent.atomic.AtomicReference<TranslationGlossary>()
+        show {
+            TranslationGlossaryDialog(
+                glossary = initial,
+                onSave = saved::set,
+                onDismissRequest = {},
+            )
+        }
+        await { has("Series glossary") && has("Remove") }
+        click("Remove")
+        click("Save")
+        assertEquals(TranslationGlossary(preserveHonorifics = true), saved.get())
+    }
+
+    @Test fun remoteTranslationPreviewShowsDestinationAndKeepsSendAndCancelDistinct() {
+        val sent = AtomicInteger()
+        val cancelled = AtomicInteger()
+        val prompt = "Translate this OCR fixture. Authorization: [redacted]"
+        show {
+            ReaderRemoteTranslationDialog(
+                destination = "fixture.example",
+                prompt = prompt,
+                onConfirm = { sent.incrementAndGet() },
+                onDismissRequest = { cancelled.incrementAndGet() },
+            )
+        }
+        await { has("This request sends the text below to fixture.example.") && has(prompt) }
+        click("Cancel")
+        assertEquals(1, cancelled.get())
+        assertEquals(0, sent.get())
+        click("Send text")
+        assertEquals(1, sent.get())
+    }
+
+    @Test fun cloudChapterProgressKeepsCancelAvailableWithoutBackgroundAction() {
+        val cancelled = AtomicInteger()
+        show {
+            BatchTranslationProgressDialog(
+                currentPage = 1,
+                totalPages = 4,
+                translatedCount = 0,
+                targetLanguage = "Spanish",
+                onRunInBackground = null,
+                onCancel = { cancelled.incrementAndGet() },
+            )
+        }
+        await { has("Cancel") }
+        assertTrue(!has("Run in background"))
+        click("Cancel")
+        assertEquals(1, cancelled.get())
     }
 
     @Test fun areaResultRetainsBothTextsAndExplicitActions() {

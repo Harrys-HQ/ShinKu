@@ -13,6 +13,7 @@ import com.shinku.reader.data.notification.Notifications
 import com.shinku.reader.domain.ai.interactor.AiClustering
 import com.shinku.reader.util.system.notificationManager
 import com.shinku.reader.util.system.workManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import logcat.LogPriority
@@ -48,6 +49,8 @@ class AiClusteringJob(
                     .build()
             )
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to run AiClusteringJob" }
             Result.retry()

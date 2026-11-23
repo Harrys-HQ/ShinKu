@@ -54,6 +54,34 @@ import com.shinku.reader.presentation.core.theme.SanctuaryShapes
 import com.shinku.reader.util.system.copyToClipboard
 
 @Composable
+fun ReaderRemoteTranslationDialog(
+    destination: String,
+    prompt: String,
+    onConfirm: () -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(MR.strings.reader_remote_translation_title)) },
+        text = {
+            Column(
+                modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(stringResource(MR.strings.reader_remote_translation_destination, destination))
+                Text(prompt, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(MR.strings.reader_remote_translation_send)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) { Text(stringResource(MR.strings.action_cancel)) }
+        },
+    )
+}
+
+@Composable
 fun ReaderAiProcessingDialog(
     onDismissRequest: () -> Unit,
 ) {

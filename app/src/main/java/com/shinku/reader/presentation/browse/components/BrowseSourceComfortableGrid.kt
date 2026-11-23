@@ -40,6 +40,7 @@ fun BrowseSourceComfortableGrid(
     contentPadding: PaddingValues,
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
+    isSelected: (Manga) -> Boolean = { false },
     source: Source? = null,
 ) {
     val sourceContextLabel = remember(source?.id, source?.name) {
@@ -69,6 +70,7 @@ fun BrowseSourceComfortableGrid(
                 // SY -->
                 metadata = metadata,
                 // SY <--
+                isSelected = isSelected(manga),
                 sourceContextLabel = sourceContextLabel,
                 onClick = { onMangaClick(manga) },
                 onLongClick = { onMangaLongClick(manga) },
@@ -89,6 +91,7 @@ private fun BrowseSourceComfortableGridItem(
     // SY -->
     metadata: RaisedSearchMetadata?,
     // SY <--
+    isSelected: Boolean = false,
     sourceContextLabel: String? = null,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = onClick,
@@ -98,6 +101,7 @@ private fun BrowseSourceComfortableGridItem(
             title = manga.title,
             titleMaxLines = 3,
             captionSurface = true,
+            isSelected = isSelected,
             coverData = MangaCover(
                 mangaId = manga.id,
                 sourceId = manga.source,

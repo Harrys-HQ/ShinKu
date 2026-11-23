@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.8.6-preview.1" changeDate="November 23, 2026">
+        <changelogtext>[b]Reader position (#45)[/b]. Reopen at the saved page and save chapter and page changes in order when leaving the reader.</changelogtext>
+        <changelogtext>[b]App Diagnostics and Source Health (#50)[/b]. Run local checks, inspect separate health results, and review a report before sharing. Source scans show progress and support cancellation.</changelogtext>
+        <changelogtext>[b]Browse and Library (#43, #44)[/b]. Multi-select in Source Browse and Global Search, reorder Browse tabs, and find duplicate titles and missing sources in Library Management.</changelogtext>
+        <changelogtext>[b]Large restores (#46)[/b]. A faster chapter lookup reduces work when restoring reading history.</changelogtext>
+        <changelogtext>[b]Reader translation (#47, #49)[/b]. Edit a series glossary and review OCR text before approving a cloud translation.</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.8.5" changeDate="November 21, 2026">
         <changelogtext>[b]Streaming Backup Validation &amp; Restoration (Fixes #40)[/b]: Replaced full-file byte-array buffering and full-graph protobuf decoding with streaming wire inspection and single-entry restoration via BackupProtoStream, eliminating OutOfMemoryError crashes on large multi-year backups under 512 MiB heap limits.</changelogtext>
         <changelogtext>[b]Saved Search Chips in Source Browse (Fixes #39)[/b]: Fixed top-bar saved search chips in BrowseSourceScreen so tapping a chip applies both the saved query and saved filter list instead of falling back to default filters.</changelogtext>

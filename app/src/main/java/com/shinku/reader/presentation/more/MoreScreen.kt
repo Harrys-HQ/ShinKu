@@ -3,9 +3,11 @@ package com.shinku.reader.presentation.more
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
+import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.GetApp
+import androidx.compose.material.icons.outlined.HealthAndSafety
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NewReleases
@@ -53,6 +55,8 @@ fun MoreScreen(
     onClickAbout: () -> Unit,
     onClickUpdates: () -> Unit,
     onClickHistory: () -> Unit,
+    onClickLibraryManagement: () -> Unit = {},
+    onClickAppDiagnostics: () -> Unit = {},
 ) {
     val uriHandler = LocalUriHandler.current
     val downloadQueueState = downloadQueueStateProvider()
@@ -114,6 +118,12 @@ fun MoreScreen(
                         icon = Icons.Outlined.AutoAwesome,
                         onClick = onClickConfigureFeatures,
                     )
+                    com.shinku.reader.presentation.more.components.CommandRowItem(
+                        title = stringResource(MR.strings.library_management_title),
+                        subtitle = stringResource(MR.strings.library_management_subtitle),
+                        icon = Icons.AutoMirrored.Outlined.LibraryBooks,
+                        onClick = onClickLibraryManagement,
+                    )
                     if (!showNavUpdates) {
                         com.shinku.reader.presentation.more.components.CommandRowItem(
                             title = stringResource(MR.strings.label_recent_updates),
@@ -167,6 +177,12 @@ fun MoreScreen(
                         subtitle = "User guide and website",
                         icon = Icons.AutoMirrored.Outlined.HelpOutline,
                         onClick = { uriHandler.openUri(Constants.URL_HELP) },
+                    )
+                    com.shinku.reader.presentation.more.components.CommandRowItem(
+                        title = stringResource(MR.strings.diagnostics_title),
+                        subtitle = stringResource(MR.strings.diagnostics_subtitle),
+                        icon = Icons.Outlined.HealthAndSafety,
+                        onClick = onClickAppDiagnostics,
                     )
                 }
             }

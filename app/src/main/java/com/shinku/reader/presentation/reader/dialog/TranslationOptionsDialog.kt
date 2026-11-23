@@ -65,6 +65,8 @@ fun TranslationOptionsDialog(
     onTranslateEntireChapter: () -> Unit,
     onChangeLanguages: () -> Unit,
     onClearTranslations: () -> Unit,
+    onOpenGlossary: (() -> Unit)? = null,
+    onShowOlderTranslations: (() -> Unit)? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -111,6 +113,8 @@ fun TranslationOptionsDialog(
                 onTranslateEntireChapter = onTranslateEntireChapter,
                 onChangeLanguages = onChangeLanguages,
                 onClearTranslations = onClearTranslations,
+                onOpenGlossary = onOpenGlossary,
+                onShowOlderTranslations = onShowOlderTranslations,
             )
         },
         confirmButton = {
@@ -136,6 +140,8 @@ fun TranslationOptionsContent(
     onTranslateEntireChapter: () -> Unit,
     onChangeLanguages: () -> Unit,
     onClearTranslations: () -> Unit,
+    onOpenGlossary: (() -> Unit)? = null,
+    onShowOlderTranslations: (() -> Unit)? = null,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
     Column(
@@ -226,6 +232,30 @@ fun TranslationOptionsContent(
             },
         )
 
+        if (onOpenGlossary != null) {
+            OptionRow(
+                icon = Icons.Outlined.Language,
+                title = stringResource(MR.strings.reader_translation_glossary),
+                subtitle = stringResource(MR.strings.reader_translation_glossary_summary),
+                iconTint = MaterialTheme.colorScheme.secondary,
+                onClick = {
+                    onDismissRequest()
+                    onOpenGlossary()
+                },
+            )
+        }
+        if (onShowOlderTranslations != null) {
+            OptionRow(
+                icon = Icons.Outlined.Translate,
+                title = stringResource(MR.strings.reader_translation_older_title),
+                subtitle = stringResource(MR.strings.reader_translation_older_summary),
+                iconTint = MaterialTheme.colorScheme.secondary,
+                onClick = {
+                    onDismissRequest()
+                    onShowOlderTranslations()
+                },
+            )
+        }
         if (hasCachedTranslations) {
             OptionRow(
                 icon = Icons.Outlined.DeleteOutline,

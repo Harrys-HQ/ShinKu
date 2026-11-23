@@ -8,9 +8,11 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.produceState
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import com.shinku.reader.core.common.preference.CheckboxState
 import com.shinku.reader.core.common.preference.toggle
 import com.shinku.reader.core.common.util.lang.launchIO
 import com.shinku.reader.core.common.util.system.logcat
+import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.domain.manga.interactor.GetManga
 import com.shinku.reader.domain.manga.interactor.NetworkToLocalManga
 import com.shinku.reader.domain.manga.model.Manga
@@ -22,9 +24,11 @@ import com.shinku.reader.exh.source.ShinKuPreferences
 import com.shinku.reader.extension.ExtensionManager
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.util.ioCoroutineScope
+import com.shinku.reader.ui.browse.BrowseSelectionState
 import com.shinku.reader.util.system.toast
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.local.isLocal
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentMapOf
@@ -338,6 +342,8 @@ abstract class SearchScreenModel(
         }
     }
 
+    protected fun getSourceOrStub(sourceId: Long) = sourceManager.getOrStub(sourceId)
+
     fun setMigrateDialog(currentId: Long, target: Manga) {
         screenModelScope.launchIO {
             val current = getManga.await(currentId) ?: return@launchIO
@@ -358,6 +364,7 @@ abstract class SearchScreenModel(
         val noSourcesSelected: Boolean = false,
         val items: PersistentMap<CatalogueSource, SearchItemResult> = persistentMapOf(),
         val dialog: Dialog? = null,
+        val selection: BrowseSelectionState = BrowseSelectionState(),
     ) {
         val progress: Int = items.count { it.value !is SearchItemResult.Loading }
         val total: Int = items.size
@@ -367,6 +374,10 @@ abstract class SearchScreenModel(
 
     sealed interface Dialog {
         data class Migrate(val target: Manga, val current: Manga) : Dialog
+        data class BulkChangeMangaCategory(
+            val mangas: List<Manga>,
+            val initialSelection: ImmutableList<CheckboxState.State<Category>>,
+        ) : Dialog
     }
 }
 

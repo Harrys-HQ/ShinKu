@@ -3,6 +3,8 @@ package com.shinku.reader.extension
 import android.content.Context
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
+import com.shinku.reader.domain.diagnostics.DiagnosticRedactor
+import com.shinku.reader.domain.diagnostics.ExtensionLoadIssue
 import com.shinku.reader.domain.extension.interactor.TrustExtension
 import com.shinku.reader.domain.source.service.SourcePreferences
 import com.shinku.reader.R
@@ -93,6 +95,11 @@ class ExtensionManager(
     private val untrustedExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Untrusted>())
     val untrustedExtensionsFlow = untrustedExtensionMapFlow.mapExtensionsOnceInitialized()
 
+    private val failedExtensionMapFlow = MutableStateFlow(emptyMap<String, ExtensionLoadIssue>())
+    val failedExtensionsFlow: StateFlow<List<ExtensionLoadIssue>> = failedExtensionMapFlow
+        .map { map -> map.values.sortedBy { it.name.lowercase(Locale.ROOT) } }
+        .stateIn(scope, SharingStarted.Eagerly, emptyList())
+
     private val findAvailableExtensionsMutex = Mutex()
     private var findAvailableExtensionsJob: kotlinx.coroutines.Job? = null
 
@@ -177,6 +184,21 @@ class ExtensionManager(
             // SY -->
             .filterNotBlacklisted()
         // SY <--
+
+        val now = System.currentTimeMillis()
+        failedExtensionMapFlow.value = extensions
+            .filterIsInstance<LoadResult.Error>()
+            .mapIndexed { index, error ->
+                val pkg = error.pkgName ?: "unknown-$index"
+                pkg to ExtensionLoadIssue(
+                    pkgName = pkg,
+                    name = error.name ?: pkg,
+                    reason = error.reason,
+                    detail = error.detail?.let(DiagnosticRedactor::redact),
+                    detectedAt = now,
+                )
+            }
+            .toMap()
 
         _isInitialized.value = true
     }
@@ -377,6 +399,7 @@ class ExtensionManager(
         // SY <--
 
         installedExtensionMapFlow.update { it + (extension.pkgName to extension) }
+        failedExtensionMapFlow.update { it - extension.pkgName }
         refreshAvailableExtensions()
     }
 
@@ -395,6 +418,7 @@ class ExtensionManager(
         // SY <--
 
         installedExtensionMapFlow.update { it + (extension.pkgName to extension) }
+        failedExtensionMapFlow.update { it - extension.pkgName }
         refreshAvailableExtensions()
     }
 
@@ -407,6 +431,7 @@ class ExtensionManager(
     private fun unregisterExtension(pkgName: String) {
         installedExtensionMapFlow.update { it - pkgName }
         untrustedExtensionMapFlow.update { it - pkgName }
+        failedExtensionMapFlow.update { it - pkgName }
     }
 
     /**

@@ -22,6 +22,19 @@ insert:
 INSERT INTO mangas_categories(manga_id, category_id)
 VALUES (:mangaId, :categoryId);
 
+insertMissing:
+INSERT INTO mangas_categories(manga_id, category_id)
+SELECT mangas._id, categories._id
+FROM mangas
+CROSS JOIN categories
+WHERE mangas._id IN :mangaIds
+  AND categories._id = :categoryId
+  AND mangas._id NOT IN (
+    SELECT manga_id
+    FROM mangas_categories
+    WHERE category_id = :categoryId
+  );
+
 deleteMangaCategoryByMangaId:
 DELETE FROM mangas_categories
 WHERE manga_id = :mangaId;

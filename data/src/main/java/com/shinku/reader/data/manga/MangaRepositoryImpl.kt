@@ -109,6 +109,15 @@ class MangaRepositoryImpl(
         }
     }
 
+    override suspend fun addMangaToCategory(mangaIds: List<Long>, categoryId: Long) {
+        val chunks = mangaIds.chunked(900)
+        handler.await(inTransaction = true) {
+            for (chunk in chunks) {
+                mangas_categoriesQueries.insertMissing(chunk, categoryId)
+            }
+        }
+    }
+
     override suspend fun update(update: MangaUpdate): Boolean {
         return try {
             partialUpdate(update)

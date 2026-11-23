@@ -1,5 +1,14 @@
 # ShinKu Changelog
 
+## 2.8.6-preview.1 (2026-11-23)
+
+- **Reader position (#45)**. Reopen a chapter at its saved page and save chapter/page changes in order when leaving the reader.
+- **App Diagnostics and Source Health (#50)**. Run local checks, see repository, extension and source results, and preview a selective report before sharing. Source scans show progress and support cancellation. AI explanation is optional and requires approval. Diagnostic progress stays on-device.
+- **Browse and Library (#43, #44)**. Multi-select in Source Browse and Global Search, configurable Browse tab order, a Library Management screen, and a refresh indicator tied to actual background work. Feed multi-select, batch extension install/update, and cross-app backup formats remain outside this preview.
+- **Large restores (#46)**. Use an indexed chapter lookup while restoring history. The Tecno background failure still needs device confirmation.
+- **Reader translation (#47, #49)**. Edit a per-series glossary and review the OCR text before approving cloud translation. Source-image and crop-specific cache invalidation and broader AI consent coverage remain pending.
+- **Clustering groundwork (#48)**. Use deterministic grouping and batch metadata reads internally. The preview does not expose a clustering workflow.
+
 ## 2.8.5 "Streaming Backup Architecture & Saved Search Chips Fix" (2026-11-21)
 ### Bug Fixes & Performance
 - **Streaming Backup Validation & Restoration (Fixes #40)**:

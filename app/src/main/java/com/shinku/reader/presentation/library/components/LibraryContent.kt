@@ -26,6 +26,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.dp
 import com.shinku.reader.core.preference.PreferenceMutableState
 import com.shinku.reader.domain.category.model.Category
 import com.shinku.reader.domain.library.model.LibraryDisplayMode
@@ -36,11 +37,9 @@ import com.shinku.reader.presentation.core.util.collectAsState
 import com.shinku.reader.presentation.util.LocalHomeBottomInset
 import com.shinku.reader.ui.library.LibraryItem
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun LibraryContent(
@@ -56,7 +55,8 @@ fun LibraryContent(
     onContinueReadingClicked: ((LibraryManga) -> Unit)?,
     onToggleSelection: (Category, LibraryManga) -> Unit,
     onToggleRangeSelection: (Category, LibraryManga) -> Unit,
-    onRefresh: () -> Boolean,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     onGlobalSearchClicked: () -> Unit,
     getItemCountForCategory: (Category) -> Int?,
     getDisplayMode: (Int) -> PreferenceMutableState<LibraryDisplayMode>,
@@ -103,7 +103,6 @@ fun LibraryContent(
         val pagerState = rememberPagerState(coercedCurrentPage) { categories.size }
 
         val scope = rememberCoroutineScope()
-        var isRefreshing by remember(pagerState.currentPage) { mutableStateOf(false) }
 
         val readingItems = remember(lastReadItem, activeReadingList) {
             if (activeReadingList.isNotEmpty()) activeReadingList else listOfNotNull(lastReadItem)
@@ -142,20 +141,12 @@ fun LibraryContent(
         PullRefresh(
             refreshing = isRefreshing,
             enabled = selection.isEmpty(),
-            onRefresh = {
-                val started = onRefresh()
-                if (!started) return@PullRefresh
-                scope.launch {
-                    // Fake refresh status but hide it after a second as it's a long running task
-                    isRefreshing = true
-                    delay(1.seconds)
-                    isRefreshing = false
-                }
-            },
+            onRefresh = onRefresh,
         ) {
+            val homeBottomInset = if (selection.isNotEmpty()) 0.dp else LocalHomeBottomInset.current
             LibraryPager(
                 state = pagerState,
-                contentPadding = PaddingValues(bottom = maxOf(contentPadding.calculateBottomPadding(), LocalHomeBottomInset.current)),
+                contentPadding = PaddingValues(bottom = maxOf(contentPadding.calculateBottomPadding(), homeBottomInset)),
                 hasActiveFilters = hasActiveFilters,
                 selection = selection,
                 searchQuery = searchQuery,

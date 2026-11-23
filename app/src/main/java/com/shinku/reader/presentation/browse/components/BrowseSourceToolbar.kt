@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.automirrored.outlined.Help
 import androidx.compose.material.icons.filled.ViewModule
+import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -39,6 +40,7 @@ fun BrowseSourceToolbar(
     onHelpClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSearch: (String) -> Unit,
+    onEnterSelectionMode: (() -> Unit)? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
     // Avoid capturing unstable source in actions lambda
@@ -59,6 +61,15 @@ fun BrowseSourceToolbar(
             AppBarActions(
                 actions = persistentListOf<AppBar.AppBarAction>().builder()
                     .apply {
+                        if (onEnterSelectionMode != null) {
+                            add(
+                                AppBar.Action(
+                                    title = stringResource(MR.strings.action_select_items),
+                                    icon = Icons.Outlined.Checklist,
+                                    onClick = onEnterSelectionMode,
+                                ),
+                            )
+                        }
                         if (displayMode != null) {
                             add(
                                 AppBar.Action(
