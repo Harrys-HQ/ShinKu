@@ -518,7 +518,7 @@ class ReaderActivity : BaseActivity() {
                         val savedTranslations by androidx.compose.runtime.produceState(false to false, chapterId, targetLang) {
                             value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                                 viewModel.hasCompatibleChapterTranslations(chapterId) to
-                                    com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
+                                    viewModel.hasOlderChapterTranslations(chapterId)
                             }
                         }
                         val activePageBlocks = state.activePage?.translationBlocks?.size ?: 0
@@ -618,7 +618,7 @@ class ReaderActivity : BaseActivity() {
                 val savedTranslations by androidx.compose.runtime.produceState(false to false, chapterId, targetLang) {
                     value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         viewModel.hasCompatibleChapterTranslations(chapterId) to
-                            com.shinku.reader.ui.reader.model.TranslationCache.hasChapter(chapterId, targetLang)
+                            viewModel.hasOlderChapterTranslations(chapterId)
                     }
                 }
                 val activePageBlocks = state.activePage?.translationBlocks?.size ?: 0
@@ -795,6 +795,7 @@ class ReaderActivity : BaseActivity() {
                                 cacheKey = dialog.cacheKey,
                                 sourceWidth = sWidth,
                                 sourceHeight = sHeight,
+                                sourceIdentity = dialog.sourceIdentity.takeIf { targetPage === dialog.page },
                             )
                         }
                     },
@@ -814,6 +815,7 @@ class ReaderActivity : BaseActivity() {
                     prompt = request.prompt,
                     onConfirm = { viewModel.answerRemoteTranslation(request, true) },
                     onDismissRequest = { viewModel.answerRemoteTranslation(request, false) },
+                    title = stringResource(request.title),
                 )
             }
 

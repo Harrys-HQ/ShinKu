@@ -1,5 +1,10 @@
 package com.shinku.reader.ui.browse.feed
 
+import com.shinku.reader.domain.category.model.Category
+import com.shinku.reader.core.common.preference.CheckboxState
+import com.shinku.reader.ui.browse.BrowseSelectionState
+import com.shinku.reader.ui.browse.BulkFavoriteCoordinator
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.produceState
@@ -191,6 +196,70 @@ open class FeedScreenModel(
         init(force = true)
     }
 
+    internal val remoteAiConsent = com.shinku.reader.presentation.components.RemoteAiConsent()
+    private val bulkFavoriteCoordinator = BulkFavoriteCoordinator()
+    val bulkFavoriteEvents = bulkFavoriteCoordinator.events
+
+    fun toggleSelection(manga: DomainManga) {
+        mutableState.update { it.copy(selection = it.selection.toggle(manga)) }
+    }
+
+    fun exitSelectionMode() {
+        mutableState.update { it.copy(selection = it.selection.exitSelectionMode()) }
+    }
+
+    fun selectAllLoaded() {
+        mutableState.update { it.copy(selection = it.selection.selectAllLoaded(it.loadedTitles())) }
+    }
+
+    fun invertLoaded() {
+        mutableState.update { it.copy(selection = it.selection.invertLoaded(it.loadedTitles())) }
+    }
+
+    fun requestBulkAddToLibrary() {
+        bulkFavoriteCoordinator.requestBulkAdd(
+            scope = screenModelScope,
+            selected = state.value.selection.selectedManga,
+            sourceProvider = sourceManager::getOrStub,
+            onNeedsCategoryChoice = { mangas, initialSelection ->
+                mutableState.update { it.copy(dialog = Dialog.BulkChangeMangaCategory(mangas, initialSelection)) }
+            },
+            onFinished = ::exitSelectionMode,
+        )
+    }
+
+    fun confirmBulkAddToLibrary(mangas: List<DomainManga>, categoryIds: List<Long>) {
+        dismissDialog()
+        bulkFavoriteCoordinator.confirmBulkAdd(
+            scope = screenModelScope,
+            mangas = mangas,
+            categoryIds = categoryIds,
+            sourceProvider = sourceManager::getOrStub,
+            onFinished = ::exitSelectionMode,
+        )
+    }
+
+    fun requestAiRecommendations() {
+        if (state.value.isLoadingAiRecommendations || !shinkuPreferences.isAiConfigured()) return
+        mutableState.update { it.copy(isLoadingAiRecommendations = true) }
+        screenModelScope.launchIO {
+            try {
+                sourceManager.isInitialized.first { it }
+                fetchAiRecommendations(
+                    bestGenres = getReadingStats.awaitBestGenres(),
+                    healthySources = getFilteredCatalogueSources(),
+                    libraryIds = getLibraryManga.await().map { it.manga.id }.toSet(),
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN, e) { "Could not prepare AI recommendations" }
+            } finally {
+                mutableState.update { it.copy(isLoadingAiRecommendations = false) }
+            }
+        }
+    }
+
     private suspend fun fetchAiRecommendations(
         bestGenres: List<String>,
         healthySources: List<CatalogueSource>,
@@ -209,6 +278,9 @@ open class FeedScreenModel(
                 topGenres = bestGenres,
                 apiKey = apiKey,
                 model = model,
+                authorize = { destination, prompt ->
+                    remoteAiConsent.authorize(destination, prompt, com.shinku.reader.i18n.MR.strings.remote_ai_recommendations_title)
+                },
             )
 
             if (titles.isNotEmpty()) {
@@ -613,7 +685,6 @@ open class FeedScreenModel(
                 val libraryManga = runCatchingCancellable { getLibraryManga.await().map { it.manga } }.getOrDefault(emptyList())
                 val bestGenres = runCatchingCancellable { getReadingStats.awaitBestGenres() }.getOrDefault(emptyList())
                 val sources = getFilteredCatalogueSources()
-                val libraryIds = libraryManga.map { it.id }.toSet()
 
                 // 1. Load Hero Carousel + Titles For You first so top of screen is ready fast
                 loadFeaturedAndForYou(
@@ -625,19 +696,12 @@ open class FeedScreenModel(
                 // Release pull-to-refresh spinner as soon as Hero + Titles For You are ready
                 mutableState.updateIfActive { it.copy(isRefreshing = false) }
 
-                // 2. Load Genre rows, AI Picks, and Custom Source Feeds in background
+                // 2. Load genre rows in the background.
                 launchIO {
                     loadGenreSections(
                         sources = sources,
                         userBestGenres = bestGenres,
                         allLibraryManga = libraryManga,
-                    )
-                }
-                launchIO {
-                    fetchAiRecommendations(
-                        bestGenres = bestGenres,
-                        healthySources = sources,
-                        libraryIds = libraryIds,
                     )
                 }
             } catch (e: CancellationException) {
@@ -733,7 +797,7 @@ open class FeedScreenModel(
     fun selectCategory(index: Int) {
         val cat = state.value.categories.getOrNull(index) ?: return
         selectedCategoryId.value = cat._id
-        mutableState.update { it.copy(selectedCategoryIndex = index, items = null) }
+        mutableState.update { it.copy(selectedCategoryIndex = index, items = null, selection = it.selection.exitSelectionMode()) }
     }
 
     fun openManageCategoriesDialog() {
@@ -887,6 +951,10 @@ open class FeedScreenModel(
     }
 
     sealed class Dialog {
+        data class BulkChangeMangaCategory(
+            val mangas: List<DomainManga>,
+            val initialSelection: ImmutableList<CheckboxState.State<Category>>,
+        ) : Dialog()
         data object FeedFilter : Dialog()
         data class AddFeed(val options: ImmutableList<CatalogueSource>) : Dialog()
         data class AddFeedSearch(val source: CatalogueSource, val options: ImmutableList<SavedSearch?>) : Dialog()
@@ -905,6 +973,7 @@ open class FeedScreenModel(
 
 @androidx.compose.runtime.Immutable
 data class FeedScreenState(
+    val selection: BrowseSelectionState = BrowseSelectionState(),
     val dialog: FeedScreenModel.Dialog? = null,
     val categories: kotlinx.collections.immutable.ImmutableList<FeedCategory> = kotlinx.collections.immutable.persistentListOf(),
     val selectedCategoryIndex: Int = 0,
@@ -912,6 +981,7 @@ data class FeedScreenState(
     val recommendations: kotlinx.collections.immutable.ImmutableList<DomainManga>? = null,
     val featuredManga: kotlinx.collections.immutable.ImmutableList<DomainManga> = kotlinx.collections.immutable.persistentListOf(),
     val forYouManga: kotlinx.collections.immutable.ImmutableList<DomainManga> = kotlinx.collections.immutable.persistentListOf(),
+    val isLoadingAiRecommendations: Boolean = false,
     val genreSections: kotlinx.collections.immutable.ImmutableMap<String, kotlinx.collections.immutable.ImmutableList<DomainManga>> = kotlinx.collections.immutable.persistentMapOf(),
     val selectedGenre: String? = null,
     val selectedGenreManga: kotlinx.collections.immutable.ImmutableList<DomainManga>? = null,
@@ -926,6 +996,19 @@ data class FeedScreenState(
 
     val isGlobalTab: Boolean
         get() = (selectedCategory?._id ?: 1L) == 1L || selectedCategory?.explore == true
+
+    internal fun loadedTitles(): List<DomainManga> = buildList {
+        if (isGlobalTab) {
+            addAll(featuredManga)
+            addAll(selectedGenreManga.orEmpty())
+            addAll(forYouManga)
+            addAll(recommendations.orEmpty())
+            genreSections.values.forEach { addAll(it) }
+        }
+        if (showSourceFeeds || !isGlobalTab) {
+            items.orEmpty().forEach { addAll(it.results.orEmpty()) }
+        }
+    }
 
     val hasContent: Boolean
         get() = if (isGlobalTab) {

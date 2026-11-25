@@ -1,5 +1,11 @@
 # ShinKu Changelog
 
+## 2.8.6-preview.2 (2026-11-25)
+
+- **Feed and Extensions (#43, #44)**. Select multiple Feed titles to add to the library. Queue selected extension installs and updates, cancel the queue, or retry remaining packages.
+- **Reader translation (#47)**. Match saved overlays to the page image. Save area overlays separately from full-page translations and reuse them only for the matching image, region, and recognized text.
+- **Cloud AI consent (#49)**. Review prompts before sending reader footnotes, lore, recaps, series metadata, or personalized Discover recommendations. Personalized cloud recommendations start from an explicit action in Discover.
+
 ## 2.8.6-preview.1 (2026-11-23)
 
 - **Reader position (#45)**. Reopen a chapter at its saved page and save chapter/page changes in order when leaving the reader.

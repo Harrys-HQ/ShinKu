@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +52,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.shinku.reader.extension.model.Extension
 import com.shinku.reader.extension.model.InstallStep
+import com.shinku.reader.ui.browse.extension.canBatchInstall
 import com.shinku.reader.i18n.MR
 import com.shinku.reader.i18n.sy.SYMR
 import com.shinku.reader.presentation.browse.components.BaseBrowseItem
@@ -93,6 +95,10 @@ fun ExtensionScreen(
     onOpenExtension: (Extension.Installed) -> Unit,
     onClickUpdateAll: () -> Unit,
     onRefresh: () -> Unit,
+    onToggleSelection: (Extension) -> Unit,
+    onInstallSelected: () -> Unit,
+    onExitSelection: () -> Unit,
+    onCancelBatch: () -> Unit,
 ) {
     val navigator = LocalNavigator.currentOrThrow
 
@@ -103,7 +109,7 @@ fun ExtensionScreen(
     ) {
         when {
             state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
-            state.isEmpty -> {
+            state.isEmpty && !state.isSelecting && !state.batchRunning && state.batchSummary == null -> {
                 val msg = if (!searchQuery.isNullOrEmpty()) {
                     MR.strings.no_results_found
                 } else {
@@ -134,6 +140,10 @@ fun ExtensionScreen(
                     onTrustExtension = onTrustExtension,
                     onOpenExtension = onOpenExtension,
                     onClickUpdateAll = onClickUpdateAll,
+                    onToggleSelection = onToggleSelection,
+                    onInstallSelected = onInstallSelected,
+                    onExitSelection = onExitSelection,
+                    onCancelBatch = onCancelBatch,
                 )
             }
         }
@@ -153,6 +163,10 @@ private fun ExtensionContent(
     onTrustExtension: (Extension.Untrusted) -> Unit,
     onOpenExtension: (Extension.Installed) -> Unit,
     onClickUpdateAll: () -> Unit,
+    onToggleSelection: (Extension) -> Unit,
+    onInstallSelected: () -> Unit,
+    onExitSelection: () -> Unit,
+    onCancelBatch: () -> Unit,
 ) {
     val context = LocalContext.current
     var trustState by remember { mutableStateOf<Extension.Untrusted?>(null) }
@@ -170,6 +184,25 @@ private fun ExtensionContent(
     FastScrollLazyColumn(
         contentPadding = contentPadding + topSmallPaddingValues,
     ) {
+        if (state.isSelecting || state.batchRunning || state.batchSummary != null) {
+            item(key = "extension-batch-actions") {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    state.batchSummary?.let {
+                        Text(stringResource(MR.strings.ext_batch_summary, it.completed, it.failed, it.cancelled))
+                    }
+                    if (state.batchRunning) {
+                        TextButton(onClick = onCancelBatch) { Text(stringResource(MR.strings.action_cancel)) }
+                    } else if (state.isSelecting) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = onInstallSelected, enabled = state.selected.isNotEmpty()) {
+                                Text(stringResource(MR.strings.ext_batch_install_selected, state.selected.size))
+                            }
+                            TextButton(onClick = onExitSelection) { Text(stringResource(MR.strings.action_cancel)) }
+                        }
+                    }
+                }
+            }
+        }
         if (!installGranted && state.installer?.requiresSystemPermission == true) {
             item(key = "extension-permissions-warning") {
                 WarningBanner(
@@ -234,7 +267,7 @@ private fun ExtensionContent(
                         val action: @Composable RowScope.() -> Unit =
                             if (header.textRes == MR.strings.ext_updates_pending) {
                                 {
-                                    Button(onClick = { onClickUpdateAll() }) {
+                                    Button(onClick = onClickUpdateAll, enabled = !state.isSelecting && !state.batchRunning) {
                                         Text(
                                             text = stringResource(MR.strings.ext_update_all),
                                             style = LocalTextStyle.current.copy(
@@ -277,8 +310,16 @@ private fun ExtensionContent(
                 ExtensionItem(
                     modifier = Modifier.animateItemFastScroll(),
                     item = item,
+                    selection = if (state.isSelecting || state.batchRunning) {
+                        if (item.extension.canBatchInstall()) item.extension.installPackageName in state.selected else null
+                    } else {
+                        null
+                    },
+                    selectionEnabled = !state.batchRunning,
                     onClickItem = {
-                        when (it) {
+                        if (state.isSelecting || state.batchRunning) {
+                            onToggleSelection(it)
+                        } else when (it) {
                             is Extension.Available -> onInstallExtension(it)
                             is Extension.Installed -> onOpenExtension(it)
                             is Extension.Untrusted -> {
@@ -286,7 +327,7 @@ private fun ExtensionContent(
                             }
                         }
                     },
-                    onLongClickItem = onLongClickItem,
+                    onLongClickItem = if (state.isSelecting || state.batchRunning) onToggleSelection else onLongClickItem,
                     onClickItemSecondaryAction = {
                         when (it) {
                             is Extension.Available -> onOpenWebView(it)
@@ -340,6 +381,8 @@ private fun ExtensionItem(
     onClickItemAction: (Extension) -> Unit,
     onClickItemSecondaryAction: (Extension) -> Unit,
     modifier: Modifier = Modifier,
+    selection: Boolean? = null,
+    selectionEnabled: Boolean = true,
 ) {
     val (extension, installStep) = item
     BaseBrowseItem(
@@ -374,7 +417,13 @@ private fun ExtensionItem(
             }
         },
         action = {
-            ExtensionItemActions(
+            if (selection != null) {
+                Checkbox(
+                    checked = selection,
+                    onCheckedChange = { onClickItem(extension) },
+                    enabled = selectionEnabled,
+                )
+            } else ExtensionItemActions(
                 extension = extension,
                 installStep = installStep,
                 onClickItemCancel = onClickItemCancel,

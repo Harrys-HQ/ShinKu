@@ -20,6 +20,25 @@ class TranslationPageStoreTest {
     private fun blocks(text: String) = listOf(TranslatedBlock("original", text, null, bgColor = -1, textColor = 0))
 
     @Test
+    fun `page content changes invalidate matched records without hiding older overlays`() {
+        val store = TranslationPageStore(directory)
+        store.putPage(1, 0, "en", blocks("older"))
+        store.putPage(1, 0, "en", blocks("page A"), sourceIdentity = "image-a")
+        store.putPage(1, 0, "enareas", blocks("crop A"), sourceIdentity = "image-a")
+
+        val restarted = TranslationPageStore(directory)
+        assertEquals("page A", restarted.getPage(1, 0, "en", "image-a")?.single()?.translatedText)
+        assertEquals("crop A", restarted.getPage(1, 0, "enareas", "image-a")?.single()?.translatedText)
+        assertNull(restarted.getPage(1, 0, "en", "image-b"))
+        assertNull(restarted.getPage(1, 0, "enareas", "image-b"))
+        assertEquals("older", restarted.getChapter(1, "en")?.get(0)?.single()?.translatedText)
+
+        restarted.putPage(1, 0, "en", blocks("page B"), sourceIdentity = "image-b")
+        assertNull(restarted.getPage(1, 0, "en", "image-a"))
+        assertEquals("page B", restarted.getPage(1, 0, "en", "image-b")?.single()?.translatedText)
+    }
+
+    @Test
     fun `saved pages survive restart and invalidation removes only the selected language page`() {
         val store = TranslationPageStore(directory)
         store.putPage(1, 0, "en", blocks("English"))

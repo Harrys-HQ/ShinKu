@@ -1,7 +1,8 @@
 package com.shinku.reader.presentation.browse.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +19,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -35,6 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,13 +58,16 @@ fun DiscoverFeaturedCarousel(
     onClickManga: (Manga) -> Unit,
     getMangaState: (@Composable (Manga) -> State<Manga>)? = null,
     modifier: Modifier = Modifier,
+    onLongClickManga: ((Manga) -> Unit)? = null,
+    isSelected: (Manga) -> Boolean = { false },
+    autoAdvance: Boolean = true,
 ) {
     if (featuredManga.isEmpty()) return
 
     val pagerState = rememberPagerState { featuredManga.size }
 
-    LaunchedEffect(pagerState.pageCount, pagerState.isScrollInProgress) {
-        if (featuredManga.size > 1 && !pagerState.isScrollInProgress) {
+    LaunchedEffect(pagerState.pageCount, pagerState.isScrollInProgress, autoAdvance) {
+        if (autoAdvance && featuredManga.size > 1 && !pagerState.isScrollInProgress) {
             delay(6000)
             val nextPage = (pagerState.currentPage + 1) % featuredManga.size
             pagerState.animateScrollToPage(nextPage)
@@ -82,6 +89,8 @@ fun DiscoverFeaturedCarousel(
             FeaturedCard(
                 manga = manga,
                 onClick = { onClickManga(manga) },
+                onLongClick = onLongClickManga?.let { { it(manga) } },
+                selected = isSelected(manga),
                 getMangaState = getMangaState,
             )
         }
@@ -123,13 +132,15 @@ private fun FeaturedCard(
     onClick: () -> Unit,
     getMangaState: (@Composable (Manga) -> State<Manga>)? = null,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    selected: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
     val currentManga = getMangaState?.invoke(manga)?.value ?: manga
     val isTablet = LocalConfiguration.current.screenWidthDp >= 600
     val cardHeight = if (isTablet) 240.dp else 200.dp
 
-    ElevatedCard(
+    Card(
         modifier = modifier
             .fillMaxWidth()
             .height(cardHeight)
@@ -140,14 +151,21 @@ private fun FeaturedCard(
                 ambientAlpha = 0.15f,
             ),
         shape = SanctuaryShapes.hero,
+        border = if (selected) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
+        elevation = CardDefaults.elevatedCardElevation(),
+        colors = CardDefaults.elevatedCardColors(),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onClick()
-                },
+                .semantics { this.selected = selected }
+                .combinedClickable(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onClick()
+                    },
+                    onLongClick = onLongClick,
+                ),
         ) {
             MangaCover.Book(
                 data = currentManga,

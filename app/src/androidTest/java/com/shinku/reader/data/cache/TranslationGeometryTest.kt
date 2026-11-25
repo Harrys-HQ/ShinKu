@@ -6,12 +6,31 @@ import com.shinku.reader.ui.reader.model.TranslatedBlock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 
 /** Real Android geometry constructors are not implemented by the local JVM Android stubs. */
 @RunWith(AndroidJUnit4::class)
 class TranslationGeometryTest {
+    @get:Rule
+    val directory = TemporaryFolder()
+
+    @Test
+    fun separateCropRegionsRetainGeometryForTheMatchingImage() {
+        val first = TranslatedBlock("First", "One", Rect(0, 0, 40, 40), bgColor = -1, textColor = 0)
+        val second = first.copy(originalText = "Second", translatedText = "Two", boundingBox = Rect(100, 100, 140, 140))
+        val store = TranslationPageStore(directory.root)
+        store.putPage(1, 0, "enareas", listOf(first, second), sourceIdentity = "page-image")
+
+        val reopened = TranslationPageStore(directory.root)
+        assertEquals(listOf(first, second), reopened.getPage(1, 0, "enareas", "page-image"))
+        assertNull(reopened.getPage(1, 0, "enareas", "updated-image"))
+        assertNull(reopened.getPage(1, 0, "en", "page-image"))
+    }
+
     @Test
     fun serializedRectConvertsToAndroidAndBack() {
         val serialized = SerializedRect(10, 20, 150, 200)

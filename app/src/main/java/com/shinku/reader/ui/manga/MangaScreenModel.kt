@@ -68,6 +68,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -261,8 +262,13 @@ class MangaScreenModel(
 
         screenModelScope.launch {
             updateSuccessState { it.copy(dialog = Dialog.VibeSearching) }
-            val titles = geminiVibeSearch.getSimilarManga(manga.title, manga.description ?: "", apiKey, model)
-            dismissDialog()
+            val titles = try {
+                geminiVibeSearch.getSimilarManga(manga.title, manga.description.orEmpty(), apiKey, model) { destination, prompt ->
+                    remoteAiConsent.authorize(destination, prompt, MR.strings.remote_ai_metadata_title)
+                }
+            } finally {
+                dismissDialog()
+            }
             if (titles.isNotEmpty()) {
                 events.emit(Event.SearchSimilarVibes(titles))
             } else {
@@ -1839,7 +1845,9 @@ class MangaScreenModel(
                     manga.description.orEmpty(),
                     apiKey,
                     model,
-                )
+                ) { destination, prompt ->
+                    remoteAiConsent.authorize(destination, prompt, MR.strings.remote_ai_metadata_title)
+                }
 
                 if (enriched != null) {
                     updateMangaInfo(
@@ -1859,6 +1867,8 @@ class MangaScreenModel(
                         context.toast(context.stringResource(SYMR.strings.ai_fix_error, "AI returned no result"))
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
                 withUIContext {
@@ -1869,6 +1879,8 @@ class MangaScreenModel(
             }
         }
     }
+
+    internal val remoteAiConsent = com.shinku.reader.presentation.components.RemoteAiConsent()
 
     fun generateAIChapterRecap(context: Context) {
         val state = successState ?: return
@@ -1899,8 +1911,14 @@ class MangaScreenModel(
                     author = state.manga.author,
                     genres = state.manga.genre,
                     originalTitle = state.manga.ogTitle,
+                    authorize = { destination, prompt ->
+                        remoteAiConsent.authorize(destination, prompt, MR.strings.remote_ai_recap_title)
+                    },
                 )
                 updateSuccessState { it.copy(isLoadingRecap = false, recapText = recap) }
+            } catch (e: CancellationException) {
+                updateSuccessState { it.copy(isLoadingRecap = false) }
+                throw e
             } catch (e: Exception) {
                 updateSuccessState { it.copy(isLoadingRecap = false, recapText = "Failed to generate recap: ${e.message}") }
             }

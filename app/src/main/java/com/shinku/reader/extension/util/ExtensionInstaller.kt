@@ -17,6 +17,8 @@ import com.shinku.reader.extension.model.Extension
 import com.shinku.reader.extension.model.InstallStep
 import com.shinku.reader.util.storage.getUriCompat
 import com.shinku.reader.util.system.isPackageInstalled
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,8 +28,8 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
-import com.shinku.reader.core.common.util.lang.withUIContext
 import com.shinku.reader.core.common.util.system.logcat
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -69,7 +71,7 @@ internal class ExtensionInstaller(private val context: Context) {
      * @param extension The extension to install.
      */
     fun downloadAndInstall(url: String, extension: Extension): Flow<InstallStep> {
-        val pkgName = extension.pkgName
+        val pkgName = extension.installPackageName
 
         val oldDownload = activeDownloads[pkgName]
         if (oldDownload != null) {
@@ -106,11 +108,12 @@ internal class ExtensionInstaller(private val context: Context) {
             emit(it)
             // Stop when the application is installed or errors
             !it.isCompleted()
-        }.onCompletion {
-            // Always notify on main thread
-            withUIContext {
-                // Always remove the download when unsubscribed
-                deleteDownload(pkgName)
+        }.onCompletion { cause ->
+            withContext(NonCancellable + Dispatchers.Main.immediate) {
+                if (activeDownloads[pkgName] == id) {
+                    if (cause != null) Installer.cancelInstallQueue(context, id)
+                    deleteDownload(pkgName)
+                }
             }
         }
     }
@@ -206,9 +209,10 @@ internal class ExtensionInstaller(private val context: Context) {
      * Cancels extension install and remove from download manager and installer.
      */
     fun cancelInstall(pkgName: String) {
-        val downloadId = activeDownloads.remove(pkgName) ?: return
-        downloadManager.remove(downloadId)
+        val downloadId = activeDownloads[pkgName] ?: return
+        updateInstallStep(downloadId, InstallStep.Idle)
         Installer.cancelInstallQueue(context, downloadId)
+        deleteDownload(pkgName)
     }
 
     /**

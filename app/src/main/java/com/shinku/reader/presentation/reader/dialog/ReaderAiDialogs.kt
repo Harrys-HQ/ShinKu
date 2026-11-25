@@ -59,10 +59,11 @@ fun ReaderRemoteTranslationDialog(
     prompt: String,
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
+    title: String = stringResource(MR.strings.reader_remote_translation_title),
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(MR.strings.reader_remote_translation_title)) },
+        title = { Text(title) },
         text = {
             Column(
                 modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState()),

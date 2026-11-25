@@ -73,6 +73,24 @@ class ReaderTranslationConsentTest {
             val glossary = TranslationGlossary(listOf(TranslationGlossary.Entry("Hello", "Preferred greeting")))
 
             try {
+                translator.getForYouRecommendations(
+                    historyTitles = listOf("Recently read fixture"),
+                    topGenres = listOf("Fantasy"),
+                    apiKey = "",
+                    model = "",
+                ) { destination, prompt ->
+                    assertTrue(destination.startsWith(origin))
+                    assertTrue(prompt.contains("Recently read fixture"))
+                    assertTrue(prompt.contains("Fantasy"))
+                    assertTrue(requests.isEmpty())
+                    false
+                }
+                error("Declining should cancel library recommendations")
+            } catch (_: ReaderTranslationDeclined) {
+                assertTrue(requests.isEmpty())
+            }
+
+            try {
                 translator.translateBlocks(text, "Spanish", provider = provider) { _, _ ->
                     assertTrue(requests.isEmpty())
                     false

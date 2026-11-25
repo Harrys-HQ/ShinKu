@@ -38,6 +38,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -257,6 +259,7 @@ fun DiscoverMangaRow(
     onLongClickManga: ((Manga) -> Unit)? = null,
     getMangaState: (@Composable (Manga) -> State<Manga>)? = null,
     modifier: Modifier = Modifier,
+    isSelected: (Manga) -> Boolean = { false },
 ) {
     if (mangas.isEmpty()) return
 
@@ -273,6 +276,7 @@ fun DiscoverMangaRow(
                 onClick = { onClickManga(manga) },
                 onLongClick = onLongClickManga?.let { { it(manga) } },
                 getMangaState = getMangaState,
+                selected = isSelected(manga),
             )
         }
     }
@@ -286,6 +290,7 @@ private fun DiscoverMangaCard(
     onLongClick: (() -> Unit)? = null,
     getMangaState: (@Composable (Manga) -> State<Manga>)? = null,
     modifier: Modifier = Modifier,
+    selected: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
     val currentManga = getMangaState?.invoke(manga)?.value ?: manga
@@ -297,6 +302,7 @@ private fun DiscoverMangaCard(
         modifier = modifier
             .width(cardWidth)
             .clip(SanctuaryShapes.coverLarge)
+            .semantics { this.selected = selected }
             .combinedClickable(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -316,7 +322,7 @@ private fun DiscoverMangaCard(
             Surface(
                 shape = SanctuaryShapes.coverLarge,
                 shadowElevation = SanctuaryElevation.compact,
-                border = SanctuaryBrushes.subtleBorder(),
+                border = if (selected) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else SanctuaryBrushes.subtleBorder(),
                 modifier = Modifier.fillMaxSize(),
             ) {
                 MangaCover.Book(

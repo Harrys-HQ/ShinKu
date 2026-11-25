@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,6 +48,7 @@ import com.shinku.reader.presentation.browse.components.DiscoverFeaturedCarousel
 import com.shinku.reader.presentation.browse.components.DiscoverFeedSkeleton
 import com.shinku.reader.presentation.browse.components.DiscoverGenreCloud
 import com.shinku.reader.presentation.browse.components.DiscoverMangaRow
+import com.shinku.reader.presentation.browse.components.BrowseSelectionToolbar
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -96,12 +98,20 @@ fun FeedScreen(
     onAddFeed: () -> Unit = {},
     onRefresh: () -> Unit,
     getMangaState: @Composable (Manga) -> State<Manga>,
+    onRequestAiRecommendations: (() -> Unit)? = null,
+    onLongClickManga: (Manga) -> Unit = onClickManga,
+    onExitSelection: () -> Unit = {},
+    onSelectAllLoaded: () -> Unit = {},
+    onInvertLoaded: () -> Unit = {},
+    onBulkAdd: () -> Unit = {},
 ) {
     val hasContent = state.hasContent
     val layoutDirection = LocalLayoutDirection.current
     val topPadding = contentPadding.calculateTopPadding()
     val hasTabs = state.categories.size > 1
-    val innerPadding = if (hasTabs) {
+    val hasFixedTopContent = hasTabs || state.selection.selectionMode
+    val isSelected = state.selection::isSelected
+    val innerPadding = if (hasFixedTopContent) {
         PaddingValues(
             start = contentPadding.calculateStartPadding(layoutDirection),
             end = contentPadding.calculateEndPadding(layoutDirection),
@@ -115,7 +125,7 @@ fun FeedScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = if (hasTabs) topPadding else 0.dp),
+            .padding(top = if (hasFixedTopContent) topPadding else 0.dp),
     ) {
         if (hasTabs) {
             FeedCategoryTabs(
@@ -123,6 +133,16 @@ fun FeedScreen(
                 selectedCategoryIndex = state.selectedCategoryIndex,
                 onSelectCategory = onSelectCategory,
                 onManageCategories = onManageCategories,
+            )
+        }
+
+        if (state.selection.selectionMode) {
+            BrowseSelectionToolbar(
+                selectedCount = state.selection.selectedCount,
+                onCancelSelectionMode = onExitSelection,
+                onAddSelectedToLibrary = onBulkAdd,
+                onSelectAllLoaded = onSelectAllLoaded,
+                onInvertLoaded = onInvertLoaded,
             )
         }
 
@@ -177,6 +197,9 @@ fun FeedScreen(
                                     DiscoverFeaturedCarousel(
                                         featuredManga = state.featuredManga,
                                         onClickManga = onClickManga,
+                                        onLongClickManga = onLongClickManga,
+                                        isSelected = isSelected,
+                                        autoAdvance = !state.selection.selectionMode,
                                         getMangaState = getMangaState,
                                     )
                                 }
@@ -226,6 +249,8 @@ fun FeedScreen(
                                 DiscoverMangaRow(
                                     mangas = state.selectedGenreManga.orEmpty(),
                                     onClickManga = onClickManga,
+                                    onLongClickManga = onLongClickManga,
+                                    isSelected = isSelected,
                                     getMangaState = getMangaState,
                                 )
                             } else {
@@ -258,12 +283,25 @@ fun FeedScreen(
                             DiscoverMangaRow(
                                 mangas = state.forYouManga,
                                 onClickManga = onClickManga,
+                                onLongClickManga = onLongClickManga,
+                                isSelected = isSelected,
                                 getMangaState = getMangaState,
                             )
                         }
                     }
 
-                    // 5. AI Sanctuary Picks (When an AI provider is configured)
+                    if (onRequestAiRecommendations != null) {
+                        item {
+                            TextButton(
+                                onClick = onRequestAiRecommendations,
+                                enabled = !state.isLoadingAiRecommendations,
+                            ) {
+                                Text(stringResource(MR.strings.remote_ai_recommendations_action))
+                            }
+                        }
+                    }
+
+                    // 5. AI Sanctuary Picks
                     if (!state.recommendations.isNullOrEmpty()) {
                         item {
                             DiscoverSectionHeader(
@@ -281,6 +319,8 @@ fun FeedScreen(
                             DiscoverMangaRow(
                                 mangas = state.recommendations,
                                 onClickManga = onClickManga,
+                                onLongClickManga = onLongClickManga,
+                                isSelected = isSelected,
                                 getMangaState = getMangaState,
                             )
                         }
@@ -300,6 +340,8 @@ fun FeedScreen(
                                 DiscoverMangaRow(
                                     mangas = mangas,
                                     onClickManga = onClickManga,
+                                    onLongClickManga = onLongClickManga,
+                                    isSelected = isSelected,
                                     getMangaState = getMangaState,
                                 )
                             }
@@ -399,6 +441,8 @@ fun FeedScreen(
                                 item = item,
                                 getMangaState = { getMangaState(it) },
                                 onClickManga = onClickManga,
+                                onLongClickManga = onLongClickManga,
+                                isSelected = isSelected,
                             )
                         }
                     }
@@ -473,6 +517,8 @@ fun FeedItem(
     item: FeedItemUI,
     getMangaState: @Composable ((Manga) -> State<Manga>),
     onClickManga: (Manga) -> Unit,
+    onLongClickManga: (Manga) -> Unit = onClickManga,
+    isSelected: (Manga) -> Boolean = { false },
 ) {
     when {
         item.results == null -> {
@@ -486,7 +532,8 @@ fun FeedItem(
                 titles = item.results,
                 getManga = getMangaState,
                 onClick = onClickManga,
-                onLongClick = onClickManga,
+                onLongClick = onLongClickManga,
+                isSelected = isSelected,
             )
         }
     }

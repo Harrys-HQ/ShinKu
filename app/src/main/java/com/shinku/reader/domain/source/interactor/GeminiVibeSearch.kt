@@ -51,7 +51,7 @@ class GeminiVibeSearch(
                     Example: ["Title 1", "Title 2"]
                 """.trimIndent()
                 val result = activeEngine.generateTitles(prompt)
-                val titles = result.getOrDefault(callGemini(query, apiKey, model))
+                val titles = result.getOrElse { callGemini(query, apiKey, model) }
                 if (titles.isNotEmpty()) {
                     vibeCache[cacheKey] = titles
                 }
@@ -75,7 +75,13 @@ class GeminiVibeSearch(
         }
     }
 
-    suspend fun getSimilarManga(title: String, description: String, apiKey: String, model: String): List<String> {
+    internal suspend fun getSimilarManga(
+        title: String,
+        description: String,
+        apiKey: String,
+        model: String,
+        authorize: suspend (String, String) -> Boolean,
+    ): List<String> {
         val cacheKey = "$title::$description".lowercase()
         similarCache[cacheKey]?.let { return it }
 
@@ -87,7 +93,7 @@ class GeminiVibeSearch(
                     suggest 5-10 other real manga titles that have a similar "vibe", tone, or themes.
                     Return ONLY a JSON array of strings.
                 """.trimIndent()
-                val text = callGeminiForText(prompt, apiKey, model)
+                val text = sendContext(prompt, apiKey, model, authorize)
                 val start = text.indexOf("[")
                 val end = text.lastIndexOf("]") + 1
                 if (start != -1 && end > start) {
@@ -100,17 +106,25 @@ class GeminiVibeSearch(
                 } else {
                     emptyList()
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 emptyList()
             }
         }
     }
 
-    suspend fun explainFootnotes(text: String, apiKey: String, model: String): String {
-        return callGeminiForText(
+    internal suspend fun explainFootnotes(
+        text: String,
+        apiKey: String,
+        model: String,
+        authorize: suspend (String, String) -> Boolean,
+    ): String {
+        return sendContext(
             "Explain any cultural references, puns, or interesting nuances in this manga text: \"$text\". Be concise.",
             apiKey,
             model,
+            authorize,
         )
     }
 
@@ -124,13 +138,14 @@ class GeminiVibeSearch(
             .ifBlank { title }
     }
 
-    suspend fun explainCharacterAndLoreCodex(
+    internal suspend fun explainCharacterAndLoreCodex(
         text: String,
         mangaTitle: String,
         chapterName: String,
         apiKey: String,
         model: String,
         synopsis: String? = null,
+        authorize: suspend (String, String) -> Boolean,
     ): String {
         val cleanTitle = cleanMangaTitle(mangaTitle)
         val prompt = buildString {
@@ -147,7 +162,7 @@ class GeminiVibeSearch(
             appendLine("Page Text:")
             appendLine("\"$text\"")
         }
-        return callGeminiForText(prompt, apiKey, model)
+        return sendContext(prompt, apiKey, model, authorize)
     }
 
     suspend fun translateText(text: String, apiKey: String, model: String, targetLanguage: String = "English"): String {
@@ -186,7 +201,7 @@ class GeminiVibeSearch(
                 destination = destination,
             ) { prompt ->
                 compatibleEngine.generateApprovedReaderText(prompt, compatibleConfig)
-                    .getOrElse { error("Cloud translation request failed") }
+                    .getOrElse { error("Cloud AI request failed") }
             }
         }
         if (apiKey.isBlank()) return null
@@ -196,9 +211,19 @@ class GeminiVibeSearch(
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (_: Exception) {
-                error("Cloud translation request failed")
+                error("Cloud AI request failed")
             }
         }
+    }
+
+    private suspend fun sendContext(
+        prompt: String,
+        apiKey: String,
+        model: String,
+        authorize: suspend (String, String) -> Boolean,
+    ): String {
+        val provider = readerTranslationProvider(apiKey, model) ?: error("No cloud AI provider is configured")
+        return sendReaderTranslation(provider.destination, sanitizeReaderTranslationText(prompt), authorize, provider.send)
     }
 
     internal suspend fun translateBlocks(
@@ -294,7 +319,13 @@ class GeminiVibeSearch(
         }
     }
 
-    suspend fun enrichMetadata(title: String, currentDescription: String, apiKey: String, model: String): EnrichedMetadata? {
+    internal suspend fun enrichMetadata(
+        title: String,
+        currentDescription: String,
+        apiKey: String,
+        model: String,
+        authorize: suspend (String, String) -> Boolean,
+    ): EnrichedMetadata? {
         return withIOContext {
             if (!shinkuPreferences.isAiConfigured() && apiKey.isBlank()) return@withIOContext null
             try {
@@ -311,7 +342,7 @@ class GeminiVibeSearch(
                     {"description": "...", "genres": ["...", "..."], "tags": ["...", "..."]}
                 """.trimIndent()
 
-                val text = callGeminiForText(prompt, apiKey, model)
+                val text = sendContext(prompt, apiKey, model, authorize)
                 val start = text.indexOf("{")
                 val end = text.lastIndexOf("}") + 1
                 if (start != -1 && end > start) {
@@ -320,17 +351,20 @@ class GeminiVibeSearch(
                 } else {
                     null
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 null
             }
         }
     }
 
-    suspend fun getForYouRecommendations(
+    internal suspend fun getForYouRecommendations(
         historyTitles: List<String>,
         topGenres: List<String>,
         apiKey: String,
         model: String,
+        authorize: suspend (String, String) -> Boolean,
     ): List<String> {
         val prompt = """
             You are a manga discovery expert. Based on my recent reading history and favorite genres, suggest 10 real manga titles I might enjoy.
@@ -341,16 +375,10 @@ class GeminiVibeSearch(
             Return ONLY a JSON array of strings containing the suggested titles.
         """.trimIndent()
 
-        return withIOContext {
-            try {
-                callGemini(prompt, apiKey, model)
-            } catch (e: Exception) {
-                emptyList()
-            }
-        }
+        return withIOContext { parseTitles(sendContext(prompt, apiKey, model, authorize)) }
     }
 
-    suspend fun getChapterRecap(
+    internal suspend fun getChapterRecap(
         title: String,
         chapterNames: List<String>,
         apiKey: String,
@@ -359,6 +387,7 @@ class GeminiVibeSearch(
         author: String? = null,
         genres: List<String>? = null,
         originalTitle: String? = null,
+        authorize: suspend (String, String) -> Boolean,
     ): String {
         val cleanTitle = cleanMangaTitle(title)
         val cacheKey = "${cleanTitle.trim()}::${chapterNames.joinToString(",")}::${author.orEmpty()}::${synopsis?.hashCode() ?: 0}"
@@ -394,7 +423,7 @@ class GeminiVibeSearch(
             appendLine("5. Focus on the main narrative progress, key characters, and major turning points.")
         }
 
-        val result = callGeminiForText(prompt, apiKey, model)
+        val result = sendContext(prompt, apiKey, model, authorize)
         if (!result.startsWith("Error:")) {
             recapCache[cacheKey] = result
         }

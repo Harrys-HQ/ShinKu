@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.8.6-preview.2" changeDate="November 25, 2026">
+        <changelogtext>[b]Feed and Extensions (#43, #44)[/b]. Add multiple Feed titles to the library and queue selected extension installs and updates.</changelogtext>
+        <changelogtext>[b]Reader translation (#47)[/b]. Saved overlays match the page image, and area results are saved separately from full-page translations.</changelogtext>
+        <changelogtext>[b]Cloud AI consent (#49)[/b]. Review the prompt before sending reader insights, recaps, series metadata, or personalized Discover recommendations.</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.8.6-preview.1" changeDate="November 23, 2026">
         <changelogtext>[b]Reader position (#45)[/b]. Reopen at the saved page and save chapter and page changes in order when leaving the reader.</changelogtext>
         <changelogtext>[b]App Diagnostics and Source Health (#50)[/b]. Run local checks, inspect separate health results, and review a report before sharing. Source scans show progress and support cancellation.</changelogtext>

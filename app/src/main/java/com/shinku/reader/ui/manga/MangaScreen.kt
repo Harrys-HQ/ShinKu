@@ -123,6 +123,7 @@ class MangaScreen(
         }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
+        com.shinku.reader.presentation.components.RemoteAiConsentDialog(screenModel.remoteAiConsent)
 
         if (state is MangaScreenModel.State.Loading) {
             LoadingScreen()

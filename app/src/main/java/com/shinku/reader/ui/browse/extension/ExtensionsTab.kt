@@ -1,5 +1,10 @@
 package com.shinku.reader.ui.browse.extension
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.SelectAll
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,25 +42,38 @@ fun extensionsTab(
         badgeNumber = state.updates.takeIf { it > 0 },
         searchEnabled = true,
         actions = persistentListOf(
-            AppBar.OverflowAction(
+            AppBar.Action(
                 title = stringResource(MR.strings.action_filter),
+                icon = Icons.Outlined.FilterList,
                 onClick = { navigator.push(ExtensionFilterScreen()) },
             ),
-            AppBar.OverflowAction(
+            AppBar.Action(
                 title = stringResource(MR.strings.label_extension_repos),
+                icon = Icons.Outlined.Settings,
                 onClick = { navigator.push(ExtensionReposScreen()) },
+            ),
+            AppBar.Action(
+                title = stringResource(MR.strings.action_select_items),
+                icon = Icons.Outlined.SelectAll,
+                enabled = !state.batchRunning,
+                onClick = extensionsScreenModel::enterSelectionMode,
             ),
         ),
         content = { contentPadding, _ ->
+            BackHandler(enabled = state.isSelecting || state.batchRunning) {
+                if (state.batchRunning) extensionsScreenModel.cancelBatch() else extensionsScreenModel.exitSelectionMode()
+            }
             ExtensionScreen(
                 state = state,
                 contentPadding = contentPadding,
                 searchQuery = state.searchQuery,
                 onLongClickItem = { extension ->
                     when (extension) {
-                        is Extension.Available -> extensionsScreenModel.installExtension(extension)
+                        is Extension.Available -> extensionsScreenModel.toggleSelection(extension)
                         else -> {
-                            if (context.isPackageInstalled(extension.pkgName)) {
+                            if (extension.canBatchInstall()) {
+                                extensionsScreenModel.toggleSelection(extension)
+                            } else if (context.isPackageInstalled(extension.pkgName)) {
                                 extensionsScreenModel.uninstallExtension(extension)
                             } else {
                                 privateExtensionToUninstall = extension
@@ -65,6 +83,10 @@ fun extensionsTab(
                 },
                 onClickItemCancel = extensionsScreenModel::cancelInstallUpdateExtension,
                 onClickUpdateAll = extensionsScreenModel::updateAllExtensions,
+                onToggleSelection = extensionsScreenModel::toggleSelection,
+                onInstallSelected = extensionsScreenModel::installSelected,
+                onExitSelection = extensionsScreenModel::exitSelectionMode,
+                onCancelBatch = extensionsScreenModel::cancelBatch,
                 onOpenWebView = { extension ->
                     extension.sources.getOrNull(0)?.let {
                         navigator.push(

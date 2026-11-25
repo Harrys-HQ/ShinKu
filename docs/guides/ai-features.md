@@ -25,6 +25,8 @@ For cloud translation of a page or selected area, the reader shows the destinati
 
 Automatic translation as you turn pages reuses saved translations, or uses on-device ML Kit in Automatic and on-device modes. In cloud-only mode, tap Translate to request a preview for an uncached page. ML Kit may download language models before its first translation for a language.
 
+Reader footnotes and lore use locally recognized OCR text. Lore can also include the series title, current chapter name, and synopsis. Recaps use a limited list of read chapter names and available series details. Manga metadata repair and similar-title discovery use the selected series title and description. Each of these actions previews the sanitized prompt and provider before sending. Cancelling skips the request.
+
 New saved results are kept separately for each set of language, provider, model, and glossary settings. After changing those settings, translate again to see results for the new profile. Use **Show older translations** to view saved overlays from before ShinKu tracked these settings.
 
 ---
@@ -49,7 +51,7 @@ Translate custom areas, signs, background sound effects, or stubborn speech ball
 Looking for something specific, but don't know the exact title or author?
 
 * **Natural Language Queries:** Search using descriptive narrative tropes, moods, or themes (e.g., *"wholesome fantasy romance with an overpowered mage"*, *"dark cyberpunk psychological mystery"*).
-* **AI "For You" Carousel:** ShinKu analyzes your reading journey velocity, top genres, and reading habits locally to recommend hidden gems matching your unique taste profile.
+* **AI Sanctuary Picks:** Tap **Generate AI Sanctuary Picks** in Discover to review the prompt with recent titles and top genres before sending it to the configured provider. Discover refreshes use local preferences and source results. They leave cloud recommendations idle until requested.
 
 ---
 

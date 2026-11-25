@@ -14,6 +14,9 @@ import com.shinku.reader.extension.model.Extension
 import com.shinku.reader.extension.model.InstallStep
 import eu.kanade.tachiyomi.source.online.HttpSource
 import com.shinku.reader.util.system.LocaleHelper
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,10 +27,10 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.shinku.reader.core.common.util.lang.launchIO
 import com.shinku.reader.i18n.MR
 import uy.kohesive.injekt.Injekt
@@ -42,12 +45,13 @@ class ExtensionsScreenModel(
 ) : StateScreenModel<ExtensionsScreenModel.State>(State()) {
 
     private val currentDownloads = MutableStateFlow<Map<String, InstallStep>>(hashMapOf())
+    private var batchJob: Job? = null
 
     init {
         val context = Injekt.get<Application>()
         val extensionMapper: (Map<String, InstallStep>) -> ((Extension) -> ExtensionUiModel.Item) = { map ->
             {
-                ExtensionUiModel.Item(it, map[it.pkgName] ?: InstallStep.Idle)
+                ExtensionUiModel.Item(it, map[it.installPackageName] ?: InstallStep.Idle)
             }
         }
         val queryFilter: (String) -> ((Extension) -> Boolean) = { query ->
@@ -146,45 +150,116 @@ class ExtensionsScreenModel(
     }
 
     fun updateAllExtensions() {
-        screenModelScope.launchIO {
-            state.value.items.values.flatten()
-                .map { it.extension }
-                .filterIsInstance<Extension.Installed>()
-                .filter { it.hasUpdate }
-                .forEach(::updateExtension)
+        val updates = state.value.items.values.flatten().map { it.extension }
+            .filterIsInstance<Extension.Installed>().filter { it.hasUpdate }
+        runBatch(updates)
+    }
+
+    fun enterSelectionMode() {
+        mutableState.update { it.copy(isSelecting = true, batchSummary = null) }
+    }
+
+    fun exitSelectionMode() {
+        if (batchJob?.isActive == true) return
+        mutableState.update { it.copy(isSelecting = false, selected = emptyMap()) }
+    }
+
+    fun toggleSelection(extension: Extension) {
+        if (!extension.canBatchInstall() || batchJob?.isActive == true) return
+        mutableState.update {
+            val packageName = extension.installPackageName
+            val selected = if (packageName in it.selected) it.selected - packageName
+            else it.selected + (packageName to extension)
+            it.copy(isSelecting = true, selected = selected, batchSummary = null)
+        }
+    }
+
+    fun installSelected() = runBatch(state.value.selected.values.toList())
+
+    fun cancelBatch() {
+        batchJob?.cancel()
+    }
+
+    private fun runBatch(extensions: List<Extension>) {
+        if (extensions.isEmpty() || batchJob?.isActive == true) return
+        val queue = extensions.distinctBy { it.installPackageName }
+        val remaining = queue.associateBy { it.installPackageName }.toMutableMap()
+        mutableState.update { it.copy(batchRunning = true, batchSummary = null) }
+        batchJob = screenModelScope.launch(Dispatchers.Main.immediate) {
+            var completed = 0
+            var failed = 0
+            try {
+                for (extension in queue) {
+                    if (runInstall(extension) == InstallStep.Installed) {
+                        remaining.remove(extension.installPackageName)
+                        completed++
+                    } else {
+                        failed++
+                    }
+                }
+            } finally {
+                mutableState.update {
+                    it.copy(
+                        batchRunning = false,
+                        isSelecting = remaining.isNotEmpty(),
+                        selected = remaining.toMap(),
+                        batchSummary = BatchSummary(completed, failed, remaining.size - failed),
+                    )
+                }
+            }
         }
     }
 
     fun installExtension(extension: Extension.Available) {
-        screenModelScope.launchIO {
-            extensionManager.installExtension(extension).collectToInstallUpdate(extension)
+        screenModelScope.launch(Dispatchers.Main.immediate) {
+            runInstall(extension)
         }
     }
 
     fun updateExtension(extension: Extension.Installed) {
-        screenModelScope.launchIO {
-            extensionManager.updateExtension(extension).collectToInstallUpdate(extension)
+        screenModelScope.launch(Dispatchers.Main.immediate) {
+            runInstall(extension)
         }
     }
 
     fun cancelInstallUpdateExtension(extension: Extension) {
         extensionManager.cancelInstallUpdateExtension(extension)
-        removeDownloadState(extension)
     }
 
     private fun addDownloadState(extension: Extension, installStep: InstallStep) {
-        currentDownloads.update { it + Pair(extension.pkgName, installStep) }
+        currentDownloads.update { it + Pair(extension.installPackageName, installStep) }
     }
 
     private fun removeDownloadState(extension: Extension) {
-        currentDownloads.update { it - extension.pkgName }
+        currentDownloads.update { it - extension.installPackageName }
     }
 
-    private suspend fun Flow<InstallStep>.collectToInstallUpdate(extension: Extension) =
-        this
-            .onEach { installStep -> addDownloadState(extension, installStep) }
-            .onCompletion { removeDownloadState(extension) }
-            .collect()
+    private suspend fun runInstall(extension: Extension): InstallStep {
+        if (extension.installPackageName in currentDownloads.value) return InstallStep.Error
+        addDownloadState(extension, InstallStep.Pending)
+        try {
+            val steps: Flow<InstallStep> = when (extension) {
+                is Extension.Available -> extensionManager.installExtension(extension)
+                is Extension.Installed -> extensionManager.updateExtension(extension)
+                is Extension.Untrusted -> return InstallStep.Error
+            }
+            var finalStep = InstallStep.Error
+            withContext(Dispatchers.IO) {
+                steps.collect { step ->
+                    finalStep = step
+                    addDownloadState(extension, step)
+                }
+            }
+            return finalStep
+        } catch (e: CancellationException) {
+            extensionManager.cancelInstallUpdateExtension(extension)
+            throw e
+        } catch (_: Exception) {
+            return InstallStep.Error
+        } finally {
+            removeDownloadState(extension)
+        }
+    }
 
     fun uninstallExtension(extension: Extension) {
         extensionManager.uninstallExtension(extension)
@@ -217,10 +292,18 @@ class ExtensionsScreenModel(
         val updates: Int = 0,
         val installer: BasePreferences.ExtensionInstaller? = null,
         val searchQuery: String? = null,
+        val isSelecting: Boolean = false,
+        val selected: Map<String, Extension> = emptyMap(),
+        val batchRunning: Boolean = false,
+        val batchSummary: BatchSummary? = null,
     ) {
         val isEmpty = items.isEmpty()
     }
+
+    data class BatchSummary(val completed: Int, val failed: Int, val cancelled: Int)
 }
+
+internal fun Extension.canBatchInstall(): Boolean = this is Extension.Available || this is Extension.Installed && hasUpdate
 
 typealias ItemGroups = MutableMap<ExtensionUiModel.Header, List<ExtensionUiModel.Item>>
 

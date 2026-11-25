@@ -31,6 +31,7 @@ open class ReaderPage(
     // Translation Overlay Data
     var translationLanguage: String? = null
     var translationCacheKey: String? = null
+    var translationSourceIdentity: String? = null
     var translationBlocks: List<TranslatedBlock>? = null
     var showTranslation: Boolean = false
 }
@@ -50,12 +51,12 @@ object TranslationCache {
     private val memCache = android.util.LruCache<String, List<TranslatedBlock>>(128)
 
     @Synchronized
-    fun get(chapterId: Long, pageIndex: Int, targetLanguage: String): List<TranslatedBlock>? {
-        val key = "${chapterId}_${pageIndex}_$targetLanguage"
+    fun get(chapterId: Long, pageIndex: Int, targetLanguage: String, sourceIdentity: String? = null): List<TranslatedBlock>? {
+        val key = cacheKey(chapterId, pageIndex, targetLanguage, sourceIdentity)
         memCache.get(key)?.let { return it }
 
         // Fallback to persistent disk cache
-        val diskBlocks = com.shinku.reader.data.cache.TranslationDiskCache.getPage(chapterId, pageIndex, targetLanguage)
+        val diskBlocks = com.shinku.reader.data.cache.TranslationDiskCache.getPage(chapterId, pageIndex, targetLanguage, sourceIdentity)
         if (diskBlocks != null) {
             memCache.put(key, diskBlocks)
             return diskBlocks
@@ -63,14 +64,25 @@ object TranslationCache {
         return null
     }
 
-    suspend fun put(chapterId: Long, pageIndex: Int, targetLanguage: String, blocks: List<TranslatedBlock>) {
+    suspend fun put(
+        chapterId: Long,
+        pageIndex: Int,
+        targetLanguage: String,
+        blocks: List<TranslatedBlock>,
+        sourceIdentity: String? = null,
+    ) {
         val context = currentCoroutineContext()
         synchronized(this) {
             context.ensureActive()
-            val key = "${chapterId}_${pageIndex}_$targetLanguage"
+            val key = cacheKey(chapterId, pageIndex, targetLanguage, sourceIdentity)
             memCache.put(key, blocks)
-            com.shinku.reader.data.cache.TranslationDiskCache.putPage(chapterId, pageIndex, targetLanguage, blocks)
+            com.shinku.reader.data.cache.TranslationDiskCache.putPage(chapterId, pageIndex, targetLanguage, blocks, sourceIdentity)
         }
+    }
+
+    private fun cacheKey(chapterId: Long, pageIndex: Int, language: String, sourceIdentity: String?): String {
+        val key = "${chapterId}_${pageIndex}_$language"
+        return if (sourceIdentity == null) key else "$key:$sourceIdentity"
     }
 
     @Synchronized

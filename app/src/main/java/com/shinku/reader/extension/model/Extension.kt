@@ -8,6 +8,8 @@ sealed class Extension {
 
     abstract val name: String
     abstract val pkgName: String
+    // Available rows can append a source ID to distinguish the languages in one APK.
+    val installPackageName: String get() = pkgName.substringBefore('-')
     abstract val versionName: String
     abstract val versionCode: Long
     abstract val libVersion: Double

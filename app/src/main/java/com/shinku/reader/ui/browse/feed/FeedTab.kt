@@ -1,5 +1,6 @@
 package com.shinku.reader.ui.browse.feed
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.FilterList
@@ -8,6 +9,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.stack.StackEvent
@@ -24,9 +26,11 @@ import com.shinku.reader.presentation.browse.components.FeedFilterDialog
 import com.shinku.reader.presentation.browse.components.FeedManageCategoriesDialog
 import com.shinku.reader.presentation.components.AppBar
 import com.shinku.reader.presentation.components.TabContent
+import com.shinku.reader.presentation.category.components.ChangeCategoryDialog
 import com.shinku.reader.ui.browse.source.browse.BrowseSourceScreen
 import com.shinku.reader.ui.browse.source.globalsearch.GlobalSearchScreen
 import com.shinku.reader.ui.manga.MangaScreen
+import com.shinku.reader.ui.category.CategoryScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -81,6 +85,14 @@ fun Screen.feedTab(): TabContent {
             ),
         ),
         content = { contentPadding, snackbarHostState ->
+            val context = LocalContext.current
+            BackHandler(enabled = state.selection.selectionMode, onBack = screenModel::exitSelectionMode)
+            LaunchedEffect(screenModel) {
+                screenModel.bulkFavoriteEvents.collectLatest { summary ->
+                    snackbarHostState.showSnackbar(summary.formatMessage(context))
+                }
+            }
+            com.shinku.reader.presentation.components.RemoteAiConsentDialog(screenModel.remoteAiConsent)
             FeedScreen(
                 state = state,
                 contentPadding = contentPadding,
@@ -107,8 +119,17 @@ fun Screen.feedTab(): TabContent {
                 },
                 onClickDelete = screenModel::openDeleteDialog,
                 onClickManga = { manga ->
-                    navigator.push(MangaScreen(manga.id, true))
+                    if (state.selection.selectionMode) {
+                        screenModel.toggleSelection(manga)
+                    } else {
+                        navigator.push(MangaScreen(manga.id, true))
+                    }
                 },
+                onLongClickManga = screenModel::toggleSelection,
+                onExitSelection = screenModel::exitSelectionMode,
+                onSelectAllLoaded = screenModel::selectAllLoaded,
+                onInvertLoaded = screenModel::invertLoaded,
+                onBulkAdd = screenModel::requestBulkAddToLibrary,
                 onClickGenre = screenModel::selectGenre,
                 onSeeAllGenre = { genre ->
                     navigator.push(GlobalSearchScreen(genre))
@@ -118,11 +139,24 @@ fun Screen.feedTab(): TabContent {
                 },
                 onAddFeed = screenModel::openAddDialog,
                 onRefresh = { screenModel.init(force = true) },
+                onRequestAiRecommendations = if (screenModel.shinkuPreferences.isAiConfigured()) {
+                    screenModel::requestAiRecommendations
+                } else {
+                    null
+                },
                 getMangaState = { manga -> screenModel.getManga(initialManga = manga) },
             )
 
             state.dialog?.let { dialog ->
                 when (dialog) {
+                    is FeedScreenModel.Dialog.BulkChangeMangaCategory -> {
+                        ChangeCategoryDialog(
+                            initialSelection = dialog.initialSelection,
+                            onDismissRequest = screenModel::dismissDialog,
+                            onEditCategories = { navigator.push(CategoryScreen()) },
+                            onConfirm = { include, _ -> screenModel.confirmBulkAddToLibrary(dialog.mangas, include) },
+                        )
+                    }
                     is FeedScreenModel.Dialog.FeedFilter -> {
                         FeedFilterDialog(
                             currentSourceFilter = screenModel.shinkuPreferences.feedSourceFilter().get(),
