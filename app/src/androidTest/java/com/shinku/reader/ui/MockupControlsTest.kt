@@ -16,12 +16,17 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.shinku.reader.R
+import com.shinku.reader.core.common.i18n.pluralStringResource
 import com.shinku.reader.core.common.preference.TriState
+import com.shinku.reader.data.download.model.Download
 import com.shinku.reader.domain.base.BasePreferences
 import com.shinku.reader.domain.chapter.model.Chapter
 import com.shinku.reader.domain.library.service.LibraryPreferences
 import com.shinku.reader.domain.manga.model.Manga
+import com.shinku.reader.domain.manga.model.asMangaCover
 import com.shinku.reader.domain.source.model.Source
+import com.shinku.reader.domain.updates.model.UpdatesWithRelations
+import com.shinku.reader.i18n.MR
 import com.shinku.reader.presentation.browse.MigrateSourceScreen
 import com.shinku.reader.presentation.library.LibrarySettingsDialog
 import com.shinku.reader.presentation.reader.ChapterListDialog
@@ -29,6 +34,7 @@ import com.shinku.reader.presentation.reader.ReaderPageActionsDialog
 import com.shinku.reader.presentation.reader.dialog.TranslationOptionsContent
 import com.shinku.reader.presentation.reader.settings.ReaderSettingsDialog
 import com.shinku.reader.presentation.theme.TachiyomiTheme
+import com.shinku.reader.presentation.updates.UpdateScreen
 import com.shinku.reader.ui.browse.migration.sources.MigrateSourceScreenModel
 import com.shinku.reader.ui.browse.source.globalsearch.SearchScreenModel
 import com.shinku.reader.ui.library.LibrarySettingsScreenModel
@@ -36,6 +42,9 @@ import com.shinku.reader.ui.main.MainActivity
 import com.shinku.reader.ui.reader.ReaderViewModel
 import com.shinku.reader.ui.reader.chapter.ReaderChapterItem
 import com.shinku.reader.ui.reader.setting.ReaderSettingsScreenModel
+import com.shinku.reader.ui.updates.UpdatesItem
+import com.shinku.reader.ui.updates.UpdatesScreenModel
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
@@ -70,6 +79,74 @@ class MockupControlsTest {
     @After
     fun cleanup() {
         if (::activity.isInitialized) instrumentation.runOnMainSync { activity.finish() }
+    }
+
+    @Test
+    fun updatesGroupExpandsAndRoutesChildReadAndDownloadActions() {
+        val manga = Manga.create().copy(id = 5100, ogTitle = "Grouped series fixture")
+        val fetched = System.currentTimeMillis()
+        fun chapter(id: Long, name: String, downloaded: Boolean) = UpdatesItem(
+            update = UpdatesWithRelations(
+                mangaId = manga.id,
+                ogMangaTitle = manga.title,
+                chapterId = id,
+                chapterName = name,
+                scanlator = null,
+                chapterUrl = "/fixture/$id",
+                read = false,
+                bookmark = false,
+                lastPageRead = 0,
+                sourceId = manga.source,
+                dateFetch = fetched,
+                coverData = manga.asMangaCover(),
+            ),
+            downloadStateProvider = {
+                if (downloaded) Download.State.DOWNLOADED else Download.State.NOT_DOWNLOADED
+            },
+            downloadProgressProvider = { 0 },
+        )
+        val lead = chapter(5102, "Newest fixture chapter", downloaded = true)
+        val child = chapter(5101, "Earlier fixture chapter", downloaded = false)
+        val read = AtomicInteger()
+        val download = AtomicInteger()
+        show {
+            UpdateScreen(
+                state = UpdatesScreenModel.State(isLoading = false, items = persistentListOf(lead, child)),
+                snackbarHostState = androidx.compose.material3.SnackbarHostState(),
+                lastUpdated = fetched,
+                preserveReadingPosition = false,
+                onClickCover = {},
+                onSelectAll = {},
+                onInvertSelection = {},
+                onCalendarClicked = {},
+                onUpdateLibrary = { false },
+                onDownloadChapter = { items, _ -> download.set(items.single().update.chapterId.toInt()) },
+                onMultiBookmarkClicked = { _, _ -> },
+                onMultiMarkAsReadClicked = { _, _ -> },
+                onMultiDeleteClicked = {},
+                onUpdateSelected = { _, _, _, _ -> },
+                onOpenChapter = { read.set(it.update.chapterId.toInt()) },
+            )
+        }
+
+        eventually { hasText(lead.update.chapterName) }
+        assertTrue(!hasText(child.update.chapterName))
+        val showMore = context.pluralStringResource(MR.plurals.updates_show_more_chapters, 1, 1)
+        click(showMore)
+        scrollTo(child.update.chapterName)
+        click(child.update.chapterName)
+        assertEquals(5101, read.get())
+
+        val downloadLabel = context.getString(R.string.manga_download)
+        fun downloadButton() = nodes().firstOrNull {
+            it.isVisibleToUser && it.contentDescription?.toString() == downloadLabel
+        }?.let { if (it.isClickable) it else it.parent }
+        eventually { downloadButton()?.isClickable == true }
+        assertTrue(checkNotNull(downloadButton()).performAction(AccessibilityNodeInfo.ACTION_CLICK))
+        assertEquals(5101, download.get())
+
+        click(context.getString(R.string.updates_hide_chapters))
+        eventually { hasText(showMore) && !hasText(child.update.chapterName) }
     }
 
     @Test

@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -17,11 +16,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Checkbox
@@ -31,6 +33,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -56,6 +59,7 @@ import com.shinku.reader.presentation.components.relativeDateText
 import com.shinku.reader.presentation.core.components.ListGroupHeader
 import com.shinku.reader.presentation.core.components.material.DISABLED_ALPHA
 import com.shinku.reader.presentation.core.components.material.padding
+import com.shinku.reader.presentation.core.i18n.pluralStringResource
 import com.shinku.reader.presentation.core.i18n.stringResource
 import com.shinku.reader.presentation.core.theme.SanctuaryBrushes
 import com.shinku.reader.presentation.core.theme.SanctuaryElevation
@@ -154,6 +158,8 @@ internal fun LazyListScope.updatesLastUpdatedItem(
 
 internal fun LazyListScope.updatesUiItems(
     uiModels: List<UpdatesUiModel>,
+    expandedGroups: Set<Long>,
+    onToggleGroup: (Long) -> Unit,
     selectionMode: Boolean,
     // SY -->
     preserveReadingPosition: Boolean,
@@ -163,73 +169,89 @@ internal fun LazyListScope.updatesUiItems(
     onClickUpdate: (UpdatesItem) -> Unit,
     onDownloadChapter: (List<UpdatesItem>, ChapterDownloadAction) -> Unit,
 ) {
-    items(
-        items = uiModels,
-        contentType = {
-            when (it) {
-                is UpdatesUiModel.Header -> "header"
-                is UpdatesUiModel.Item -> "item"
-            }
-        },
-        key = {
-            when (it) {
-                is UpdatesUiModel.Header -> "updatesHeader-${it.hashCode()}"
-                is UpdatesUiModel.Item -> "updates-${it.item.update.mangaId}-${it.item.update.chapterId}"
-            }
-        },
-    ) { item ->
-        when (item) {
+    uiModels.forEach { model ->
+        when (model) {
             is UpdatesUiModel.Header -> {
-                ListGroupHeader(
-                    modifier = Modifier.animateItemFastScroll(),
-                    text = relativeDateText(item.date),
-                )
+                item(key = "updates-header-${model.date}", contentType = "header") {
+                    ListGroupHeader(
+                        modifier = Modifier.animateItemFastScroll(),
+                        text = relativeDateText(model.date),
+                    )
+                }
             }
-            is UpdatesUiModel.Item -> {
-                val updatesItem = item.item
-                UpdatesUiItem(
-                    modifier = Modifier.animateItemFastScroll(),
-                    update = updatesItem.update,
-                    selected = updatesItem.selected,
-                    selectionMode = selectionMode,
-                    readProgress = updatesItem.update.lastPageRead
-                        .takeIf {
-                            /* SY --> */(
-                                !updatesItem.update.read ||
-                                    (preserveReadingPosition && updatesItem.isEhBasedUpdate())
-                                )/* SY <-- */ &&
-                                it > 0L
-                        }
-                        ?.let {
-                            stringResource(
-                                MR.strings.chapter_progress,
-                                it + 1,
-                            )
+            is UpdatesUiModel.Group -> {
+                val hasMore = model.chapters.size > 1
+                // Selection can include a range or all chapters, so every selected row stays visible.
+                val expanded = hasMore && (selectionMode || model.id in expandedGroups)
+                val visible = if (expanded) model.chapters else model.chapters.subList(0, 1)
+                items(
+                    count = visible.size,
+                    key = { index -> "updates-chapter-${visible[index].update.chapterId}" },
+                    contentType = { index -> if (index == 0) "series" else "chapter" },
+                ) { index ->
+                    val chapter = visible[index]
+                    val isFirst = index == 0
+                    val isLast = index == visible.lastIndex
+                    val update = chapter.update
+                    UpdatesUiItem(
+                        modifier = Modifier.animateItemFastScroll(),
+                        update = update,
+                        isFirst = isFirst,
+                        isLast = isLast,
+                        selected = chapter.selected,
+                        selectionMode = selectionMode,
+                        readProgress = update.lastPageRead
+                            .takeIf { it > 0L && (!update.read || preserveReadingPosition && chapter.isEhBasedUpdate()) }
+                            ?.let { stringResource(MR.strings.chapter_progress, it + 1) },
+                        onLongClick = { onUpdateSelected(chapter, !chapter.selected, true, true) },
+                        onClick = {
+                            if (selectionMode) onUpdateSelected(chapter, !chapter.selected, true, false)
+                            else onClickUpdate(chapter)
                         },
-                    onLongClick = {
-                        onUpdateSelected(updatesItem, !updatesItem.selected, true, true)
-                    },
-                    onClick = {
-                        when {
-                            selectionMode -> onUpdateSelected(updatesItem, !updatesItem.selected, true, false)
-                            else -> onClickUpdate(updatesItem)
-                        }
-                    },
-                    onClickCover = { onClickCover(updatesItem) }.takeIf { !selectionMode },
-                    onDownloadChapter = { action: ChapterDownloadAction ->
-                        onDownloadChapter(listOf(updatesItem), action)
-                    }.takeIf { !selectionMode },
-                    downloadStateProvider = updatesItem.downloadStateProvider,
-                    downloadProgressProvider = updatesItem.downloadProgressProvider,
-                )
+                        onClickCover = { onClickCover(chapter) }.takeIf { isFirst && !selectionMode },
+                        onDownloadChapter = { action: ChapterDownloadAction ->
+                            onDownloadChapter(listOf(chapter), action)
+                        }.takeIf { !selectionMode },
+                        downloadStateProvider = chapter.downloadStateProvider,
+                        downloadProgressProvider = chapter.downloadProgressProvider,
+                        groupToggle = if (isFirst && hasMore && !selectionMode) {
+                            {
+                                UpdatesGroupToggle(model.chapters.size - 1, expanded) { onToggleGroup(model.id) }
+                            }
+                        } else {
+                            null
+                        },
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
+private fun UpdatesGroupToggle(additionalChapters: Int, expanded: Boolean, onClick: () -> Unit) {
+    TextButton(onClick = onClick, modifier = Modifier.heightIn(min = 48.dp)) {
+        Icon(
+            imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = if (expanded) {
+                stringResource(MR.strings.updates_hide_chapters)
+            } else {
+                pluralStringResource(MR.plurals.updates_show_more_chapters, additionalChapters, additionalChapters)
+            },
+            modifier = Modifier.padding(start = 6.dp),
+        )
+    }
+}
+
+@Composable
 private fun UpdatesUiItem(
     update: UpdatesWithRelations,
+    isFirst: Boolean,
+    isLast: Boolean,
     selected: Boolean,
     selectionMode: Boolean,
     readProgress: String?,
@@ -240,16 +262,25 @@ private fun UpdatesUiItem(
     // Download Indicator
     downloadStateProvider: () -> Download.State,
     downloadProgressProvider: () -> Int,
+    groupToggle: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
     val textAlpha = if (update.read) DISABLED_ALPHA else 1f
-    val shape = SanctuaryShapes.deckCard
+    val cardShape = SanctuaryShapes.deckCard
+    val shape = RoundedCornerShape(
+        topStart = if (isFirst) cardShape.topStart else CornerSize(0.dp),
+        topEnd = if (isFirst) cardShape.topEnd else CornerSize(0.dp),
+        bottomStart = if (isLast) cardShape.bottomStart else CornerSize(0.dp),
+        bottomEnd = if (isLast) cardShape.bottomEnd else CornerSize(0.dp),
+    )
+    val standaloneCard = isFirst && isLast
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = MaterialTheme.padding.medium, vertical = 4.dp),
+            .padding(horizontal = MaterialTheme.padding.medium)
+            .padding(top = if (isFirst) 4.dp else 0.dp, bottom = if (isLast) 4.dp else 0.dp),
         shape = shape,
         color = if (selected) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
@@ -258,10 +289,12 @@ private fun UpdatesUiItem(
         },
         border = if (selected) {
             BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
-        } else {
+        } else if (standaloneCard) {
             SanctuaryBrushes.subtleBorder()
+        } else {
+            null
         },
-        shadowElevation = SanctuaryElevation.subtle,
+        shadowElevation = if (standaloneCard) SanctuaryElevation.subtle else 0.dp,
     ) {
         Row(
             modifier = Modifier
@@ -277,7 +310,7 @@ private fun UpdatesUiItem(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            MangaCover.Book(
+            if (isFirst) MangaCover.Book(
                 modifier = Modifier
                     .width(64.dp)
                     .height(96.dp)
@@ -292,7 +325,7 @@ private fun UpdatesUiItem(
                     .padding(horizontal = 12.dp)
                     .weight(1f),
             ) {
-                Text(
+                if (isFirst) Text(
                     text = update.mangaTitle,
                     maxLines = 3,
                     style = MaterialTheme.typography.titleMedium.copy(
@@ -393,6 +426,7 @@ private fun UpdatesUiItem(
                         )
                     }
                 }
+                groupToggle?.invoke()
             }
 
             if (selectionMode) {

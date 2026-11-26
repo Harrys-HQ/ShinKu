@@ -8,7 +8,6 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.shinku.reader.core.preference.asState
 import com.shinku.reader.core.util.addOrRemove
-import com.shinku.reader.core.util.insertSeparators
 import com.shinku.reader.domain.chapter.interactor.SetReadStatus
 import com.shinku.reader.presentation.manga.components.ChapterDownloadAction
 import com.shinku.reader.presentation.updates.UpdatesUiModel
@@ -383,18 +382,25 @@ class UpdatesScreenModel(
         val selected = items.filter { it.selected }
         val selectionMode = selected.isNotEmpty()
 
-        fun getUiModel(): List<UpdatesUiModel> {
-            return items
-                .map { UpdatesUiModel.Item(it) }
-                .insertSeparators { before, after ->
-                    val beforeDate = before?.item?.update?.dateFetch?.toLocalDate()
-                    val afterDate = after?.item?.update?.dateFetch?.toLocalDate()
-                    when {
-                        beforeDate != afterDate && afterDate != null -> UpdatesUiModel.Header(afterDate)
-                        // Return null to avoid adding a separator between two items.
-                        else -> null
-                    }
+        fun getUiModel(): List<UpdatesUiModel> = buildList {
+            var previousDate: java.time.LocalDate? = null
+            var start = 0
+            while (start < items.size) {
+                val first = items[start].update
+                val date = first.dateFetch.toLocalDate()
+                if (date != previousDate) {
+                    add(UpdatesUiModel.Header(date))
+                    previousDate = date
                 }
+                var end = start + 1
+                while (end < items.size) {
+                    val next = items[end].update
+                    if (next.mangaId != first.mangaId || next.dateFetch.toLocalDate() != date) break
+                    end++
+                }
+                add(UpdatesUiModel.Group(items.subList(start, end)))
+                start = end
+            }
         }
     }
 

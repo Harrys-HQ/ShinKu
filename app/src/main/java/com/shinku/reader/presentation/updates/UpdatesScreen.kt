@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -64,6 +65,8 @@ fun UpdateScreen(
     onUpdateSelected: (UpdatesItem, Boolean, Boolean, Boolean) -> Unit,
     onOpenChapter: (UpdatesItem) -> Unit,
 ) {
+    var expandedGroups by rememberSaveable { mutableStateOf(longArrayOf()) }
+
     BackHandler(enabled = state.selectionMode) {
         onSelectAll(false)
     }
@@ -100,6 +103,7 @@ fun UpdateScreen(
             else -> {
                 val scope = rememberCoroutineScope()
                 var isRefreshing by remember { mutableStateOf(false) }
+                val uiModels = remember(state.items) { state.getUiModel() }
 
                 PullRefresh(
                     refreshing = isRefreshing,
@@ -135,7 +139,15 @@ fun UpdateScreen(
                         )
 
                         updatesUiItems(
-                            uiModels = state.getUiModel(),
+                            uiModels = uiModels,
+                            expandedGroups = expandedGroups.toSet(),
+                            onToggleGroup = { id ->
+                                expandedGroups = if (id in expandedGroups) {
+                                    expandedGroups.filterNot { it == id }.toLongArray()
+                                } else {
+                                    expandedGroups + id
+                                }
+                            },
                             selectionMode = state.selectionMode,
                             // SY -->
                             preserveReadingPosition = preserveReadingPosition,
@@ -241,5 +253,8 @@ private fun UpdatesBottomBar(
 
 sealed interface UpdatesUiModel {
     data class Header(val date: LocalDate) : UpdatesUiModel
-    data class Item(val item: UpdatesItem) : UpdatesUiModel
+    data class Group(val chapters: List<UpdatesItem>) : UpdatesUiModel {
+        // Newer chapters can join a run without changing its expansion key.
+        val id = chapters.last().update.chapterId
+    }
 }

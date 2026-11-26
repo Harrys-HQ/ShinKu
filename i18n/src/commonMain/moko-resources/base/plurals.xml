@@ -113,4 +113,8 @@
         <item quantity="one">%1$d title</item>
         <item quantity="other">%1$d titles</item>
     </plurals>
+    <plurals name="updates_show_more_chapters">
+        <item quantity="one">Show %1$d more chapter</item>
+        <item quantity="other">Show %1$d more chapters</item>
+    </plurals>
 </resources>

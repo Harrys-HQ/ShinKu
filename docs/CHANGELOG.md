@@ -1,5 +1,9 @@
 # ShinKu Changelog
 
+## 2.8.6-preview.3 (2026-11-26)
+
+- **Grouped chapter updates (#51)**. Consecutive updates from the same series now share an expandable card within each date section. Expand it to read or download any chapter individually. Bulk selection still shows every chapter.
+
 ## 2.8.6-preview.2 (2026-11-25)
 
 - **Feed and Extensions (#43, #44)**. Select multiple Feed titles to add to the library. Queue selected extension installs and updates, cancel the queue, or retry remaining packages.
