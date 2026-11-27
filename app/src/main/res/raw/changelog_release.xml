@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <changelog bulletedList="true">
+    <changelogversion versionName="2.8.6-preview.4" changeDate="November 27, 2026">
+        <changelogtext>[b]Extension repositories (#53, #57)[/b]. Skip identical repositories during restore and cap extension index size.</changelogtext>
+        <changelogtext>[b]Recommendations and trackers (#54, #55)[/b]. Handle missing titles and unsupported tracker searches gracefully.</changelogtext>
+        <changelogtext>[b]Preferences and build reliability (#56, #60)[/b]. Support in-memory string sets and resolve the download queue adapter from Maven Central.</changelogtext>
+    </changelogversion>
     <changelogversion versionName="2.8.6-preview.3" changeDate="November 26, 2026">
         <changelogtext>[b]Grouped chapter updates (#51)[/b]. Consecutive updates from the same series share an expandable card. Expand it to read or download individual chapters.</changelogtext>
     </changelogversion>

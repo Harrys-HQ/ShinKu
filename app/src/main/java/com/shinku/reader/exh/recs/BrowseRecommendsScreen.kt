@@ -3,6 +3,8 @@ package com.shinku.reader.exh.recs
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -21,6 +23,9 @@ import com.shinku.reader.presentation.core.util.collectAsLazyPagingItems
 import com.shinku.reader.domain.manga.model.Manga
 import com.shinku.reader.presentation.core.components.material.Scaffold
 import com.shinku.reader.presentation.core.screens.LoadingScreen
+import com.shinku.reader.core.common.util.lang.withIOContext
+import com.shinku.reader.i18n.sy.SYMR
+import kotlinx.coroutines.CancellationException
 import java.io.Serializable
 
 class BrowseRecommendsScreen(
@@ -49,6 +54,18 @@ class BrowseRecommendsScreen(
 
         val screenModel = rememberScreenModel { BrowseRecommendsScreenModel(args) }
         val snackbarHostState = remember { SnackbarHostState() }
+        val title by produceState(SYMR.strings.similar_titles.getString(context), screenModel, context) {
+            try {
+                val recSource = withIOContext { screenModel.resolveRecommendationSource() }
+                if (recSource != null) {
+                    value = "${recSource.name} (${recSource.category.getString(context)})"
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Paging displays the failure. Keep the localized title available for navigation.
+            }
+        }
 
         val onClickItem = { manga: Manga ->
             navigator.push(
@@ -68,11 +85,6 @@ class BrowseRecommendsScreen(
 
         Scaffold(
             topBar = { scrollBehavior ->
-                val title = remember {
-                    val recSource = screenModel.recommendationSource
-                    "${recSource.name} (${recSource.category.getString(context)})"
-                }
-
                 BrowseSourceSimpleToolbar(
                     navigateUp = navigator::pop,
                     title = title,

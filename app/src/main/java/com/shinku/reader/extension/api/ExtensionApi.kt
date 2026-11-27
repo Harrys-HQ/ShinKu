@@ -25,21 +25,24 @@ import com.shinku.reader.extension.util.ExtensionLoader
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.awaitSuccess
-import eu.kanade.tachiyomi.network.parseAs
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.okio.decodeFromBufferedSource
 import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.serializer
 import logcat.LogPriority
+import okhttp3.Response
 import okio.BufferedSource
 import okio.buffer
 import okio.gzip
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import uy.kohesive.injekt.injectLazy
+import java.io.IOException
 import java.time.Instant
 import kotlin.time.Duration.Companion.days
 
@@ -93,7 +96,7 @@ internal class ExtensionApi {
             extensions
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Throwable) {
+        } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to get extensions from $repoBaseUrl" }
             recordPassiveRepoResult(extRepo, count = 0, error = e)
             emptyList()
@@ -147,9 +150,7 @@ internal class ExtensionApi {
                 .newCall(GET("$repoBaseUrl/index.pb"))
                 .awaitSuccess()
 
-            val indexDto = response.body.source().decompressIfGzipped().use { source ->
-                protoBuf.decodeFromByteArray<ExtensionIndexDto>(source.readByteArray())
-            }
+            val indexDto = protoBuf.decodeFromByteArray<ExtensionIndexDto>(response.readProtobufIndexBytes())
 
             val extensions = if (indexDto.extensionList != null && indexDto.extensionList.extensions.isNotEmpty()) {
                 indexDto.extensionList.extensions
@@ -160,15 +161,15 @@ internal class ExtensionApi {
                     else -> "$repoBaseUrl/${indexDto.extensionListUrl}"
                 }
                 val listResponse = networkService.client.newCall(GET(listUrl)).awaitSuccess()
-                listResponse.body.source().decompressIfGzipped().use { listSource ->
-                    protoBuf.decodeFromByteArray<ExtensionIndexDto.ExtensionList>(listSource.readByteArray()).extensions
-                }
+                protoBuf.decodeFromByteArray<ExtensionIndexDto.ExtensionList>(listResponse.readProtobufIndexBytes()).extensions
             } else {
                 emptyList()
             }
 
             extensions.toAvailableExtensions(repoBaseUrl).takeIf { it.isNotEmpty() }
-        } catch (e: Throwable) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             logcat(LogPriority.DEBUG, e) { "Failed to get protobuf extensions from $repoBaseUrl" }
             null
         }
@@ -179,16 +180,18 @@ internal class ExtensionApi {
             networkService.client
                 .newCall(GET("$repoBaseUrl/index.min.json"))
                 .awaitSuccess()
-        } catch (e: Throwable) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
             networkService.client
                 .newCall(GET("$repoBaseUrl/index.json"))
                 .awaitSuccess()
         }
 
-        return with(json) {
-            response
-                .parseAs<List<ExtensionJsonObject>>()
-                .toExtensions(repoBaseUrl)
+        return response.use {
+            val source = it.body.source()
+            source.requireExtensionIndexSize()
+            json.decodeFromBufferedSource(serializer<List<ExtensionJsonObject>>(), source).toExtensions(repoBaseUrl)
         }
     }
 
@@ -348,6 +351,25 @@ internal class ExtensionApi {
         return pkgName in BlacklistedSources.BLACKLISTED_EXTENSIONS && blacklistEnabled
     }
     // SY <--
+}
+
+internal const val MAX_EXTENSION_INDEX_BYTES = 16L * 1024 * 1024
+
+internal class ExtensionIndexTooLargeException : IOException("Extension index exceeds 16 MiB")
+
+internal fun BufferedSource.requireExtensionIndexSize() {
+    if (request(MAX_EXTENSION_INDEX_BYTES + 1)) throw ExtensionIndexTooLargeException()
+}
+
+internal fun BufferedSource.readExtensionIndexBytes(): ByteArray {
+    requireExtensionIndexSize()
+    return readByteArray()
+}
+
+internal fun Response.readProtobufIndexBytes(): ByteArray = use { response ->
+    val source = response.body.source()
+    source.requireExtensionIndexSize()
+    source.decompressIfGzipped().use { it.readExtensionIndexBytes() }
 }
 
 internal fun BufferedSource.decompressIfGzipped(): BufferedSource {

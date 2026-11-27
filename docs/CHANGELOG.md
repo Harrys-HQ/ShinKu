@@ -1,5 +1,11 @@
 # ShinKu Changelog
 
+## 2.8.6-preview.4 (2026-11-27)
+
+- **Extension repositories (#53, #57)**. Restoring a repository with the original URL and signing key skips an existing entry. Extension index loading now limits the size of protobuf, gzip, and JSON payloads.
+- **Recommendations and trackers (#54, #55)**. Recommendations handle missing titles, and Kavita, Komga, and Suwayomi keep auto-matching without throwing on manual search.
+- **Preferences and build reliability (#56, #60)**. In-memory preferences support string sets, and the download queue adapter now resolves from Maven Central.
+
 ## 2.8.6-preview.3 (2026-11-26)
 
 - **Grouped chapter updates (#51)**. Consecutive updates from the same series now share an expandable card within each date section. Expand it to read or download any chapter individually. Bulk selection still shows every chapter.

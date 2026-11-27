@@ -11,7 +11,10 @@ import com.shinku.reader.domain.source.model.SourceHealthClassifier
 import com.shinku.reader.domain.source.model.SourceProbeOutcome
 import com.shinku.reader.extension.api.ExtensionIndexDto
 import com.shinku.reader.extension.api.ExtensionJsonObject
+import com.shinku.reader.extension.api.ExtensionIndexTooLargeException
+import com.shinku.reader.extension.api.MAX_EXTENSION_INDEX_BYTES
 import com.shinku.reader.extension.api.decompressIfGzipped
+import com.shinku.reader.extension.api.readExtensionIndexBytes
 import com.shinku.reader.extension.util.ExtensionLoader
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.await
@@ -31,7 +34,6 @@ import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import okio.Buffer
-import okio.BufferedSource
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
@@ -43,7 +45,7 @@ import kotlin.system.measureTimeMillis
 object SourceHealthProber {
 
     const val DEFAULT_TIMEOUT_MS = 15_000L
-    internal const val MAX_INDEX_BYTES = 16L * 1024 * 1024
+    internal const val MAX_INDEX_BYTES = MAX_EXTENSION_INDEX_BYTES
 
     private fun probeClientFrom(baseClient: OkHttpClient, timeoutMs: Long): OkHttpClient =
         baseClient.newBuilder()
@@ -207,7 +209,7 @@ object SourceHealthProber {
         val pbUrl = "$cleanBaseUrl/index.pb"
         return executeRepoAttempt(client, pbUrl, isNetworkAvailable, correlationId, timeoutMs) { bytes ->
             val indexDto = Buffer().write(bytes).decompressIfGzipped().use { source ->
-                protoBuf.decodeFromByteArray<ExtensionIndexDto>(source.readIndexBytes())
+                protoBuf.decodeFromByteArray<ExtensionIndexDto>(source.readExtensionIndexBytes())
             }
             val extensions = when {
                 indexDto.extensionList != null -> indexDto.extensionList.extensions
@@ -215,7 +217,7 @@ object SourceHealthProber {
                     val listUrl = resolveRelativeUrl(cleanBaseUrl, indexDto.extensionListUrl)
                     val listBytes = fetchBytesOrThrow(client, listUrl, timeoutMs)
                     Buffer().write(listBytes).decompressIfGzipped().use { listSource ->
-                        protoBuf.decodeFromByteArray<ExtensionIndexDto.ExtensionList>(listSource.readIndexBytes()).extensions
+                        protoBuf.decodeFromByteArray<ExtensionIndexDto.ExtensionList>(listSource.readExtensionIndexBytes()).extensions
                     }
                 }
                 else -> emptyList()
@@ -284,7 +286,7 @@ object SourceHealthProber {
                             )
                             return@use null
                         }
-                        runInterruptible { response.body.source().readIndexBytes() }
+                        runInterruptible { response.body.source().readExtensionIndexBytes() }
                     }
                 }
                 if (bytes != null) {
@@ -316,7 +318,7 @@ object SourceHealthProber {
                 } else {
                     throw e
                 }
-            } catch (e: IndexTooLargeException) {
+            } catch (e: ExtensionIndexTooLargeException) {
                 attemptResult = RepoAttempt(
                     category = SourceHealthCategory.REPO_INDEX_INVALID,
                     statusCode = statusCode,
@@ -358,16 +360,9 @@ object SourceHealthProber {
             if (!response.isSuccessful) {
                 throw eu.kanade.tachiyomi.network.HttpException(response.code)
             }
-            runInterruptible { response.body.source().readIndexBytes() }
+            runInterruptible { response.body.source().readExtensionIndexBytes() }
         }
     }
-
-    private fun BufferedSource.readIndexBytes(): ByteArray {
-        if (request(MAX_INDEX_BYTES + 1)) throw IndexTooLargeException()
-        return readByteArray()
-    }
-
-    private class IndexTooLargeException : Exception()
 
     private fun resolveRelativeUrl(cleanBaseUrl: String, relativeOrFull: String): String {
         return when {
